@@ -1,0 +1,39 @@
+name: mqnet-photos
+
+services:
+  photos:
+    build: .
+    image: mqnet-photos:latest
+    container_name: mqnet-photos
+    restart: always
+    ports:
+      - "8006:8000"
+    environment:
+      - PHOTOS_DIR=/media
+      - CACHE_DIR=/cache
+    volumes:
+      - "L:/:/media"
+      - "./frontend:/app/frontend:ro"
+      - photos_cache:/cache
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/albums')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  cloudflared-photos:
+    image: cloudflare/cloudflared:latest
+    container_name: mqnet-cloudflared-photos
+    restart: always
+    command: tunnel --no-autoupdate --protocol http2 run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN_PHOTOS:-${CLOUDFLARE_TUNNEL_TOKEN}}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - photos
+
+volumes:
+  photos_cache:
+    driver: local

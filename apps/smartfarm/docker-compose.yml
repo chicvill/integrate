@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  smartfarm:
+    build: .
+    container_name: mqnet-smartfarm
+    restart: always
+    ports:
+      - "8003:8003"
+    environment:
+      - DEPLOYMENT_MODE=LOCAL_STANDALONE
+      - ENABLE_GROWTH_AI=true
+      - DATABASE_URL=sqlite:////app/backend/smartfarm.db
+    volumes:
+      - ./backend/data:/app/backend/data

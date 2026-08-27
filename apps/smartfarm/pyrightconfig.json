@@ -1,0 +1,12 @@
+{
+  "venvPath": "D:\\Workstation\\MQnet\\smartfarm\\backend",
+  "venv": ".venv",
+  "executionEnvironments": [
+    {
+      "root": "D:\\Workstation\\MQnet\\smartfarm",
+      "extraPaths": [
+        "D:\\Workstation\\MQnet\\smartfarm\\backend\\.venv\\Lib\\site-packages"
+      ]
+    }
+  ]
+}

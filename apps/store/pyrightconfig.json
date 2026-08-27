@@ -1,0 +1,12 @@
+{
+  "venvPath": "D:\\Workstation\\MQnet\\store\\backend",
+  "venv": ".venv",
+  "executionEnvironments": [
+    {
+      "root": "D:\\Workstation\\MQnet\\store",
+      "extraPaths": [
+        "D:\\Workstation\\MQnet\\store\\backend\\.venv\\Lib\\site-packages"
+      ]
+    }
+  ]
+}

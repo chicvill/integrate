@@ -1,0 +1,115 @@
+# MQnet 통합 SaaS 플랫폼 - Docker Compose
+# 실행: docker-compose up -d --build
+
+version: '3.9'
+
+services:
+  # ─── 통합 API 게이트웨이 & 포털 (포트 10000) ───────────────────────
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mqnet-integrate:latest
+    container_name: mqnet-gateway
+    ports:
+      - "10000:10000"
+    environment:
+      - DEPLOYMENT_MODE=DOCKER
+      - PYTHONPATH=/app
+    env_file:
+      - .env.shared
+    command: python -m uvicorn gateway.main:app --host 0.0.0.0 --port 10000
+    restart: unless-stopped
+
+  # ─── 스터디카페 독립 컨테이너 (포트 8001) ─────────────────────────────
+  studycafe:
+    image: mqnet-integrate:latest
+    container_name: mqnet-studycafe
+    ports:
+      - "8001:8001"
+    environment:
+      - PYTHONPATH=/app
+    env_file:
+      - .env.shared
+    command: python -m uvicorn apps.studycafe.backend.main:app --host 0.0.0.0 --port 8001
+    restart: unless-stopped
+    depends_on:
+      - gateway
+
+  # ─── 매장 관제 & POS 독립 컨테이너 (포트 8002) ──────────────────────────
+  store:
+    image: mqnet-integrate:latest
+    container_name: mqnet-store
+    ports:
+      - "8002:8002"
+    environment:
+      - PYTHONPATH=/app
+    env_file:
+      - .env.shared
+    command: python -m uvicorn apps.store.backend.main:app --host 0.0.0.0 --port 8002
+    restart: unless-stopped
+    depends_on:
+      - gateway
+
+  # ─── 자기주도학습 독립 컨테이너 (포트 8003) ───────────────────────────
+  selfstudy:
+    image: mqnet-integrate:latest
+    container_name: mqnet-selfstudy
+    ports:
+      - "8003:8003"
+    environment:
+      - PYTHONPATH=/app
+    env_file:
+      - .env.shared
+    command: python -m uvicorn apps.selfstudy.backend.main:app --host 0.0.0.0 --port 8003
+    restart: unless-stopped
+    depends_on:
+      - gateway
+
+  # ─── 스마트팜 IoT 독립 컨테이너 (포트 8004) ────────────────────────────────
+  smartfarm:
+    image: mqnet-integrate:latest
+    container_name: mqnet-smartfarm
+    ports:
+      - "8004:8004"
+    environment:
+      - PYTHONPATH=/app
+    env_file:
+      - .env.shared
+    command: python -m uvicorn apps.smartfarm.backend.main:app --host 0.0.0.0 --port 8004
+    restart: unless-stopped
+    depends_on:
+      - gateway
+
+  # ─── AI 관상 분석 독립 컨테이너 (포트 8005) ─────────────────────────────────
+  ai_gwansang:
+    image: mqnet-integrate:latest
+    container_name: mqnet-ai-gwansang
+    ports:
+      - "8005:8005"
+    environment:
+      - PYTHONPATH=/app
+    env_file:
+      - .env.shared
+    command: python -m uvicorn apps.ai_gwansang.backend.main:app --host 0.0.0.0 --port 8005
+    restart: unless-stopped
+    depends_on:
+      - gateway
+
+  # ─── 사진 & 미디어 갤러리 독립 컨테이너 (포트 8006) ──────────────────────────
+  photos:
+    image: mqnet-integrate:latest
+    container_name: mqnet-photos
+    ports:
+      - "8006:8006"
+    environment:
+      - PYTHONPATH=/app
+      - PHOTOS_DIR=/media
+      - CACHE_DIR=/cache
+    env_file:
+      - .env.shared
+    command: python -m uvicorn apps.photos.backend.main:app --host 0.0.0.0 --port 8006
+    restart: unless-stopped
+    depends_on:
+      - gateway
+

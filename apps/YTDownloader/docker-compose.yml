@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  ytdownloader:
+    build: .
+    container_name: mqnet-ytdownloader
+    restart: always
+    ports:
+      - "8004:8004"
+    environment:
+      - DEPLOYMENT_MODE=SAAS_PORTAL
+      - ENABLE_AI_TRANSCRIPTION=true
+      - DATABASE_URL=sqlite:////app/backend/ytdownloader.db
+    volumes:
+      - ./backend/downloads:/app/backend/downloads

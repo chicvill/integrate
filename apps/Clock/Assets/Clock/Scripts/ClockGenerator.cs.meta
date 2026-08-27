@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 39f18aa5ea56aa5448d76b7b8d4c015c
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - _configuration: {fileID: 11400000, guid: e2839f51ec5892f4f8d018b5b985d51c, type: 2}
+  - _clockView: {fileID: 3477502217437482438, guid: 0772156a81f93f847a67deae296fc5bd,
+      type: 3}
+  - _timeViewPrefab: {fileID: 2300514429973837015, guid: b322c65a4af949d42a8df1f3cfa3183b,
+      type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -1,0 +1,20 @@
+name: Auto Rebuild Photos Microservice
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  rebuild-photos:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Execute Local Deployment Batch Script
+        shell: cmd
+        run: |
+          call .github\workflows\deploy_local.bat

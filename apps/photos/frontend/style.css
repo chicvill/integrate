@@ -1,0 +1,9 @@
+/* ╔══════════════════════════════════════════════════════════╗
+   ║  MQnet Photos & Media — Master Stylesheet               ║
+   ║  Modular imports: variables, layout, components         ║
+   ╚══════════════════════════════════════════════════════════╝ */
+
+@import url('./css/variables.css');
+@import url('./css/layout.css');
+@import url('./css/components.css');
+
