@@ -194,6 +194,13 @@ timeout /t 1 /nobreak > nul
 REM AI Gwansang (port 9009)
 start "MQnet-AI-Gwansang [9009]" cmd /k "title MQnet-AI-Gwansang [9009] && color 09 && cd /d %BASE% && set PYTHONPATH=%BASE% && echo === MQnet AI-Gwansang - Port 9009 === && python -m uvicorn apps.ai_gwansang.backend.main:app --host 0.0.0.0 --port 9009 --reload"
 
+timeout /t 1 /nobreak > nul
+
+REM n8n Deposit Alert (port 3000)
+if exist "%BASE%apps\n8n\index.js" (
+    start "MQnet-n8n-Deposit [3000]" cmd /k "title MQnet-n8n-Deposit [3000] && color 0A && cd /d %BASE%apps\n8n && echo === MQnet NH Deposit Alert - Port 3000 === && node index.js"
+)
+
 echo.
 echo [DONE] Server windows launched.
 echo.
