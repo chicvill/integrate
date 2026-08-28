@@ -199,6 +199,115 @@ function initEvents() {
     searchInput.addEventListener('input', (e) => filterItems(e.target.value));
   }
 
+  // ── Service URL Resolvers ──
+  const getFileBrowserUrl = (folderPath = '') => {
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const base = isLocal ? `http://${window.location.hostname}:8082` : `${window.location.protocol}//${window.location.hostname}:8082`;
+    const cleanPath = (folderPath || '').replace(/^[\\\/]+/, '').replace(/\\/g, '/');
+    return cleanPath ? `${base}/files/${cleanPath}` : `${base}/files/`;
+  };
+
+  const getImmichUrl = () => {
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    return isLocal ? `http://${window.location.hostname}:8007` : `${window.location.protocol}//${window.location.hostname}:8007`;
+  };
+
+  // ── App Switcher / Embedded View Management ──
+  const navHome             = $('navHome');
+  const navFileBrowser      = $('navFileBrowser');
+  const navImmich           = $('navImmich');
+  const openFbExtBtn        = $('openFbExtBtn');
+  const openImmichExtBtn    = $('openImmichExtBtn');
+  const openCurrentInFbBtn  = $('openCurrentInFbBtn');
+
+  const galleryControlsBar  = $('galleryControlsBar');
+  const galleryArea         = $('galleryArea');
+  const embeddedViewWrap    = $('embeddedViewWrap');
+  const embeddedIframe      = $('embeddedIframe');
+  const embeddedServiceBadge= $('embeddedServiceBadge');
+  const embeddedServiceTitle= $('embeddedServiceTitle');
+  const embeddedServiceUrl  = $('embeddedServiceUrl');
+  const embeddedRefreshBtn  = $('embeddedRefreshBtn');
+  const embeddedExternalBtn = $('embeddedExternalBtn');
+  const embeddedCloseBtn    = $('embeddedCloseBtn');
+
+  const switchServiceView = (viewType, targetPath = '') => {
+    document.querySelectorAll('.sidebar-nav .nav-item').forEach(b => b.classList.remove('active'));
+
+    if (viewType === 'photos') {
+      if (navHome) navHome.classList.add('active');
+      if (embeddedViewWrap) embeddedViewWrap.classList.add('hidden');
+      if (galleryControlsBar) galleryControlsBar.classList.remove('hidden');
+      if (galleryArea) galleryArea.classList.remove('hidden');
+      if (embeddedIframe) embeddedIframe.src = 'about:blank';
+      if (window.innerWidth <= 768) closeMobileSidebar();
+      return;
+    }
+
+    if (galleryControlsBar) galleryControlsBar.classList.add('hidden');
+    if (galleryArea) galleryArea.classList.add('hidden');
+    if (embeddedViewWrap) embeddedViewWrap.classList.remove('hidden');
+    if (window.innerWidth <= 768) closeMobileSidebar();
+
+    if (viewType === 'filebrowser') {
+      if (navFileBrowser) navFileBrowser.classList.add('active');
+      const targetUrl = getFileBrowserUrl(targetPath || state.currentFolder);
+      if (embeddedServiceBadge) embeddedServiceBadge.textContent = 'FileBrowser';
+      if (embeddedServiceTitle) embeddedServiceTitle.textContent = 'L: 드라이브 파일 탐색기 (문서/음악/전체 파일)';
+      if (embeddedServiceUrl) embeddedServiceUrl.textContent = targetUrl;
+      if (embeddedIframe) embeddedIframe.src = targetUrl;
+    } else if (viewType === 'immich') {
+      if (navImmich) navImmich.classList.add('active');
+      const targetUrl = getImmichUrl();
+      if (embeddedServiceBadge) embeddedServiceBadge.textContent = 'Immich / Photoview';
+      if (embeddedServiceTitle) embeddedServiceTitle.textContent = 'AI 스마트 갤러리 (얼굴인식 / 타임라인 / 맵)';
+      if (embeddedServiceUrl) embeddedServiceUrl.textContent = targetUrl;
+      if (embeddedIframe) embeddedIframe.src = targetUrl;
+    }
+  };
+
+  if (navHome) navHome.addEventListener('click', () => switchServiceView('photos'));
+  if (navFileBrowser) navFileBrowser.addEventListener('click', () => switchServiceView('filebrowser'));
+  if (navImmich) navImmich.addEventListener('click', () => switchServiceView('immich'));
+
+  if (openCurrentInFbBtn) {
+    openCurrentInFbBtn.addEventListener('click', () => switchServiceView('filebrowser', state.currentFolder));
+  }
+
+  if (openFbExtBtn) {
+    openFbExtBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.open(getFileBrowserUrl(state.currentFolder), '_blank');
+    });
+  }
+
+  if (openImmichExtBtn) {
+    openImmichExtBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.open(getImmichUrl(), '_blank');
+    });
+  }
+
+  if (embeddedRefreshBtn && embeddedIframe) {
+    embeddedRefreshBtn.addEventListener('click', () => {
+      if (embeddedIframe.src && embeddedIframe.src !== 'about:blank') {
+        embeddedIframe.src = embeddedIframe.src;
+      }
+    });
+  }
+
+  if (embeddedExternalBtn && embeddedIframe) {
+    embeddedExternalBtn.addEventListener('click', () => {
+      if (embeddedIframe.src && embeddedIframe.src !== 'about:blank') {
+        window.open(embeddedIframe.src, '_blank');
+      }
+    });
+  }
+
+  if (embeddedCloseBtn) {
+    embeddedCloseBtn.addEventListener('click', () => switchServiceView('photos'));
+  }
+
   // Filter Tabs & Sort Select
   const filterTabs = $('filterTabs');
   const sortSelect = $('sortSelect');

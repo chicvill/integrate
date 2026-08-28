@@ -1,0 +1,77 @@
+name: mqnet-immich
+
+services:
+  immich-server:
+    container_name: immich_server
+    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
+    volumes:
+      - immich_upload:/usr/src/app/upload
+      - /etc/localtime:/etc/localtime:ro
+      # L: 드라이브 외부 라이브러리 읽기 전용 마운트
+      - "L:/:/usr/src/app/external:ro"
+    env_file:
+      - .env
+    ports:
+      - "9006:2283"
+    environment:
+      - IMMICH_MACHINE_LEARNING_URL=http://immich_machine_learning:3003
+      - DB_HOSTNAME=immich_postgres
+      - DB_DATABASE_NAME=${DB_DATABASE_NAME:-immich}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - REDIS_HOSTNAME=immich_redis
+    restart: always
+    networks:
+      - photos-network
+
+  immich-machine-learning:
+    container_name: immich_machine_learning
+    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}
+    volumes:
+      - immich_model_cache:/cache
+    environment:
+      - IMMICH_PORT=3003
+    restart: always
+    networks:
+      - photos-network
+
+  redis:
+    container_name: immich_redis
+    image: docker.io/redis:6.2-alpine
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    networks:
+      - photos-network
+
+  database:
+    container_name: immich_postgres
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_DB: ${DB_DATABASE_NAME:-immich}
+      POSTGRES_INITDB_ARGS: '--data-checksums'
+    volumes:
+      - immich_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready --username=${DB_USERNAME:-postgres} --dbname=${DB_DATABASE_NAME:-immich} || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    networks:
+      - photos-network
+
+networks:
+  photos-network:
+    name: mqnet-photos-net
+    driver: bridge
+
+volumes:
+  immich_upload:
+  immich_model_cache:
+  immich_pgdata:

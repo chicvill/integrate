@@ -1,0 +1,30 @@
+name: mqnet-filebrowser
+
+services:
+  filebrowser:
+    image: filebrowser/filebrowser:latest
+    container_name: mqnet-filebrowser
+    restart: always
+    ports:
+      - "9007:80"
+    volumes:
+      # L: 드라이브 전체 마운트 (문서/음악/영상/사진/압축파일 관리)
+      - "L:/:/srv"
+      - filebrowser_data:/database
+      - filebrowser_config:/config
+    environment:
+      - FB_DATABASE=/database/filebrowser.db
+      - FB_ROOT=/srv
+      - FB_LOG=stdout
+      - FB_NOAUTH=false
+    networks:
+      - photos-network
+
+networks:
+  photos-network:
+    name: mqnet-photos-net
+    driver: bridge
+
+volumes:
+  filebrowser_data:
+  filebrowser_config:

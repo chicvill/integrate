@@ -5,6 +5,7 @@ from backend.db.database import Base
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(50), nullable=False)
@@ -19,6 +20,7 @@ class User(Base):
 
 class Seat(Base):
     __tablename__ = "seats"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     seat_number = Column(String(10), unique=True, index=True, nullable=False)
@@ -31,6 +33,7 @@ class Seat(Base):
 
 class Ticket(Base):
     __tablename__ = "tickets"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -43,6 +46,7 @@ class Ticket(Base):
 
 class DoorLog(Base):
     __tablename__ = "door_logs"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)

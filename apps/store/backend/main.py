@@ -13,7 +13,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("main")
 
 # Auto-create DB tables
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    logger.warning(f"Database table creation fallback: {e}")
 
 app = FastAPI(
     title=f"MQnet Store Unified System [{settings.DEPLOYMENT_MODE}]",

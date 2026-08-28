@@ -11,7 +11,7 @@ from apps.smartfarm.backend.db.database import get_db
 from apps.smartfarm.backend.db import models
 from apps.smartfarm.backend.schemas import SensorTelemetry
 
-router = APIRouter(prefix="", tags=["SmartFarm Sensors"])
+router = APIRouter(prefix="/api/sensors", tags=["SmartFarm Sensors"])
 
 
 @router.get("/current", response_model=SensorTelemetry)

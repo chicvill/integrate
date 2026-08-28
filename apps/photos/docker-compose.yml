@@ -2,7 +2,9 @@ name: mqnet-photos
 
 services:
   photos:
-    build: .
+    build:
+      context: ../..
+      dockerfile: apps/photos/Dockerfile
     image: mqnet-photos:latest
     container_name: mqnet-photos
     restart: always
@@ -11,9 +13,10 @@ services:
     environment:
       - PHOTOS_DIR=/media
       - CACHE_DIR=/cache
+      - PYTHONPATH=/workspace
     volumes:
       - "L:/:/media"
-      - "./frontend:/app/frontend:ro"
+      - "./frontend:/workspace/apps/photos/frontend:ro"
       - photos_cache:/cache
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/albums')"]

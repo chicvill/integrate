@@ -11,7 +11,7 @@ from apps.smartfarm.backend.db.database import get_db
 from apps.smartfarm.backend.db import models
 from apps.smartfarm.backend.schemas import ActuatorControlRequest, ActuatorStateResponse
 
-router = APIRouter(prefix="", tags=["SmartFarm Actuators"])
+router = APIRouter(prefix="/api/actuators", tags=["SmartFarm Actuators"])
 
 # Default in-memory state
 actuator_states = [
