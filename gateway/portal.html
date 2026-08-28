@@ -62,6 +62,7 @@
     .seat-btn { padding: 0.5rem 0.2rem; border-radius: 6px; border: 1px solid var(--border); background: rgba(255,255,255,0.05); color: white; cursor: pointer; font-size: 0.75rem; text-align: center; }
     .seat-btn.selected { background: var(--primary); }
     @media(max-width: 800px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+    @media(max-width: 960px) { .ref-grid { grid-template-columns: 1fr !important; } }
   </style>
 </head>
 <body>
@@ -282,7 +283,237 @@
       </div>
 
     </div>
-  </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- 🏛️ 1. 공통분모 리스트 (Shared Infrastructure & Core Components) -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div style="margin-top: 5rem; padding-top: 3rem; border-top: 1px solid rgba(255,255,255,0.08);">
+      <div style="text-align: center; margin-bottom: 2.5rem;">
+        <div style="display: inline-block; padding: 0.35rem 0.9rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700; background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.3); margin-bottom: 0.75rem;">
+          ⚙️ SHARED INFRASTRUCTURE
+        </div>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 800; margin-bottom: 0.75rem;">
+          14개 앱을 관통하는 <span style="background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">7대 공통분모 모듈</span>
+        </h2>
+        <p style="color: var(--text-muted); max-width: 650px; margin: 0 auto; font-size: 0.95rem;">
+          각 앱이 개별 구축하지 않고 중앙 <code style="color:#a5b4fc; background:rgba(255,255,255,0.05); padding:0.15rem 0.4rem; border-radius:6px;">shared/</code> 패키지에서 재사용하는 표준 인프라입니다.
+        </p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+        <!-- 공통분모 1: 인증 및 보안 -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(12px);">
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom: 0.75rem;">
+            <span style="font-size: 1.6rem;">🔐</span>
+            <div>
+              <h4 style="font-size: 1.05rem; font-weight: 700; color: #fff;">공통 인증 & 보안 (Auth)</h4>
+              <span style="font-size: 0.75rem; color: #818cf8; font-family: monospace;">shared/auth/</span>
+            </div>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 0.75rem;">
+            JWT 토큰 기반 단일 로그인, 4단계 RBAC 역할 권한 (Master / Tenant / Staff / User), BCrypt 단방향 해싱.
+          </p>
+          <div style="font-size: 0.75rem; color: #34d399; display: flex; align-items: center; gap: 0.35rem;">
+            ✓ 전체 14개 서비스 공통 적용
+          </div>
+        </div>
+
+        <!-- 공통분모 2: 통합 데이터베이스 -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(12px);">
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom: 0.75rem;">
+            <span style="font-size: 1.6rem;">🗄️</span>
+            <div>
+              <h4 style="font-size: 1.05rem; font-weight: 700; color: #fff;">통합 데이터베이스 (Database)</h4>
+              <span style="font-size: 0.75rem; color: #34d399; font-family: monospace;">shared/core/base_database.py</span>
+            </div>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 0.75rem;">
+            Supabase(Postgres pgvector) 원격 동기화 지원 + 네트워크 단절 시 <b>로컬 SQLite 자동 폴백</b> 및 Session 풀링.
+          </p>
+          <div style="font-size: 0.75rem; color: #34d399; display: flex; align-items: center; gap: 0.35rem;">
+            ✓ 하이브리드 클라우드/로컬 지원
+          </div>
+        </div>
+
+        <!-- 공통분모 3: Gemini AI 비전 & LLM -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(12px);">
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom: 0.75rem;">
+            <span style="font-size: 1.6rem;">🤖</span>
+            <div>
+              <h4 style="font-size: 1.05rem; font-weight: 700; color: #fff;">통합 AI 엔진 (Gemini 2.5)</h4>
+              <span style="font-size: 0.75rem; color: #ec4899; font-family: monospace;">shared/ai/</span>
+            </div>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 0.75rem;">
+            Google Gemini 2.5 Flash 비전 & 텍스트 통합 클라이언트. 관상/얼굴 분석, 유튜브 요약, 작물 진단, 메타인지 멘토링.
+          </p>
+          <div style="font-size: 0.75rem; color: #34d399; display: flex; align-items: center; gap: 0.35rem;">
+            ✓ 프롬프트 템플릿 & OCR 공통화
+          </div>
+        </div>
+
+        <!-- 공통분모 4: 실시간 메시징 (MQTT/WS) -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(12px);">
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom: 0.75rem;">
+            <span style="font-size: 1.6rem;">📡</span>
+            <div>
+              <h4 style="font-size: 1.05rem; font-weight: 700; color: #fff;">실시간 통신 (MQTT & WS)</h4>
+              <span style="font-size: 0.75rem; color: #f59e0b; font-family: monospace;">shared/messaging/</span>
+            </div>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 0.75rem;">
+            스마트팜 센서 텔레메트리 스트리밍, 매장 POS-주방 KDS 즉시 전송, 스터디카페 NFC 도어락/좌석 이벤트 중계.
+          </p>
+          <div style="font-size: 0.75rem; color: #34d399; display: flex; align-items: center; gap: 0.35rem;">
+            ✓ 저지연 브로드캐스팅 파이프라인
+          </div>
+        </div>
+
+        <!-- 공통분모 5: 통합 결제 PG사 연동 -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(12px);">
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom: 0.75rem;">
+            <span style="font-size: 1.6rem;">💳</span>
+            <div>
+              <h4 style="font-size: 1.05rem; font-weight: 700; color: #fff;">공통 결제 (Payments)</h4>
+              <span style="font-size: 0.75rem; color: #38bdf8; font-family: monospace;">shared/payment/</span>
+            </div>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 0.75rem;">
+            토스페이먼츠(Toss) 및 스트라이프(Stripe) 다중 PG사 어댑터, 결제 승인/취소 및 웹훅 자동 정산 처리.
+          </p>
+          <div style="font-size: 0.75rem; color: #34d399; display: flex; align-items: center; gap: 0.35rem;">
+            ✓ 스터디카페·매장POS·관상 공통 사용
+          </div>
+        </div>
+
+        <!-- 공통분모 6: 스토리지 & L: 드라이브 -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(12px);">
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom: 0.75rem;">
+            <span style="font-size: 1.6rem;">📁</span>
+            <div>
+              <h4 style="font-size: 1.05rem; font-weight: 700; color: #fff;">파일 & 스토리지 (Storage)</h4>
+              <span style="font-size: 0.75rem; color: #fb7185; font-family: monospace;">shared/storage/ & L:\</span>
+            </div>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 0.75rem;">
+            로컬 대용량 <code>L:\</code> 스토리지 마운트, 썸네일 고속 캐시, S3 호환 오브젝트 스토리지 연동.
+          </p>
+          <div style="font-size: 0.75rem; color: #34d399; display: flex; align-items: center; gap: 0.35rem;">
+            ✓ Immich & FileBrowser 공유
+          </div>
+        </div>
+
+        <!-- 공통분모 7: 멀티테넌시 & 서비스 레지스트리 -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(12px);">
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom: 0.75rem;">
+            <span style="font-size: 1.6rem;">🏢</span>
+            <div>
+              <h4 style="font-size: 1.05rem; font-weight: 700; color: #fff;">멀티테넌시 (Tenant Registry)</h4>
+              <span style="font-size: 0.75rem; color: #a855f7; font-family: monospace;">shared/tenant/registry.py</span>
+            </div>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 0.75rem;">
+            14개 마이크로서비스 앱 등록, 테넌트별 데이터베이스 격리, 동적 라우팅 및 기능 플래그 제어.
+          </p>
+          <div style="font-size: 0.75rem; color: #34d399; display: flex; align-items: center; gap: 0.35rem;">
+            ✓ 단일 진입점 API 게이트웨이 연동
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- 📚 2. 참고자료 & 연동 가이드 (Reference Materials & Quick Guide) -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div style="margin-top: 4rem; padding-top: 3rem; border-top: 1px solid rgba(255,255,255,0.08);">
+      <div style="text-align: center; margin-bottom: 2.5rem;">
+        <div style="display: inline-block; padding: 0.35rem 0.9rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700; background: rgba(52,211,153,0.15); color: #34d399; border: 1px solid rgba(52,211,153,0.3); margin-bottom: 0.75rem;">
+          📖 CHEAT SHEET & QUICK LINKS
+        </div>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 800; margin-bottom: 0.75rem;">
+          아키텍처 <span style="background: linear-gradient(135deg,#34d399,#3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">참고자료 & 설정 가이드</span>
+        </h2>
+        <p style="color: var(--text-muted); max-width: 650px; margin: 0 auto; font-size: 0.95rem;">
+          Cloudflare Zero Trust 터널 매핑, Docker 포트 레이아웃, 실행 명령어 요약입니다.
+        </p>
+      </div>
+
+      <div class="ref-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <!-- 참고자료 1: Cloudflare Zero Trust 서브도메인 매핑표 -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 1.75rem; backdrop-filter: blur(12px);">
+          <h3 style="font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+            ☁️ Cloudflare Zero Trust 서브도메인 매핑
+          </h3>
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem; text-align: left;">
+              <thead>
+                <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted);">
+                  <th style="padding: 0.5rem;">서브도메인 (Domain: chicvill.store)</th>
+                  <th style="padding: 0.5rem;">로컬 대상 URL</th>
+                </tr>
+              </thead>
+              <tbody style="color: #cbd5e1;">
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code>portal.chicvill.store</code></td><td><code>localhost:9000</code></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code>home.chicvill.store</code></td><td><code>localhost:9000/mqhome/</code></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code>study.chicvill.store</code></td><td><code>localhost:9002</code></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code>selfstudy.chicvill.store</code></td><td><code>localhost:9003</code></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code>store.chicvill.store</code></td><td><code>localhost:9004</code></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code>farm.chicvill.store</code></td><td><code>localhost:9005</code></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code>photos.chicvill.store</code></td><td><code>localhost:9006 (Immich AI)</code></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code>files.chicvill.store</code></td><td><code>localhost:9007 (FileBrowser)</code></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code>youtube.chicvill.store</code></td><td><code>localhost:9000/ytdownloader/</code></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code>gwansang.chicvill.store</code></td><td><code>localhost:9009</code></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code>face.chicvill.store</code></td><td><code>localhost:9000/face_analy/</code></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code>ironman.chicvill.store</code></td><td><code>localhost:9000/ironman/</code></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code>clock.chicvill.store</code></td><td><code>localhost:9000/clock/</code></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code>video.chicvill.store</code></td><td><code>localhost:9000/videobooth/</code></td></tr>
+                <tr><td style="padding:0.45rem;"><code style="color:#fb923c;">n8n.chicvill.store</code></td><td style="color:#fb923c;"><code>localhost:3000 (n8n)</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 참고자료 2: 빠른 실행 & 핵심 API 엔드포인트 -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 1.75rem; backdrop-filter: blur(12px); display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+              ⚡ 빠른 실행 & 개발자 API 링크
+            </h3>
+            
+            <div style="margin-bottom: 1.25rem;">
+              <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem;">💻 로컬 원클릭 실행 스크립트</div>
+              <div style="background: rgba(0,0,0,0.4); padding: 0.75rem 1rem; border-radius: 10px; font-family: monospace; font-size: 0.82rem; line-height: 1.6; border: 1px solid var(--border);">
+                <span style="color:#a855f7;">.\run.bat</span> <span style="color:#60a5fa;">gateway</span>  <span style="color:#64748b;"># 통합 단일 게이트웨이 (포트 9000 & 10000)</span><br>
+                <span style="color:#a855f7;">.\run.bat</span> <span style="color:#34d399;">docker</span>   <span style="color:#64748b;"># Docker Compose 9000번대 서비스 일괄 기동</span><br>
+                <span style="color:#a855f7;">.\run.bat</span> <span style="color:#f59e0b;">all</span>      <span style="color:#64748b;"># 7대 마이크로서비스 개별 창 분리 기동</span>
+              </div>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+              <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem;">🔗 핵심 개발자 및 관리자 엔드포인트</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                <a href="/docs" target="_blank" class="btn" style="text-align: center; font-size: 0.8rem;">📖 Swagger API Docs</a>
+                <a href="/redoc" target="_blank" class="btn" style="text-align: center; font-size: 0.8rem;">📑 ReDoc 기술 명세</a>
+                <a href="/health" target="_blank" class="btn" style="text-align: center; font-size: 0.8rem;">💚 시스템 Health</a>
+                <a href="/apps" target="_blank" class="btn" style="text-align: center; font-size: 0.8rem;">🏢 앱 레지스트리 JSON</a>
+              </div>
+            </div>
+          </div>
+
+          <div style="background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.25); border-radius: 12px; padding: 0.85rem; font-size: 0.8rem; color: #cbd5e1;">
+            💡 <b>실시간 파일 및 DB 저장 경로</b><br>
+            • L: 드라이브 마운트: <code>L:\</code> (사진 6,500+장 및 문서/영상 관리)<br>
+            • 데이터베이스: <code>integrat.db</code> (SQLite) & <code>immich_pgdata</code> (Postgres)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div style="text-align: center; margin-top: 4rem; color: var(--text-muted); font-size: 0.85rem; padding-bottom: 2rem;">
+      MQnet Unified SaaS Architecture Platform &copy; 2026. All Rights Reserved.
+    </div>
 
 
 
