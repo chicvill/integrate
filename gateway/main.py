@@ -264,8 +264,9 @@ async def list_registered_apps():
 
 @app.get("/api/health/all", tags=["플랫폼"])
 async def check_all_services_health():
-    """14대 마이크로서비스 실시간 가동 상태 및 시스템 리소스 헬스체크"""
-    import httpx
+    """16대 마이크로서비스 실시간 가동 상태 및 시스템 리소스 헬스체크 (표준 라이브러리 기반)"""
+    import urllib.request
+    import urllib.error
     import shutil
     import asyncio
 
@@ -290,22 +291,26 @@ async def check_all_services_health():
         {"id": "n8n_deposit", "name": "농협 입금 알림판", "port": 3000, "url": f"http://{host_ip}:3000/"},
     ]
 
-    async def ping_service(client: httpx.AsyncClient, s: dict):
+    def ping_sync(s: dict) -> dict:
         candidate_urls = [s["url"]]
         if "host.docker.internal" in s["url"]:
             candidate_urls.append(s["url"].replace("host.docker.internal", f"mqnet-{s['id']}".replace("_", "-")))
             candidate_urls.append(s["url"].replace("host.docker.internal", "127.0.0.1"))
         for target_url in candidate_urls:
             try:
-                r = await client.get(target_url, timeout=1.5)
-                if r.status_code in (200, 301, 302, 307, 401, 403, 404):
-                    return {**s, "online": True, "status_code": r.status_code}
+                req = urllib.request.Request(target_url, headers={"User-Agent": "MQnet-HealthChecker/1.0"})
+                with urllib.request.urlopen(req, timeout=1.5) as resp:
+                    status_code = resp.getcode()
+                    if status_code in (200, 301, 302, 307, 401, 403, 404):
+                        return {**s, "online": True, "status_code": status_code}
+            except urllib.error.HTTPError as he:
+                if he.code in (200, 301, 302, 307, 401, 403, 404):
+                    return {**s, "online": True, "status_code": he.code}
             except Exception:
                 pass
         return {**s, "online": False, "status_code": None}
 
-    async with httpx.AsyncClient() as client:
-        results = await asyncio.gather(*(ping_service(client, s) for s in services))
+    results = await asyncio.gather(*(asyncio.to_thread(ping_sync, s) for s in services))
 
     # 시스템 리소스 (디스크 용량)
     storage_info = {}
