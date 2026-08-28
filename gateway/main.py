@@ -251,6 +251,71 @@ async def list_registered_apps():
     }
 
 
+@app.get("/api/health/all", tags=["플랫폼"])
+async def check_all_services_health():
+    """14대 마이크로서비스 실시간 가동 상태 및 시스템 리소스 헬스체크"""
+    import httpx
+    import shutil
+    import asyncio
+
+    host_ip = "host.docker.internal" if os.path.exists("/.dockerenv") else "127.0.0.1"
+
+    services = [
+        {"id": "gateway", "name": "통합 게이트웨이", "port": 9000, "url": "http://127.0.0.1:9000/health"},
+        {"id": "mqhome", "name": "MQnet 브랜드 홈페이지", "port": 9001, "url": "http://127.0.0.1:9000/mqhome/"},
+        {"id": "studycafe", "name": "스터디카페 관리", "port": 9002, "url": f"http://{host_ip}:9002/docs"},
+        {"id": "selfstudy", "name": "자기주도학습 (SelfStudy)", "port": 9003, "url": f"http://{host_ip}:9003/docs"},
+        {"id": "store", "name": "매장 관제 & POS", "port": 9004, "url": f"http://{host_ip}:9004/docs"},
+        {"id": "smartfarm", "name": "스마트팜 센서 관제", "port": 9005, "url": f"http://{host_ip}:9005/docs"},
+        {"id": "photos", "name": "스마트 갤러리 (Immich)", "port": 9006, "url": f"http://{host_ip}:9006"},
+        {"id": "filebrowser", "name": "통합 파일 탐색기", "port": 9007, "url": f"http://{host_ip}:9007"},
+        {"id": "ytdownloader", "name": "유튜브 다운로더", "port": 9008, "url": "http://127.0.0.1:9000/ytdownloader/"},
+        {"id": "ai_gwansang", "name": "AI 관상 분석", "port": 9009, "url": f"http://{host_ip}:9009/docs"},
+        {"id": "face_analy", "name": "테토/에겐 AI 얼굴분석", "port": 9010, "url": "http://127.0.0.1:9000/face_analy/"},
+        {"id": "ironman", "name": "아이언맨 제스처 게임", "port": 9011, "url": "http://127.0.0.1:9000/ironman/"},
+        {"id": "clock", "name": "모던 스마트 클락", "port": 9012, "url": "http://127.0.0.1:9000/clock/"},
+        {"id": "videobooth", "name": "레트로 TV 비디오 부스", "port": 9013, "url": "http://127.0.0.1:9000/videobooth/"},
+        {"id": "n8n", "name": "n8n AI 자동화", "port": 3000, "url": f"http://{host_ip}:3000"},
+    ]
+
+    async def ping_service(client: httpx.AsyncClient, s: dict):
+        try:
+            r = await client.get(s["url"], timeout=1.5)
+            is_online = r.status_code in (200, 301, 302, 307)
+            return {**s, "online": is_online, "status_code": r.status_code}
+        except Exception:
+            return {**s, "online": False, "status_code": None}
+
+    async with httpx.AsyncClient() as client:
+        results = await asyncio.gather(*(ping_service(client, s) for s in services))
+
+    # 시스템 리소스 (디스크 용량)
+    storage_info = {}
+    for path_candidate in ["L:\\", "/usr/src/app/external", "C:\\", "."]:
+        if os.path.exists(path_candidate):
+            try:
+                usage = shutil.disk_usage(path_candidate)
+                storage_info = {
+                    "path": path_candidate,
+                    "total_gb": round(usage.total / (1024**3), 1),
+                    "used_gb": round(usage.used / (1024**3), 1),
+                    "free_gb": round(usage.free / (1024**3), 1),
+                    "percent_used": round((usage.used / usage.total) * 100, 1)
+                }
+                break
+            except Exception:
+                pass
+
+    online_count = sum(1 for r in results if r["online"])
+    return {
+        "status": "HEALTHY" if online_count >= 10 else "DEGRADED",
+        "total_services": len(results),
+        "online_services": online_count,
+        "services": results,
+        "storage": storage_info
+    }
+
+
 @app.get("/health", tags=["플랫폼"])
 async def platform_health(request: Request):
     """

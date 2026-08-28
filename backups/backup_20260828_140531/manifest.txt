@@ -1,0 +1,3 @@
+Backup Date: 2026-08-28 14:05:31.59 
+Source: D:\Workstation\integrate\scripts\..\ 
+Backup Folder: D:\Workstation\integrate\scripts\..\backups\backup_20260828_140531 

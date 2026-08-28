@@ -76,6 +76,7 @@ if /i "%MODE%"=="install" goto do_install
 if /i "%MODE%"=="gateway" goto do_gateway
 if /i "%MODE%"=="all" goto do_all
 if /i "%MODE%"=="docker" goto do_docker
+if /i "%MODE%"=="backup" goto do_backup
 
 echo [ERROR] Unknown option: %MODE%
 echo.
@@ -84,11 +85,19 @@ echo   run.bat           - gateway mode (port 9000, default)
 echo   run.bat gateway   - gateway mode (port 9000)
 echo   run.bat all       - launch apps in separate windows
 echo   run.bat docker    - run with Docker Compose (port 9000 & 10000)
+echo   run.bat backup    - run one-click data backup
 echo   run.bat install   - install packages only
 
 echo.
 pause
 exit /b 1
+
+REM ================================================================
+REM  BACKUP mode
+REM ================================================================
+:do_backup
+call "%BASE%scripts\backup_all.bat"
+exit /b 0
 
 
 REM ================================================================

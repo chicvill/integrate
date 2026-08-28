@@ -1626,6 +1626,36 @@
         `;
       } catch(e) { box.innerHTML = '<span style="color:#ef4444;">오류: ' + e.message + '</span>'; }
     }
+
+    // ─── 🟢 14대 마이크로서비스 실시간 헬스 모니터링 ────────────────
+    async function updateSystemHealth() {
+      try {
+        const res = await fetch('/api/health/all');
+        const data = await res.json();
+        
+        // 1. 상단 활성 배지 갱신
+        const pill = document.querySelector('.status-pill');
+        if (pill) {
+          pill.innerHTML = `<div class="status-dot" style="background:${data.online_services >= 10 ? '#10b981' : '#f59e0b'};"></div>${data.online_services} / ${data.total_services} Online`;
+        }
+
+        // 2. 스토리지 용량 정보가 있으면 표기
+        if (data.storage && data.storage.total_gb) {
+          const statVal = document.querySelectorAll('.stat-val')[1];
+          if (statVal) {
+            statVal.innerHTML = `<span style="font-size:1.1rem; color:#38bdf8;">${data.storage.free_gb}GB 남음</span> <span style="font-size:0.75rem; color:var(--text-muted);">/ ${data.storage.total_gb}GB</span>`;
+          }
+        }
+      } catch (err) {
+        console.warn('Health check polling:', err);
+      }
+    }
+
+    // 페이지 로드 시 즉시 실행 및 5초 주기 폴링
+    document.addEventListener('DOMContentLoaded', () => {
+      updateSystemHealth();
+      setInterval(updateSystemHealth, 5000);
+    });
   </script>
 </body>
 </html>
