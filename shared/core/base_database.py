@@ -21,10 +21,11 @@ Base = declarative_base()
 
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
-    """SQLite 동시성 및 쓰기 성능 극대화를 위한 WAL 및 Busy Timeout 자동 설정"""
+    """SQLite 동시성 및 도커 볼륨 안전성을 위한 자동 설정"""
     try:
         cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA journal_mode=WAL")
+        # 도커 볼륨 마운트 시 mmap 충돌을 방지하기 위해 DELETE 모드 사용
+        cursor.execute("PRAGMA journal_mode=DELETE")
         cursor.execute("PRAGMA synchronous=NORMAL")
         cursor.execute("PRAGMA busy_timeout=5000")
         cursor.execute("PRAGMA foreign_keys=ON")
