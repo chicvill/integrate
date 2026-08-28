@@ -17,6 +17,11 @@ from apps.YTDownloader.backend.config import settings
 router = APIRouter(prefix="", tags=["YouTube Downloader"])
 
 
+@router.get("/jobs", response_model=list[DownloadResponse])
+def list_download_jobs(db: Session = Depends(get_db)):
+    return db.query(models.DownloadJob).order_by(models.DownloadJob.created_at.desc()).limit(20).all()
+
+
 @router.post("/preview")
 def preview_video(payload: DownloadRequest):
     if not payload.url:

@@ -11,6 +11,7 @@ from apps.YTDownloader.backend.schemas import DownloadResponse
 router = APIRouter(prefix="", tags=["Media Archive"])
 
 
+@router.get("/files", response_model=list[DownloadResponse])
 @router.get("/recent", response_model=list[DownloadResponse])
 def get_recent_downloads(db: Session = Depends(get_db)):
-    return db.query(models.DownloadJob).order_by(models.DownloadJob.created_at.desc()).limit(20).all()
+    return db.query(models.DownloadJob).order_by(models.DownloadJob.created_at.desc()).limit(50).all()

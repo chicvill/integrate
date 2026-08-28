@@ -13,9 +13,10 @@ export default function LibraryPage() {
     try {
       const res = await fetch('/api/media/files');
       const data = await res.json();
-      setFiles(data);
+      setFiles(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
+      setFiles([]);
     }
   };
 

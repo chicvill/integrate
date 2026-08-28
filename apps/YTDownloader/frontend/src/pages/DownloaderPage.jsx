@@ -21,9 +21,10 @@ export default function DownloaderPage() {
     try {
       const res = await fetch('/api/download/jobs');
       const data = await res.json();
-      setJobs(data);
+      setJobs(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
+      setJobs([]);
     }
   };
 
