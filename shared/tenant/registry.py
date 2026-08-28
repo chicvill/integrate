@@ -109,6 +109,14 @@ APP_REGISTRY: Dict[str, Dict[str, Any]] = {
         "backend_port": 9013,
         "features": ["실시간 웹캠 녹화", "레트로 TV 프레임", "최신 갤러리 아카이브", "TTS 음성 카운트다운"],
     },
+    "n8n": {
+        "app_id": "n8n",
+        "app_name": "n8n AI 워크플로우 자동화",
+        "icon": "⚡",
+        "description": "은행 입출금 이메일 실시간 파싱 및 Google Sheets/Excel 자동 회계 기록",
+        "backend_port": 3000,
+        "features": ["은행 이메일 자동 파싱", "구글 시트 실시간 연동", "AI 워크플로우 자동화", "무중단 백그라운드 구동"],
+    },
 }
 
 

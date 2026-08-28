@@ -68,7 +68,7 @@
   <nav class="navbar">
     <a href="/" class="brand"><div class="brand-logo">MQ</div>MQnet Platform</a>
     <div style="display: flex; gap: 0.75rem; align-items: center;">
-      <div class="status-pill"><div class="status-dot"></div>13 Apps Active</div>
+      <div class="status-pill"><div class="status-dot"></div>14 Apps Active</div>
       <a href="/docs" target="_blank" class="btn">📖 API Docs</a>
       <a href="/health" target="_blank" class="btn">⚡ Health</a>
     </div>
@@ -76,15 +76,15 @@
 
   <div class="container">
     <div class="hero">
-      <h1>하나의 서버로 완성하는<br><span>13대 올인원 SaaS & 미디어 플랫폼</span></h1>
-      <p>단일 포트 10000 게이트웨이에서 공통 인증, 통합 DB, Gemini 2.5 AI 및 Immich를 공유하여 모든 마이크로서비스를 즉시 실행합니다.</p>
+      <h1>하나의 서버로 완성하는<br><span>14대 올인원 SaaS & 자동화 플랫폼</span></h1>
+      <p>단일 포트 9000/10000 게이트웨이에서 공통 인증, 통합 DB, Gemini 2.5 AI 및 n8n 자동화를 공유하여 모든 서비스를 즉시 실행합니다.</p>
     </div>
 
     <div class="stats">
-      <div class="stat-item"><div style="font-size: 0.8rem; color: var(--text-muted);">통합 서비스</div><div class="stat-val">13개 앱</div></div>
+      <div class="stat-item"><div style="font-size: 0.8rem; color: var(--text-muted);">통합 서비스</div><div class="stat-val">14개 앱</div></div>
       <div class="stat-item"><div style="font-size: 0.8rem; color: var(--text-muted);">공유 DB</div><div class="stat-val">SQLite/Postgres</div></div>
       <div class="stat-item"><div style="font-size: 0.8rem; color: var(--text-muted);">인공지능</div><div class="stat-val">Gemini 2.5</div></div>
-      <div class="stat-item"><div style="font-size: 0.8rem; color: var(--text-muted);">게이트웨이 포트</div><div class="stat-val">:10000</div></div>
+      <div class="stat-item"><div style="font-size: 0.8rem; color: var(--text-muted);">게이트웨이 포트</div><div class="stat-val">:9000 (:10000)</div></div>
     </div>
 
     <div class="grid">
@@ -265,6 +265,19 @@
         <div class="actions" style="display:flex; gap:0.5rem;">
           <a href="/videobooth/" target="_blank" class="btn-main" style="flex:1.4; text-align:center; text-decoration:none; background: linear-gradient(135deg, #854d0e, #ca8a04); color:white; font-weight:800; font-size:0.9rem; padding:0.75rem 0.5rem; border-radius:12px;">📺 비디오 부스 실행 ↗</a>
           <button class="btn" style="flex:0.8; background: rgba(255,255,255,0.06); color:var(--text-muted); font-size:0.8rem; border-radius:12px;" onclick="window.open('/videobooth/','_blank')">📼 녹화하기</button>
+        </div>
+      </div>
+
+      <!-- 14. n8n AI Workflow Automation -->
+      <div class="card" style="cursor:pointer;" onclick="if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('http://localhost:3000','_blank')">
+        <div>
+          <div class="card-top"><span class="icon">⚡</span><span class="badge" style="background:rgba(234,88,12,0.15); color:#fb923c;">PORT 3000 · n8n Automation</span></div>
+          <h3>n8n AI 워크플로우 자동화</h3>
+          <p>은행 입출금 알림 이메일을 실시간 AI로 분석하여 Google Sheets 및 Excel에 자동 분개·기록하는 백그라운드 자동화 허브입니다.</p>
+          <div class="tags"><span class="tag">은행 이메일 파싱</span><span class="tag">구글 시트 연동</span><span class="tag">AI 워크플로우</span><span class="tag">농협 입금 파싱</span></div>
+        </div>
+        <div class="actions" style="display:flex; gap:0.5rem;">
+          <a href="http://localhost:3000" target="_blank" class="btn-main" style="flex:1.4; text-align:center; text-decoration:none; background: linear-gradient(135deg, #ea580c, #f97316); color:white; font-weight:800; font-size:0.9rem; padding:0.75rem 0.5rem; border-radius:12px;">⚡ n8n 워크플로우 열기 ↗</a>
         </div>
       </div>
 
