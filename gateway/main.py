@@ -82,6 +82,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 성능 최적화: 정적 자산 브라우저 캐싱 & 동적 API 노캐시 미들웨어
+@app.middleware("http")
+async def add_performance_cache_headers(request: Request, call_next):
+    response = await call_next(request)
+    path = request.url.path
+    if path.endswith((".js", ".css", ".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg", ".woff", ".woff2", ".ttf", ".webp")):
+        response.headers["Cache-Control"] = "public, max-age=3600"
+    elif path.startswith("/api/") or path.startswith("/auth/"):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
+
 # 미들웨어
 app.middleware("http")(app_context_middleware)
 

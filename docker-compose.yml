@@ -1,6 +1,12 @@
 # MQnet 통합 SaaS 플랫폼 - Docker Compose
 # 실행: docker compose up -d
 
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   # ─── 통합 API 게이트웨이 & 포털 (포트 9000 & 10000) ───────────────────────
   gateway:
@@ -9,6 +15,7 @@ services:
       dockerfile: Dockerfile
     image: mqnet-integrate:latest
     container_name: mqnet-gateway
+    logging: *default-logging
     ports:
       - "9000:9000"
       - "10000:9000"
@@ -26,6 +33,7 @@ services:
   studycafe:
     image: mqnet-integrate:latest
     container_name: mqnet-studycafe
+    logging: *default-logging
     working_dir: /app/apps/studycafe
     ports:
       - "9002:9002"
@@ -44,6 +52,7 @@ services:
   selfstudy:
     image: mqnet-integrate:latest
     container_name: mqnet-selfstudy
+    logging: *default-logging
     working_dir: /app/apps/selfstudy/SelfStudy/backend
     ports:
       - "9003:9003"
@@ -62,6 +71,7 @@ services:
   store:
     image: mqnet-integrate:latest
     container_name: mqnet-store
+    logging: *default-logging
     working_dir: /app/apps/store
     ports:
       - "9004:9004"
@@ -80,6 +90,7 @@ services:
   smartfarm:
     image: mqnet-integrate:latest
     container_name: mqnet-smartfarm
+    logging: *default-logging
     working_dir: /app/apps/smartfarm
     ports:
       - "9005:9005"
@@ -98,6 +109,7 @@ services:
   ai_gwansang:
     image: mqnet-integrate:latest
     container_name: mqnet-ai-gwansang
+    logging: *default-logging
     working_dir: /app/apps/ai_gwansang
     ports:
       - "9009:9009"
@@ -116,6 +128,7 @@ services:
   n8n:
     image: docker.n8n.io/n8nio/n8n:latest
     container_name: mqnet-n8n-editor
+    logging: *default-logging
     ports:
       - "5678:5678"
     environment:

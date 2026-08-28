@@ -38,10 +38,16 @@ yarn-error.log*
 *.pem
 *.key
 
-# Database
+# Database & runtime journals
 *.db
 *.sqlite
 *.sqlite3
+*.db-wal
+*.db-shm
+*.sqlite-wal
+*.sqlite-shm
+backups/
+apps/n8n/data/
 
 # Unity & Game Engines
 **/Library/

@@ -10,12 +10,27 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import Generator, Optional
 
-from sqlalchemy import create_engine, Column, String, DateTime, text
+from sqlalchemy import create_engine, Column, String, DateTime, text, event
+from sqlalchemy.engine import Engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 
 logger = logging.getLogger("mqnet.db")
 Base = declarative_base()
+
+
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    """SQLite 동시성 및 쓰기 성능 극대화를 위한 WAL 및 Busy Timeout 자동 설정"""
+    try:
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.execute("PRAGMA busy_timeout=5000")
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+    except Exception:
+        pass
 
 
 def get_database_url() -> str:
@@ -44,9 +59,13 @@ class BaseDatabase:
         self._init_engine()
 
     def _init_engine(self):
-        connect_args = {"check_same_thread": False} if "sqlite" in self.database_url else {}
+        connect_args = {"check_same_thread": False, "timeout": 15} if "sqlite" in self.database_url else {}
         try:
-            self.engine = create_engine(self.database_url, connect_args=connect_args, pool_pre_ping=True)
+            self.engine = create_engine(
+                self.database_url,
+                connect_args=connect_args,
+                pool_pre_ping=True,
+            )
             # 연결 테스트
             with self.engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
@@ -55,7 +74,11 @@ class BaseDatabase:
         except Exception as e:
             logger.warning(f"원격 DB 연결 불가 ({e}). 로컬 SQLite로 안전 전환합니다.")
             self.database_url = "sqlite:///./integrat.db"
-            self.engine = create_engine(self.database_url, connect_args={"check_same_thread": False})
+            self.engine = create_engine(
+                self.database_url,
+                connect_args={"check_same_thread": False, "timeout": 15},
+                pool_pre_ping=True
+            )
             self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
         
         self.create_tables()
