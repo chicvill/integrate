@@ -275,16 +275,23 @@ async def check_all_services_health():
         {"id": "ironman", "name": "아이언맨 제스처 게임", "port": 9011, "url": "http://127.0.0.1:9000/ironman/"},
         {"id": "clock", "name": "모던 스마트 클락", "port": 9012, "url": "http://127.0.0.1:9000/clock/"},
         {"id": "videobooth", "name": "레트로 TV 비디오 부스", "port": 9013, "url": "http://127.0.0.1:9000/videobooth/"},
-        {"id": "n8n", "name": "n8n AI 자동화", "port": 3000, "url": f"http://{host_ip}:3000"},
+        {"id": "n8n_editor", "name": "n8n 비주얼 편집기", "port": 5678, "url": f"http://{host_ip}:5678/healthz"},
+        {"id": "n8n_deposit", "name": "농협 입금 알림판", "port": 3000, "url": f"http://{host_ip}:3000/"},
     ]
 
     async def ping_service(client: httpx.AsyncClient, s: dict):
-        try:
-            r = await client.get(s["url"], timeout=1.5)
-            is_online = r.status_code in (200, 301, 302, 307)
-            return {**s, "online": is_online, "status_code": r.status_code}
-        except Exception:
-            return {**s, "online": False, "status_code": None}
+        candidate_urls = [s["url"]]
+        if "host.docker.internal" in s["url"]:
+            candidate_urls.append(s["url"].replace("host.docker.internal", f"mqnet-{s['id']}".replace("_", "-")))
+            candidate_urls.append(s["url"].replace("host.docker.internal", "127.0.0.1"))
+        for target_url in candidate_urls:
+            try:
+                r = await client.get(target_url, timeout=1.5)
+                if r.status_code in (200, 301, 302, 307, 401, 403, 404):
+                    return {**s, "online": True, "status_code": r.status_code}
+            except Exception:
+                pass
+        return {**s, "online": False, "status_code": None}
 
     async with httpx.AsyncClient() as client:
         results = await asyncio.gather(*(ping_service(client, s) for s in services))

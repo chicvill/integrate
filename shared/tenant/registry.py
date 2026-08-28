@@ -111,11 +111,11 @@ APP_REGISTRY: Dict[str, Dict[str, Any]] = {
     },
     "n8n": {
         "app_id": "n8n",
-        "app_name": "n8n AI 워크플로우 자동화",
+        "app_name": "n8n AI 워크플로우 자동화 & 에디터",
         "icon": "⚡",
-        "description": "은행 입출금 이메일 실시간 파싱 및 Google Sheets/Excel 자동 회계 기록",
-        "backend_port": 3000,
-        "features": ["은행 이메일 자동 파싱", "구글 시트 실시간 연동", "AI 워크플로우 자동화", "무중단 백그라운드 구동"],
+        "description": "공식 n8n 비주얼 노드 편집기(포트 5678) 및 농협 입금 알림 대시보드(포트 3000)",
+        "backend_port": 5678,
+        "features": ["공식 n8n 비주얼 편집기", "AI Agent & LLM 노드", "은행 이메일 자동 파싱", "구글 시트/엑셀 연동"],
     },
 }
 

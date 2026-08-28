@@ -111,3 +111,23 @@ services:
     restart: unless-stopped
     depends_on:
       - gateway
+
+  # ─── 공식 n8n 비주얼 워크플로우 편집기 (포트 5678) ─────────────────────────
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: mqnet-n8n-editor
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=n8n.chicvill.store
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=https://n8n.chicvill.store/
+      - N8N_EDITOR_BASE_URL=https://n8n.chicvill.store/
+      - GENERIC_TIMEZONE=Asia/Seoul
+      - TZ=Asia/Seoul
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168
+    volumes:
+      - ./apps/n8n/data:/home/node/.n8n
+    restart: unless-stopped

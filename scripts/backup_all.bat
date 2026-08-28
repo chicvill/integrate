@@ -25,9 +25,13 @@ if exist "%BASE%integrat.db" (
     copy /y "%BASE%integrat.db" "%BACKUP_DIR%\integrat.db" > nul
     echo   - integrat.db copied.
 )
+if exist "%BASE%apps\n8n\database.sqlite" (
+    copy /y "%BASE%apps\n8n\database.sqlite" "%BACKUP_DIR%\apps_n8n_database.sqlite" > nul
+    echo   - apps\n8n\database.sqlite copied.
+)
 if exist "D:\Workstation\Test-n8n\database.sqlite" (
-    copy /y "D:\Workstation\Test-n8n\database.sqlite" "%BACKUP_DIR%\n8n_database.sqlite" > nul
-    echo   - n8n_database.sqlite copied.
+    copy /y "D:\Workstation\Test-n8n\database.sqlite" "%BACKUP_DIR%\test_n8n_database.sqlite" > nul
+    echo   - test_n8n_database.sqlite copied.
 )
 
 echo.
