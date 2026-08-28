@@ -30,7 +30,7 @@
     .container { max-width: 1200px; margin: 0 auto; padding: 2.5rem 1.5rem; }
     .hero { text-align: center; padding: 2.5rem 0 3.5rem; }
     .hero h1 { font-family: 'Outfit', 'Pretendard', sans-serif; font-size: 3rem; font-weight: 800; margin-bottom: 1rem; }
-    .hero h1 span { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero h1 span { background: var(--grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
     .hero p { font-size: 1.1rem; color: var(--text-muted); max-width: 680px; margin: 0 auto; }
     .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 3.5rem; }
     .stat-item { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem; }
@@ -293,7 +293,7 @@
           ⚙️ SHARED INFRASTRUCTURE
         </div>
         <h2 style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 800; margin-bottom: 0.75rem;">
-          14개 앱을 관통하는 <span style="background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">7대 공통분모 모듈</span>
+          14개 앱을 관통하는 <span style="background: var(--grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">7대 공통분모 모듈</span>
         </h2>
         <p style="color: var(--text-muted); max-width: 650px; margin: 0 auto; font-size: 0.95rem;">
           각 앱이 개별 구축하지 않고 중앙 <code style="color:#a5b4fc; background:rgba(255,255,255,0.05); padding:0.15rem 0.4rem; border-radius:6px;">shared/</code> 패키지에서 재사용하는 표준 인프라입니다.
@@ -432,7 +432,7 @@
           📖 CHEAT SHEET & QUICK LINKS
         </div>
         <h2 style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 800; margin-bottom: 0.75rem;">
-          아키텍처 <span style="background: linear-gradient(135deg,#34d399,#3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">참고자료 & 설정 가이드</span>
+          아키텍처 <span style="background: linear-gradient(135deg,#34d399,#3b82f6); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">참고자료 & 설정 가이드</span>
         </h2>
         <p style="color: var(--text-muted); max-width: 650px; margin: 0 auto; font-size: 0.95rem;">
           Cloudflare Zero Trust 터널 매핑, Docker 포트 레이아웃, 실행 명령어 요약입니다.
