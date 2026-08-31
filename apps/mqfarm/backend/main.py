@@ -5,22 +5,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 
-from apps.store.backend.config import settings
-from apps.store.backend.db.database import engine, Base
-from apps.store.backend.routers import orders, inventory, situation
+from backend.config import settings
+from backend.db.database import engine, Base
+from backend.routers import sensors, actuators, growth
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("main")
+logger = logging.getLogger("mqfarm_main")
 
 # Auto-create DB tables
-try:
-    Base.metadata.create_all(bind=engine)
-except Exception as e:
-    logger.warning(f"Database table creation fallback: {e}")
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title=f"MQnet Store Unified System [{settings.DEPLOYMENT_MODE}]",
-    description="situation + MQstore Unified Core (SaaS & Standalone Mode)",
+    title=f"MQnet MQFarm Unified Platform [{settings.DEPLOYMENT_MODE}]",
+    description="MQFarm Unified Core (SaaS & Standalone Mode)",
     version="1.0.0"
 )
 
@@ -32,23 +29,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(orders.router)
-app.include_router(inventory.router)
-app.include_router(situation.router)
+app.include_router(sensors.router)
+app.include_router(actuators.router)
+app.include_router(growth.router)
 
 @app.get("/api/system-status")
 def get_system_status():
     return {
         "deployment_mode": settings.DEPLOYMENT_MODE,
         "is_standalone": settings.is_standalone,
-        "enable_ai_analytics": settings.ENABLE_AI_ANALYTICS,
+        "enable_growth_ai": settings.ENABLE_GROWTH_AI,
         "enable_offline_sync": settings.ENABLE_OFFLINE_SYNC,
         "database": settings.DATABASE_URL.split(":///")[0],
         "status": "HEALTHY"
     }
 
 # Mount React Frontend static build if available
-dist_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "dist")
+dist_dir = os.path.join(os.path.dirname(__file__), "dist")
 if os.path.exists(dist_dir):
     app.mount("/assets", StaticFiles(directory=os.path.join(dist_dir, "assets")), name="assets")
 

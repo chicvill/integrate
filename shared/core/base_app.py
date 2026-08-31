@@ -32,6 +32,7 @@ def create_base_app(
     include_auth: bool = True,
     lifespan: Optional[Callable] = None,
     extra_routers: Optional[List] = None,
+    include_root_route: bool = True,
 ) -> FastAPI:
     """
     스마트 공통 FastAPI 앱 팩토리 함수.
@@ -125,15 +126,16 @@ def create_base_app(
             **settings.get_app_info()
         }
 
-    @app.get("/", tags=["System"])
-    async def root():
-        """루트 엔드포인트"""
-        return {
-            "message": f"{settings.APP_NAME}에 오신 것을 환영합니다.",
-            "app_id": settings.APP_ID,
-            "version": settings.APP_VERSION,
-            "docs": "/docs",
-        }
+    if include_root_route:
+        @app.get("/", tags=["System"])
+        async def root():
+            """루트 엔드포인트"""
+            return {
+                "message": f"{settings.APP_NAME}에 오신 것을 환영합니다.",
+                "app_id": settings.APP_ID,
+                "version": settings.APP_VERSION,
+                "docs": "/docs",
+            }
 
     # ─── 표준 비즈니스 예외 핸들러 ──────────────────────
     @app.exception_handler(AppException)

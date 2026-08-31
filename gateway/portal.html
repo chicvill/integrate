@@ -132,7 +132,7 @@
       </div>
 
       <!-- 4. Store -->
-      <div class="card" style="cursor:pointer;" onclick="if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('/store/','_blank')">
+      <div class="card" style="cursor:pointer;" onclick="if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('https://store.chicvill.store/','_blank')">
         <div>
           <div class="card-top"><span class="icon">🍽️</span><span class="badge" style="background:rgba(245,158,11,0.15); color:#fbbf24;">PORT 9000 / 9004</span></div>
           <h3>매장 관제 & POS</h3>
@@ -140,21 +140,21 @@
           <div class="tags"><span class="tag">카운터 POS</span><span class="tag">실시간 상황실</span><span class="tag">재고 관리</span><span class="tag">Vite+React</span></div>
         </div>
         <div class="actions" style="display:flex; gap:0.5rem;">
-          <a href="/store/" target="_blank" class="btn-main" style="flex:1.4; text-align:center; text-decoration:none; background: linear-gradient(135deg, #f59e0b, #ef4444); color:white; font-weight:800; font-size:0.9rem; padding:0.75rem 0.5rem; border-radius:12px;">🏪 오리지널 React 앱 실행 ↗</a>
+          <a href="https://store.chicvill.store/" target="_blank" class="btn-main" style="flex:1.4; text-align:center; text-decoration:none; background: linear-gradient(135deg, #f59e0b, #ef4444); color:white; font-weight:800; font-size:0.9rem; padding:0.75rem 0.5rem; border-radius:12px;">🏪 오리지널 React 앱 실행 ↗</a>
           <button class="btn" style="flex:0.8; background: rgba(255,255,255,0.06); color:var(--text-muted); font-size:0.8rem; border-radius:12px;" onclick="openM('store')">📱 간이 모달</button>
         </div>
       </div>
 
-      <!-- 5. SmartFarm -->
-      <div class="card" style="cursor:pointer;" onclick="if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('/smartfarm/','_blank')">
+      <!-- 5. MQFarm -->
+      <div class="card" style="cursor:pointer;" onclick="if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('/mqfarm/','_blank')">
         <div>
           <div class="card-top"><span class="icon">🌿</span><span class="badge" style="background:rgba(99,102,241,0.15); color:#a5b4fc;">PORT 9000 / 9005</span></div>
-          <h3>스마트팜 센서 모니터링</h3>
+          <h3>MQFarm 센서 모니터링</h3>
           <p>온도, 습도, CO2 센서 실시간 텔레메트리와 환풍/급수 원격 제어 및 AI 작물 생육 진단입니다.</p>
           <div class="tags"><span class="tag">센서 관제</span><span class="tag">장비 제어</span><span class="tag">비전 생육 AI</span><span class="tag">Vite+React</span></div>
         </div>
         <div class="actions" style="display:flex; gap:0.5rem;">
-          <a href="/smartfarm/" target="_blank" class="btn-main" style="flex:1.4; text-align:center; text-decoration:none; background: linear-gradient(135deg, #6366f1, #8b5cf6); color:white; font-weight:800; font-size:0.9rem; padding:0.75rem 0.5rem; border-radius:12px;">🌿 오리지널 React 앱 실행 ↗</a>
+          <a href="/mqfarm/" target="_blank" class="btn-main" style="flex:1.4; text-align:center; text-decoration:none; background: linear-gradient(135deg, #6366f1, #8b5cf6); color:white; font-weight:800; font-size:0.9rem; padding:0.75rem 0.5rem; border-radius:12px;">🌿 오리지널 React 앱 실행 ↗</a>
           <button class="btn" style="flex:0.8; background: rgba(255,255,255,0.06); color:var(--text-muted); font-size:0.8rem; border-radius:12px;" onclick="openM('farm')">📊 간이 모달</button>
         </div>
       </div>
@@ -362,7 +362,7 @@
             </div>
           </div>
           <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 0.75rem;">
-            스마트팜 센서 텔레메트리 스트리밍, 매장 POS-주방 KDS 즉시 전송, 스터디카페 NFC 도어락/좌석 이벤트 중계.
+            MQFarm 센서 텔레메트리 스트리밍, 매장 POS-주방 KDS 즉시 전송, 스터디카페 NFC 도어락/좌석 이벤트 중계.
           </p>
           <div style="font-size: 0.75rem; color: #34d399; display: flex; align-items: center; gap: 0.35rem;">
             ✓ 저지연 브로드캐스팅 파이프라인
@@ -459,7 +459,7 @@
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code>study.chicvill.store</code></td><td><code>localhost:9002</code></td></tr>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code>selfstudy.chicvill.store</code></td><td><code>localhost:9003</code></td></tr>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code>store.chicvill.store</code></td><td><code>localhost:9004</code></td></tr>
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code>farm.chicvill.store</code></td><td><code>localhost:9005</code></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code>mqfarm.chicvill.store</code></td><td><code>localhost:9005</code></td></tr>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code>photos.chicvill.store</code></td><td><code>localhost:9006 (Immich AI)</code></td></tr>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code>files.chicvill.store</code></td><td><code>localhost:9007 (FileBrowser)</code></td></tr>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code>youtube.chicvill.store</code></td><td><code>localhost:9000/ytdownloader/</code></td></tr>

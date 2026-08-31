@@ -45,7 +45,7 @@ def get_system_status():
     }
 
 # Mount React Frontend static build if available
-dist_dir = os.path.join(os.path.dirname(__file__), "dist")
+dist_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "dist")
 if os.path.exists(dist_dir):
     app.mount("/assets", StaticFiles(directory=os.path.join(dist_dir, "assets")), name="assets")
 

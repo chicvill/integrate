@@ -36,7 +36,7 @@ export default function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Activity color="#34d399" size={24} />
             <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#f0fdf4' }}>
-              MQnet SmartFarm 센서 모니터링 (Monitoring View)
+              MQnet MQFarm 센서 모니터링 (Monitoring View)
             </h1>
           </div>
           <span className="badge badge-saas">MONITORING MODE</span>
@@ -63,7 +63,7 @@ export default function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Sliders color="#2dd4bf" size={24} />
             <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#f0fdf4' }}>
-              MQnet SmartFarm 구동 장비 제어 (Control View)
+              MQnet MQFarm 구동 장비 제어 (Control View)
             </h1>
           </div>
           <span className="badge badge-standalone">ACTUATOR CONTROL MODE</span>

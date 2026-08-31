@@ -1,5 +1,8 @@
-# MQnet 통합 SaaS 플랫폼 - Docker Compose
+﻿# MQnet 통합 SaaS 플랫폼 - Docker Compose
 # 실행: docker compose up -d
+
+volumes:
+  sandbox-tls:
 
 x-logging: &default-logging
   driver: "json-file"
@@ -8,7 +11,6 @@ x-logging: &default-logging
     max-file: "3"
 
 services:
-  # ─── 통합 API 게이트웨이 & 포털 (포트 9000 & 10000) ───────────────────────
   gateway:
     build:
       context: .
@@ -29,7 +31,6 @@ services:
     command: python -m uvicorn gateway.main:app --host 0.0.0.0 --port 9000
     restart: unless-stopped
 
-  # ─── 스터디카페 독립 컨테이너 (포트 9002) ─────────────────────────────
   studycafe:
     image: mqnet-integrate:latest
     container_name: mqnet-studycafe
@@ -48,7 +49,6 @@ services:
     depends_on:
       - gateway
 
-  # ─── 자기주도학습 독립 컨테이너 (포트 9003) ───────────────────────────
   selfstudy:
     image: mqnet-integrate:latest
     container_name: mqnet-selfstudy
@@ -67,7 +67,6 @@ services:
     depends_on:
       - gateway
 
-  # ─── 매장 관제 & POS 독립 컨테이너 (포트 9004) ──────────────────────────
   store:
     image: mqnet-integrate:latest
     container_name: mqnet-store
@@ -86,16 +85,15 @@ services:
     depends_on:
       - gateway
 
-  # ─── 스마트팜 IoT 독립 컨테이너 (포트 9005) ────────────────────────────────
-  smartfarm:
+  mqfarm:
     image: mqnet-integrate:latest
-    container_name: mqnet-smartfarm
+    container_name: mqnet-mqfarm
     logging: *default-logging
-    working_dir: /app/apps/smartfarm
+    working_dir: /app/apps/mqfarm
     ports:
       - "9005:9005"
     environment:
-      - PYTHONPATH=/app:/app/apps/smartfarm
+      - PYTHONPATH=/app:/app/apps/mqfarm
     volumes:
       - .:/app
     env_file:
@@ -105,7 +103,6 @@ services:
     depends_on:
       - gateway
 
-  # ─── AI 관상 분석 독립 컨테이너 (포트 9009) ─────────────────────────────────
   ai_gwansang:
     image: mqnet-integrate:latest
     container_name: mqnet-ai-gwansang
@@ -124,13 +121,89 @@ services:
     depends_on:
       - gateway
 
-  # ─── 공식 n8n 비주얼 워크플로우 편집기 (포트 5678) ─────────────────────────
+  sandbox-certs:
+    image: ghcr.io/n8n-io/n8n-sandbox-service-api:latest
+    container_name: mqnet-sandbox-certs
+    user: '0:0'
+    entrypoint: ['sh', '-c']
+    command:
+      - >
+        bootstrap-mtls.sh --out-dir /tls --api-san sandbox-api
+        --control-san-prefix sandbox-runner &&
+        chown -R sandbox-api:sandbox-api /tls/api
+    environment:
+      NUM_RUNNERS: '1'
+    volumes:
+      - sandbox-tls:/tls
+
+  sandbox-api:
+    image: ghcr.io/n8n-io/n8n-sandbox-service-api:latest
+    container_name: mqnet-sandbox-api
+    logging: *default-logging
+    depends_on:
+      sandbox-certs:
+        condition: service_completed_successfully
+    env_file:
+      - .env.sandbox
+    environment:
+      SANDBOX_API_GRPC_TLS_CERT_FILE: /tls/api/grpc-server.crt
+      SANDBOX_API_GRPC_TLS_KEY_FILE: /tls/api/grpc-server.key
+      SANDBOX_API_GRPC_TLS_CLIENT_CA_FILE: /tls/api/ca.crt
+      SANDBOX_API_RUNNER_CONTROL_GRPC_TLS_CA_FILE: /tls/api/ca.crt
+      SANDBOX_API_RUNNER_CONTROL_GRPC_TLS_CERT_FILE: /tls/api/control-grpc-api-client.crt
+      SANDBOX_API_RUNNER_CONTROL_GRPC_TLS_KEY_FILE: /tls/api/control-grpc-api-client.key
+      SANDBOX_API_RUNNER_CONTROL_GRPC_TLS_SERVER_NAME: sandbox-runner-1
+    volumes:
+      - sandbox-tls:/tls:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  sandbox-runner-1:
+    image: ghcr.io/n8n-io/n8n-sandbox-service-runner-dind:latest
+    container_name: mqnet-sandbox-runner-1
+    logging: *default-logging
+    privileged: true
+    depends_on:
+      sandbox-api:
+        condition: service_healthy
+    env_file:
+      - .env.sandbox
+    environment:
+      SANDBOX_RUNNER_API_KEYS: mqnet-sbx-runner-9d3c8b2a5e
+      SANDBOX_RUNNER_REGISTRATION_TOKEN: mqnet-sbx-reg-7b4e2a1f6c
+      SANDBOX_RUNNER_API_GRPC_ADDR: sandbox-api:9090
+      SANDBOX_RUNNER_HTTP_BASE_URL: http://sandbox-runner-1:8080
+      SANDBOX_RUNNER_CONTROL_GRPC_LISTEN_ADDR: ':9091'
+      SANDBOX_RUNNER_CONTROL_GRPC_ADVERTISE_ADDR: sandbox-runner-1:9091
+      SANDBOX_RUNNER_ID: runner-1
+      SANDBOX_RUNNER_DOCKER_SANDBOX_IMAGE: ghcr.io/n8n-io/n8n-sandbox-service-sandbox:latest
+      SANDBOX_RUNNER_REGISTRATION_GRPC_CA_FILE: /tls/runner/ca.crt
+      SANDBOX_RUNNER_REGISTRATION_GRPC_CERT_FILE: /tls/runner/grpc-client.crt
+      SANDBOX_RUNNER_REGISTRATION_GRPC_KEY_FILE: /tls/runner/grpc-client.key
+      SANDBOX_RUNNER_REGISTRATION_GRPC_SERVER_NAME: sandbox-api
+      SANDBOX_RUNNER_CONTROL_GRPC_TLS_CERT_FILE: /tls/runner/control-grpc-server.crt
+      SANDBOX_RUNNER_CONTROL_GRPC_TLS_KEY_FILE: /tls/runner/control-grpc-server.key
+      SANDBOX_RUNNER_CONTROL_GRPC_TLS_CLIENT_CA_FILE: /tls/runner/ca.crt
+    volumes:
+      - sandbox-tls:/tls:ro
+    restart: unless-stopped
+
   n8n:
     image: docker.n8n.io/n8nio/n8n:latest
     container_name: mqnet-n8n-editor
     logging: *default-logging
     ports:
       - "5678:5678"
+    depends_on:
+      sandbox-api:
+        condition: service_healthy
+    env_file:
+      - .env.sandbox
     environment:
       - N8N_HOST=n8n.chicvill.store
       - N8N_PORT=5678
@@ -141,6 +214,17 @@ services:
       - TZ=Asia/Seoul
       - EXECUTIONS_DATA_PRUNE=true
       - EXECUTIONS_DATA_MAX_AGE=168
+      - N8N_SANDBOX_SERVICE_URL=http://sandbox-api:8080
     volumes:
       - ./apps/n8n/data:/home/node/.n8n
     restart: unless-stopped
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: mqnet-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=eyJhIjoiODY2NmZlODI1Mzg2NTVjZjY2ZjJmZGE5NGVmMDE2OTMiLCJ0IjoiNTRiYWU5YWEtMmNmNS00NWE5LWJlZWMtNmIwODFhM2I5YzczIiwicyI6Ik1qVm1ZMkppTW1FdE9EUTRNQzAwWWpkbUxUZ3lNbUV0TVRKbE9UUmpPR05rT1RRNSJ9
+    depends_on:
+      - gateway

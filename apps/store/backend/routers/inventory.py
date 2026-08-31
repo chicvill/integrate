@@ -4,7 +4,7 @@ from apps.store.backend.db.database import get_db
 from apps.store.backend.db import models
 from apps.store.backend.schemas import ProductCreate, ProductResponse
 
-router = APIRouter(prefix="", tags=["Inventory & Products"])
+router = APIRouter(prefix="/api/inventory", tags=["Inventory & Products"])
 
 
 @router.get("/products", response_model=list[ProductResponse])

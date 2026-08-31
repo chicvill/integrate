@@ -989,8 +989,22 @@ async def api_nfc_tag(payload: NfcTagPayload):
         conn.close()
 
 # ----------------- Static File Hosting & SPA Fallback -----------------
-DIST_DIR = os.path.join(os.path.dirname(__file__), "dist")
-if os.path.exists(DIST_DIR):
+possible_dist_dirs = [
+    os.path.join(os.path.dirname(__file__), "dist"),
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist")),
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")),
+    "/app/apps/selfstudy/frontend/dist",
+    "/app/apps/selfstudy/SelfStudy/frontend/dist"
+]
+
+DIST_DIR = None
+for d in possible_dist_dirs:
+    if os.path.exists(d) and os.path.isdir(d):
+        DIST_DIR = d
+        break
+
+if DIST_DIR:
+    print(f"[STATIC] Serving SelfStudy frontend from: {DIST_DIR}")
     assets_dir = os.path.join(DIST_DIR, "assets")
     if os.path.exists(assets_dir):
         app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
@@ -1003,6 +1017,7 @@ if os.path.exists(DIST_DIR):
         if os.path.isfile(file_path):
             return FileResponse(file_path)
         return FileResponse(os.path.join(DIST_DIR, "index.html"))
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8001)

@@ -22,7 +22,7 @@ export default function AdminPage({ systemStatus }) {
   return (
     <div>
       <div className="glass-card">
-        <h2>MQnet SmartFarm 시스템 설정</h2>
+        <h2>MQnet MQFarm 시스템 설정</h2>
         <p style={{ color: 'var(--text-muted)' }}>SaaS 및 스탠드얼론 운영 모드를 확인하고 센서 데이터 덤프를 동기화합니다.</p>
       </div>
 

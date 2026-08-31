@@ -37,7 +37,7 @@ from apps.selfstudy.backend.routers import (
     attendance_router as study_attendance_router,
     admin_router as study_admin_router,
 )
-from apps.smartfarm.backend.routers import (
+from apps.mqfarm.backend.routers import (
     sensor_router as farm_sensor_router,
     actuator_router as farm_actuator_router,
     growth_router as farm_growth_router
@@ -124,10 +124,10 @@ app.include_router(study_schedule_router, prefix="/api/selfstudy/schedule", tags
 app.include_router(study_attendance_router, prefix="/api/selfstudy/attendance", tags=["자기주도학습 - 출결 & 학부모 참관"])
 app.include_router(study_admin_router, prefix="/api/selfstudy/admin", tags=["자기주도학습 - 관리자 & 대면 상담"])
 
-# 4. 스마트팜 앱
-app.include_router(farm_sensor_router, prefix="/api/smartfarm/sensors", tags=["스마트팜 - 센서"])
-app.include_router(farm_actuator_router, prefix="/api/smartfarm/controls", tags=["스마트팜 - 제어"])
-app.include_router(farm_growth_router, prefix="/api/smartfarm/growth", tags=["스마트팜 - 작물생육 AI"])
+# 4. MQFarm 앱
+app.include_router(farm_sensor_router, prefix="/api/mqfarm/sensors", tags=["MQFarm - 센서"])
+app.include_router(farm_actuator_router, prefix="/api/mqfarm/controls", tags=["MQFarm - 제어"])
+app.include_router(farm_growth_router, prefix="/api/mqfarm/growth", tags=["MQFarm - 작물생육 AI"])
 
 # 5. AI 관상 앱
 app.include_router(gwansang_router, prefix="/api/ai_gwansang", tags=["AI 관상 분석"])
@@ -152,12 +152,23 @@ app.include_router(seat_router, prefix="/api/seats", include_in_schema=False)
 app.include_router(study_auth_router, prefix="/api/auth", include_in_schema=False)
 app.include_router(ticket_router, prefix="/api/tickets", include_in_schema=False)
 app.include_router(session_router, prefix="/api/sessions", include_in_schema=False)
-app.include_router(store_inventory_router, prefix="/api/inventory", include_in_schema=False)
-app.include_router(order_router, prefix="/api/orders", include_in_schema=False)
-app.include_router(store_situation_router, prefix="/api/situation", include_in_schema=False)
+app.include_router(store_inventory_router, include_in_schema=False)
+app.include_router(order_router, include_in_schema=False)
+app.include_router(store_situation_router, include_in_schema=False)
 app.include_router(farm_sensor_router, prefix="/api/sensors", include_in_schema=False)
 app.include_router(farm_actuator_router, prefix="/api/actuators", include_in_schema=False)
 app.include_router(farm_growth_router, prefix="/api/growth", include_in_schema=False)
+
+@app.get("/api/system-status", tags=["시스템 - 상태"])
+def get_system_status():
+    from apps.store.backend.config import settings
+    return {
+        "deployment_mode": "SAAS_PORTAL",
+        "is_standalone": False,
+        "enable_ai_analytics": True,
+        "enable_offline_sync": True,
+        "status": "HEALTHY"
+    }
 app.include_router(photos_gallery_router, prefix="/api", include_in_schema=False)
 app.include_router(yt_download_router, prefix="/api/download", include_in_schema=False)
 app.include_router(yt_media_router, prefix="/api/media", include_in_schema=False)
@@ -181,16 +192,22 @@ if os.path.exists(studycafe_dist):
     app.mount("/studycafe", StaticFiles(directory=studycafe_dist, html=True), name="studycafe_react_app")
 
 store_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "store", "frontend", "dist"))
-if os.path.exists(store_dist):
-    app.mount("/store", StaticFiles(directory=store_dist, html=True), name="store_react_app")
+from fastapi.responses import RedirectResponse
+@app.get("/store", include_in_schema=False)
+def redirect_store_root():
+    return RedirectResponse(url="https://store.chicvill.store/")
+    
+@app.get("/store/{full_path:path}", include_in_schema=False)
+def redirect_store_path(full_path: str):
+    return RedirectResponse(url=f"https://store.chicvill.store/{full_path}")
 
 selfstudy_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "selfstudy", "frontend", "dist"))
 if os.path.exists(selfstudy_dist):
     app.mount("/selfstudy", StaticFiles(directory=selfstudy_dist, html=True), name="selfstudy_react_app")
 
-smartfarm_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "smartfarm", "frontend", "dist"))
-if os.path.exists(smartfarm_dist):
-    app.mount("/smartfarm", StaticFiles(directory=smartfarm_dist, html=True), name="smartfarm_react_app")
+mqfarm_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "mqfarm", "frontend", "dist"))
+if os.path.exists(mqfarm_dist):
+    app.mount("/mqfarm", StaticFiles(directory=mqfarm_dist, html=True), name="mqfarm_react_app")
 
 photos_frontend = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "photos", "frontend"))
 if os.path.exists(photos_frontend):
@@ -279,7 +296,7 @@ async def check_all_services_health():
         {"id": "studycafe", "name": "스터디카페 관리", "port": 9002, "url": f"http://{host_ip}:9002/docs"},
         {"id": "selfstudy", "name": "자기주도학습 (SelfStudy)", "port": 9003, "url": f"http://{host_ip}:9003/docs"},
         {"id": "store", "name": "매장 관제 & POS", "port": 9004, "url": f"http://{host_ip}:9004/docs"},
-        {"id": "smartfarm", "name": "스마트팜 센서 관제", "port": 9005, "url": f"http://{host_ip}:9005/docs"},
+        {"id": "mqfarm", "name": "MQFarm 센서 관제", "port": 9005, "url": f"http://{host_ip}:9005/docs"},
         {"id": "photos", "name": "스마트 갤러리 (Immich)", "port": 9006, "url": f"http://{host_ip}:9006"},
         {"id": "filebrowser", "name": "통합 파일 탐색기", "port": 9007, "url": f"http://{host_ip}:9007"},
         {"id": "ytdownloader", "name": "유튜브 다운로더", "port": 9008, "url": "http://127.0.0.1:9000/ytdownloader/"},

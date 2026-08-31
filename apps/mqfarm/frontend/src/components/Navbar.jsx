@@ -17,7 +17,7 @@ export default function Navbar({ activeTab, setActiveTab, systemStatus }) {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
         <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', background: 'linear-gradient(135deg, #34d399, #10b981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Sprout color="#34d399" /> MQnet SmartFarm Platform
+          <Sprout color="#34d399" /> MQnet MQFarm Platform
         </h1>
         <span className={isStandalone ? "badge badge-standalone" : "badge badge-saas"}>
           {isStandalone ? "N100 LOCAL SMARTFARM (STANDALONE)" : "SAAS MULTI-FARM PORTAL"}
