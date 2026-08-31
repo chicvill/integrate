@@ -29,9 +29,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(sensors.router)
-app.include_router(actuators.router)
-app.include_router(growth.router)
+app.include_router(sensors.router, prefix="/api/sensors")
+app.include_router(actuators.router, prefix="/api/actuators")
+app.include_router(growth.router, prefix="/api/growth")
 
 @app.get("/api/system-status")
 def get_system_status():
@@ -45,9 +45,14 @@ def get_system_status():
     }
 
 # Mount React Frontend static build if available
-dist_dir = os.path.join(os.path.dirname(__file__), "dist")
+dist_dir = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+if not os.path.exists(dist_dir):
+    dist_dir = os.path.join(os.path.dirname(__file__), "dist")
+
 if os.path.exists(dist_dir):
-    app.mount("/assets", StaticFiles(directory=os.path.join(dist_dir, "assets")), name="assets")
+    assets_dir = os.path.join(dist_dir, "assets")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
     @app.get("/{full_path:path}")
     def serve_frontend_spa(full_path: str):

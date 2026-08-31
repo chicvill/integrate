@@ -23,7 +23,6 @@ actuator_states = [
 
 
 @router.get("/", response_model=List[ActuatorStateResponse])
-@router.get("", response_model=List[ActuatorStateResponse])
 def list_actuators():
     return actuator_states
 
