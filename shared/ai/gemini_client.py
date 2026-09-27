@@ -21,6 +21,29 @@ from shared.ai.base import BaseAIClient
 logger = logging.getLogger("mqnet.gemini")
 
 
+def clean_json_markdown(text: str) -> str:
+    """AI 응답 문자열에서 ```json ... ``` 코드 블록 마크다운을 안전하게 제거"""
+    clean = text.strip()
+    if clean.startswith("```json"):
+        clean = clean[7:]
+    elif clean.startswith("```"):
+        clean = clean[3:]
+    if clean.endswith("```"):
+        clean = clean[:-3]
+    return clean.strip()
+
+
+def extract_base64_data(image_data: str, default_mime: str = "image/jpeg") -> tuple[str, str]:
+    """Base64 data URL에서 순수 base64 문자열과 MIME 타입을 추출"""
+    if "," in image_data:
+        header, b64 = image_data.split(",", 1)
+        mime = default_mime
+        if header.startswith("data:") and ";base64" in header:
+            mime = header[5:].split(";")[0]
+        return b64.strip(), mime
+    return image_data.strip(), default_mime
+
+
 class GeminiClient(BaseAIClient):
     """
     Gemini AI 기반 공통 클라이언트 클래스.
@@ -86,26 +109,49 @@ class GeminiClient(BaseAIClient):
             logger.error(f"Gemini 이미지 분석 오류: {e}")
             return self._mock_image_response()
 
-    async def generate_structured(self, prompt: str, schema: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    async def generate_structured(
+        self,
+        prompt: str,
+        schema: Optional[Dict[str, Any]] = None,
+        fallback_data: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """구조화된 JSON 응답 생성 (데이터 분석 등)"""
         json_prompt = f"{prompt}\n\n응답은 반드시 마크다운이나 부가 설명 없이 순수한 JSON 형식으로만 작성하세요."
         text = await self.generate_text(json_prompt)
 
         try:
-            # JSON 코드 블록 마크다운 제거
-            clean = text.strip()
-            if clean.startswith("```json"):
-                clean = clean[7:]
-            elif clean.startswith("```"):
-                clean = clean[3:]
-            if clean.endswith("```"):
-                clean = clean[:-3]
-            clean = clean.strip()
-
+            clean = clean_json_markdown(text)
             return json.loads(clean)
         except Exception as e:
-            logger.warning(f"JSON 파싱 실패 ({e}), 원본 텍스트 반환")
+            logger.warning(f"JSON 파싱 실패 ({e}), fallback 또는 원본 반환")
+            if fallback_data:
+                return fallback_data
             return {"raw": text, "parse_error": True}
+
+    async def generate_structured_with_image(
+        self,
+        prompt: str,
+        image_base64: str,
+        mime_type: str = "image/jpeg",
+        schema: Optional[Dict[str, Any]] = None,
+        fallback_data: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """이미지 기반 구조화된 JSON 데이터 분석 및 생성 (관상, 얼굴분석, 작물진단 등)"""
+        if not self.is_available:
+            return fallback_data or json.loads(self._mock_image_response())
+
+        b64_clean, detected_mime = extract_base64_data(image_base64, default_mime=mime_type)
+        json_prompt = f"{prompt}\n\n응답은 반드시 마크다운(```json) 없이 순수한 JSON 형식으로만 작성하세요."
+        
+        try:
+            raw_text = await self.generate_with_image(json_prompt, b64_clean, mime_type=detected_mime)
+            clean = clean_json_markdown(raw_text)
+            return json.loads(clean)
+        except Exception as e:
+            logger.warning(f"Gemini 이미지 구조화 파싱 실패 ({e})")
+            if fallback_data:
+                return fallback_data
+            return {"raw": raw_text if 'raw_text' in locals() else "", "parse_error": True}
 
     # ─── Mock 응답 (API Key 없을 때) ──────────────────────────
     def _mock_text_response(self, prompt: str) -> str:

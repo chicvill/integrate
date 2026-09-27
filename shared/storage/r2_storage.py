@@ -101,3 +101,48 @@ class R2StorageService(BaseStorageService):
         if self._s3_client:
             return f"https://pub-{self.account_id}.r2.dev/{clean_path}"
         return self._fallback_local.get_public_url(path) if self._fallback_local else f"/uploads/{clean_path}"
+
+    def get_file_path(self, path: str) -> Optional[str]:
+        if self._fallback_local:
+            return self._fallback_local.get_file_path(path)
+        return None
+
+    def file_exists(self, path: str) -> bool:
+        if self._s3_client:
+            try:
+                self._s3_client.head_object(Bucket=self.bucket_name, Key=path.lstrip("/"))
+                return True
+            except Exception:
+                return False
+        if self._fallback_local:
+            return self._fallback_local.file_exists(path)
+        return False
+
+    async def list_files(
+        self,
+        prefix: str = "",
+        extensions: Optional[list[str]] = None,
+        reverse: bool = True,
+    ) -> list[str]:
+        if self._s3_client:
+            try:
+                clean_prefix = prefix.lstrip("/")
+                resp = self._s3_client.list_objects_v2(Bucket=self.bucket_name, Prefix=clean_prefix)
+                contents = resp.get("Contents", [])
+                ext_set = {ext.lower() if ext.startswith(".") else f".{ext.lower()}" for ext in extensions} if extensions else None
+                keys = []
+                for item in contents:
+                    key = item.get("Key", "")
+                    if ext_set:
+                        _, ext = os.path.splitext(key)
+                        if ext.lower() not in ext_set:
+                            continue
+                    keys.append(key)
+                keys.sort(reverse=reverse)
+                return keys
+            except Exception as e:
+                logger.error(f"R2 파일 목록 조회 실패: {e}")
+                return []
+        if self._fallback_local:
+            return await self._fallback_local.list_files(prefix, extensions, reverse)
+        return []

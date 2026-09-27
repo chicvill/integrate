@@ -29,3 +29,21 @@ class MockAIClient(BaseAIClient):
             "prompt": prompt[:50],
             "message": "API 키를 설정하면 실제 AI 모델 분석 결과가 반환됩니다.",
         }
+
+    async def generate_structured_with_image(
+        self,
+        prompt: str,
+        image_base64: str,
+        mime_type: str = "image/jpeg",
+        schema: Optional[Dict[str, Any]] = None,
+        fallback_data: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        if fallback_data:
+            return fallback_data
+        return {
+            "mock": True,
+            "status": "success",
+            "prompt": prompt[:50],
+            "image_size": len(image_base64),
+            "message": "Mock 이미지 구조화 분석 응답입니다.",
+        }

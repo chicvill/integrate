@@ -34,3 +34,23 @@ class BaseStorageService(ABC):
     def get_public_url(self, path: str) -> str:
         """파일의 공개 접근 URL 반환"""
         pass
+
+    @abstractmethod
+    async def list_files(
+        self,
+        prefix: str = "",
+        extensions: Optional[list[str]] = None,
+        reverse: bool = True,
+    ) -> list[str]:
+        """스토리지 내 파일 목록 조회 (확장자 필터링 및 정렬 지원)"""
+        pass
+
+    @abstractmethod
+    def get_file_path(self, path: str) -> Optional[str]:
+        """로컬 파일 경로가 있는 경우 절대 경로 반환 (FileResponse 등에 활용)"""
+        pass
+
+    @abstractmethod
+    def file_exists(self, path: str) -> bool:
+        """파일 존재 여부 확인"""
+        pass

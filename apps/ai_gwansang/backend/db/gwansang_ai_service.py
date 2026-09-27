@@ -42,16 +42,12 @@ class GwansangAIService(GeminiClient):
   "advice": "오늘의 조언 (2-3문장)"
 }}
         """
-        result = await self.generate_with_image(prompt, image_base64)
-        
-        try:
-            clean = result.replace("```json", "").replace("```", "").strip()
-            parsed = json.loads(clean)
-            if isinstance(parsed, dict) and "animalType" in parsed:
-                return parsed
-            return self._mock_gwansang_result(user_name)
-        except Exception:
-            return self._mock_gwansang_result(user_name)
+        fallback = self._mock_gwansang_result(user_name)
+        return await self.generate_structured_with_image(
+            prompt=prompt,
+            image_base64=image_base64,
+            fallback_data=fallback,
+        )
 
     def _mock_gwansang_result(self, user_name: str) -> dict:
         return {

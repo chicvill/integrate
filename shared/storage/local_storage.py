@@ -57,3 +57,39 @@ class LocalStorageService(BaseStorageService):
     def get_public_url(self, path: str) -> str:
         clean_path = path.lstrip("/").replace("\\", "/")
         return f"{self.base_url}/{clean_path}"
+
+    def get_file_path(self, path: str) -> Optional[str]:
+        clean_path = path.lstrip("/").replace("/", os.sep)
+        full_path = os.path.join(self.base_dir, clean_path)
+        return full_path if os.path.exists(full_path) else None
+
+    def file_exists(self, path: str) -> bool:
+        clean_path = path.lstrip("/").replace("/", os.sep)
+        full_path = os.path.join(self.base_dir, clean_path)
+        return os.path.isfile(full_path)
+
+    async def list_files(
+        self,
+        prefix: str = "",
+        extensions: Optional[list[str]] = None,
+        reverse: bool = True,
+    ) -> list[str]:
+        target_dir = os.path.join(self.base_dir, prefix.lstrip("/").replace("/", os.sep))
+        if not os.path.exists(target_dir):
+            return []
+
+        files = []
+        ext_set = {ext.lower() if ext.startswith(".") else f".{ext.lower()}" for ext in extensions} if extensions else None
+
+        for item in os.listdir(target_dir):
+            full_item_path = os.path.join(target_dir, item)
+            if os.path.isfile(full_item_path):
+                if ext_set:
+                    _, ext = os.path.splitext(item)
+                    if ext.lower() not in ext_set:
+                        continue
+                rel_path = os.path.relpath(full_item_path, self.base_dir).replace(os.sep, "/")
+                files.append(rel_path)
+
+        files.sort(reverse=reverse)
+        return files

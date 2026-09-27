@@ -58,15 +58,6 @@ def create_base_app(
         except Exception as e:
             logger.warning(f"[{settings.APP_ID}] DB 자동 초기화 중 경고 (계속 진행): {e}")
 
-        # 공통 인증 라우터 등록
-        if include_auth:
-            try:
-                from shared.auth.router import auth_router
-                app_instance.include_router(auth_router, prefix="/auth", tags=["인증 (공통)"])
-                logger.info(f"[{settings.APP_ID}] 공통 인증 라우터 등록 완료")
-            except Exception as e:
-                logger.warning(f"[{settings.APP_ID}] 인증 라우터 등록 생략: {e}")
-
         if lifespan:
             async with lifespan(app_instance):
                 yield
@@ -84,6 +75,15 @@ def create_base_app(
         redoc_url="/redoc",
         lifespan=default_lifespan,
     )
+
+    # 공통 인증 라우터 등록 (FastAPI 초기화 시점에 안전하게 마운트)
+    if include_auth:
+        try:
+            from shared.auth.router import auth_router
+            app.include_router(auth_router, prefix="/auth", tags=["인증 (공통)"])
+            logger.info(f"[{settings.APP_ID}] 공통 인증 라우터 등록 완료")
+        except Exception as e:
+            logger.warning(f"[{settings.APP_ID}] 인증 라우터 등록 생략: {e}")
 
     # ─── CORS 미들웨어 ────────────────────────────────────
     app.add_middleware(
@@ -174,3 +174,19 @@ def create_base_app(
             app.include_router(r)
 
     return app
+
+
+def mount_static_directory(app: FastAPI, path: str, directory: str, html: bool = True, name: Optional[str] = None):
+    """
+    디렉토리가 존재하는 경우에만 안전하게 정적 파일을 마운트하는 헬퍼.
+    """
+    import os
+    from fastapi.staticfiles import StaticFiles
+
+    abs_dir = os.path.abspath(directory)
+    if os.path.exists(abs_dir):
+        mount_name = name or f"static_{path.strip('/').replace('/', '_')}"
+        app.mount(path, StaticFiles(directory=abs_dir, html=html), name=mount_name)
+        logger.info(f"정적 파일 마운트 완료: {path} -> {abs_dir}")
+        return True
+    return False

@@ -30,3 +30,15 @@ class BaseAIClient(ABC):
     async def generate_structured(self, prompt: str, schema: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """구조화된 JSON 형식 생성"""
         pass
+
+    @abstractmethod
+    async def generate_structured_with_image(
+        self,
+        prompt: str,
+        image_base64: str,
+        mime_type: str = "image/jpeg",
+        schema: Optional[Dict[str, Any]] = None,
+        fallback_data: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """이미지 기반 구조화된 JSON 데이터 분석 및 생성"""
+        pass

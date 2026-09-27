@@ -45,21 +45,28 @@ class BaseConfig(BaseSettings):
     GEMINI_MODEL: str = "gemini-2.5-flash"
     ENABLE_AI: bool = os.getenv("ENABLE_AI", "false").lower() == "true"
 
-    # ─── 결제 (Stripe) ───────────────────────────────────
+    # ─── 결제 (Stripe & TossPayments) ─────────────────────
     STRIPE_SECRET_KEY: str = os.getenv("STRIPE_SECRET_KEY", "")
     STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+    TOSS_CLIENT_KEY: str = os.getenv("TOSS_CLIENT_KEY", "")
+    TOSS_SECRET_KEY: str = os.getenv("TOSS_SECRET_KEY", "")
     ENABLE_PAYMENT: bool = os.getenv("ENABLE_PAYMENT", "false").lower() == "true"
 
-    # ─── 파일 저장소 (Cloudflare R2) ─────────────────────
+    # ─── 파일 저장소 (Cloudflare R2 & Local) ──────────────
     R2_ACCOUNT_ID: str = os.getenv("R2_ACCOUNT_ID", "")
     R2_ACCESS_KEY_ID: str = os.getenv("R2_ACCESS_KEY_ID", "")
     R2_SECRET_ACCESS_KEY: str = os.getenv("R2_SECRET_ACCESS_KEY", "")
     R2_BUCKET_NAME: str = os.getenv("R2_BUCKET_NAME", "mqnet-uploads")
+    UPLOADS_DIR: str = os.getenv("UPLOADS_DIR", "uploads")
     ENABLE_FILE_STORAGE: bool = os.getenv("ENABLE_FILE_STORAGE", "false").lower() == "true"
 
     # ─── 알림 ────────────────────────────────────────────
     KAKAO_API_KEY: str = os.getenv("KAKAO_API_KEY", "")
     ENABLE_NOTIFICATIONS: bool = os.getenv("ENABLE_NOTIFICATIONS", "false").lower() == "true"
+
+    # ─── 공통 SaaS 쿼터 & 카테고리 ─────────────────────────
+    DAILY_FREE_LIMIT: int = int(os.getenv("DAILY_FREE_LIMIT", "5"))
+    APP_CATEGORY: str = os.getenv("APP_CATEGORY", "general")
 
     # ─── 공통 기능 플래그 ─────────────────────────────────
     ENABLE_CLOUD_SYNC: bool = os.getenv("ENABLE_CLOUD_SYNC", "false").lower() == "true"
@@ -76,7 +83,9 @@ class BaseConfig(BaseSettings):
             "app_id": self.APP_ID,
             "app_name": self.APP_NAME,
             "version": self.APP_VERSION,
+            "category": self.APP_CATEGORY,
             "deployment_mode": self.DEPLOYMENT_MODE,
+            "daily_free_limit": self.DAILY_FREE_LIMIT,
             "features": {
                 "ai": self.ENABLE_AI,
                 "payment": self.ENABLE_PAYMENT,

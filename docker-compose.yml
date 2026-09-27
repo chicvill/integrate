@@ -19,6 +19,7 @@ services:
     container_name: mqnet-gateway
     logging: *default-logging
     ports:
+      - "8000:9000"
       - "9000:9000"
       - "10000:9000"
     environment:
