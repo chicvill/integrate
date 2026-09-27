@@ -1,4 +1,4 @@
-﻿# MQnet 통합 SaaS 플랫폼 - Docker Compose
+# MQnet 통합 SaaS 플랫폼 - Docker Compose
 # 실행: docker compose up -d
 
 volumes:
@@ -228,3 +228,16 @@ services:
       - TUNNEL_TOKEN=eyJhIjoiODY2NmZlODI1Mzg2NTVjZjY2ZjJmZGE5NGVmMDE2OTMiLCJ0IjoiNTRiYWU5YWEtMmNmNS00NWE5LWJlZWMtNmIwODFhM2I5YzczIiwicyI6Ik1qVm1ZMkppTW1FdE9EUTRNQzAwWWpkbUxUZ3lNbUV0TVRKbE9UUmpPR05rT1RRNSJ9
     depends_on:
       - gateway
+    networks:
+      - default
+      - mqnet-photos-net
+      - mqnet_default
+
+networks:
+  default:
+    name: integrate_default
+  mqnet-photos-net:
+    external: true
+  mqnet_default:
+    external: true
+
