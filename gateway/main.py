@@ -220,9 +220,15 @@ if os.path.exists(gwansang_dist):
     app.mount("/gwansang", StaticFiles(directory=gwansang_dist, html=True), name="gwansang_react_app")
     app.mount("/ai_gwansang", StaticFiles(directory=gwansang_dist, html=True), name="ai_gwansang_app")
 
-ytdownloader_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "YTDownloader", "frontend", "dist"))
-if os.path.exists(ytdownloader_dist):
-    app.mount("/ytdownloader", StaticFiles(directory=ytdownloader_dist, html=True), name="ytdownloader_react_app")
+# ── 유튜브 미디어 다운로더: 독립 도메인(youtube.chicvill.store) 301 리다이렉트 ──
+from fastapi.responses import RedirectResponse
+@app.get("/ytdownloader", include_in_schema=False)
+def redirect_ytdownloader_root():
+    return RedirectResponse(url="https://youtube.chicvill.store/", status_code=301)
+
+@app.get("/ytdownloader/{full_path:path}", include_in_schema=False)
+def redirect_ytdownloader_path(full_path: str):
+    return RedirectResponse(url=f"https://youtube.chicvill.store/{full_path}", status_code=301)
 
 mqhome_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "MQhome"))
 if os.path.exists(mqhome_dir):
