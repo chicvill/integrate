@@ -1,0 +1,11 @@
+services:
+  grammer-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: grammer-tv-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
