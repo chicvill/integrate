@@ -160,6 +160,17 @@ APP_REGISTRY: Dict[str, Dict[str, Any]] = {
         "modules": ["core"],
         "features": ["공식 n8n 비주얼 편집기", "AI Agent & LLM 노드", "은행 이메일 자동 파싱", "구글 시트/엑셀 연동"],
     },
+    "grammer": {
+        "app_id": "grammer",
+        "app_name": "Grammar Quest (AI 영문법 퀘스트)",
+        "icon": "🔤",
+        "category": "education",
+        "description": "초3~고3 수능 영문법 무한 생성 & AI 음성 섀도잉 발음 코칭",
+        "backend_port": 9014,
+        "route_path": "/grammer",
+        "modules": ["core", "ai", "storage", "utils"],
+        "features": ["STEM & AI 어휘 예문", "6단계 정규 교육과정", "5대 인터랙티브 퀘스트", "음성 인식 & 섀도잉", "AI 원어민 발음 코칭"],
+    },
 }
 
 

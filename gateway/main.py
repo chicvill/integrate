@@ -54,6 +54,7 @@ from apps.YTDownloader.backend.routers import (
 )
 from apps.face_analy.backend.routers import face_analy_router
 from apps.videoBooth.backend.routers import videobooth_router
+from apps.grammer.backend.routers.grammer_router import router as grammer_router
 
 
 
@@ -146,6 +147,9 @@ app.include_router(face_analy_router, prefix="/api/face_analy", tags=["테토/�
 # 9. 레트로 TV 비디오 부스 (videoBooth)
 app.include_router(videobooth_router, prefix="/api/videobooth", tags=["비디오 부스"])
 app.include_router(videobooth_router, prefix="/videobooth", include_in_schema=False)
+
+# 10. AI 영문법 퀘스트 (Grammar Quest)
+app.include_router(grammer_router, prefix="/api/grammer", tags=["AI 영문법 퀘스트"])
 
 # ── 원본 앱 API 호환 라우팅 ──
 app.include_router(seat_router, prefix="/api/seats", include_in_schema=False)
@@ -247,6 +251,10 @@ videobooth_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "
 if os.path.exists(videobooth_dir):
     app.mount("/videobooth", StaticFiles(directory=videobooth_dir, html=True), name="videobooth_app")
 
+grammer_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "grammer"))
+if os.path.exists(grammer_dir):
+    app.mount("/grammer", StaticFiles(directory=grammer_dir, html=True), name="grammer_app")
+
 
 
 
@@ -307,6 +315,7 @@ async def check_all_services_health():
         {"id": "videobooth", "name": "레트로 TV 비디오 부스", "port": 9013, "url": "http://127.0.0.1:9000/videobooth/"},
         {"id": "n8n_editor", "name": "n8n 비주얼 편집기", "port": 5678, "url": f"http://{host_ip}:5678/healthz"},
         {"id": "n8n_deposit", "name": "농협 입금 알림판", "port": 3000, "url": f"http://{host_ip}:3000/"},
+        {"id": "grammer", "name": "Grammar Quest (AI 영문법)", "port": 9014, "url": "http://127.0.0.1:9000/grammer/"},
     ]
 
     def ping_sync(s: dict) -> dict:
