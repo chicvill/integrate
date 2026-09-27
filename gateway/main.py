@@ -196,14 +196,8 @@ if os.path.exists(studycafe_dist):
     app.mount("/studycafe", StaticFiles(directory=studycafe_dist, html=True), name="studycafe_react_app")
 
 store_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "store", "frontend", "dist"))
-from fastapi.responses import RedirectResponse
-@app.get("/store", include_in_schema=False)
-def redirect_store_root():
-    return RedirectResponse(url="https://store.chicvill.store/")
-    
-@app.get("/store/{full_path:path}", include_in_schema=False)
-def redirect_store_path(full_path: str):
-    return RedirectResponse(url=f"https://store.chicvill.store/{full_path}")
+if os.path.exists(store_dist):
+    app.mount("/store", StaticFiles(directory=store_dist, html=True), name="store_react_app")
 
 selfstudy_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "selfstudy", "frontend", "dist"))
 if os.path.exists(selfstudy_dist):
