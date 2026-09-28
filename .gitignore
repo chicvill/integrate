@@ -8,6 +8,8 @@ env/
 build/
 develop-eggs/
 dist/
+!apps/**/dist/**
+!apps/**/dist
 downloads/
 eggs/
 .eggs/

@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   base: './',
-  envDir: 'D:\\Workstation\\MQnet',
   plugins: [react()],
 
   server: {
