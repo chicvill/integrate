@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
+import PortalHeader from './PortalHeader';
 
 const DEFAULT_TENANT = 'demo-office';
 
@@ -266,9 +267,12 @@ export default function App() {
       background: 'linear-gradient(135deg, #0f172a, #1f2937)',
       color: '#f8fafc',
       fontFamily: 'sans-serif',
-      padding: isMobile ? '20px 10px' : '40px 20px'
+      display: 'flex',
+      flexDirection: 'column'
     }}>
-      <div style={{ maxWidth: 980, margin: '0 auto' }}>
+      <PortalHeader appName="AI 관상 분석" appIcon="🔮" category="AI Vision" />
+      <div style={{ flex: 1, padding: isMobile ? '20px 10px' : '40px 20px' }}>
+        <div style={{ maxWidth: 980, margin: '0 auto' }}>
         <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: 24, gap: 12 }}>
           <div>
             <h1 style={{ fontSize: isMobile ? '1.8rem' : '2.5rem', margin: 0 }}>AI 관상 SaaS</h1>
@@ -432,6 +436,7 @@ export default function App() {
             </ul>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

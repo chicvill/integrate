@@ -10,6 +10,7 @@ import { analyzeFace, AnalysisResult, generateHairPreview } from './services/gem
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { Loader2, CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
+import PortalHeader from './PortalHeader';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -225,8 +226,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] font-sans selection:bg-indigo-100">
-      <main className={cn("pt-6 pb-8 px-6 mx-auto transition-all duration-500 relative", result ? "max-w-[1600px]" : "max-w-4xl")}>
+    <div className="min-h-screen bg-[#F8F9FA] font-sans selection:bg-indigo-100 flex flex-col">
+      <PortalHeader appName="실시간 얼굴상 분석" appIcon="👤" category="Face AI" />
+      <main className={cn("pt-6 pb-8 px-6 mx-auto transition-all duration-500 relative flex-1 w-full", result ? "max-w-[1600px]" : "max-w-4xl")}>
         {/* Refresh Button - Top Right */}
         <div className="absolute top-6 right-6 z-30">
           <button 

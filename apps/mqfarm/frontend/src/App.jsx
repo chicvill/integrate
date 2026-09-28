@@ -5,6 +5,7 @@ import ControlPage from './pages/ControlPage';
 import GrowthPage from './pages/GrowthPage';
 import AdminPage from './pages/AdminPage';
 import { Activity, Sliders } from 'lucide-react';
+import PortalHeader from './PortalHeader';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('monitoring');
@@ -25,6 +26,7 @@ export default function App() {
   if (isDedicatedMonitoring) {
     return (
       <div className="app-container">
+        <PortalHeader appName="MQFarm 센서 모니터링" appIcon="📊" category="IoT Monitor" />
         <header style={{
           background: 'rgba(13, 56, 38, 0.95)',
           borderBottom: '1px solid rgba(16, 185, 129, 0.25)',
@@ -52,6 +54,7 @@ export default function App() {
   if (isDedicatedControl) {
     return (
       <div className="app-container">
+        <PortalHeader appName="MQFarm 구동 장비 제어" appIcon="🎛️" category="IoT Control" />
         <header style={{
           background: 'var(--bg-secondary)',
           borderBottom: '1px solid var(--border-color)',
@@ -78,6 +81,7 @@ export default function App() {
   // 3. Integrated Manager View
   return (
     <div className="app-container">
+      <PortalHeader appName="MQFarm 스마트팜 통합관리" appIcon="🌱" category="IoT & Agriculture" />
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}

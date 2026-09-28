@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PortalHeader from './components/PortalHeader';
 import Navbar from './components/Navbar';
 import SeatMapPage from './pages/SeatMapPage';
 import AdminPage from './pages/AdminPage';
@@ -22,6 +23,7 @@ export default function App() {
   if (isDedicatedKiosk) {
     return (
       <div className="app-container">
+        <PortalHeader appName="스터디카페 키오스크" appIcon="☕" category="Kiosk" />
         <Navbar
           systemStatus={systemStatus}
           title="MQnet 무인 키오스크 입출실"
@@ -38,6 +40,7 @@ export default function App() {
   // 3. Full Integrated Manager View (Default for / or /admin)
   return (
     <div className="app-container">
+      <PortalHeader appName="스터디카페 관리" appIcon="☕" category="Business" />
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}

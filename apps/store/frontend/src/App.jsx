@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PortalHeader from './components/PortalHeader';
 import Navbar from './components/Navbar';
 import PosPage from './pages/PosPage';
 import SituationPage from './pages/SituationPage';
@@ -25,6 +26,7 @@ export default function App() {
   if (isDedicatedSituation) {
     return (
       <div className="app-container">
+        <PortalHeader appName="매장 상황실" appIcon="📊" category="Monitoring" />
         <header style={{
           background: 'linear-gradient(135deg, #083344, #155e75)',
           borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
@@ -78,6 +80,7 @@ export default function App() {
   // 3. Integrated Manager View
   return (
     <div className="app-container">
+      <PortalHeader appName="매장 관제 & POS" appIcon="🍽️" category="Business" />
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}

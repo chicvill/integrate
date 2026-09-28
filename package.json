@@ -1,0 +1,30 @@
+{
+  "name": "mqnet-integrated-platform",
+  "version": "2.0.0",
+  "private": true,
+  "description": "MQnet Multi-SaaS Integrated Platform with Unified Vite & Shared UI",
+  "workspaces": [
+    "shared/ui",
+    "apps/studycafe/frontend",
+    "apps/store/frontend",
+    "apps/selfstudy/frontend",
+    "apps/mqfarm/frontend",
+    "apps/ai_gwansang/frontend",
+    "apps/face_analy",
+    "templates/saas-template/frontend"
+  ],
+  "scripts": {
+    "build:all": "npm run build --workspaces --if-present",
+    "install:all": "npm install --workspaces",
+    "new-app": "python scripts/create_app.py"
+  },
+  "keywords": [
+    "saas",
+    "multi-tenant",
+    "vite",
+    "fastapi",
+    "monorepo"
+  ],
+  "author": "chicvill",
+  "license": "MIT"
+}

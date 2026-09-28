@@ -10,6 +10,7 @@ import ProfileEdit from './ProfileEdit';
 import axios from 'axios';
 
 import { API_URL } from './config';
+import PortalHeader from './PortalHeader';
 
 const generateSessionId = () => "sess_" + Math.random().toString(36).substr(2, 9);
 
@@ -152,7 +153,14 @@ function App() {
   if (!sessionId) return <div>Loading...</div>;
 
   if (!loggedInUserId && !isParentDirect && currentTab !== 'parent') {
-    return <Login onLogin={handleLogin} onOpenParentView={handleParentDirect} />;
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+        <PortalHeader appName="자기주도학습 관리" appIcon="📚" category="Education" />
+        <div style={{ flex: 1, overflow: 'auto' }}>
+          <Login onLogin={handleLogin} onOpenParentView={handleParentDirect} />
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -164,6 +172,7 @@ function App() {
       flexDirection: 'column',
       background: 'linear-gradient(135deg, #0b1a6c 0%, #35158a 50%, #6830c2 100%)'
     }}>
+      <PortalHeader appName="자기주도학습 관리" appIcon="📚" category="Education" />
       <header style={{ padding: '12px 15px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, flexWrap: 'wrap', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '240px' }}>
           <button 

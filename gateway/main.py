@@ -282,6 +282,11 @@ if os.path.exists(grammer_dir):
     app.mount("/grammar", StaticFiles(directory=grammer_dir, html=True), name="grammar_app")
     app.mount("/grammer", StaticFiles(directory=grammer_dir, html=True), name="grammer_app")
 
+gateway_static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "static"))
+if os.path.exists(gateway_static_dir):
+    app.mount("/static", StaticFiles(directory=gateway_static_dir), name="gateway_static")
+
+
 
 
 
