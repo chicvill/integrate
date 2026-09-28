@@ -115,6 +115,10 @@ async def subdomain_host_router_middleware(request: Request, call_next):
             "video.chicvill.store": "/videobooth/",
             "grammar.chicvill.store": "/grammar/",
             "grammer.chicvill.store": "/grammar/",
+            "youtube.chicvill.store": "/ytdownloader/",
+            "ytdownloader.chicvill.store": "/ytdownloader/",
+            "file.chicvill.store": "/filebrowser/",
+            "filebrowser.chicvill.store": "/filebrowser/",
         }
         if host in subdomain_routes:
             return RedirectResponse(url=subdomain_routes[host], status_code=307)
@@ -246,15 +250,74 @@ if os.path.exists(gwansang_dist):
     app.mount("/gwansang", StaticFiles(directory=gwansang_dist, html=True), name="gwansang_react_app")
     app.mount("/ai_gwansang", StaticFiles(directory=gwansang_dist, html=True), name="ai_gwansang_app")
 
-# ── 유튜브 미디어 다운로더: 독립 도메인(youtube.chicvill.store) 301 리다이렉트 ──
-from fastapi.responses import RedirectResponse
-@app.get("/ytdownloader", include_in_schema=False)
-def redirect_ytdownloader_root():
-    return RedirectResponse(url="https://youtube.chicvill.store/", status_code=301)
+# ── 유튜브 미디어 다운로더 (YTDownloader) 앱 정적 서빙 ──
+ytdownloader_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "YTDownloader", "frontend", "dist"))
+if os.path.exists(ytdownloader_dist):
+    app.mount("/ytdownloader", StaticFiles(directory=ytdownloader_dist, html=True), name="ytdownloader_app")
 
-@app.get("/ytdownloader/{full_path:path}", include_in_schema=False)
-def redirect_ytdownloader_path(full_path: str):
-    return RedirectResponse(url=f"https://youtube.chicvill.store/{full_path}", status_code=301)
+# ── 통합 파일 탐색기 (FileBrowser) 웹 뷰어 서빙 ──
+@app.get("/filebrowser", response_class=HTMLResponse, tags=["파일 탐색기"])
+@app.get("/filebrowser/", response_class=HTMLResponse, tags=["파일 탐색기"])
+async def filebrowser_portal_ui(request: Request):
+    media_dir = os.environ.get("MEDIA_STORAGE_PATH", os.environ.get("MEDIA_PATH", "/media"))
+    if not os.path.exists(media_dir):
+        media_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "media"))
+    
+    file_list = []
+    if os.path.exists(media_dir):
+        try:
+            for root, dirs, files in os.walk(media_dir):
+                for f in files[:80]:
+                    fp = os.path.join(root, f)
+                    rel = os.path.relpath(fp, media_dir).replace("\\", "/")
+                    sz = round(os.path.getsize(fp) / (1024 * 1024), 2)
+                    file_list.append({"name": f, "path": rel, "size": f"{sz} MB"})
+        except Exception:
+            pass
+
+    rows_html = "".join([
+        f'''<tr style="border-bottom:1px solid rgba(255,255,255,0.06); transition:background 0.2s;">
+            <td style="padding:0.85rem 1.2rem; font-weight:600;">📄 {item["name"]}</td>
+            <td style="padding:0.85rem 1.2rem; color:#94a3b8; font-family:monospace; font-size:0.85rem;">{item["path"]}</td>
+            <td style="padding:0.85rem 1.2rem; color:#38bdf8; font-weight:700;">{item["size"]}</td>
+            <td style="padding:0.85rem 1.2rem;"><a href="/media/{item["path"]}" target="_blank" style="display:inline-block; padding:0.35rem 0.75rem; border-radius:8px; background:rgba(99,102,241,0.2); color:#818cf8; text-decoration:none; font-weight:700; font-size:0.8rem; border:1px solid rgba(99,102,241,0.3);">다운로드 📥</a></td>
+        </tr>''' for item in file_list
+    ]) or '<tr><td colspan="4" style="text-align:center; padding:3rem; color:#64748b;">📂 스토리지(미디어) 디렉토리에 등록된 파일이 없습니다.</td></tr>'
+
+    return HTMLResponse(f"""<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MQnet 통합 파일 탐색기 (FileBrowser)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {{ margin:0; padding:2rem; background:#090d16; color:#f8fafc; font-family:'Pretendard', sans-serif; }}
+    .box {{ max-width:1100px; margin:0 auto; background:rgba(18,24,38,0.75); border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:2.5rem; backdrop-filter:blur(16px); box-shadow:0 20px 40px rgba(0,0,0,0.5); }}
+    table {{ width:100%; border-collapse:collapse; margin-top:1.5rem; }}
+    th {{ text-align:left; padding:0.85rem 1.2rem; background:rgba(255,255,255,0.04); color:#94a3b8; font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; }}
+    .btn {{ display:inline-flex; align-items:center; gap:0.5rem; padding:0.6rem 1.2rem; border-radius:12px; background:linear-gradient(135deg,#6366f1,#3b82f6); color:#fff; text-decoration:none; font-weight:700; font-size:0.9rem; }}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+      <div>
+        <div style="display:inline-block; font-size:0.75rem; font-weight:800; padding:0.2rem 0.6rem; border-radius:6px; background:rgba(59,130,246,0.15); color:#60a5fa; margin-bottom:0.4rem;">FILE STORAGE HUB</div>
+        <h1 style="margin:0 0 0.4rem 0; font-size:2rem; font-weight:800;">📁 MQnet 통합 파일 탐색기 (FileBrowser)</h1>
+        <p style="margin:0; color:#94a3b8; font-size:0.95rem;">연동 스토리지 경로: <code>{media_dir}</code> | 읽기/다운로드 활성화</p>
+      </div>
+      <a href="/" class="btn">🏠 포털 대시보드 ↗</a>
+    </div>
+    <table>
+      <thead>
+        <tr><th>파일명</th><th>상대 경로</th><th>크기</th><th>작업</th></tr>
+      </thead>
+      <tbody>{rows_html}</tbody>
+    </table>
+  </div>
+</body>
+</html>""")
 
 mqhome_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "MQhome"))
 if os.path.exists(mqhome_dir):

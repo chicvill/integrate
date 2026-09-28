@@ -208,25 +208,33 @@ services:
     logging: *default-logging
     ports:
       - "5678:5678"
-    depends_on:
-      sandbox-api:
-        condition: service_healthy
     env_file:
       - path: .env.sandbox
         required: false
     environment:
       - N8N_HOST=n8n.chicvill.store
       - N8N_PORT=5678
-      - N8N_PROTOCOL=http
+      - N8N_PROTOCOL=https
       - WEBHOOK_URL=https://n8n.chicvill.store/
       - N8N_EDITOR_BASE_URL=https://n8n.chicvill.store/
       - GENERIC_TIMEZONE=Asia/Seoul
       - TZ=Asia/Seoul
       - EXECUTIONS_DATA_PRUNE=true
       - EXECUTIONS_DATA_MAX_AGE=168
-      - N8N_SANDBOX_SERVICE_URL=http://sandbox-api:8080
     volumes:
       - ./apps/n8n/data:/home/node/.n8n
+    restart: unless-stopped
+
+  filebrowser:
+    image: filebrowser/filebrowser:latest
+    container_name: mqnet-filebrowser
+    logging: *default-logging
+    ports:
+      - "9007:80"
+    environment:
+      - FB_BASEURL=/filebrowser
+    volumes:
+      - "${MEDIA_PATH:-./media}:/srv"
     restart: unless-stopped
 
   tunnel:
