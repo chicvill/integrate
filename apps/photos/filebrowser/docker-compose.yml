@@ -8,8 +8,8 @@ services:
     ports:
       - "9007:80"
     volumes:
-      # L: 드라이브 전체 마운트 (문서/음악/영상/사진/압축파일 관리)
-      - "L:/:/srv"
+      # 미디어/스토리지 마운트 (Coolify/Linux: MEDIA_PATH 또는 ./media, Windows: L:/)
+      - "${MEDIA_PATH:-./media}:/srv"
       - filebrowser_data:/database
       - filebrowser_config:/config
     environment:

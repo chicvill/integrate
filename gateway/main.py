@@ -366,7 +366,8 @@ async def check_all_services_health():
 
     # 시스템 리소스 (디스크 용량)
     storage_info = {}
-    for path_candidate in ["L:\\", "/usr/src/app/external", "C:\\", "."]:
+    media_env = os.getenv("MEDIA_STORAGE_PATH", "/media")
+    for path_candidate in [media_env, "/media", "L:\\", "/usr/src/app/external", "C:\\", "."]:
         if os.path.exists(path_candidate):
             try:
                 usage = shutil.disk_usage(path_candidate)

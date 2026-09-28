@@ -15,7 +15,7 @@ services:
       - CACHE_DIR=/cache
       - PYTHONPATH=/workspace
     volumes:
-      - "L:/:/media"
+      - "${MEDIA_PATH:-./media}:/media"
       - "./frontend:/workspace/apps/photos/frontend:ro"
       - photos_cache:/cache
     healthcheck:

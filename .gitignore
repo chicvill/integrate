@@ -33,6 +33,9 @@ yarn-error.log*
 .env.*
 !.env.template
 !.env.example
+!.env.shared.template
+!.env.sandbox.template
+!.env.coolify.example
 *.pem
 *.key
 *.bak

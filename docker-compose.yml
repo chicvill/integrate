@@ -27,9 +27,10 @@ services:
       - PYTHONPATH=/app
     volumes:
       - .:/app
-      - "L:/:/media"
+      - "${MEDIA_PATH:-./media}:/media"
     env_file:
-      - .env.shared
+      - path: .env.shared
+        required: false
     command: python -m uvicorn gateway.main:app --host 0.0.0.0 --port 9000
     restart: unless-stopped
 
@@ -45,7 +46,8 @@ services:
     volumes:
       - .:/app
     env_file:
-      - .env.shared
+      - path: .env.shared
+        required: false
     command: python -m uvicorn backend.main:app --host 0.0.0.0 --port 9002
     restart: unless-stopped
     depends_on:
@@ -63,7 +65,8 @@ services:
     volumes:
       - .:/app
     env_file:
-      - .env.shared
+      - path: .env.shared
+        required: false
     command: python -m uvicorn main:app --host 0.0.0.0 --port 9003
     restart: unless-stopped
     depends_on:
@@ -81,7 +84,8 @@ services:
     volumes:
       - .:/app
     env_file:
-      - .env.shared
+      - path: .env.shared
+        required: false
     command: python -m uvicorn backend.main:app --host 0.0.0.0 --port 9004
     restart: unless-stopped
     depends_on:
@@ -99,7 +103,8 @@ services:
     volumes:
       - .:/app
     env_file:
-      - .env.shared
+      - path: .env.shared
+        required: false
     command: python -m uvicorn backend.main:app --host 0.0.0.0 --port 9005
     restart: unless-stopped
     depends_on:
@@ -117,7 +122,8 @@ services:
     volumes:
       - .:/app
     env_file:
-      - .env.shared
+      - path: .env.shared
+        required: false
     command: python -m uvicorn backend.main:app --host 0.0.0.0 --port 9009
     restart: unless-stopped
     depends_on:
@@ -146,7 +152,8 @@ services:
       sandbox-certs:
         condition: service_completed_successfully
     env_file:
-      - .env.sandbox
+      - path: .env.sandbox
+        required: false
     environment:
       SANDBOX_API_GRPC_TLS_CERT_FILE: /tls/api/grpc-server.crt
       SANDBOX_API_GRPC_TLS_KEY_FILE: /tls/api/grpc-server.key
@@ -174,7 +181,8 @@ services:
       sandbox-api:
         condition: service_healthy
     env_file:
-      - .env.sandbox
+      - path: .env.sandbox
+        required: false
     environment:
       SANDBOX_RUNNER_API_KEYS: mqnet-sbx-runner-9d3c8b2a5e
       SANDBOX_RUNNER_REGISTRATION_TOKEN: mqnet-sbx-reg-7b4e2a1f6c
@@ -205,7 +213,8 @@ services:
       sandbox-api:
         condition: service_healthy
     env_file:
-      - .env.sandbox
+      - path: .env.sandbox
+        required: false
     environment:
       - N8N_HOST=n8n.chicvill.store
       - N8N_PORT=5678
@@ -227,19 +236,13 @@ services:
     restart: unless-stopped
     command: tunnel --no-autoupdate run
     environment:
-      - TUNNEL_TOKEN=eyJhIjoiODY2NmZlODI1Mzg2NTVjZjY2ZjJmZGE5NGVmMDE2OTMiLCJ0IjoiNTRiYWU5YWEtMmNmNS00NWE5LWJlZWMtNmIwODFhM2I5YzczIiwicyI6Ik1qVm1ZMkppTW1FdE9EUTRNQzAwWWpkbUxUZ3lNbUV0TVRKbE9UUmpPR05rT1RRNSJ9
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN:-eyJhIjoiODY2NmZlODI1Mzg2NTVjZjY2ZjJmZGE5NGVmMDE2OTMiLCJ0IjoiNTRiYWU5YWEtMmNmNS00NWE5LWJlZWMtNmIwODFhM2I5YzczIiwicyI6Ik1qVm1ZMkppTW1FdE9EUTRNQzAwWWpkbUxUZ3lNbUV0TVRKbE9UUmpPR05rT1RRNSJ9}
     depends_on:
       - gateway
     networks:
       - default
-      - mqnet-photos-net
-      - mqnet_default
 
 networks:
   default:
     name: integrate_default
-  mqnet-photos-net:
-    external: true
-  mqnet_default:
-    external: true
 
