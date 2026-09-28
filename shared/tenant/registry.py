@@ -167,7 +167,7 @@ APP_REGISTRY: Dict[str, Dict[str, Any]] = {
         "category": "education",
         "description": "초3~고3 수능 영문법 무한 생성 & AI 음성 섀도잉 발음 코칭",
         "backend_port": 9014,
-        "route_path": "/grammer",
+        "route_path": "/grammar",
         "modules": ["core", "ai", "storage", "utils"],
         "features": ["STEM & AI 어휘 예문", "6단계 정규 교육과정", "5대 인터랙티브 퀘스트", "음성 인식 & 섀도잉", "AI 원어민 발음 코칭"],
     },

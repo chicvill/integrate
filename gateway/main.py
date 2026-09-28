@@ -113,7 +113,8 @@ async def subdomain_host_router_middleware(request: Request, call_next):
             "ironman.chicvill.store": "/ironman/",
             "clock.chicvill.store": "/clock/",
             "video.chicvill.store": "/videobooth/",
-            "grammer.chicvill.store": "/grammer/",
+            "grammar.chicvill.store": "/grammar/",
+            "grammer.chicvill.store": "/grammar/",
         }
         if host in subdomain_routes:
             return RedirectResponse(url=subdomain_routes[host], status_code=307)
@@ -278,6 +279,7 @@ if os.path.exists(videobooth_dir):
 
 grammer_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "grammer"))
 if os.path.exists(grammer_dir):
+    app.mount("/grammar", StaticFiles(directory=grammer_dir, html=True), name="grammar_app")
     app.mount("/grammer", StaticFiles(directory=grammer_dir, html=True), name="grammer_app")
 
 
@@ -340,7 +342,7 @@ async def check_all_services_health():
         {"id": "videobooth", "name": "레트로 TV 비디오 부스", "port": 9013, "url": "http://127.0.0.1:9000/videobooth/"},
         {"id": "n8n_editor", "name": "n8n 비주얼 편집기", "port": 5678, "url": f"http://{host_ip}:5678/healthz"},
         {"id": "n8n_deposit", "name": "농협 입금 알림판", "port": 3000, "url": f"http://{host_ip}:3000/"},
-        {"id": "grammer", "name": "Grammar Quest (AI 영문법)", "port": 9014, "url": "http://127.0.0.1:9000/grammer/"},
+        {"id": "grammar", "name": "Grammar Quest (AI 영문법)", "port": 9014, "url": "http://127.0.0.1:9000/grammar/"},
     ]
 
     def ping_sync(s: dict) -> dict:
