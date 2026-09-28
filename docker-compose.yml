@@ -19,7 +19,6 @@ services:
     container_name: mqnet-gateway
     logging: *default-logging
     ports:
-      - "8000:9000"
       - "9000:9000"
       - "10000:9000"
     environment:
@@ -31,7 +30,7 @@ services:
     env_file:
       - path: .env.shared
         required: false
-    command: python -m uvicorn gateway.main:app --host 0.0.0.0 --port 9000
+    command: python -m uvicorn gateway.main:app --host 0.0.0.0 --port 9000 --proxy-headers --forwarded-allow-ips="*"
     restart: unless-stopped
 
   studycafe:
