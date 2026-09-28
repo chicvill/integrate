@@ -202,14 +202,14 @@ function initEvents() {
   // ── Service URL Resolvers ──
   const getFileBrowserUrl = (folderPath = '') => {
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const base = isLocal ? `http://${window.location.hostname}:8082` : `${window.location.protocol}//${window.location.hostname}:8082`;
+    const base = isLocal ? `http://${window.location.hostname}:9007` : `https://files.chicvill.store`;
     const cleanPath = (folderPath || '').replace(/^[\\\/]+/, '').replace(/\\/g, '/');
     return cleanPath ? `${base}/files/${cleanPath}` : `${base}/files/`;
   };
 
   const getImmichUrl = () => {
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    return isLocal ? `http://${window.location.hostname}:8007` : `${window.location.protocol}//${window.location.hostname}:8007`;
+    return isLocal ? `http://${window.location.hostname}:8007` : `https://photos.chicvill.store`;
   };
 
   // ── App Switcher / Embedded View Management ──

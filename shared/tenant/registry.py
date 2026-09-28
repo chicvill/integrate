@@ -156,7 +156,7 @@ APP_REGISTRY: Dict[str, Dict[str, Any]] = {
         "category": "automation",
         "description": "공식 n8n 비주얼 노드 편집기(포트 5678) 및 농협 입금 알림 대시보드(포트 3000)",
         "backend_port": 5678,
-        "route_path": "http://localhost:5678",
+        "route_path": "https://n8n.chicvill.store",
         "modules": ["core"],
         "features": ["공식 n8n 비주얼 편집기", "AI Agent & LLM 노드", "은행 이메일 자동 파싱", "구글 시트/엑셀 연동"],
     },

@@ -6,7 +6,7 @@ import os
 import logging
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 
@@ -93,6 +93,31 @@ async def add_performance_cache_headers(request: Request, call_next):
     elif path.startswith("/api/") or path.startswith("/auth/"):
         response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return response
+ 
+# 서브도메인 기반 자동 라우팅 미들웨어 ({app}.chicvill.store -> 각 앱 메인 경로)
+@app.middleware("http")
+async def subdomain_host_router_middleware(request: Request, call_next):
+    host = request.headers.get("host", "").lower().split(":")[0]
+    path = request.url.path
+    if path in ("/", ""):
+        subdomain_routes = {
+            "home.chicvill.store": "/mqhome/",
+            "studycafe.chicvill.store": "/studycafe/",
+            "study.chicvill.store": "/studycafe/",
+            "selfstudy.chicvill.store": "/selfstudy/",
+            "store.chicvill.store": "/store/",
+            "smartfarm.chicvill.store": "/mqfarm/",
+            "mqfarm.chicvill.store": "/mqfarm/",
+            "gwansang.chicvill.store": "/gwansang/",
+            "face.chicvill.store": "/face_analy/",
+            "ironman.chicvill.store": "/ironman/",
+            "clock.chicvill.store": "/clock/",
+            "video.chicvill.store": "/videobooth/",
+            "grammer.chicvill.store": "/grammer/",
+        }
+        if host in subdomain_routes:
+            return RedirectResponse(url=subdomain_routes[host], status_code=307)
+    return await call_next(request)
 
 # 미들웨어
 app.middleware("http")(app_context_middleware)

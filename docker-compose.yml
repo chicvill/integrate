@@ -27,6 +27,7 @@ services:
       - PYTHONPATH=/app
     volumes:
       - .:/app
+      - "L:/:/media"
     env_file:
       - .env.shared
     command: python -m uvicorn gateway.main:app --host 0.0.0.0 --port 9000
