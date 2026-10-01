@@ -1,8 +1,6 @@
 # MQnet 통합 SaaS 플랫폼 - Docker Compose
 # 실행: docker compose up -d
 
-volumes:
-  sandbox-tls:
 
 x-logging: &default-logging
   driver: "json-file"
@@ -161,79 +159,6 @@ services:
     depends_on:
       - gateway
 
-  sandbox-certs:
-    image: ghcr.io/n8n-io/n8n-sandbox-service-api:latest
-    container_name: mqnet-sandbox-certs
-    user: '0:0'
-    entrypoint: ['sh', '-c']
-    command:
-      - >
-        bootstrap-mtls.sh --force --out-dir /tls --api-san sandbox-api
-        --control-san-prefix sandbox-runner &&
-        chown -R sandbox-api:sandbox-api /tls/api || exit 0
-    environment:
-      NUM_RUNNERS: '1'
-    volumes:
-      - sandbox-tls:/tls
-
-  sandbox-api:
-    image: ghcr.io/n8n-io/n8n-sandbox-service-api:latest
-    container_name: mqnet-sandbox-api
-    logging: *default-logging
-    depends_on:
-      sandbox-certs:
-        condition: service_completed_successfully
-    env_file:
-      - path: .env.sandbox
-        required: false
-    environment:
-      SANDBOX_API_GRPC_TLS_CERT_FILE: /tls/api/grpc-server.crt
-      SANDBOX_API_GRPC_TLS_KEY_FILE: /tls/api/grpc-server.key
-      SANDBOX_API_GRPC_TLS_CLIENT_CA_FILE: /tls/api/ca.crt
-      SANDBOX_API_RUNNER_CONTROL_GRPC_TLS_CA_FILE: /tls/api/ca.crt
-      SANDBOX_API_RUNNER_CONTROL_GRPC_TLS_CERT_FILE: /tls/api/control-grpc-api-client.crt
-      SANDBOX_API_RUNNER_CONTROL_GRPC_TLS_KEY_FILE: /tls/api/control-grpc-api-client.key
-      SANDBOX_API_RUNNER_CONTROL_GRPC_TLS_SERVER_NAME: sandbox-runner-1
-    volumes:
-      - sandbox-tls:/tls:ro
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-      start_period: 10s
-    restart: unless-stopped
-
-  sandbox-runner-1:
-    image: ghcr.io/n8n-io/n8n-sandbox-service-runner-dind:latest
-    container_name: mqnet-sandbox-runner-1
-    logging: *default-logging
-    privileged: true
-    depends_on:
-      sandbox-api:
-        condition: service_healthy
-    env_file:
-      - path: .env.sandbox
-        required: false
-    environment:
-      SANDBOX_RUNNER_API_KEYS: mqnet-sbx-runner-9d3c8b2a5e
-      SANDBOX_RUNNER_REGISTRATION_TOKEN: mqnet-sbx-reg-7b4e2a1f6c
-      SANDBOX_RUNNER_API_GRPC_ADDR: sandbox-api:9090
-      SANDBOX_RUNNER_HTTP_BASE_URL: http://sandbox-runner-1:8080
-      SANDBOX_RUNNER_CONTROL_GRPC_LISTEN_ADDR: ':9091'
-      SANDBOX_RUNNER_CONTROL_GRPC_ADVERTISE_ADDR: sandbox-runner-1:9091
-      SANDBOX_RUNNER_ID: runner-1
-      SANDBOX_RUNNER_DOCKER_SANDBOX_IMAGE: ghcr.io/n8n-io/n8n-sandbox-service-sandbox:latest
-      SANDBOX_RUNNER_REGISTRATION_GRPC_CA_FILE: /tls/runner/ca.crt
-      SANDBOX_RUNNER_REGISTRATION_GRPC_CERT_FILE: /tls/runner/grpc-client.crt
-      SANDBOX_RUNNER_REGISTRATION_GRPC_KEY_FILE: /tls/runner/grpc-client.key
-      SANDBOX_RUNNER_REGISTRATION_GRPC_SERVER_NAME: sandbox-api
-      SANDBOX_RUNNER_CONTROL_GRPC_TLS_CERT_FILE: /tls/runner/control-grpc-server.crt
-      SANDBOX_RUNNER_CONTROL_GRPC_TLS_KEY_FILE: /tls/runner/control-grpc-server.key
-      SANDBOX_RUNNER_CONTROL_GRPC_TLS_CLIENT_CA_FILE: /tls/runner/ca.crt
-    volumes:
-      - sandbox-tls:/tls:ro
-    restart: unless-stopped
 
   n8n:
     image: docker.n8n.io/n8nio/n8n:latest
@@ -241,9 +166,6 @@ services:
     logging: *default-logging
     ports:
       - "5678:5678"
-    env_file:
-      - path: .env.sandbox
-        required: false
     environment:
       - N8N_HOST=n8n.chicvill.store
       - N8N_PORT=5678
