@@ -33,6 +33,11 @@ services:
       - path: .env.shared
         required: false
     command: python -m uvicorn gateway.main:app --host 0.0.0.0 --port 9000 --proxy-headers --forwarded-allow-ips="*"
+    networks:
+      default:
+        aliases:
+          - mqnet-gateway
+          - mqnet-ytdownloader
     restart: unless-stopped
 
   studycafe:
@@ -51,6 +56,10 @@ services:
       - path: .env.shared
         required: false
     command: python -m uvicorn backend.main:app --host 0.0.0.0 --port 9002
+    networks:
+      default:
+        aliases:
+          - mqnet-studycafe
     restart: unless-stopped
     depends_on:
       - gateway
@@ -71,6 +80,10 @@ services:
       - path: .env.shared
         required: false
     command: python -m uvicorn main:app --host 0.0.0.0 --port 9003
+    networks:
+      default:
+        aliases:
+          - mqnet-selfstudy
     restart: unless-stopped
     depends_on:
       - gateway
@@ -91,6 +104,10 @@ services:
       - path: .env.shared
         required: false
     command: python -m uvicorn backend.main:app --host 0.0.0.0 --port 9004
+    networks:
+      default:
+        aliases:
+          - mqnet-store
     restart: unless-stopped
     depends_on:
       - gateway
@@ -111,6 +128,11 @@ services:
       - path: .env.shared
         required: false
     command: python -m uvicorn backend.main:app --host 0.0.0.0 --port 9005
+    networks:
+      default:
+        aliases:
+          - mqnet-smartfarm
+          - mqnet-mqfarm
     restart: unless-stopped
     depends_on:
       - gateway
@@ -131,6 +153,10 @@ services:
       - path: .env.shared
         required: false
     command: python -m uvicorn backend.main:app --host 0.0.0.0 --port 9009
+    networks:
+      default:
+        aliases:
+          - mqnet-ai-gwansang
     restart: unless-stopped
     depends_on:
       - gateway
@@ -230,6 +256,10 @@ services:
       - EXECUTIONS_DATA_MAX_AGE=168
     volumes:
       - ./apps/n8n/data:/home/node/.n8n
+    networks:
+      default:
+        aliases:
+          - mqnet-n8n-editor
     restart: unless-stopped
 
   filebrowser:
@@ -238,10 +268,12 @@ services:
     logging: *default-logging
     ports:
       - "9007:80"
-    environment:
-      - FB_BASEURL=/filebrowser
     volumes:
       - "${MEDIA_PATH:-./media}:/srv"
+    networks:
+      default:
+        aliases:
+          - mqnet-filebrowser
     restart: unless-stopped
 
   tunnel:
