@@ -10,11 +10,13 @@ x-logging: &default-logging
     max-size: "10m"
     max-file: "3"
 
+x-build: &default-build
+  context: .
+  dockerfile: Dockerfile
+
 services:
   gateway:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: *default-build
     image: mqnet-integrate:latest
     container_name: mqnet-gateway
     logging: *default-logging
@@ -34,6 +36,7 @@ services:
     restart: unless-stopped
 
   studycafe:
+    build: *default-build
     image: mqnet-integrate:latest
     container_name: mqnet-studycafe
     logging: *default-logging
@@ -53,6 +56,7 @@ services:
       - gateway
 
   selfstudy:
+    build: *default-build
     image: mqnet-integrate:latest
     container_name: mqnet-selfstudy
     logging: *default-logging
@@ -72,6 +76,7 @@ services:
       - gateway
 
   store:
+    build: *default-build
     image: mqnet-integrate:latest
     container_name: mqnet-store
     logging: *default-logging
@@ -91,6 +96,7 @@ services:
       - gateway
 
   mqfarm:
+    build: *default-build
     image: mqnet-integrate:latest
     container_name: mqnet-mqfarm
     logging: *default-logging
@@ -110,6 +116,7 @@ services:
       - gateway
 
   ai_gwansang:
+    build: *default-build
     image: mqnet-integrate:latest
     container_name: mqnet-ai-gwansang
     logging: *default-logging
