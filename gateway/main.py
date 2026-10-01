@@ -118,6 +118,7 @@ async def subdomain_host_router_middleware(request: Request, call_next):
             "youtube.chicvill.store": "/ytdownloader/",
             "ytdownloader.chicvill.store": "/ytdownloader/",
             "file.chicvill.store": "/filebrowser/",
+            "files.chicvill.store": "/filebrowser/",
             "filebrowser.chicvill.store": "/filebrowser/",
         }
         if host in subdomain_routes:
@@ -258,6 +259,8 @@ if os.path.exists(ytdownloader_dist):
 # ── 통합 파일 탐색기 (FileBrowser) 웹 뷰어 서빙 ──
 @app.get("/filebrowser", response_class=HTMLResponse, tags=["파일 탐색기"])
 @app.get("/filebrowser/", response_class=HTMLResponse, tags=["파일 탐색기"])
+@app.get("/files", response_class=HTMLResponse, tags=["파일 탐색기"])
+@app.get("/files/", response_class=HTMLResponse, tags=["파일 탐색기"])
 async def filebrowser_portal_ui(request: Request):
     media_dir = os.environ.get("MEDIA_STORAGE_PATH", os.environ.get("MEDIA_PATH", "/media"))
     if not os.path.exists(media_dir):
@@ -348,6 +351,13 @@ if os.path.exists(grammer_dir):
 gateway_static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "static"))
 if os.path.exists(gateway_static_dir):
     app.mount("/static", StaticFiles(directory=gateway_static_dir), name="gateway_static")
+
+media_storage_dir = os.environ.get("MEDIA_STORAGE_PATH", os.environ.get("MEDIA_PATH", "/media"))
+if not os.path.exists(media_storage_dir):
+    media_storage_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "media"))
+if os.path.exists(media_storage_dir):
+    app.mount("/media", StaticFiles(directory=media_storage_dir), name="media_storage")
+
 
 
 
