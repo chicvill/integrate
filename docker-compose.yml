@@ -15,7 +15,7 @@ x-build: &default-build
 services:
   gateway:
     build: *default-build
-    image: mqnet-integrate:latest
+    image: mqnet-integrate:v1.0.1
     container_name: mqnet-gateway
     logging: *default-logging
     ports:
@@ -40,7 +40,7 @@ services:
 
   studycafe:
     build: *default-build
-    image: mqnet-integrate:latest
+    image: mqnet-integrate:v1.0.1
     container_name: mqnet-studycafe
     logging: *default-logging
     working_dir: /app/apps/studycafe
@@ -64,7 +64,7 @@ services:
 
   selfstudy:
     build: *default-build
-    image: mqnet-integrate:latest
+    image: mqnet-integrate:v1.0.1
     container_name: mqnet-selfstudy
     logging: *default-logging
     working_dir: /app/apps/selfstudy/SelfStudy/backend
@@ -88,7 +88,7 @@ services:
 
   store:
     build: *default-build
-    image: mqnet-integrate:latest
+    image: mqnet-integrate:v1.0.1
     container_name: mqnet-store
     logging: *default-logging
     working_dir: /app/apps/store
@@ -112,7 +112,7 @@ services:
 
   mqfarm:
     build: *default-build
-    image: mqnet-integrate:latest
+    image: mqnet-integrate:v1.0.1
     container_name: mqnet-mqfarm
     logging: *default-logging
     working_dir: /app/apps/mqfarm
@@ -137,7 +137,7 @@ services:
 
   ai_gwansang:
     build: *default-build
-    image: mqnet-integrate:latest
+    image: mqnet-integrate:v1.0.1
     container_name: mqnet-ai-gwansang
     logging: *default-logging
     working_dir: /app/apps/ai_gwansang
