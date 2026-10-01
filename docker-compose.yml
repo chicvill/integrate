@@ -168,6 +168,9 @@ services:
       - "5678:5678"
     environment:
       - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - N8N_SECURE_COOKIE=false
+      - WEBHOOK_URL=http://34.31.10.12:5678/
       - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
       - GENERIC_TIMEZONE=Asia/Seoul
       - TZ=Asia/Seoul
