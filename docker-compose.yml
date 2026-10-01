@@ -142,9 +142,9 @@ services:
     entrypoint: ['sh', '-c']
     command:
       - >
-        bootstrap-mtls.sh --out-dir /tls --api-san sandbox-api
+        bootstrap-mtls.sh --force --out-dir /tls --api-san sandbox-api
         --control-san-prefix sandbox-runner &&
-        chown -R sandbox-api:sandbox-api /tls/api
+        chown -R sandbox-api:sandbox-api /tls/api || exit 0
     environment:
       NUM_RUNNERS: '1'
     volumes:
