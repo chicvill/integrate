@@ -1665,8 +1665,38 @@
       }
     }
 
+    // ─── 🌐 다른 PC / Tailscale / 공인 IP 접속 시 호스트 자동 동기화 ──────
+    function syncHostLinks() {
+      const currentHost = window.location.hostname;
+      if (!currentHost || currentHost === 'localhost' || currentHost === '127.0.0.1') return;
+
+      // 1. 카드 상단 배지 텍스트를 현재 접속한 호스트명/IP로 동적 교체
+      document.querySelectorAll('.badge').forEach(badge => {
+        if (badge.textContent.includes('34.31.10.12')) {
+          badge.textContent = badge.textContent.replaceAll('34.31.10.12', currentHost);
+        }
+      });
+
+      // 2. n8n 워크플로우 카드 및 열기 버튼 링크 동적 변경 (포트 5678)
+      document.querySelectorAll('a[href*="5678"]').forEach(a => {
+        a.href = `http://${currentHost}:5678/`;
+      });
+      document.querySelectorAll('.card[onclick*="5678"]').forEach(card => {
+        card.setAttribute('onclick', `if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('http://${currentHost}:5678/','_blank')`);
+      });
+
+      // 3. 하단 빠른 링크 및 매핑표 URL 동적 변경
+      document.querySelectorAll('.ref-grid table a').forEach(a => {
+        if (a.href.includes('34.31.10.12')) {
+          a.href = a.href.replaceAll('34.31.10.12', currentHost);
+          a.innerHTML = a.innerHTML.replaceAll('34.31.10.12', currentHost);
+        }
+      });
+    }
+
     // 페이지 로드 시 즉시 실행 및 5초 주기 폴링
     document.addEventListener('DOMContentLoaded', () => {
+      syncHostLinks();
       updateSystemHealth();
       setInterval(updateSystemHealth, 5000);
     });
