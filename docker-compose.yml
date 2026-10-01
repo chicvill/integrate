@@ -25,7 +25,6 @@ services:
       - DEPLOYMENT_MODE=DOCKER
       - PYTHONPATH=/app
     volumes:
-      - .:/app
       - "${MEDIA_PATH:-./media}:/media"
     env_file:
       - path: .env.shared
@@ -48,8 +47,7 @@ services:
       - "9002:9002"
     environment:
       - PYTHONPATH=/app:/app/apps/studycafe
-    volumes:
-      - .:/app
+
     env_file:
       - path: .env.shared
         required: false
@@ -72,8 +70,7 @@ services:
       - "9003:9003"
     environment:
       - PYTHONPATH=/app:/app/apps/selfstudy/SelfStudy/backend
-    volumes:
-      - .:/app
+
     env_file:
       - path: .env.shared
         required: false
@@ -96,8 +93,7 @@ services:
       - "9004:9004"
     environment:
       - PYTHONPATH=/app:/app/apps/store
-    volumes:
-      - .:/app
+
     env_file:
       - path: .env.shared
         required: false
@@ -120,8 +116,7 @@ services:
       - "9005:9005"
     environment:
       - PYTHONPATH=/app:/app/apps/mqfarm
-    volumes:
-      - .:/app
+
     env_file:
       - path: .env.shared
         required: false
@@ -145,8 +140,7 @@ services:
       - "9009:9009"
     environment:
       - PYTHONPATH=/app:/app/apps/ai_gwansang
-    volumes:
-      - .:/app
+
     env_file:
       - path: .env.shared
         required: false

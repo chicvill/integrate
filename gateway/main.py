@@ -368,15 +368,25 @@ if os.path.exists(media_storage_dir):
 
 
 # ─── 메인 웹 대시보드 포털 (GET /) ──────────────────────
+@app.get("/api/version", tags=["플랫폼 포털"])
+def get_version():
+    return {"version": "v1.0.2", "updated_at": "2026-10-02T05:45:00"}
+
 @app.get("/", response_class=HTMLResponse, tags=["플랫폼 포털"])
 async def platform_home(request: Request):
     portal_path = os.path.join(os.path.dirname(__file__), "portal.html")
     if os.path.exists(portal_path):
         with open(portal_path, "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read())
+            html = f.read()
+            # 안전장치: n8n.chicvill.store가 남아있을 경우 현재 호스트:5678로 실시간 치환
+            host = request.headers.get("host", "").split(":")[0] or "34.31.10.12"
+            html = html.replace("https://n8n.chicvill.store/", f"http://{host}:5678/")
+            html = html.replace("https://n8n.chicvill.store", f"http://{host}:5678/")
+            html = html.replace("n8n.chicvill.store", f"{host}:5678")
+            return HTMLResponse(content=html)
     return JSONResponse(content={
         "platform": "MQnet 통합 SaaS 플랫폼",
-        "version": "1.0.0",
+        "version": "1.0.2",
         "docs": "/docs",
         "apps_list": "/apps",
         "health": "/health",
