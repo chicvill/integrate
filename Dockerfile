@@ -2,16 +2,17 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# 시스템 패키지 설치 (psycopg2 빌드, ffmpeg 미디어 인코딩, nodejs JS 런타임 지원)
+# 시스템 패키지 설치 (psycopg2 빌드, ffmpeg 미디어 인코딩, nodejs JS 런타임 지원, deno)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     curl \
+    unzip \
     ffmpeg \
     nodejs \
-    && rm -rf /var/lib/apt/lists/* \
     && curl -fsSL https://deno.land/install.sh | sh \
-    && mv /root/.deno/bin/deno /usr/local/bin/deno
+    && mv /root/.deno/bin/deno /usr/local/bin/deno \
+    && rm -rf /var/lib/apt/lists/*
 
 # 파이썬 의존성 설치
 COPY requirements.txt .
