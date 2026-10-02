@@ -29,13 +29,23 @@ export async function fetchFolderData(folderPath) {
   return await res.json();
 }
 
-export function uploadSingleFile(file, mode, onProgress) {
+export function uploadSingleFile(fileItem, mode, onProgress) {
   return new Promise((resolve, reject) => {
+    const file = (fileItem && fileItem.file) ? fileItem.file : fileItem;
+    const relPath = (fileItem && fileItem.relativePath) ? fileItem.relativePath : (file.webkitRelativePath || file.name);
+
+    // Guard: If a directory handle is passed as File (size 0, no type, no extension)
+    if (!file || (file.size === 0 && !file.type && !file.name.includes('.'))) {
+      const folderName = file ? file.name : (relPath || 'new_folder');
+      createFolderApi(state.currentFolder, folderName)
+        .then(() => resolve(JSON.stringify({ success: true, folder: folderName })))
+        .catch(err => reject(err));
+      return;
+    }
+
     const formData = new FormData();
     formData.append('folder', state.currentFolder);
     formData.append('mode', mode || state.currentUploadMode || 'copy');
-
-    const relPath = file.webkitRelativePath || file.name;
     formData.append('relative_path', relPath);
     formData.append('files', file);
 
@@ -63,7 +73,32 @@ export function uploadSingleFile(file, mode, onProgress) {
       }
     };
 
-    xhr.onerror = () => reject(new Error('네트워크 오류 (HTTP 전송 중 단절)'));
+    xhr.onerror = () => {
+      // Fallback: If ${base}/upload failed, try /api/upload
+      if (base !== '/api') {
+        const fallbackXhr = new XMLHttpRequest();
+        fallbackXhr.open('POST', '/api/upload');
+        if (xhr.upload.onprogress) fallbackXhr.upload.onprogress = xhr.upload.onprogress;
+        fallbackXhr.onload = () => {
+          if (fallbackXhr.status >= 200 && fallbackXhr.status < 300) {
+            resolve(fallbackXhr.responseText);
+          } else {
+            let msg = `HTTP ${fallbackXhr.status}`;
+            try {
+              const res = JSON.parse(fallbackXhr.responseText);
+              msg = res.detail || msg;
+            } catch (e) {}
+            reject(new Error(msg));
+          }
+        };
+        fallbackXhr.onerror = () => reject(new Error('네트워크 오류 (HTTP 전송 중 단절)'));
+        fallbackXhr.ontimeout = () => reject(new Error('요청 시간 초과'));
+        fallbackXhr.send(formData);
+        return;
+      }
+      reject(new Error('네트워크 오류 (HTTP 전송 중 단절)'));
+    };
+
     xhr.ontimeout = () => reject(new Error('요청 시간 초과'));
 
     xhr.send(formData);

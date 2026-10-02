@@ -1,5 +1,5 @@
 import { $, state, formatBytes, saveFavorites } from './js/state.js';
-import { fetchFolderData, uploadSingleFile, deleteItemApi, fetchStorageInfo } from './js/api.js';
+import { fetchFolderData, uploadSingleFile, deleteItemApi, fetchStorageInfo, createFolderApi } from './js/api.js';
 import { renderBreadcrumb, renderSidebarStats, renderGallery, copyLinkToClipboard, shareItem } from './js/ui.js';
 import {
   openLightbox, closeLightbox, renderLightboxItem, rotateLightboxImage, toggleSlideshow,
@@ -78,6 +78,69 @@ function releaseWakeLock() {
   }
 }
 
+// Recursively extract all files and directory structure from Drag & Drop DataTransfer
+async function extractDroppedFiles(dataTransfer) {
+  const fileEntries = [];
+  const emptyDirs = [];
+
+  if (dataTransfer.items && dataTransfer.items.length > 0) {
+    const queue = [];
+    for (let i = 0; i < dataTransfer.items.length; i++) {
+      const item = dataTransfer.items[i];
+      if (item.webkitGetAsEntry) {
+        const entry = item.webkitGetAsEntry();
+        if (entry) queue.push(entry);
+      } else if (item.kind === 'file') {
+        const f = item.getAsFile();
+        if (f) fileEntries.push({ file: f, relativePath: f.name });
+      }
+    }
+
+    while (queue.length > 0) {
+      const entry = queue.shift();
+      if (entry.isFile) {
+        try {
+          const file = await new Promise((res, rej) => entry.file(res, rej));
+          const relPath = entry.fullPath ? entry.fullPath.replace(/^\//, '') : file.name;
+          fileEntries.push({ file, relativePath: relPath });
+        } catch (err) {
+          console.warn('Error reading dropped file entry:', entry, err);
+        }
+      } else if (entry.isDirectory) {
+        try {
+          const dirReader = entry.createReader();
+          let allChildren = [];
+          const readBatch = () => new Promise((res, rej) => dirReader.readEntries(res, rej));
+          let batch = await readBatch();
+          while (batch && batch.length > 0) {
+            allChildren.push(...batch);
+            batch = await readBatch();
+          }
+
+          if (allChildren.length === 0) {
+            const dirRelPath = entry.fullPath ? entry.fullPath.replace(/^\//, '') : entry.name;
+            emptyDirs.push(dirRelPath);
+          } else {
+            queue.push(...allChildren);
+          }
+        } catch (err) {
+          console.warn('Error reading dropped directory:', entry, err);
+        }
+      }
+    }
+  }
+
+  // Fallback to dataTransfer.files
+  if (fileEntries.length === 0 && emptyDirs.length === 0 && dataTransfer.files) {
+    for (let i = 0; i < dataTransfer.files.length; i++) {
+      const f = dataTransfer.files[i];
+      fileEntries.push({ file: f, relativePath: f.webkitRelativePath || f.name });
+    }
+  }
+
+  return { files: fileEntries, emptyDirs };
+}
+
 // ── File Upload Process ───────────────────────────────────────
 async function uploadFiles(fileList) {
   if (!fileList || fileList.length === 0) return;
@@ -91,10 +154,10 @@ async function uploadFiles(fileList) {
   const uploadProgressFill = $('uploadProgressFill');
   const uploadStatusDetail = $('uploadStatusDetail');
 
-  const destPath = state.currentFolder ? `L:\\${state.currentFolder.replace(/\//g, '\\')}` : 'L:\\ (루트)';
+  const destPath = state.currentFolder ? state.currentFolder : '루트 폴더';
 
   if (uploadModal) {
-    if (uploadStatusTitle) uploadStatusTitle.textContent = `📱 화면 켜짐 유지 중… 파일 업로드 (0 / ${totalCount})`;
+    if (uploadStatusTitle) uploadStatusTitle.textContent = `📤 파일 업로드 준비 중… (0 / ${totalCount})`;
     if (uploadProgressFill) uploadProgressFill.style.width = '0%';
     if (uploadStatusDetail) uploadStatusDetail.textContent = `저장 위치: ${destPath}`;
     uploadModal.classList.remove('hidden');
@@ -105,38 +168,40 @@ async function uploadFiles(fileList) {
 
   try {
     for (let i = 0; i < totalCount; i++) {
-      const file = files[i];
+      const item = files[i];
+      const file = item.file || item;
+      const fileName = (item && item.relativePath) ? item.relativePath : (file.name || `file_${i}`);
 
-      if (file.size > 100 * 1024 * 1024) {
+      if (file.size && file.size > 200 * 1024 * 1024) {
         failCount++;
-        alert(`⚠️ '${file.name}' 파일이 너무 큽니다. (100MB 제한 초과: ${formatBytes(file.size)})`);
+        alert(`⚠️ '${fileName}' 파일이 너무 큽니다. (200MB 제한 초과: ${formatBytes(file.size)})`);
         continue;
       }
 
       if (uploadStatusTitle) {
-        uploadStatusTitle.textContent = `📱 화면 켜짐 유지 중… (${i + 1} / ${totalCount})`;
+        uploadStatusTitle.textContent = `📤 업로드 중… (${i + 1} / ${totalCount})`;
       }
 
       let fileUploaded = false;
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
-          await uploadSingleFile(file, state.currentUploadMode, (percent, loaded, total) => {
+          await uploadSingleFile(item, state.currentUploadMode, (percent, loaded, total) => {
             const overallPercent = Math.round(((i + percent / 100) / totalCount) * 100);
             if (uploadProgressFill) uploadProgressFill.style.width = `${overallPercent}%`;
             if (uploadStatusDetail) {
-              uploadStatusDetail.textContent = `${file.name} (${percent}% - ${formatBytes(loaded)} / ${formatBytes(total)})`;
+              uploadStatusDetail.textContent = `${fileName} (${percent}% - ${formatBytes(loaded)} / ${formatBytes(total)})`;
             }
           });
           fileUploaded = true;
           break;
         } catch (err) {
-          console.warn(`Upload attempt ${attempt} failed for ${file.name}:`, err);
+          console.warn(`Upload attempt ${attempt} failed for ${fileName}:`, err);
           if (attempt < 3) {
             if (uploadStatusDetail) uploadStatusDetail.textContent = `네트워크 재연동 시도 중… (${attempt}/3회)`;
             await new Promise(r => setTimeout(r, 1000));
           } else {
             failCount++;
-            alert(`'${file.name}' 업로드 실패: ${err.message}`);
+            alert(`'${fileName}' 업로드 실패: ${err.message}`);
           }
         }
       }
@@ -150,9 +215,9 @@ async function uploadFiles(fileList) {
     if (failCount === 0) {
       uploadStatusTitle.textContent = '✅ 전체 업로드 완료!';
       if (state.currentUploadMode === 'overwrite') {
-        uploadStatusDetail.textContent = `🚚 ${successCount}개 파일이 서버에 안전하게 저장되었습니다. 💡 (안내: 모바일 OS 보안 정책으로 스마트폰 갤러리의 원본은 폰에서 직접 정리해 주시면 됩니다)`;
+        uploadStatusDetail.textContent = `🚚 ${successCount}개 파일이 서버에 안전하게 저장되었습니다.`;
       } else {
-        uploadStatusDetail.textContent = `📋 ${successCount}개 파일이 안전하게 사본 저장되었습니다. (폰 원본 보관됨)`;
+        uploadStatusDetail.textContent = `📋 ${successCount}개 파일이 안전하게 사본 저장되었습니다.`;
       }
     } else {
       uploadStatusTitle.textContent = `⚠️ 업로드 완료 (${successCount} 성공, ${failCount} 실패)`;
@@ -161,7 +226,7 @@ async function uploadFiles(fileList) {
   }
   if (uploadProgressFill) uploadProgressFill.style.width = '100%';
 
-  const delayTime = (state.currentUploadMode === 'overwrite') ? 3500 : 1500;
+  const delayTime = (state.currentUploadMode === 'overwrite') ? 2500 : 1500;
   setTimeout(() => {
     if (uploadModal) uploadModal.classList.add('hidden');
     navigateTo(state.currentFolder);
@@ -605,12 +670,26 @@ function initEvents() {
     }
   });
 
-  document.body.addEventListener('drop', (e) => {
+  document.body.addEventListener('drop', async (e) => {
     e.preventDefault();
     dragCounter = 0;
     if (dropzoneOverlay) dropzoneOverlay.classList.add('hidden');
-    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      uploadFiles(e.dataTransfer.files);
+    if (e.dataTransfer) {
+      const extracted = await extractDroppedFiles(e.dataTransfer);
+      // Create any empty folders dropped
+      for (const emptyDir of extracted.emptyDirs) {
+        try {
+          await createFolderApi(state.currentFolder, emptyDir);
+        } catch (err) {
+          console.warn('Failed to create empty folder:', emptyDir, err);
+        }
+      }
+      // Upload all extracted files (with relative paths preserved)
+      if (extracted.files && extracted.files.length > 0) {
+        await uploadFiles(extracted.files);
+      } else if (extracted.emptyDirs.length > 0) {
+        navigateTo(state.currentFolder);
+      }
     }
   });
 }
