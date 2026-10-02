@@ -57,19 +57,29 @@ def process_download_background(job_id: int, url: str, mode: str, quality: str):
         job.status = "DOWNLOADING"
         db.commit()
 
+        # 1. 미디어 다운로드 실행 (타임아웃 및 코덱 최적화 적용)
         result = ytdlp_engine.download_media(url=url, mode=mode, quality=quality)
         job.title = result["title"]
         job.filename = result["filename"]
         job.file_size_mb = result["size_mb"]
         job.status = "COMPLETED"
-        job.ai_summary = ai_transcribe_engine.summarize_video_content(result["title"])
-        db.commit()
-    except Exception as e:
-        job = db.query(models.DownloadJob).filter(models.DownloadJob.id == job_id).first()
-        if job:
-            job.status = "FAILED"
-            job.error_message = str(e)
+        db.commit()  # 다운로드 완료 즉시 화면 반영!
+
+        # 2. AI 요약은 다운로드 완료 후 안전하게 백그라운드 처리
+        try:
+            job.ai_summary = ai_transcribe_engine.summarize_video_content(result["title"])
             db.commit()
+        except Exception:
+            pass
+    except Exception as e:
+        try:
+            job = db.query(models.DownloadJob).filter(models.DownloadJob.id == job_id).first()
+            if job:
+                job.status = "FAILED"
+                job.error_message = str(e)[:250]
+                db.commit()
+        except Exception:
+            pass
     finally:
         db.close()
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Youtube, Music, Video, Sparkles, CheckCircle2, Clock, Clipboard, FileText, ExternalLink } from 'lucide-react';
+import { Download, Youtube, Music, Video, Sparkles, CheckCircle2, Clock, Clipboard, FileText, ExternalLink, Trash2 } from 'lucide-react';
 
 export default function DownloaderPage() {
   const [url, setUrl] = useState('');
@@ -16,6 +16,15 @@ export default function DownloaderPage() {
     const interval = setInterval(fetchJobs, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleDeleteJob = async (jobId) => {
+    try {
+      await fetch(`/api/media/${jobId}`, { method: 'DELETE' });
+      fetchJobs();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const fetchJobs = async () => {
     try {
@@ -202,15 +211,35 @@ export default function DownloaderPage() {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <strong>{job.title || job.url}</strong>
-                  <span style={{
-                    fontSize: '0.8rem',
-                    fontWeight: 'bold',
-                    color: job.status === 'COMPLETED' ? '#34d399' : job.status === 'FAILED' ? '#f43f5e' : '#fbbf24'
-                  }}>
-                    {job.status === 'COMPLETED' && <CheckCircle2 size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />}
-                    {job.status === 'DOWNLOADING' && <Clock size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />}
-                    {job.status}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{
+                      fontSize: '0.8rem',
+                      fontWeight: 'bold',
+                      color: job.status === 'COMPLETED' ? '#34d399' : job.status === 'FAILED' ? '#f43f5e' : '#fbbf24'
+                    }}>
+                      {job.status === 'COMPLETED' && <CheckCircle2 size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />}
+                      {job.status === 'DOWNLOADING' && <Clock size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />}
+                      {job.status}
+                    </span>
+                    <button
+                      onClick={() => handleDeleteJob(job.id)}
+                      title="작업 내역 삭제"
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        borderRadius: '4px',
+                        display: 'inline-flex',
+                        alignItems: 'center'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = '#f43f5e'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
 
                 {job.filename && (
