@@ -382,10 +382,11 @@ async def get_raw(file_path: str, request: Request):
 # ─── API: Upload ─────────────────────────────────────────────────────────────
 @router.post("/upload")
 async def upload_files(
+    request: Request,
     folder: str = Form(""),
     mode: str = Form("copy"),
     relative_path: str = Form(""),
-    files: List[UploadFile] = File(...),
+    files: Optional[List[UploadFile]] = File(None),
 ):
     media_root = get_media_root()
     abs_folder = safe_path(folder)
@@ -396,14 +397,34 @@ async def upload_files(
         else:
             raise HTTPException(status_code=404, detail="Target folder not found")
 
+    # Extract all uploaded files flexibly
+    upload_list: List[UploadFile] = []
+    if files:
+        upload_list.extend(files)
+
+    try:
+        form_data = await request.form()
+        for field_name in ("files", "file", "upload"):
+            for item in form_data.getlist(field_name):
+                if hasattr(item, "filename") and item.filename and item not in upload_list:
+                    upload_list.append(item)
+    except Exception:
+        pass
+
+    if not upload_list:
+        # Check if relative_path was just requesting to create a subfolder
+        if relative_path and not any(relative_path.lower().endswith(ext) for ext in IMAGE_EXTENSIONS | VIDEO_EXTENSIONS | DOCUMENT_EXTENSIONS):
+            target_dir = abs_folder / Path(relative_path)
+            target_dir.mkdir(parents=True, exist_ok=True)
+            return JSONResponse({"success": True, "folder": str(target_dir.relative_to(media_root)), "uploaded": [], "errors": []})
+        raise HTTPException(status_code=400, detail="업로드할 파일 데이터가 없습니다.")
+
     saved_files = []
     errors = []
 
-    for file in files:
-        if not file.filename:
-            continue
-
-        raw_rel = relative_path.strip() if relative_path else file.filename
+    for file in upload_list:
+        raw_name = file.filename or Path(relative_path).name or "upload.bin"
+        raw_rel = relative_path.strip() if relative_path else raw_name
         # Normalize Korean Unicode (NFC)
         raw_rel = unicodedata.normalize("NFC", raw_rel)
         rel_p = Path(raw_rel)

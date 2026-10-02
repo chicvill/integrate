@@ -100,9 +100,14 @@ async function extractDroppedFiles(dataTransfer) {
       const entry = queue.shift();
       if (entry.isFile) {
         try {
-          const file = await new Promise((res, rej) => entry.file(res, rej));
-          const relPath = entry.fullPath ? entry.fullPath.replace(/^\//, '') : file.name;
-          fileEntries.push({ file, relativePath: relPath });
+          const rawFile = await new Promise((res, rej) => entry.file(res, rej));
+          const fileName = rawFile.name || entry.name || 'photo.jpg';
+          const safeFile = new File([rawFile], fileName, {
+            type: rawFile.type || 'application/octet-stream',
+            lastModified: rawFile.lastModified || Date.now()
+          });
+          const relPath = entry.fullPath ? entry.fullPath.replace(/^\//, '') : fileName;
+          fileEntries.push({ file: safeFile, relativePath: relPath });
         } catch (err) {
           console.warn('Error reading dropped file entry:', entry, err);
         }

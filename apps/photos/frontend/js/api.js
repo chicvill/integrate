@@ -43,11 +43,14 @@ export function uploadSingleFile(fileItem, mode, onProgress) {
       return;
     }
 
+    const fileName = (file && file.name) ? file.name : (relPath.split('/').pop() || 'photo.jpg');
+
     const formData = new FormData();
     formData.append('folder', state.currentFolder);
     formData.append('mode', mode || state.currentUploadMode || 'copy');
     formData.append('relative_path', relPath);
-    formData.append('files', file);
+    formData.append('files', file, fileName);
+    formData.append('file', file, fileName);
 
     const base = getApiBase();
     const xhr = new XMLHttpRequest();
@@ -67,7 +70,15 @@ export function uploadSingleFile(fileItem, mode, onProgress) {
         let msg = `HTTP ${xhr.status}`;
         try {
           const res = JSON.parse(xhr.responseText);
-          msg = res.detail || msg;
+          if (typeof res.detail === 'string') {
+            msg = res.detail;
+          } else if (Array.isArray(res.detail)) {
+            msg = res.detail.map(d => d.msg || JSON.stringify(d)).join(', ');
+          } else if (res.detail) {
+            msg = JSON.stringify(res.detail);
+          } else if (res.message) {
+            msg = res.message;
+          }
         } catch (e) {}
         reject(new Error(msg));
       }
@@ -86,7 +97,13 @@ export function uploadSingleFile(fileItem, mode, onProgress) {
             let msg = `HTTP ${fallbackXhr.status}`;
             try {
               const res = JSON.parse(fallbackXhr.responseText);
-              msg = res.detail || msg;
+              if (typeof res.detail === 'string') {
+                msg = res.detail;
+              } else if (Array.isArray(res.detail)) {
+                msg = res.detail.map(d => d.msg || JSON.stringify(d)).join(', ');
+              } else if (res.detail) {
+                msg = JSON.stringify(res.detail);
+              }
             } catch (e) {}
             reject(new Error(msg));
           }
