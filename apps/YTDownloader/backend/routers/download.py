@@ -7,19 +7,34 @@ import datetime
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from fastapi.responses import Response, FileResponse
 from sqlalchemy.orm import Session
-from apps.YTDownloader.backend.db.database import get_db, SessionLocal
+from apps.YTDownloader.backend.db.database import get_db, SessionLocal, engine, Base
 from apps.YTDownloader.backend.db import models
 from apps.YTDownloader.backend.schemas import DownloadRequest, DownloadResponse
 from apps.YTDownloader.backend.services.ytdlp_engine import ytdlp_engine
 from apps.YTDownloader.backend.services.ai_transcribe import ai_transcribe_engine
 from apps.YTDownloader.backend.config import settings
 
+# DB 테이블 자동 생성 보장
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    import logging
+    logging.getLogger("ytdownloader").warning(f"DB 테이블 자동 생성 실패(무시가능): {e}")
+
 router = APIRouter(prefix="", tags=["YouTube Downloader"])
 
 
 @router.get("/jobs", response_model=list[DownloadResponse])
 def list_download_jobs(db: Session = Depends(get_db)):
-    return db.query(models.DownloadJob).order_by(models.DownloadJob.created_at.desc()).limit(20).all()
+    try:
+        return db.query(models.DownloadJob).order_by(models.DownloadJob.created_at.desc()).limit(20).all()
+    except Exception as e:
+        # 테이블이 없는 경우 즉시 재생성 시도
+        try:
+            Base.metadata.create_all(bind=engine)
+            return db.query(models.DownloadJob).order_by(models.DownloadJob.created_at.desc()).limit(20).all()
+        except Exception:
+            return []
 
 
 @router.post("/preview")
@@ -70,9 +85,19 @@ def trigger_download(payload: DownloadRequest, background_tasks: BackgroundTasks
         quality=payload.quality,
         status="PENDING"
     )
-    db.add(job)
-    db.commit()
-    db.refresh(job)
+    try:
+        db.add(job)
+        db.commit()
+        db.refresh(job)
+    except Exception:
+        db.rollback()
+        try:
+            Base.metadata.create_all(bind=engine)
+            db.add(job)
+            db.commit()
+            db.refresh(job)
+        except Exception as err:
+            raise HTTPException(status_code=500, detail=f"작업 등록 실패: {str(err)}")
 
     background_tasks.add_task(
         process_download_background,

@@ -55,12 +55,18 @@ from apps.YTDownloader.backend.routers import (
 from apps.face_analy.backend.routers import face_analy_router
 from apps.videoBooth.backend.routers import videobooth_router
 from apps.grammer.backend.routers.grammer_router import router as grammer_router
-
-
-
+from shared.core.base_database import Base, get_database_service
+from apps.YTDownloader.backend.db import models as yt_models
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("mqnet.gateway")
+
+# 게이트웨이 기동 시 모든 등록된 모델 테이블 생성 보장
+try:
+    db_service = get_database_service()
+    Base.metadata.create_all(bind=db_service.engine)
+except Exception as e:
+    logger.warning(f"Gateway DB 초기화 알림: {e}")
 
 app = FastAPI(
     title="MQnet 통합 SaaS 플랫폼 Gateway",

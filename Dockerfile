@@ -2,11 +2,12 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# 시스템 패키지 설치 (psycopg2 빌드 등 지원)
+# 시스템 패키지 설치 (psycopg2 빌드, ffmpeg 미디어 인코딩 등 지원)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     curl \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # 파이썬 의존성 설치

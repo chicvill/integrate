@@ -20,10 +20,13 @@ export default function DownloaderPage() {
   const fetchJobs = async () => {
     try {
       const res = await fetch('/api/download/jobs');
+      if (!res.ok) {
+        setJobs([]);
+        return;
+      }
       const data = await res.json();
       setJobs(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error(err);
       setJobs([]);
     }
   };
@@ -77,7 +80,12 @@ export default function DownloaderPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url, mode, quality })
       });
-      const data = await res.json();
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (jsonErr) {
+        data = { detail: `서버 응답 오류 (HTTP ${res.status})` };
+      }
       if (res.ok) {
         setMsg(`[성공] 다운로드 큐 등록 완료! (Job ID: ${data.id})`);
         setUrl('');
@@ -87,7 +95,7 @@ export default function DownloaderPage() {
         setMsg(`[오류] ${data.detail || '다운로드 요청 실패'}`);
       }
     } catch (err) {
-      setMsg("서버 통신 오류가 발생했습니다.");
+      setMsg("서버 통신 오류: " + (err.message || "네트워크 연결 확인 필요"));
     } finally {
       setLoading(false);
     }
