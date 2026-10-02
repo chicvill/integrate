@@ -120,3 +120,60 @@ def stream_media_file(filename: str):
 
     media_type = "audio/mp4" if safe_name.lower().endswith((".m4a", ".mp3", ".aac", ".wav")) else "video/mp4"
     return FileResponse(path=file_path, filename=safe_name, media_type=media_type)
+
+
+@router.delete("/delete/{target:path}")
+@router.delete("/file/{target:path}")
+@router.delete("/{target:path}")
+def delete_media_item(target: str, db: Session = Depends(get_db)):
+    """작업 ID 또는 파일명을 통해 DB 레코드 및 서버 물리 파일 삭제"""
+    import urllib.parse
+    decoded_target = urllib.parse.unquote(target).strip()
+
+    deleted_db = False
+    deleted_disk = False
+
+    # 1. 숫자인 경우 Job ID로 조회 및 삭제
+    if decoded_target.isdigit():
+        job_id = int(decoded_target)
+        job = db.query(models.DownloadJob).filter(models.DownloadJob.id == job_id).first()
+        if job:
+            if job.filename:
+                file_path = os.path.join(settings.DOWNLOADS_DIR, job.filename)
+                if os.path.exists(file_path):
+                    try:
+                        os.remove(file_path)
+                        deleted_disk = True
+                    except Exception:
+                        pass
+            db.delete(job)
+            db.commit()
+            return {"status": "ok", "message": f"작업 #{job_id} 및 파일이 성공적으로 삭제되었습니다."}
+
+    # 2. 파일명으로 DB 매칭 삭제
+    job = db.query(models.DownloadJob).filter(models.DownloadJob.filename == decoded_target).first()
+    if job:
+        db.delete(job)
+        db.commit()
+        deleted_db = True
+
+    # 3. 물리 디스크 파일 삭제
+    safe_name = os.path.basename(decoded_target)
+    file_path = os.path.join(settings.DOWNLOADS_DIR, safe_name)
+    if os.path.exists(file_path):
+        try:
+            os.remove(file_path)
+            deleted_disk = True
+        except Exception:
+            pass
+    elif os.path.exists(settings.DOWNLOADS_DIR):
+        for real_f in os.listdir(settings.DOWNLOADS_DIR):
+            if real_f == safe_name or real_f == decoded_target or urllib.parse.unquote(real_f) == decoded_target:
+                try:
+                    os.remove(os.path.join(settings.DOWNLOADS_DIR, real_f))
+                    deleted_disk = True
+                except Exception:
+                    pass
+                break
+
+    return {"status": "ok", "deleted_db": deleted_db, "deleted_disk": deleted_disk}
