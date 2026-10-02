@@ -11,6 +11,8 @@ import unicodedata
 import urllib.parse
 from pathlib import Path
 from typing import Optional, List
+from datetime import datetime
+from collections import defaultdict
 
 from fastapi import APIRouter, HTTPException, Request, Response, UploadFile, File, Form, Query
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -717,3 +719,241 @@ async def create_directory(folder: str = Form(""), name: str = Form(...)):
     new_dir.mkdir(parents=True, exist_ok=True)
     rel_created = str(new_dir.relative_to(media_root)).replace("\\", "/")
     return JSONResponse({"success": True, "folder": rel_created, "name": folder_name})
+
+
+def format_size(size_bytes: int) -> str:
+    if size_bytes == 0:
+        return "0 B"
+    sizes = ["B", "KB", "MB", "GB", "TB"]
+    i = 0
+    size = float(size_bytes)
+    while size >= 1024 and i < len(sizes) - 1:
+        size /= 1024
+        i += 1
+    return f"{size:.1f} {sizes[i]}"
+
+
+@router.get("/duplicates")
+async def find_duplicates(
+    folder: str = Query("", description="Folder to scan under (empty for root)"),
+    recursive: bool = Query(True, description="Recursively search subfolders"),
+    mode: str = Query("exact", description="Detection mode: 'exact' or 'visual'"),
+    include_videos: bool = Query(True, description="Include video duplicates"),
+    limit: int = Query(100, description="Max duplicate groups")
+):
+    media_root = get_media_root()
+    if folder:
+        scan_dir = safe_path(folder)
+        if not scan_dir or not scan_dir.exists() or not scan_dir.is_dir():
+            raise HTTPException(status_code=404, detail="지정한 폴더를 찾을 수 없습니다.")
+    else:
+        scan_dir = media_root
+
+    target_exts = set(IMAGE_EXTENSIONS)
+    if include_videos and mode == "exact":
+        target_exts |= VIDEO_EXTENSIONS
+
+    candidates = []
+    try:
+        if recursive:
+            for root, dirs, files in os.walk(str(scan_dir)):
+                dirs[:] = [d for d in dirs if is_valid_entry(d)]
+                for fname in files:
+                    ext = Path(fname).suffix.lower()
+                    if ext in target_exts and is_valid_entry(fname):
+                        full_p = Path(root) / fname
+                        candidates.append(full_p)
+        else:
+            for entry in scan_dir.iterdir():
+                if entry.is_file() and entry.suffix.lower() in target_exts and is_valid_entry(entry.name):
+                    candidates.append(entry)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"디렉터리 탐색 오류: {str(e)}")
+
+    if not candidates:
+        return JSONResponse({
+            "total_files_scanned": 0,
+            "total_groups": 0,
+            "total_duplicate_files": 0,
+            "total_wasted_bytes": 0,
+            "formatted_wasted_bytes": "0 B",
+            "groups": []
+        })
+
+    groups = []
+
+    if mode == "exact":
+        size_groups = defaultdict(list)
+        for p in candidates:
+            try:
+                sz = p.stat().st_size
+                if sz > 0:
+                    size_groups[sz].append(p)
+            except Exception:
+                continue
+
+        same_size_candidates = {sz: plist for sz, plist in size_groups.items() if len(plist) > 1}
+
+        hash_groups = defaultdict(list)
+        for sz, plist in same_size_candidates.items():
+            for p in plist:
+                try:
+                    with open(p, "rb") as f:
+                        q_hash = hashlib.sha256(f.read(65536)).hexdigest()
+                    hash_groups[(sz, q_hash)].append(p)
+                except Exception:
+                    continue
+
+        collision_candidates = [plist for plist in hash_groups.values() if len(plist) > 1]
+
+        final_exact_groups = defaultdict(list)
+        for plist in collision_candidates:
+            for p in plist:
+                try:
+                    h = hashlib.sha256()
+                    with open(p, "rb") as f:
+                        for chunk in iter(lambda: f.read(65536), b""):
+                            h.update(chunk)
+                    full_hash = h.hexdigest()
+                    final_exact_groups[full_hash].append(p)
+                except Exception:
+                    continue
+
+        grp_idx = 0
+        for fhash, plist in final_exact_groups.items():
+            if len(plist) < 2:
+                continue
+            grp_idx += 1
+            if grp_idx > limit:
+                break
+
+            items_info = []
+            for p in plist:
+                try:
+                    st = p.stat()
+                    rel_p = str(p.relative_to(media_root)).replace("\\", "/")
+                    folder_rel = str(p.parent.relative_to(media_root)).replace("\\", "/") if p.parent != media_root else ""
+                    items_info.append({
+                        "path": rel_p,
+                        "name": p.name,
+                        "size": st.st_size,
+                        "formatted_size": format_size(st.st_size),
+                        "mtime": st.st_mtime,
+                        "mtime_str": datetime.fromtimestamp(st.st_mtime).strftime("%Y-%m-%d %H:%M"),
+                        "url": f"/api/raw/{urllib.parse.quote(rel_p)}",
+                        "thumb": f"/api/thumb/{urllib.parse.quote(rel_p)}",
+                        "folder": folder_rel,
+                        "folder_display": f"L:\\{folder_rel.replace('/', chr(92))}" if folder_rel else "L:\\"
+                    })
+                except Exception:
+                    continue
+
+            if len(items_info) < 2:
+                continue
+
+            items_info.sort(key=lambda x: x["mtime"])
+            for i, it in enumerate(items_info):
+                it["is_suggested_original"] = (i == 0)
+
+            file_size = items_info[0]["size"] if items_info else 0
+            wasted = file_size * (len(items_info) - 1)
+            groups.append({
+                "group_id": f"exact_{fhash[:12]}",
+                "type": "exact",
+                "type_label": "동일 파일",
+                "file_size": file_size,
+                "formatted_size": format_size(file_size),
+                "wasted_size": wasted,
+                "formatted_wasted_size": format_size(wasted),
+                "items": items_info
+            })
+
+    elif mode == "visual" and Image:
+        img_candidates = [p for p in candidates if p.suffix.lower() in IMAGE_EXTENSIONS][:400]
+        image_hashes = []
+        for p in img_candidates:
+            try:
+                with Image.open(p) as img:
+                    img = img.convert("L").resize((9, 8), Image.Resampling.LANCZOS)
+                    pixels = list(img.getdata())
+                    diff = []
+                    for row in range(8):
+                        for col in range(8):
+                            diff.append(pixels[row * 9 + col] > pixels[row * 9 + col + 1])
+                    decimal_val = 0
+                    for bit in diff:
+                        decimal_val = (decimal_val << 1) | (1 if bit else 0)
+                    image_hashes.append((p, decimal_val))
+            except Exception:
+                continue
+
+        used = set()
+        grp_idx = 0
+        for i in range(len(image_hashes)):
+            if i in used:
+                continue
+            p1, h1 = image_hashes[i]
+            cluster = [p1]
+            for j in range(i + 1, len(image_hashes)):
+                if j in used:
+                    continue
+                p2, h2 = image_hashes[j]
+                dist = bin(h1 ^ h2).count("1")
+                if dist <= 2:
+                    cluster.append(p2)
+                    used.add(j)
+
+            if len(cluster) >= 2:
+                used.add(i)
+                grp_idx += 1
+                if grp_idx > limit:
+                    break
+
+                items_info = []
+                for p in cluster:
+                    try:
+                        st = p.stat()
+                        rel_p = str(p.relative_to(media_root)).replace("\\", "/")
+                        folder_rel = str(p.parent.relative_to(media_root)).replace("\\", "/") if p.parent != media_root else ""
+                        items_info.append({
+                            "path": rel_p,
+                            "name": p.name,
+                            "size": st.st_size,
+                            "formatted_size": format_size(st.st_size),
+                            "mtime": st.st_mtime,
+                            "mtime_str": datetime.fromtimestamp(st.st_mtime).strftime("%Y-%m-%d %H:%M"),
+                            "url": f"/api/raw/{urllib.parse.quote(rel_p)}",
+                            "thumb": f"/api/thumb/{urllib.parse.quote(rel_p)}",
+                            "folder": folder_rel,
+                            "folder_display": f"L:\\{folder_rel.replace('/', chr(92))}" if folder_rel else "L:\\"
+                        })
+                    except Exception:
+                        continue
+
+                items_info.sort(key=lambda x: x["mtime"])
+                for idx, it in enumerate(items_info):
+                    it["is_suggested_original"] = (idx == 0)
+
+                total_sz = sum(it["size"] for it in items_info[1:])
+                groups.append({
+                    "group_id": f"visual_{i}",
+                    "type": "visual",
+                    "type_label": "유사 사진",
+                    "file_size": items_info[0]["size"] if items_info else 0,
+                    "formatted_size": format_size(items_info[0]["size"]) if items_info else "0 B",
+                    "wasted_size": total_sz,
+                    "formatted_wasted_size": format_size(total_sz),
+                    "items": items_info
+                })
+
+    total_wasted = sum(g["wasted_size"] for g in groups)
+    total_dup_files = sum(len(g["items"]) - 1 for g in groups)
+
+    return JSONResponse({
+        "total_files_scanned": len(candidates),
+        "total_groups": len(groups),
+        "total_duplicate_files": total_dup_files,
+        "total_wasted_bytes": total_wasted,
+        "formatted_wasted_bytes": format_size(total_wasted),
+        "groups": groups
+    })

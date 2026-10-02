@@ -245,3 +245,24 @@ export async function analyzePhotoApi(filePath) {
     throw err;
   }
 }
+
+export async function fetchDuplicatesApi(folder = '', recursive = true, mode = 'exact', limit = 100) {
+  const base = getApiBase();
+  const q = new URLSearchParams({
+    folder: folder || '',
+    recursive: String(recursive),
+    mode: mode || 'exact',
+    limit: String(limit),
+    t: String(Date.now())
+  });
+  let res = await fetch(`${base}/duplicates?${q.toString()}`);
+  if (!res.ok && base !== '/api') {
+    res = await fetch(`/api/duplicates?${q.toString()}`);
+  }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || '중복 사진 감지 실패');
+  }
+  return await res.json();
+}
+

@@ -6,7 +6,8 @@ import {
   openMkdirModal, closeMkdirModal, handleCreateFolder,
   openUploadOptModal, closeUploadOptModal,
   enableSelectMode, toggleSelectMode, toggleItemSelection, updateSelectionUI, handleBatchShare, handleBatchDelete,
-  openMoveModal, closeMoveModal, handleConfirmMove, handleMoveModalNewFolder, showToast
+  openMoveModal, closeMoveModal, handleConfirmMove, handleMoveModalNewFolder, showToast,
+  openDuplicatesModal, closeDuplicatesModal, handleScanDuplicates, handleDeleteSelectedDuplicates, autoSelectDuplicateCopies, deselectAllDuplicates
 } from './js/modals.js';
 
 // Handlers object passed to card rendering
@@ -629,6 +630,27 @@ function initEvents() {
   if (moveModalBackdrop) moveModalBackdrop.addEventListener('click', closeMoveModal);
   if (moveModalConfirmBtn) moveModalConfirmBtn.addEventListener('click', () => handleConfirmMove((p) => navigateTo(p), cardHandlers));
   if (moveModalNewFolderBtn) moveModalNewFolderBtn.addEventListener('click', () => handleMoveModalNewFolder((p) => navigateTo(p)));
+
+  // ── Duplicates Detection Controls (Immich Feature) ───────────
+  const navDuplicates           = $('navDuplicates');
+  const topbarDupBtn            = $('topbarDupBtn');
+  const dupModalCloseBtn        = $('dupModalCloseBtn');
+  const dupModalFooterCloseBtn  = $('dupModalFooterCloseBtn');
+  const dupModalBackdrop        = $('dupModalBackdrop');
+  const dupScanBtn              = $('dupScanBtn');
+  const dupAutoSelectBtn        = $('dupAutoSelectBtn');
+  const dupDeselectAllBtn       = $('dupDeselectAllBtn');
+  const dupDeleteSelectedBtn    = $('dupDeleteSelectedBtn');
+
+  if (navDuplicates) navDuplicates.addEventListener('click', () => openDuplicatesModal((p) => navigateTo(p), cardHandlers));
+  if (topbarDupBtn) topbarDupBtn.addEventListener('click', () => openDuplicatesModal((p) => navigateTo(p), cardHandlers));
+  if (dupModalCloseBtn) dupModalCloseBtn.addEventListener('click', closeDuplicatesModal);
+  if (dupModalFooterCloseBtn) dupModalFooterCloseBtn.addEventListener('click', closeDuplicatesModal);
+  if (dupModalBackdrop) dupModalBackdrop.addEventListener('click', closeDuplicatesModal);
+  if (dupScanBtn) dupScanBtn.addEventListener('click', () => handleScanDuplicates((p) => navigateTo(p), cardHandlers));
+  if (dupAutoSelectBtn) dupAutoSelectBtn.addEventListener('click', autoSelectDuplicateCopies);
+  if (dupDeselectAllBtn) dupDeselectAllBtn.addEventListener('click', deselectAllDuplicates);
+  if (dupDeleteSelectedBtn) dupDeleteSelectedBtn.addEventListener('click', () => handleDeleteSelectedDuplicates((p) => navigateTo(p), cardHandlers));
 
   // Lightbox Controls
   const lbClose        = $('lbClose');

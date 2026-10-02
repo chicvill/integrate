@@ -1,5 +1,5 @@
-import { $, state, saveFavorites } from './state.js';
-import { createFolderApi, deleteItemApi, batchDeleteApi, batchMoveApi, moveItemApi, fetchFoldersApi } from './api.js';
+import { $, state, formatBytes, saveFavorites } from './state.js';
+import { createFolderApi, deleteItemApi, batchDeleteApi, batchMoveApi, moveItemApi, fetchFoldersApi, fetchDuplicatesApi } from './api.js';
 import { copyLinkToClipboard, renderGallery, shareItem } from './ui.js';
 
 // ── Lightbox Controller ────────────────────────────────────────
@@ -500,5 +500,250 @@ export async function handleMoveModalNewFolder(onNavigate) {
     if (cont) await renderMoveFolderList(cont, onNavigate);
   } catch (err) {
     alert(`폴더 생성 실패: ${err.message}`);
+  }
+}
+
+// ── Duplicate Photos Detection Controller (Immich Feature) ──────
+let activeDuplicatesData = null;
+let selectedDupPaths = new Set();
+
+export function openDuplicatesModal(onNavigate, handlers) {
+  const modal = $('duplicatesModal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+
+  const scopeSelect = $('dupScopeSelect');
+  if (scopeSelect && scopeSelect.options.length > 0) {
+    const curFolderText = state.currentFolder ? `현재 폴더 (L:\\${state.currentFolder.replace(/\//g, '\\')})` : '현재 폴더 (L:\\ 루트)';
+    scopeSelect.options[0].textContent = curFolderText;
+  }
+}
+
+export function closeDuplicatesModal() {
+  const modal = $('duplicatesModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+export async function handleScanDuplicates(onNavigate, handlers) {
+  const container = $('dupResultsContainer');
+  const summaryBar = $('dupSummaryBar');
+  const scope = $('dupScopeSelect') ? $('dupScopeSelect').value : 'all';
+  const mode = $('dupModeSelect') ? $('dupModeSelect').value : 'exact';
+  const folder = (scope === 'current') ? state.currentFolder : '';
+
+  if (summaryBar) summaryBar.classList.add('hidden');
+  selectedDupPaths.clear();
+  updateDupSelectedCount();
+
+  if (container) {
+    container.innerHTML = `
+      <div class="dup-loading">
+        <div class="dup-spinner"></div>
+        <p class="dup-loading-title">L: 드라이브 중복 사진 및 사본 분석 중…</p>
+        <p class="dup-loading-sub">파일 크기 대조 및 정밀 해시(SHA-256) 검사를 수행하고 있습니다. 잠시만 기다려 주세요.</p>
+      </div>
+    `;
+  }
+
+  try {
+    const data = await fetchDuplicatesApi(folder, true, mode, 150);
+    activeDuplicatesData = data;
+    renderDuplicatesResults(data, onNavigate, handlers);
+  } catch (err) {
+    if (container) {
+      container.innerHTML = `
+        <div class="dup-empty-prompt">
+          <div class="dup-empty-icon">⚠️</div>
+          <p class="dup-empty-title">중복 검사 실패</p>
+          <p class="dup-empty-desc">${err.message}</p>
+        </div>
+      `;
+    }
+  }
+}
+
+export function renderDuplicatesResults(data, onNavigate, handlers) {
+  const container = $('dupResultsContainer');
+  const summaryBar = $('dupSummaryBar');
+  const summaryStats = $('dupSummaryStats');
+  if (!container) return;
+
+  const groups = data.groups || [];
+  if (groups.length === 0) {
+    if (summaryBar) summaryBar.classList.add('hidden');
+    container.innerHTML = `
+      <div class="dup-empty-prompt">
+        <div class="dup-empty-icon">🎉</div>
+        <p class="dup-empty-title">중복된 사진이 없습니다!</p>
+        <p class="dup-empty-desc">총 <strong>${data.total_files_scanned || 0}개</strong>의 파일을 정밀 스캔하였으며, 디스크 공간이 완벽하게 정리되어 있습니다.</p>
+      </div>
+    `;
+    return;
+  }
+
+  if (summaryBar) summaryBar.classList.remove('hidden');
+  if (summaryStats) {
+    summaryStats.innerHTML = `
+      <span>🎯 <strong>${data.total_groups}개</strong> 중복 그룹 (총 <strong>${data.total_duplicate_files}개</strong> 사본)</span>
+      <span class="dup-stat-divider">·</span>
+      <span class="dup-waste-highlight">절약 가능 용량: <strong>${data.formatted_wasted_bytes}</strong></span>
+    `;
+  }
+
+  container.innerHTML = '';
+
+  groups.forEach((grp, grpIdx) => {
+    const groupCard = document.createElement('div');
+    groupCard.className = 'dup-group-card';
+
+    const groupHeader = document.createElement('div');
+    groupHeader.className = 'dup-group-header';
+    groupHeader.innerHTML = `
+      <div class="dup-group-meta">
+        <span class="dup-group-num">#${grpIdx + 1}</span>
+        <span class="dup-badge-type">${grp.type_label || (grp.type === 'exact' ? '동일 파일' : '유사 사진')}</span>
+        <span class="dup-group-size">파일당: ${grp.formatted_size}</span>
+      </div>
+      <div class="dup-group-waste">
+        낭비되는 용량: <strong>${grp.formatted_wasted_size}</strong>
+      </div>
+    `;
+    groupCard.appendChild(groupHeader);
+
+    const itemsGrid = document.createElement('div');
+    itemsGrid.className = 'dup-items-grid';
+
+    grp.items.forEach((item) => {
+      const isOriginal = item.is_suggested_original;
+      const itemEl = document.createElement('div');
+      itemEl.className = `dup-item-card ${isOriginal ? 'is-original' : 'is-duplicate'}`;
+      itemEl.dataset.path = item.path;
+
+      itemEl.innerHTML = `
+        <div class="dup-thumb-wrap">
+          <img src="${item.thumb}" alt="${item.name}" loading="lazy" onerror="this.src='/photos/assets/images/folder_placeholder.svg'">
+          <div class="dup-thumb-badge ${isOriginal ? 'orig' : 'copy'}">
+            ${isOriginal ? '👑 원본 (보관 추천)' : '📋 사본 (삭제 대상)'}
+          </div>
+        </div>
+        <div class="dup-item-info">
+          <div class="dup-item-name" title="${item.name}">${item.name}</div>
+          <div class="dup-item-folder" title="${item.folder_display || item.path}">
+            📁 ${item.folder_display || item.path}
+          </div>
+          <div class="dup-item-sub">
+            <span>📅 ${item.mtime_str || ''}</span>
+            <span>💾 ${item.formatted_size}</span>
+          </div>
+        </div>
+        <div class="dup-item-actions">
+          <label class="dup-checkbox-label">
+            <input type="checkbox" class="dup-item-check" data-path="${item.path}" ${!isOriginal ? 'checked' : ''}>
+            <span>삭제 선택</span>
+          </label>
+        </div>
+      `;
+
+      // Checkbox click
+      const check = itemEl.querySelector('.dup-item-check');
+      if (check) {
+        if (!isOriginal) {
+          selectedDupPaths.add(item.path);
+          itemEl.classList.add('selected-for-delete');
+        }
+        check.addEventListener('change', (e) => {
+          if (e.target.checked) {
+            selectedDupPaths.add(item.path);
+            itemEl.classList.add('selected-for-delete');
+          } else {
+            selectedDupPaths.delete(item.path);
+            itemEl.classList.remove('selected-for-delete');
+          }
+          updateDupSelectedCount();
+        });
+      }
+
+      itemsGrid.appendChild(itemEl);
+    });
+
+    groupCard.appendChild(itemsGrid);
+    container.appendChild(groupCard);
+  });
+
+  updateDupSelectedCount();
+}
+
+export function autoSelectDuplicateCopies() {
+  selectedDupPaths.clear();
+  const checkboxes = document.querySelectorAll('.dup-item-check');
+  checkboxes.forEach(cb => {
+    const itemCard = cb.closest('.dup-item-card');
+    const isOriginal = itemCard && itemCard.classList.contains('is-original');
+    if (!isOriginal) {
+      cb.checked = true;
+      selectedDupPaths.add(cb.dataset.path);
+      if (itemCard) itemCard.classList.add('selected-for-delete');
+    } else {
+      cb.checked = false;
+      if (itemCard) itemCard.classList.remove('selected-for-delete');
+    }
+  });
+  updateDupSelectedCount();
+}
+
+export function deselectAllDuplicates() {
+  selectedDupPaths.clear();
+  const checkboxes = document.querySelectorAll('.dup-item-check');
+  checkboxes.forEach(cb => {
+    cb.checked = false;
+    const itemCard = cb.closest('.dup-item-card');
+    if (itemCard) itemCard.classList.remove('selected-for-delete');
+  });
+  updateDupSelectedCount();
+}
+
+function updateDupSelectedCount() {
+  const countEl = $('dupSelectedCount');
+  const deleteBtn = $('dupDeleteSelectedBtn');
+  const count = selectedDupPaths.size;
+  if (countEl) countEl.textContent = String(count);
+  if (deleteBtn) {
+    deleteBtn.disabled = count === 0;
+  }
+}
+
+export async function handleDeleteSelectedDuplicates(onNavigate, handlers) {
+  const count = selectedDupPaths.size;
+  if (count === 0) {
+    alert('삭제할 중복 사진을 선택해 주세요.');
+    return;
+  }
+
+  if (!confirm(`⚠️ 선택한 ${count}개의 중복 사진(사본)을 삭제하시겠습니까?\n이 작업은 즉시 디스크 공간을 확보합니다.`)) {
+    return;
+  }
+
+  const paths = Array.from(selectedDupPaths);
+  const deleteBtn = $('dupDeleteSelectedBtn');
+  if (deleteBtn) {
+    deleteBtn.disabled = true;
+    deleteBtn.textContent = '삭제 중…';
+  }
+
+  try {
+    const res = await batchDeleteApi(paths);
+    showToast(`${res.deleted ? res.deleted.length : count}개의 중복 사진을 삭제했습니다.`, '🧹', 4000);
+    selectedDupPaths.clear();
+    updateDupSelectedCount();
+
+    if (onNavigate) await onNavigate(state.currentFolder);
+    await handleScanDuplicates(onNavigate, handlers);
+  } catch (err) {
+    alert(`중복 사진 삭제 실패: ${err.message}`);
+  } finally {
+    if (deleteBtn) {
+      deleteBtn.textContent = `🗑️ 선택한 사본 삭제 (${selectedDupPaths.size}개)`;
+      deleteBtn.disabled = selectedDupPaths.size === 0;
+    }
   }
 }
