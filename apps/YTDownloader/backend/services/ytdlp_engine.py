@@ -75,16 +75,29 @@ class YTDLPEngine:
             'socket_timeout': 30,
             'retries': 3,
             'fragment_retries': 3,
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
+                'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+            },
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['ios', 'android', 'web'],
+                    'player_client': ['android', 'ios', 'web'],
                 }
             }
         }
 
-        # Check for cookies.txt
+        # Node.js JS 런타임 자동 탐색 및 바인딩
+        for node_cmd in ["node", "/usr/bin/node", "/usr/local/bin/node"]:
+            if shutil.which(node_cmd) or os.path.exists(node_cmd):
+                ydl_opts['js_runtimes'] = {'node': {'path': node_cmd}}
+                break
+
+        # Check for cookies.txt (영구 볼륨 및 로컬)
         root_cookies = os.path.join(os.path.dirname(__file__), "..", "..", "cookies.txt")
-        if os.path.exists(root_cookies):
+        media_cookies = "/media/cookies.txt"
+        if os.path.exists(media_cookies):
+            ydl_opts['cookiefile'] = media_cookies
+        elif os.path.exists(root_cookies):
             ydl_opts['cookiefile'] = root_cookies
 
         if mode == 'audio':
