@@ -36,10 +36,14 @@ export function uploadSingleFile(fileItem, mode, onProgress) {
 
     // Guard: If a directory handle is passed as File (size 0, no type, no extension)
     if (!file || (file.size === 0 && !file.type && !file.name.includes('.'))) {
-      const folderName = file ? file.name : (relPath || 'new_folder');
-      createFolderApi(state.currentFolder, folderName)
-        .then(() => resolve(JSON.stringify({ success: true, folder: folderName })))
-        .catch(err => reject(err));
+      const folderName = (file && file.name) ? file.name : (relPath || '');
+      if (folderName && folderName !== 'undefined') {
+        createFolderApi(state.currentFolder, folderName)
+          .then(() => resolve(JSON.stringify({ success: true, folder: folderName })))
+          .catch(err => reject(err));
+      } else {
+        resolve(JSON.stringify({ success: true }));
+      }
       return;
     }
 
