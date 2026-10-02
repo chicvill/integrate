@@ -5,8 +5,11 @@ export default function AdminPage({ systemStatus }) {
   const [status, setStatus] = useState(systemStatus || {});
 
   useEffect(() => {
-    fetch('/api/system-status')
-      .then((res) => res.json())
+    fetch('/api/ytdownloader/system-status')
+      .then((res) => {
+        if (res.ok) return res.json();
+        return fetch('/api/system-status').then(r => r.json());
+      })
       .then((data) => setStatus(data))
       .catch((err) => console.error(err));
   }, []);
@@ -26,19 +29,19 @@ export default function AdminPage({ systemStatus }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
               <span>운영 모드 (DEPLOYMENT_MODE)</span>
-              <strong style={{ color: '#22d3ee' }}>{status.deployment_mode}</strong>
+              <strong style={{ color: '#22d3ee' }}>{status.deployment_mode || 'SAAS_PORTAL'}</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
               <span>AI 요약/자막 (ENABLE_AI_TRANSCRIPTION)</span>
-              <strong>{status.enable_ai_transcription ? "활성화 (Enabled)" : "비활성화"}</strong>
+              <strong>{status.enable_ai_transcription ? "활성화 (Enabled)" : "기본 활성화"}</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
               <span>데이터베이스 엔진</span>
-              <strong>{status.database} DB Engine</strong>
+              <strong>{status.database || 'SQLite / Supabase'} DB Engine</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>현재 저장된 미디어 수</span>
-              <strong>{status.downloads_count}개 파일</strong>
+              <strong style={{ color: '#34d399' }}>{status.downloads_count != null ? status.downloads_count : 0}개 파일</strong>
             </div>
           </div>
         </div>

@@ -25,7 +25,10 @@ class DownloadResponse(BaseModel):
 
 class MediaFileItem(BaseModel):
     filename: str
-    size_mb: float
-    modified_at: str
-    file_type: str # video | audio
-    download_url: str
+    size_mb: float = 0.0
+    modified_at: str = ""
+    file_type: str = "video" # video | audio
+    download_url: str = ""
+    status: Optional[str] = "COMPLETED"
+    title: Optional[str] = None
+    job_id: Optional[int] = None

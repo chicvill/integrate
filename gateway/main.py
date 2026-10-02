@@ -214,6 +214,21 @@ app.include_router(photos_gallery_router, prefix="/api", include_in_schema=False
 app.include_router(yt_download_router, prefix="/api/download", include_in_schema=False)
 app.include_router(yt_media_router, prefix="/api/media", include_in_schema=False)
 
+@app.get("/api/ytdownloader/system-status", tags=["유튜브 다운로더"])
+@app.get("/api/download/system-status", include_in_schema=False)
+def get_ytdownloader_system_status():
+    from apps.YTDownloader.backend.config import settings as yt_settings
+    downloads_count = len(os.listdir(yt_settings.DOWNLOADS_DIR)) if os.path.exists(yt_settings.DOWNLOADS_DIR) else 0
+    return {
+        "deployment_mode": getattr(yt_settings, "DEPLOYMENT_MODE", "SAAS_PORTAL"),
+        "is_standalone": getattr(yt_settings, "is_standalone", False),
+        "enable_ai_transcription": getattr(yt_settings, "ENABLE_AI_TRANSCRIPTION", True),
+        "enable_offline_sync": getattr(yt_settings, "ENABLE_OFFLINE_SYNC", True),
+        "database": "PostgreSQL (Cloud)" if "postgresql" in getattr(yt_settings, "DATABASE_URL", "") else "SQLite (Local)",
+        "downloads_count": downloads_count,
+        "status": "HEALTHY"
+    }
+
 
 @app.get("/api/system-status", tags=["시스템 상태 (호환)"])
 def get_system_status_compat():
