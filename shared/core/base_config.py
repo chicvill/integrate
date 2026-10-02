@@ -53,6 +53,7 @@ class BaseConfig(BaseSettings):
     ENABLE_PAYMENT: bool = os.getenv("ENABLE_PAYMENT", "false").lower() == "true"
 
     # ─── 파일 저장소 (Cloudflare R2 & Local) ──────────────
+    MEDIA_PATH: str = os.getenv("MEDIA_STORAGE_PATH", os.getenv("MEDIA_PATH", "/media"))
     R2_ACCOUNT_ID: str = os.getenv("R2_ACCOUNT_ID", "")
     R2_ACCESS_KEY_ID: str = os.getenv("R2_ACCESS_KEY_ID", "")
     R2_SECRET_ACCESS_KEY: str = os.getenv("R2_SECRET_ACCESS_KEY", "")
