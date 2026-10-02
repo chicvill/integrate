@@ -1,11 +1,12 @@
 import { $, state, formatBytes, saveFavorites } from './js/state.js';
-import { fetchFolderData, uploadSingleFile, deleteItemApi, fetchStorageInfo, createFolderApi } from './js/api.js';
+import { fetchFolderData, uploadSingleFile, deleteItemApi, fetchStorageInfo, createFolderApi, batchMoveApi } from './js/api.js';
 import { renderBreadcrumb, renderSidebarStats, renderGallery, copyLinkToClipboard, shareItem } from './js/ui.js';
 import {
   openLightbox, closeLightbox, renderLightboxItem, rotateLightboxImage, toggleSlideshow,
   openMkdirModal, closeMkdirModal, handleCreateFolder,
   openUploadOptModal, closeUploadOptModal,
-  enableSelectMode, toggleSelectMode, toggleItemSelection, handleBatchShare, handleBatchDelete
+  enableSelectMode, toggleSelectMode, toggleItemSelection, handleBatchShare, handleBatchDelete,
+  openMoveModal, closeMoveModal, handleConfirmMove, handleMoveModalNewFolder, showToast
 } from './js/modals.js';
 
 // Handlers object passed to card rendering
@@ -13,8 +14,38 @@ const cardHandlers = {
   onNavigate: (path) => navigateTo(path),
   onOpenLightbox: (mediaIdx) => openLightbox(mediaIdx),
   onToggleSelection: (path, isShift, idx) => toggleItemSelection(path, cardHandlers, isShift, idx),
-  onEnableSelectMode: () => enableSelectMode(cardHandlers)
+  onEnableSelectMode: () => enableSelectMode(cardHandlers),
+  onMoveItems: (paths, destFolder) => handleMoveItems(paths, destFolder),
+  onUploadToFolder: (dataTransfer, targetFolder) => handleUploadToFolder(dataTransfer, targetFolder)
 };
+
+async function handleMoveItems(paths, destFolder) {
+  if (!paths || paths.length === 0) return;
+  try {
+    const destName = destFolder ? destFolder.split('/').pop() : 'L:\\ (최상위 루트)';
+    await batchMoveApi(paths, destFolder);
+    state.selectedPaths.clear();
+    updateSelectionUI();
+    showToast(`${paths.length}개 항목을 '${destName}'(으)로 이동했습니다.`, '🚚');
+    await navigateTo(state.currentFolder);
+  } catch (err) {
+    alert(`이동 실패: ${err.message}`);
+  }
+}
+
+async function handleUploadToFolder(dataTransfer, targetFolder) {
+  const origFolder = state.currentFolder;
+  state.currentFolder = targetFolder;
+  try {
+    const syncFiles = Array.from(dataTransfer.files || []);
+    if (syncFiles.length > 0) {
+      await uploadFiles(syncFiles);
+    }
+  } finally {
+    state.currentFolder = origFolder;
+    await navigateTo(state.currentFolder);
+  }
+}
 
 // ── Navigation & Data Fetching ────────────────────────────────
 async function navigateTo(folder) {
@@ -29,7 +60,7 @@ async function navigateTo(folder) {
   if (galleryGrid) galleryGrid.innerHTML = '';
   if (emptyState) emptyState.classList.add('hidden');
 
-  renderBreadcrumb(folder, (p) => navigateTo(p));
+  renderBreadcrumb(folder, (p) => navigateTo(p), cardHandlers);
 
   try {
     const [data, storageData] = await Promise.all([
@@ -558,6 +589,39 @@ function initEvents() {
   if (batchShareBtn) batchShareBtn.addEventListener('click', handleBatchShare);
   if (batchDeleteBtn) batchDeleteBtn.addEventListener('click', () => handleBatchDelete((p) => navigateTo(p), cardHandlers));
 
+  // Move Controls (Header, FAB, Selection Bar, Lightbox, and Modal)
+  const moveBtn                 = $('moveBtn');
+  const fabMoveBtn              = $('fabMoveBtn');
+  const batchMoveBtn            = $('batchMoveBtn');
+  const lbMoveBtn               = $('lbMoveBtn');
+  const moveModalCloseIconBtn   = $('moveModalCloseIconBtn');
+  const moveModalCancelBtn      = $('moveModalCancelBtn');
+  const moveModalBackdrop       = $('moveModalBackdrop');
+  const moveModalConfirmBtn     = $('moveModalConfirmBtn');
+  const moveModalNewFolderBtn   = $('moveModalNewFolderBtn');
+
+  if (moveBtn) moveBtn.addEventListener('click', () => openMoveModal(undefined, (p) => navigateTo(p), cardHandlers));
+  if (fabMoveBtn) fabMoveBtn.addEventListener('click', () => openMoveModal(undefined, (p) => navigateTo(p), cardHandlers));
+  if (batchMoveBtn) batchMoveBtn.addEventListener('click', () => openMoveModal(undefined, (p) => navigateTo(p), cardHandlers));
+
+  if (lbMoveBtn) {
+    lbMoveBtn.addEventListener('click', () => {
+      if (state.lightboxIdx >= 0 && state.mediaItems[state.lightboxIdx]) {
+        const item = state.mediaItems[state.lightboxIdx];
+        openMoveModal([item.path], (p) => {
+          closeLightbox();
+          navigateTo(p);
+        }, cardHandlers);
+      }
+    });
+  }
+
+  if (moveModalCloseIconBtn) moveModalCloseIconBtn.addEventListener('click', closeMoveModal);
+  if (moveModalCancelBtn) moveModalCancelBtn.addEventListener('click', closeMoveModal);
+  if (moveModalBackdrop) moveModalBackdrop.addEventListener('click', closeMoveModal);
+  if (moveModalConfirmBtn) moveModalConfirmBtn.addEventListener('click', () => handleConfirmMove((p) => navigateTo(p), cardHandlers));
+  if (moveModalNewFolderBtn) moveModalNewFolderBtn.addEventListener('click', () => handleMoveModalNewFolder((p) => navigateTo(p)));
+
   // Lightbox Controls
   const lbClose        = $('lbClose');
   const lbBackdrop     = $('lbBackdrop');
@@ -679,12 +743,15 @@ function initEvents() {
 
   const handleDragEnter = (e) => {
     e.preventDefault();
+    if (state.isDraggingItems) return;
+    if (e.dataTransfer && e.dataTransfer.types && !e.dataTransfer.types.includes('Files')) return;
     dragCounter++;
     if (dropzoneOverlay) dropzoneOverlay.classList.remove('hidden');
   };
 
   const handleDragOver = (e) => {
     e.preventDefault();
+    if (state.isDraggingItems) return;
     if (e.dataTransfer) {
       e.dataTransfer.dropEffect = 'copy';
     }
@@ -692,6 +759,7 @@ function initEvents() {
 
   const handleDragLeave = (e) => {
     e.preventDefault();
+    if (state.isDraggingItems) return;
     dragCounter--;
     if (dragCounter <= 0) {
       dragCounter = 0;
@@ -700,6 +768,7 @@ function initEvents() {
   };
 
   const handleDrop = async (e) => {
+    if (state.isDraggingItems) return;
     e.preventDefault();
     dragCounter = 0;
     if (dropzoneOverlay) dropzoneOverlay.classList.add('hidden');

@@ -171,6 +171,50 @@ export async function batchDeleteApi(paths) {
   return await res.json();
 }
 
+export async function moveItemApi(src, destFolder) {
+  const base = getApiBase();
+  const formData = new FormData();
+  formData.append('src', src);
+  formData.append('dest_folder', destFolder || '');
+  let res = await fetch(`${base}/move`, { method: 'POST', body: formData });
+  if (!res.ok && base !== '/api') {
+    res = await fetch('/api/move', { method: 'POST', body: formData });
+  }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || '이동 실패');
+  }
+  return await res.json();
+}
+
+export async function batchMoveApi(paths, destFolder) {
+  const base = getApiBase();
+  const formData = new FormData();
+  paths.forEach(p => formData.append('paths', p));
+  formData.append('dest_folder', destFolder || '');
+  let res = await fetch(`${base}/batch_move`, { method: 'POST', body: formData });
+  if (!res.ok && base !== '/api') {
+    res = await fetch('/api/batch_move', { method: 'POST', body: formData });
+  }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || '다중 이동 실패');
+  }
+  return await res.json();
+}
+
+export async function fetchFoldersApi() {
+  const base = getApiBase();
+  let res = await fetch(`${base}/folders?t=${Date.now()}`);
+  if (!res.ok && base !== '/api') {
+    res = await fetch(`/api/folders?t=${Date.now()}`);
+  }
+  if (!res.ok) {
+    throw new Error('폴더 목록을 불러오지 못했습니다.');
+  }
+  return await res.json();
+}
+
 export async function fetchStorageInfo() {
   const base = getApiBase();
   try {

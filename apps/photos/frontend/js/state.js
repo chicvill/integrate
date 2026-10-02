@@ -33,7 +33,9 @@ export const state = {
   slideshowTimer: null,
   storageInfo: null,
   lastSelectedIndex: -1,
-  displayItems: []
+  displayItems: [],
+  isDraggingItems: false,
+  draggedPaths: []
 };
 
 export function saveFavorites() {

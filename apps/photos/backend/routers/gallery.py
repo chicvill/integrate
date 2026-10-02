@@ -517,18 +517,128 @@ async def get_storage_info():
 
 
 # ─── API: Move / Copy / Delete / Mkdir ─────────────────────────────────────────
+def _unique_move_target(target_path: Path) -> Path:
+    if not target_path.exists():
+        return target_path
+    if target_path.is_file():
+        stem = target_path.stem
+        suffix = target_path.suffix
+        counter = 1
+        while target_path.exists():
+            target_path = target_path.parent / f"{stem}({counter}){suffix}"
+            counter += 1
+    else:
+        name = target_path.name
+        counter = 1
+        while target_path.exists():
+            target_path = target_path.parent / f"{name}({counter})"
+            counter += 1
+    return target_path
+
+
+def _is_subpath(child: Path, parent: Path) -> bool:
+    try:
+        child.relative_to(parent)
+        return True
+    except ValueError:
+        return False
+
+
+@router.get("/folders")
+async def list_all_folders():
+    media_root = get_media_root()
+    folder_list = [{"name": "L:\\ (최상위 루트)", "path": "", "depth": 0}]
+
+    def scan_folders(current_dir: Path, rel_base: str, depth: int):
+        if depth > 8:
+            return
+        try:
+            entries = sorted(os.scandir(current_dir), key=lambda e: e.name.lower())
+            for entry in entries:
+                if entry.is_dir() and is_valid_entry(entry.name):
+                    rel = f"{rel_base}/{entry.name}".lstrip("/") if rel_base else entry.name
+                    folder_list.append({
+                        "name": entry.name,
+                        "path": rel,
+                        "depth": depth + 1
+                    })
+                    scan_folders(Path(entry.path), rel, depth + 1)
+        except Exception:
+            pass
+
+    scan_folders(media_root, "", 0)
+    return JSONResponse({"success": True, "folders": folder_list})
+
+
 @router.post("/move")
 async def move_item(src: str = Form(...), dest_folder: str = Form("")):
     abs_src = safe_path(src)
     abs_dest = safe_path(dest_folder)
     if not abs_src or not abs_src.exists():
-        raise HTTPException(status_code=404, detail="Source item not found")
+        raise HTTPException(status_code=404, detail="이동할 원본 파일을 찾을 수 없습니다.")
     if not abs_dest or not abs_dest.exists() or not abs_dest.is_dir():
-        raise HTTPException(status_code=404, detail="Destination folder not found")
+        raise HTTPException(status_code=404, detail="대상 폴더를 찾을 수 없습니다.")
 
-    target_path = abs_dest / abs_src.name
+    # Guard: Cannot move folder into itself or subfolder
+    if abs_src == abs_dest:
+        return JSONResponse({"success": True, "note": "이미 대상 폴더에 위치해 있습니다."})
+    if abs_src.is_dir() and _is_subpath(abs_dest, abs_src):
+        raise HTTPException(status_code=400, detail="폴더를 자기 자신 또는 하위 폴더로 이동할 수 없습니다.")
+
+    # Guard: If already in destination folder
+    if abs_src.parent.resolve() == abs_dest.resolve():
+        return JSONResponse({"success": True, "note": "이미 대상 폴더에 위치해 있습니다."})
+
+    target_path = _unique_move_target(abs_dest / abs_src.name)
     shutil.move(str(abs_src), str(target_path))
-    return JSONResponse({"success": True})
+
+    cache = thumb_cache_path(abs_src)
+    if cache.exists():
+        try:
+            cache.unlink()
+        except Exception:
+            pass
+
+    return JSONResponse({"success": True, "target": str(target_path.name)})
+
+
+@router.post("/batch_move")
+async def batch_move_items(paths: List[str] = Form(...), dest_folder: str = Form("")):
+    abs_dest = safe_path(dest_folder)
+    if not abs_dest or not abs_dest.exists() or not abs_dest.is_dir():
+        raise HTTPException(status_code=404, detail="대상 폴더를 찾을 수 없습니다.")
+
+    moved, errors = [], []
+    for path in paths:
+        abs_src = safe_path(path)
+        if not abs_src or not abs_src.exists():
+            errors.append(f"{path}: 원본 항목을 찾을 수 없음")
+            continue
+
+        if abs_src == abs_dest:
+            continue
+        if abs_src.is_dir() and _is_subpath(abs_dest, abs_src):
+            errors.append(f"{path}: 폴더를 자기 자신 또는 하위 폴더로 이동할 수 없음")
+            continue
+
+        if abs_src.parent.resolve() == abs_dest.resolve():
+            moved.append(path)
+            continue
+
+        try:
+            target_path = _unique_move_target(abs_dest / abs_src.name)
+            shutil.move(str(abs_src), str(target_path))
+            cache = thumb_cache_path(abs_src)
+            if cache.exists():
+                try:
+                    cache.unlink()
+                except Exception:
+                    pass
+            moved.append(path)
+        except Exception as e:
+            errors.append(f"{path}: {str(e)}")
+
+    return JSONResponse({"success": True, "moved": moved, "errors": errors})
 
 
 @router.post("/copy")

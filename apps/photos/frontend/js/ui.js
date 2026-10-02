@@ -14,7 +14,7 @@ export const lazyObserver = new IntersectionObserver((entries, obs) => {
   });
 }, { rootMargin: '200px' });
 
-export function renderBreadcrumb(folder, onNavigate) {
+export function renderBreadcrumb(folder, onNavigate, handlers) {
   const breadcrumb = $('breadcrumb');
   if (!breadcrumb) return;
   breadcrumb.innerHTML = '';
@@ -25,6 +25,38 @@ export function renderBreadcrumb(folder, onNavigate) {
     btn.dataset.path = path;
     btn.innerHTML = `${icon ? `<svg class="crumb-icon" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8.354 1.146a.5.5 0 00-.708 0l-6 6A.5.5 0 002 7.5v7a.5.5 0 00.5.5h4a.5.5 0 00.5-.5v-4h2v4a.5.5 0 00.5.5h4a.5.5 0 00.5-.5v-7a.5.5 0 00-.146-.354L13 5.793V2.5a.5.5 0 00-.5-.5h-1a.5.5 0 00-.5.5v1.293L8.354 1.146z"/></svg>` : ''} ${label}`;
     btn.addEventListener('click', () => onNavigate(path));
+
+    // Drag & Drop to Move onto Breadcrumb
+    btn.addEventListener('dragover', (e) => {
+      if (state.isDraggingItems && state.draggedPaths && state.draggedPaths.length > 0) {
+        if (path !== state.currentFolder) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          btn.classList.add('crumb-drag-hover');
+        }
+      }
+    });
+
+    btn.addEventListener('dragleave', () => {
+      btn.classList.remove('crumb-drag-hover');
+    });
+
+    btn.addEventListener('drop', async (e) => {
+      btn.classList.remove('crumb-drag-hover');
+      if (state.isDraggingItems && state.draggedPaths && state.draggedPaths.length > 0) {
+        if (path !== state.currentFolder) {
+          e.preventDefault();
+          e.stopPropagation();
+          const targets = [...state.draggedPaths];
+          state.isDraggingItems = false;
+          state.draggedPaths = [];
+          if (handlers && handlers.onMoveItems) {
+            await handlers.onMoveItems(targets, path);
+          }
+        }
+      }
+    });
+
     return btn;
   };
 
@@ -171,7 +203,94 @@ const FOLDER_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.or
   if (img) {
     lazyObserver.observe(img);
     img.addEventListener('error', () => { img.src = FOLDER_PLACEHOLDER; });
+  }
 
+  // ── Drag & Drop Implementation ──────────────────────────
+  card.setAttribute('draggable', 'true');
+
+  card.addEventListener('dragstart', (e) => {
+    if (e.target.closest('.card-checkbox') || e.target.closest('.card-fav-btn')) {
+      e.preventDefault();
+      return;
+    }
+
+    const isSelected = state.selectedPaths && state.selectedPaths.has(item.path);
+    let targets = [];
+    if (isSelected && state.selectedPaths.size > 1) {
+      targets = Array.from(state.selectedPaths);
+    } else {
+      targets = [item.path];
+    }
+
+    state.isDraggingItems = true;
+    state.draggedPaths = targets;
+
+    e.dataTransfer.setData('text/plain', JSON.stringify({
+      type: 'mqnet-media-move',
+      paths: targets,
+      fromFolder: state.currentFolder
+    }));
+    e.dataTransfer.effectAllowed = 'move';
+
+    setTimeout(() => {
+      card.classList.add('is-dragging');
+      if (targets.length > 1) {
+        document.querySelectorAll('.card.selected').forEach(c => c.classList.add('is-dragging'));
+      }
+    }, 0);
+  });
+
+  card.addEventListener('dragend', () => {
+    state.isDraggingItems = false;
+    state.draggedPaths = [];
+    document.querySelectorAll('.card.is-dragging').forEach(c => c.classList.remove('is-dragging'));
+    document.querySelectorAll('.card.folder.drag-target-hover').forEach(c => c.classList.remove('drag-target-hover'));
+    document.querySelectorAll('.crumb.crumb-drag-hover').forEach(c => c.classList.remove('crumb-drag-hover'));
+  });
+
+  // If this card is a folder, handle dragover & drop to move items into it
+  if (item.type === 'folder') {
+    card.addEventListener('dragover', (e) => {
+      if (state.isDraggingItems && state.draggedPaths && state.draggedPaths.length > 0) {
+        if (state.draggedPaths.includes(item.path)) return;
+        if (state.draggedPaths.some(p => item.path.startsWith(p + '/'))) return;
+
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        card.classList.add('drag-target-hover');
+      } else if (e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.includes('Files')) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        card.classList.add('drag-target-hover');
+      }
+    });
+
+    card.addEventListener('dragleave', (e) => {
+      if (!card.contains(e.relatedTarget)) {
+        card.classList.remove('drag-target-hover');
+      }
+    });
+
+    card.addEventListener('drop', async (e) => {
+      card.classList.remove('drag-target-hover');
+
+      if (state.isDraggingItems && state.draggedPaths && state.draggedPaths.length > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        const targets = [...state.draggedPaths];
+        state.isDraggingItems = false;
+        state.draggedPaths = [];
+        if (handlers && handlers.onMoveItems) {
+          await handlers.onMoveItems(targets, item.path);
+        }
+      } else if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        if (handlers && handlers.onUploadToFolder) {
+          e.preventDefault();
+          e.stopPropagation();
+          handlers.onUploadToFolder(e.dataTransfer, item.path);
+        }
+      }
+    });
   }
 
   return card;

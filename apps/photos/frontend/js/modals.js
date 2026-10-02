@@ -1,5 +1,5 @@
 import { $, state, saveFavorites } from './state.js';
-import { createFolderApi, deleteItemApi, batchDeleteApi } from './api.js';
+import { createFolderApi, deleteItemApi, batchDeleteApi, batchMoveApi, moveItemApi, fetchFoldersApi } from './api.js';
 import { copyLinkToClipboard, renderGallery, shareItem } from './ui.js';
 
 // ── Lightbox Controller ────────────────────────────────────────
@@ -310,5 +310,195 @@ export async function handleBatchDelete(onNavigate, handlers) {
     if (onNavigate) await onNavigate(state.currentFolder);
   } catch (err) {
     alert(`삭제 중 오류가 발생했습니다: ${err.message}`);
+  }
+}
+
+// ── Toast Notification ────────────────────────────────────────
+let toastTimer = null;
+export function showToast(message, icon = '🚚', duration = 3000) {
+  const toast = $('appToast');
+  const toastMsg = $('toastMessage');
+  const toastIcon = $('toastIcon');
+  if (!toast) return;
+  if (toastMsg) toastMsg.textContent = message;
+  if (toastIcon) toastIcon.textContent = icon;
+  toast.classList.remove('hidden');
+
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.classList.add('hidden');
+  }, duration);
+}
+
+// ── Move Destination Modal Controller ─────────────────────────
+let activeMovePaths = [];
+let selectedDestFolder = '';
+
+export async function openMoveModal(pathsToMove, onNavigate, handlers) {
+  let targets = pathsToMove;
+  if (!targets || targets.length === 0) {
+    if (state.selectedPaths && state.selectedPaths.size > 0) {
+      targets = Array.from(state.selectedPaths);
+    }
+  }
+
+  if (!targets || targets.length === 0) {
+    if (!state.isSelectMode && handlers) {
+      toggleSelectMode(true, handlers);
+      showToast('이동할 항목을 먼저 선택해 주세요.', 'ℹ️');
+    } else {
+      showToast('이동할 항목을 먼저 선택해 주세요.', 'ℹ️');
+    }
+    return;
+  }
+
+  activeMovePaths = targets;
+  selectedDestFolder = '';
+
+  const moveModal = $('moveModal');
+  const moveModalSub = $('moveModalSub');
+  const moveDestPath = $('moveDestPath');
+  const container = $('moveFolderContainer');
+
+  const names = activeMovePaths.map(p => p.split('/').pop());
+  const previewText = names.slice(0, 3).join(', ') + (names.length > 3 ? ` 외 ${names.length - 3}개` : '');
+
+  if (moveModalSub) {
+    moveModalSub.textContent = `이동할 항목: ${activeMovePaths.length}개 (${previewText})`;
+  }
+  if (moveDestPath) {
+    moveDestPath.textContent = 'L:\\ (최상위 루트)';
+  }
+
+  if (moveModal) moveModal.classList.remove('hidden');
+
+  await renderMoveFolderList(container, onNavigate);
+}
+
+export async function renderMoveFolderList(container, onNavigate) {
+  if (!container) return;
+  container.innerHTML = '<div class="move-tree-loading">📂 폴더 목록 로딩 중…</div>';
+
+  try {
+    const data = await fetchFoldersApi();
+    const folders = data.folders || [];
+    container.innerHTML = '';
+
+    folders.forEach(f => {
+      const itemEl = document.createElement('div');
+      itemEl.className = 'move-folder-item';
+      if (f.path === selectedDestFolder) itemEl.classList.add('selected');
+
+      let isDisabled = false;
+      let badgeText = '';
+
+      for (const p of activeMovePaths) {
+        if (p === f.path) {
+          isDisabled = true;
+          badgeText = '자신';
+          break;
+        }
+        if (f.path.startsWith(p + '/')) {
+          isDisabled = true;
+          badgeText = '하위 폴더';
+          break;
+        }
+      }
+
+      if (f.path === state.currentFolder) {
+        badgeText = badgeText || '현재 폴더';
+      }
+
+      if (isDisabled) {
+        itemEl.classList.add('disabled');
+      }
+
+      const indent = (f.depth || 0) * 16;
+      itemEl.style.paddingLeft = `${indent + 12}px`;
+
+      itemEl.innerHTML = `
+        <span class="folder-tree-icon">${f.path === '' ? '🏠' : '📁'}</span>
+        <span class="folder-tree-name">${f.name}</span>
+        ${badgeText ? `<span class="folder-badge">${badgeText}</span>` : ''}
+      `;
+
+      if (!isDisabled) {
+        itemEl.addEventListener('click', () => {
+          selectedDestFolder = f.path;
+          container.querySelectorAll('.move-folder-item').forEach(el => el.classList.remove('selected'));
+          itemEl.classList.add('selected');
+          const moveDestPath = $('moveDestPath');
+          if (moveDestPath) {
+            moveDestPath.textContent = f.path ? `L:\\${f.path.replace(/\//g, '\\')}` : 'L:\\ (최상위 루트)';
+          }
+        });
+      }
+
+      container.appendChild(itemEl);
+    });
+
+  } catch (err) {
+    container.innerHTML = `<div class="move-tree-loading" style="color:var(--danger)">⚠️ 폴더 목록 로드 실패: ${err.message}</div>`;
+  }
+}
+
+export function closeMoveModal() {
+  const moveModal = $('moveModal');
+  if (moveModal) moveModal.classList.add('hidden');
+  activeMovePaths = [];
+}
+
+export async function handleConfirmMove(onNavigate, handlers) {
+  if (!activeMovePaths || activeMovePaths.length === 0) {
+    closeMoveModal();
+    return;
+  }
+
+  const confirmBtn = $('moveModalConfirmBtn');
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = '이동 중…';
+  }
+
+  try {
+    const destName = selectedDestFolder ? selectedDestFolder.split('/').pop() : 'L:\\ (루트)';
+    await batchMoveApi(activeMovePaths, selectedDestFolder);
+    const count = activeMovePaths.length;
+    closeMoveModal();
+
+    if (state.isSelectMode && handlers) {
+      toggleSelectMode(false, handlers);
+    } else {
+      state.selectedPaths.clear();
+      updateSelectionUI();
+    }
+
+    showToast(`${count}개 항목을 '${destName}'(으)로 이동했습니다.`, '🚚');
+    if (onNavigate) await onNavigate(state.currentFolder);
+  } catch (err) {
+    alert(`이동 중 오류 발생: ${err.message}`);
+  } finally {
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = '이곳으로 이동';
+    }
+  }
+}
+
+export async function handleMoveModalNewFolder(onNavigate) {
+  const name = prompt('새로 생성할 폴더 이름을 입력하세요:');
+  if (!name || !name.trim()) return;
+  try {
+    await createFolderApi(selectedDestFolder, name.trim());
+    showToast(`'${name.trim()}' 폴더가 생성되었습니다.`, '📁');
+    selectedDestFolder = selectedDestFolder ? `${selectedDestFolder}/${name.trim()}` : name.trim();
+    const moveDestPath = $('moveDestPath');
+    if (moveDestPath) {
+      moveDestPath.textContent = `L:\\${selectedDestFolder.replace(/\//g, '\\')}`;
+    }
+    const cont = $('moveFolderContainer');
+    if (cont) await renderMoveFolderList(cont, onNavigate);
+  } catch (err) {
+    alert(`폴더 생성 실패: ${err.message}`);
   }
 }

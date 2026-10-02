@@ -128,6 +128,10 @@
             <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
             <span>업로드</span>
           </button>
+          <button class="move-btn" id="moveBtn" title="선택 항목 다른 폴더로 이동">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M8 5a1 1 0 100 2h5.586l-1.293 1.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L13.586 5H8z"/><path d="M12 15a1 1 0 100-2H6.414l1.293-1.293a1 1 0 10-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L6.414 15H12z"/></svg>
+            <span>이동</span>
+          </button>
           <button class="view-btn active" id="viewGrid" title="그리드 보기">
             <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
           </button>
@@ -285,6 +289,7 @@
           <a class="lb-btn" id="lbDownload" href="#" download title="원본 다운로드">
             <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
           </a>
+          <button class="lb-btn" id="lbMoveBtn" title="다른 폴더로 이동">🚚</button>
           <button class="lb-btn lb-btn-danger" id="lbDeleteBtn" title="파일 삭제">
             <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
           </button>
@@ -325,18 +330,63 @@
     </div>
     <div class="selection-actions">
       <button class="selection-act-btn" id="selectAllBtn">전체 선택</button>
+      <button class="selection-act-btn highlight" id="batchMoveBtn">🚚 이동</button>
       <button class="selection-act-btn" id="batchShareBtn">🔗 공유</button>
       <button class="selection-act-btn danger" id="batchDeleteBtn">🗑️ 삭제</button>
     </div>
   </div>
 
-  <!-- ── Mobile Floating Upload Action Button (FAB) ──────── -->
-  <button class="fab-upload-btn" id="fabUploadBtn" title="파일 업로드">
-    <svg width="22" height="22" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
-    <span>업로드</span>
-  </button>
+  <!-- ── Move Destination Modal ───────────────────────────── -->
+  <div class="move-modal hidden" id="moveModal">
+    <div class="move-modal-backdrop" id="moveModalBackdrop"></div>
+    <div class="move-modal-box">
+      <div class="move-modal-header">
+        <h3 class="move-modal-title">🚚 대상 폴더로 이동</h3>
+        <button class="modal-close-icon-btn" id="moveModalCloseIconBtn" title="닫기">✕</button>
+      </div>
+      <p class="move-modal-sub" id="moveModalSub">이동할 항목: 0개</p>
+      
+      <div class="move-tree-toolbar">
+        <span class="move-tree-label">📁 이동할 위치를 선택하세요:</span>
+        <button class="move-tree-new-folder-btn" id="moveModalNewFolderBtn" title="새 폴더 만들기">➕ 새 폴더</button>
+      </div>
 
-  <script type="module" src="./app.js?v=5.2"></script>
+      <div class="move-folder-tree-container" id="moveFolderContainer">
+        <div class="move-tree-loading">폴더 목록 로딩 중…</div>
+      </div>
+
+      <div class="move-modal-footer">
+        <div class="move-dest-preview">
+          <span class="dest-label">선택된 대상:</span>
+          <span class="dest-path" id="moveDestPath">L:\ (최상위 루트)</span>
+        </div>
+        <div class="move-modal-actions">
+          <button class="mkdir-btn-action cancel" id="moveModalCancelBtn">취소</button>
+          <button class="mkdir-btn-action confirm move-confirm-btn" id="moveModalConfirmBtn">이곳으로 이동</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Floating Toast Notification ─────────────────────── -->
+  <div class="toast-notification hidden" id="appToast">
+    <span class="toast-icon" id="toastIcon">✨</span>
+    <span class="toast-message" id="toastMessage"></span>
+  </div>
+
+  <!-- ── Mobile Floating Action Buttons ─────────────────── -->
+  <div class="fab-group">
+    <button class="fab-move-btn" id="fabMoveBtn" title="선택 항목 이동">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M8 5a1 1 0 100 2h5.586l-1.293 1.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L13.586 5H8z"/><path d="M12 15a1 1 0 100-2H6.414l1.293-1.293a1 1 0 10-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 011.414-1.414L6.414 15H12z"/></svg>
+      <span>이동</span>
+    </button>
+    <button class="fab-upload-btn" id="fabUploadBtn" title="파일 업로드">
+      <svg width="22" height="22" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+      <span>업로드</span>
+    </button>
+  </div>
+
+  <script type="module" src="./app.js?v=5.3"></script>
 
 
 </body>
