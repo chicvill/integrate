@@ -37,8 +37,8 @@ def get_recent_downloads(db: Session = Depends(get_db)):
                     size_mb=real_size,
                     modified_at=job.created_at.strftime("%Y-%m-%d %H:%M") if job.created_at else "",
                     file_type="audio" if job.mode == "audio" else "video",
-                    download_url=f"/api/download/file/{job.id}",
-                    stream_url=f"/api/download/stream/{job.id}",
+                    download_url=f"/api/ytdownloader/file/{job.id}",
+                    stream_url=f"/api/ytdownloader/stream/{job.id}",
                     status="COMPLETED",
                     title=job.title,
                     job_id=job.id
@@ -88,7 +88,8 @@ def get_recent_downloads(db: Session = Depends(get_db)):
                         size_mb=sz,
                         modified_at=mtime,
                         file_type=ftype,
-                        download_url=f"/api/media/stream/{fname}",
+                        download_url=f"/api/ytdownloader/media/stream/{fname}?download=true",
+                        stream_url=f"/api/ytdownloader/media/stream/{fname}",
                         status="COMPLETED",
                         title=fname,
                         job_id=None

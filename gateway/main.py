@@ -199,6 +199,8 @@ app.include_router(store_situation_router, include_in_schema=False)
 app.include_router(farm_sensor_router, prefix="/api/sensors", include_in_schema=False)
 app.include_router(farm_actuator_router, prefix="/api/actuators", include_in_schema=False)
 app.include_router(farm_growth_router, prefix="/api/growth", include_in_schema=False)
+app.include_router(yt_download_router, prefix="/api/download", include_in_schema=False)
+app.include_router(yt_media_router, prefix="/api/media", include_in_schema=False)
 
 @app.get("/api/system-status", tags=["시스템 - 상태"])
 def get_system_status():
