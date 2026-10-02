@@ -1220,10 +1220,10 @@
   background: var(--bg-card);
   border: 1px solid var(--border-active);
   border-radius: var(--r-xl);
-  width: 90vw;
-  max-width: 940px;
-  height: 88vh;
-  max-height: 850px;
+  width: 96vw;
+  max-width: 1280px;
+  height: 90vh;
+  max-height: 900px;
   display: flex;
   flex-direction: column;
   box-shadow: 0 25px 60px rgba(0,0,0,0.6);
@@ -1415,37 +1415,45 @@
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
   transition: border-color 0.2s;
+  margin-bottom: 8px;
 }
 .dup-group-card:hover {
   border-color: rgba(56, 189, 248, 0.4);
 }
 .dup-group-header {
-  padding: 10px 16px;
+  padding: 12px 18px;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 12.5px;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
 }
 .dup-group-meta {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 .dup-group-num {
-  font-weight: 700;
+  font-weight: 800;
+  font-size: 13.5px;
   color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 3px 8px;
+  border-radius: 6px;
 }
 .dup-badge-type {
-  padding: 3px 8px;
-  border-radius: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
   background: rgba(14, 165, 233, 0.15);
   color: #38bdf8;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -1462,128 +1470,254 @@
 }
 .dup-group-size {
   color: var(--text-muted);
+  font-size: 12px;
+}
+.dup-group-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 .dup-group-waste {
   color: var(--text-secondary);
+  font-size: 12.5px;
 }
 .dup-group-waste strong {
   color: #f87171;
+  font-weight: 700;
+}
+.dup-group-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--border-active);
+  color: var(--text-primary);
+  padding: 5px 12px;
+  border-radius: var(--r-md);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.dup-group-btn:hover {
+  background: var(--bg-hover);
+  border-color: #38bdf8;
+  color: #38bdf8;
+  transform: translateY(-1px);
+}
+.dup-group-btn.highlight {
+  background: rgba(14, 165, 233, 0.18);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+}
+.dup-group-btn.highlight:hover {
+  background: rgba(14, 165, 233, 0.3);
 }
 
-/* Items Grid */
+/* Photo-First Comparison Grid */
 .dup-items-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 12px;
-  padding: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 16px;
+  padding: 16px;
 }
+
+/* Individual Photo Card */
 .dup-item-card {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  transition: all 0.18s;
   position: relative;
+  aspect-ratio: 4 / 3;
+  min-height: 220px;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: #090a10;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.22s ease, border-color 0.22s ease;
+}
+.dup-item-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.55);
 }
 .dup-item-card.is-original {
-  border-color: rgba(34, 197, 94, 0.35);
-  background: rgba(34, 197, 94, 0.04);
+  border-color: #10b981;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.25);
 }
 .dup-item-card.selected-for-delete {
-  border-color: rgba(239, 68, 68, 0.5);
-  background: rgba(239, 68, 68, 0.06);
+  border-color: #ef4444;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.45);
 }
-.dup-thumb-wrap {
-  aspect-ratio: 16/10;
-  border-radius: var(--r-sm);
-  overflow: hidden;
-  position: relative;
-  background: #000;
-  cursor: pointer;
-}
-.dup-thumb-wrap img {
+
+/* Photo Image */
+.dup-photo-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.25s;
+  display: block;
+  transition: transform 0.3s ease;
 }
-.dup-thumb-wrap:hover img {
-  transform: scale(1.05);
-}
-.dup-thumb-badge {
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 700;
-  backdrop-filter: blur(6px);
-}
-.dup-thumb-badge.orig {
-  background: rgba(22, 101, 52, 0.85);
-  color: #86efac;
-  border: 1px solid rgba(74, 222, 128, 0.4);
-}
-.dup-thumb-badge.copy {
-  background: rgba(153, 27, 27, 0.85);
-  color: #fca5a5;
-  border: 1px solid rgba(248, 113, 113, 0.4);
+.dup-item-card:hover .dup-photo-img {
+  transform: scale(1.04);
 }
 
-.dup-item-info {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  font-size: 12px;
+/* Delete Tint Overlay */
+.dup-delete-tint {
+  position: absolute;
+  inset: 0;
+  background: rgba(239, 68, 68, 0.2);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
-.dup-item-name {
-  font-weight: 600;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.dup-item-card.selected-for-delete .dup-delete-tint {
+  opacity: 1;
 }
-.dup-item-folder {
-  color: var(--text-muted);
-  font-size: 11px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.dup-item-sub {
+
+/* Top Bar: Badge + Circular Checkbox */
+.dup-photo-top-bar {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: var(--text-secondary);
-  font-size: 11px;
-  margin-top: 2px;
+  z-index: 2;
+  pointer-events: none;
+}
+.dup-status-badge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  backdrop-filter: blur(8px);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+.dup-status-badge.orig {
+  background: rgba(16, 185, 129, 0.92);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.dup-status-badge.copy {
+  background: rgba(239, 68, 68, 0.92);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.dup-status-badge.kept {
+  background: rgba(56, 189, 248, 0.9);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-.dup-item-actions {
+.dup-check-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  padding-top: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-size: 15px;
+  font-weight: 800;
 }
-.dup-checkbox-label {
-  display: flex;
+.dup-item-card.selected-for-delete .dup-check-circle {
+  background: #ef4444;
+  border: 2px solid #fff;
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(239, 68, 68, 0.6);
+}
+.dup-item-card:not(.selected-for-delete) .dup-check-circle {
+  background: rgba(0, 0, 0, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  color: transparent;
+}
+.dup-item-card:hover .dup-check-circle {
+  transform: scale(1.08);
+}
+
+/* Hover Zoom Button in Center */
+.dup-photo-center-action {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: auto;
+}
+.dup-item-card:hover .dup-photo-center-action {
+  opacity: 1;
+}
+.dup-zoom-action-btn {
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
-  color: var(--text-primary);
-  cursor: pointer;
-  user-select: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  transition: all 0.15s ease;
 }
-.dup-item-check {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  accent-color: #ef4444;
+.dup-zoom-action-btn:hover {
+  background: #0284c7;
+  border-color: #38bdf8;
+  transform: scale(1.05);
+}
+
+/* Bottom Metadata Gradient Overlay */
+.dup-photo-bottom-meta {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  padding: 32px 12px 10px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.94) 0%, rgba(0, 0, 0, 0.65) 60%, transparent 100%);
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dup-photo-name {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+.dup-photo-folder {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.dup-photo-sub {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 2px;
 }
 
 /* Footer */
@@ -1594,6 +1728,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 .dup-footer-hint {
   font-size: 12.5px;
@@ -1607,5 +1743,184 @@
   color: #38bdf8;
   border: 1px solid rgba(56, 189, 248, 0.3);
 }
+
+/* ── Side-by-Side Photo Comparison Modal ── */
+.dup-compare-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+}
+.dup-compare-modal.hidden {
+  display: none;
+}
+.dup-compare-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+}
+.dup-compare-box {
+  position: relative;
+  z-index: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border-active);
+  border-radius: var(--r-xl);
+  width: 96vw;
+  max-width: 1360px;
+  height: 92vh;
+  max-height: 920px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.8);
+  animation: popIn 0.2s ease-out;
+  overflow: hidden;
+}
+.dup-compare-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-surface);
+}
+.dup-compare-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.dup-compare-icon {
+  font-size: 24px;
+}
+.dup-compare-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+.dup-compare-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.dup-compare-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 20px;
+  background: var(--bg-body);
+  align-items: stretch;
+}
+.dup-compare-card {
+  background: var(--bg-elevated);
+  border: 2px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+}
+.dup-compare-card.is-keep {
+  border-color: #10b981;
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.25);
+}
+.dup-compare-card.is-delete {
+  border-color: #ef4444;
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.35);
+}
+.dup-compare-img-box {
+  flex: 1;
+  min-height: 400px;
+  position: relative;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: zoom-in;
+}
+.dup-compare-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+.dup-compare-card-footer {
+  padding: 14px 18px;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dup-compare-file-info {
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.dup-compare-file-name {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dup-compare-file-path {
+  color: var(--text-muted);
+  font-size: 11.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dup-compare-toggle-btn {
+  padding: 8px 16px;
+  border-radius: var(--r-md);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.18s ease;
+  border: 1px solid transparent;
+}
+.dup-compare-toggle-btn.btn-keep {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.5);
+}
+.dup-compare-toggle-btn.btn-keep:hover {
+  background: rgba(16, 185, 129, 0.35);
+}
+.dup-compare-toggle-btn.btn-delete {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.5);
+}
+.dup-compare-toggle-btn.btn-delete:hover {
+  background: rgba(239, 68, 68, 0.35);
+}
+.dup-compare-footer {
+  padding: 14px 24px;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.dup-compare-hint {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
 
 

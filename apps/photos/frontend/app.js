@@ -1,14 +1,15 @@
-import { $, state, formatBytes, saveFavorites } from './js/state.js?v=6.0';
-import { fetchFolderData, uploadSingleFile, deleteItemApi, fetchStorageInfo, createFolderApi, batchMoveApi } from './js/api.js?v=6.0';
-import { renderBreadcrumb, renderSidebarStats, renderGallery, copyLinkToClipboard, shareItem, cleanupDragState } from './js/ui.js?v=6.0';
+import { $, state, formatBytes, saveFavorites } from './js/state.js?v=6.5';
+import { fetchFolderData, uploadSingleFile, deleteItemApi, fetchStorageInfo, createFolderApi, batchMoveApi } from './js/api.js?v=6.5';
+import { renderBreadcrumb, renderSidebarStats, renderGallery, copyLinkToClipboard, shareItem, cleanupDragState } from './js/ui.js?v=6.5';
 import {
   openLightbox, closeLightbox, renderLightboxItem, rotateLightboxImage, toggleSlideshow,
   openMkdirModal, closeMkdirModal, handleCreateFolder,
   openUploadOptModal, closeUploadOptModal, getSelectedUploadFolder,
   enableSelectMode, toggleSelectMode, toggleItemSelection, updateSelectionUI, handleBatchShare, handleBatchDelete,
   openMoveModal, closeMoveModal, handleConfirmMove, handleMoveModalNewFolder, showToast,
-  openDuplicatesModal, closeDuplicatesModal, handleScanDuplicates, handleDeleteSelectedDuplicates, autoSelectDuplicateCopies, deselectAllDuplicates
-} from './js/modals.js?v=6.0';
+  openDuplicatesModal, closeDuplicatesModal, handleScanDuplicates, handleDeleteSelectedDuplicates, autoSelectDuplicateCopies, deselectAllDuplicates,
+  closeDuplicatesComparison
+} from './js/modals.js?v=6.5';
 
 // Handlers object passed to card rendering
 const cardHandlers = {
@@ -681,6 +682,14 @@ function initEvents() {
   if (dupDeselectAllBtn) dupDeselectAllBtn.addEventListener('click', deselectAllDuplicates);
   if (dupDeleteSelectedBtn) dupDeleteSelectedBtn.addEventListener('click', () => handleDeleteSelectedDuplicates((p) => navigateTo(p), cardHandlers));
 
+  // Duplicates Side-by-Side Comparison Modal
+  const dupCompareCloseBtn   = $('dupCompareCloseBtn');
+  const dupCompareBackdrop   = $('dupCompareBackdrop');
+  const dupCompareConfirmBtn = $('dupCompareConfirmBtn');
+  if (dupCompareCloseBtn) dupCompareCloseBtn.addEventListener('click', closeDuplicatesComparison);
+  if (dupCompareBackdrop) dupCompareBackdrop.addEventListener('click', closeDuplicatesComparison);
+  if (dupCompareConfirmBtn) dupCompareConfirmBtn.addEventListener('click', closeDuplicatesComparison);
+
   // Lightbox Controls
   const lbClose        = $('lbClose');
   const lbBackdrop     = $('lbBackdrop');
@@ -766,6 +775,19 @@ function initEvents() {
 
   // Keyboard Shortcuts
   document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const dupCompare = $('dupCompareModal');
+      if (dupCompare && !dupCompare.classList.contains('hidden')) {
+        closeDuplicatesComparison();
+        return;
+      }
+      const dupModal = $('duplicatesModal');
+      if (dupModal && !dupModal.classList.contains('hidden')) {
+        closeDuplicatesModal();
+        return;
+      }
+    }
+
     if (!lightbox || !lightbox.classList.contains('open')) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();

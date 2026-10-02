@@ -8,7 +8,7 @@
   <meta name="description" content="MQnet L: 드라이브 사진, 동영상, 문서 뷰어 — 폴더별 탐색, 스트리밍, PDF/텍스트 미리보기">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="./style.css?v=5.7">
+  <link rel="stylesheet" href="./style.css?v=6.5">
 
   <style>
     svg { max-width: 100%; max-height: 100%; }
@@ -452,6 +452,28 @@
     </div>
   </div>
 
+  <!-- ── Duplicates Side-by-Side Comparison Modal ── -->
+  <div class="dup-compare-modal hidden" id="dupCompareModal">
+    <div class="dup-compare-backdrop" id="dupCompareBackdrop"></div>
+    <div class="dup-compare-box">
+      <div class="dup-compare-header">
+        <div class="dup-compare-title-group">
+          <span class="dup-compare-icon">🔍</span>
+          <div>
+            <h3 class="dup-compare-title" id="dupCompareTitle">중복 사진 1:1 정밀 비교</h3>
+            <p class="dup-compare-sub" id="dupCompareSub">사진을 확대하여 초점 및 해상도를 확인하고 보관할 원본을 선택하세요.</p>
+          </div>
+        </div>
+        <button class="modal-close-icon-btn" id="dupCompareCloseBtn" title="닫기 (ESC)">✕</button>
+      </div>
+      <div class="dup-compare-body" id="dupCompareBody"></div>
+      <div class="dup-compare-footer">
+        <span class="dup-compare-hint">💡 각 사진 상단의 <strong>[👑 보관]</strong> 또는 <strong>[🗑️ 삭제]</strong> 버튼을 클릭하여 정리할 수 있습니다.</span>
+        <button class="mkdir-btn-action confirm" id="dupCompareConfirmBtn">확인 완료</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Floating Toast Notification ─────────────────────── -->
   <div class="toast-notification hidden" id="appToast">
     <span class="toast-icon" id="toastIcon">✨</span>
@@ -470,6 +492,6 @@
     </button>
   </div>
 
-  <script type="module" src="./app.js?v=6.0"></script>
+  <script type="module" src="./app.js?v=6.5"></script>
 </body>
 </html>

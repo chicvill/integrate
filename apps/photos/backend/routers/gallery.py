@@ -813,8 +813,10 @@ async def find_duplicates(
     recursive: bool = Query(True, description="Recursively search subfolders"),
     mode: str = Query("all", description="Detection mode: 'all', 'exact' or 'visual'"),
     include_videos: bool = Query(True, description="Include video duplicates"),
-    limit: int = Query(150, description="Max duplicate groups")
+    limit: int = Query(150, description="Max duplicate groups"),
+    request: Request = None,
 ):
+    prefix = get_route_prefix(request)
     media_root = get_media_root()
     if folder:
         scan_dir = safe_path(folder)
@@ -915,8 +917,8 @@ async def find_duplicates(
                     "formatted_size": format_size(st.st_size),
                     "mtime": st.st_mtime,
                     "mtime_str": datetime.fromtimestamp(st.st_mtime).strftime("%Y-%m-%d %H:%M"),
-                    "url": f"/api/raw/{urllib.parse.quote(rel_p)}",
-                    "thumb": f"/api/thumb/{urllib.parse.quote(rel_p)}",
+                    "url": f"{prefix}/raw/{urllib.parse.quote(rel_p)}",
+                    "thumb": f"{prefix}/thumb/{urllib.parse.quote(rel_p)}",
                     "folder": folder_rel,
                     "folder_display": f"L:\\{folder_rel.replace('/', chr(92))}" if folder_rel else "L:\\"
                 })
@@ -1013,8 +1015,8 @@ async def find_duplicates(
                             "formatted_size": format_size(st.st_size),
                             "mtime": st.st_mtime,
                             "mtime_str": datetime.fromtimestamp(st.st_mtime).strftime("%Y-%m-%d %H:%M"),
-                            "url": f"/api/raw/{urllib.parse.quote(rel_p)}",
-                            "thumb": f"/api/thumb/{urllib.parse.quote(rel_p)}",
+                            "url": f"{prefix}/raw/{urllib.parse.quote(rel_p)}",
+                            "thumb": f"{prefix}/thumb/{urllib.parse.quote(rel_p)}",
                             "folder": folder_rel,
                             "folder_display": f"L:\\{folder_rel.replace('/', chr(92))}" if folder_rel else "L:\\"
                         })

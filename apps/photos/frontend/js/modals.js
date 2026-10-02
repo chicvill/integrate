@@ -627,6 +627,7 @@ export function renderDuplicatesResults(data, onNavigate, handlers) {
   groups.forEach((grp, grpIdx) => {
     const groupCard = document.createElement('div');
     groupCard.className = 'dup-group-card';
+    groupCard.dataset.groupId = grp.group_id;
 
     const groupHeader = document.createElement('div');
     groupHeader.className = 'dup-group-header';
@@ -636,64 +637,119 @@ export function renderDuplicatesResults(data, onNavigate, handlers) {
         <span class="dup-badge-type ${grp.type || 'exact'}">${grp.type_label || (grp.type === 'exact' ? '👑 완전 일치' : '📷 유사 사진')}</span>
         <span class="dup-group-size">파일당: ${grp.formatted_size}</span>
       </div>
-      <div class="dup-group-waste">
-        낭비되는 용량: <strong>${grp.formatted_wasted_size}</strong>
+      <div class="dup-group-right-actions">
+        <div class="dup-group-waste">
+          낭비 용량: <strong>${grp.formatted_wasted_size}</strong>
+        </div>
+        <button class="dup-group-btn highlight btn-group-compare" title="이 그룹의 사진들을 1:1 큰 화면으로 비교합니다">
+          🔍 나란히 사진 비교
+        </button>
+        <button class="dup-group-btn btn-group-keep-orig" title="첫 번째 원본만 남기고 다른 사본들을 모두 삭제 선택합니다">
+          👑 원본만 보관
+        </button>
       </div>
     `;
+
+    // Group comparison button
+    const compareBtn = groupHeader.querySelector('.btn-group-compare');
+    if (compareBtn) {
+      compareBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openDuplicatesComparison(grp);
+      });
+    }
+
+    // Keep original only button
+    const keepOrigBtn = groupHeader.querySelector('.btn-group-keep-orig');
+    if (keepOrigBtn) {
+      keepOrigBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        grp.items.forEach((it, idx) => {
+          const card = groupCard.querySelector(`.dup-item-card[data-path="${CSS.escape(it.path)}"]`);
+          if (idx === 0) {
+            selectedDupPaths.delete(it.path);
+            if (card) updateCardVisualState(card, false, true);
+          } else {
+            selectedDupPaths.add(it.path);
+            if (card) updateCardVisualState(card, true, false);
+          }
+        });
+        updateDupSelectedCount();
+      });
+    }
+
     groupCard.appendChild(groupHeader);
 
     const itemsGrid = document.createElement('div');
     itemsGrid.className = 'dup-items-grid';
 
     grp.items.forEach((item) => {
-      const isOriginal = item.is_suggested_original;
+      const isOriginal = !!item.is_suggested_original;
+      const isSelected = !isOriginal;
+      if (isSelected) {
+        selectedDupPaths.add(item.path);
+      }
+
       const itemEl = document.createElement('div');
-      itemEl.className = `dup-item-card ${isOriginal ? 'is-original' : 'is-duplicate'}`;
+      itemEl.className = `dup-item-card ${isOriginal ? 'is-original' : 'is-duplicate'} ${isSelected ? 'selected-for-delete' : ''}`;
       itemEl.dataset.path = item.path;
 
+      const thumbUrl = item.thumb || `${getApiBase()}/thumb/${encodeURIComponent(item.path)}`;
+      const rawUrl = item.url || `${getApiBase()}/raw/${encodeURIComponent(item.path)}`;
+
       itemEl.innerHTML = `
-        <div class="dup-thumb-wrap">
-          <img src="${item.thumb}" alt="${item.name}" loading="lazy" onerror="this.src='/photos/assets/images/folder_placeholder.svg'">
-          <div class="dup-thumb-badge ${isOriginal ? 'orig' : 'copy'}">
-            ${isOriginal ? '👑 원본 (보관 추천)' : '📋 사본 (삭제 대상)'}
+        <img class="dup-photo-img" src="${thumbUrl}" alt="${item.name}" loading="lazy" onerror="if (this.dataset.triedRaw !== 'true') { this.dataset.triedRaw = 'true'; this.src = '${rawUrl}'; } else { this.src = '/photos/assets/images/folder_placeholder.svg'; }">
+        <div class="dup-delete-tint"></div>
+
+        <div class="dup-photo-top-bar">
+          <div class="dup-status-badge ${isOriginal ? 'orig' : 'copy'}">
+            ${isOriginal ? '👑 보관 원본' : '🗑️ 삭제 사본'}
+          </div>
+          <div class="dup-check-circle" title="클릭하여 삭제 대상 선택/해제">
+            ${isSelected ? '✓' : ''}
           </div>
         </div>
-        <div class="dup-item-info">
-          <div class="dup-item-name" title="${item.name}">${item.name}</div>
-          <div class="dup-item-folder" title="${item.folder_display || item.path}">
+
+        <div class="dup-photo-center-action">
+          <button class="dup-zoom-action-btn" title="사진 1:1 확대 비교">
+            🔍 큰 사진 비교
+          </button>
+        </div>
+
+        <div class="dup-photo-bottom-meta">
+          <div class="dup-photo-name" title="${item.name}">${item.name}</div>
+          <div class="dup-photo-folder" title="${item.folder_display || item.path}">
             📁 ${item.folder_display || item.path}
           </div>
-          <div class="dup-item-sub">
+          <div class="dup-photo-sub">
             <span>📅 ${item.mtime_str || ''}</span>
             <span>💾 ${item.formatted_size}</span>
           </div>
         </div>
-        <div class="dup-item-actions">
-          <label class="dup-checkbox-label">
-            <input type="checkbox" class="dup-item-check" data-path="${item.path}" ${!isOriginal ? 'checked' : ''}>
-            <span>삭제 선택</span>
-          </label>
-        </div>
       `;
 
-      // Checkbox click
-      const check = itemEl.querySelector('.dup-item-check');
-      if (check) {
-        if (!isOriginal) {
-          selectedDupPaths.add(item.path);
-          itemEl.classList.add('selected-for-delete');
-        }
-        check.addEventListener('change', (e) => {
-          if (e.target.checked) {
-            selectedDupPaths.add(item.path);
-            itemEl.classList.add('selected-for-delete');
-          } else {
-            selectedDupPaths.delete(item.path);
-            itemEl.classList.remove('selected-for-delete');
-          }
-          updateDupSelectedCount();
+      // Zoom action
+      const zoomBtn = itemEl.querySelector('.dup-zoom-action-btn');
+      if (zoomBtn) {
+        zoomBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openDuplicatesComparison(grp, item);
         });
       }
+
+      // Card click toggles selection
+      itemEl.addEventListener('click', (e) => {
+        if (e.target.closest('.dup-zoom-action-btn')) return;
+        const nowSelected = selectedDupPaths.has(item.path);
+        if (nowSelected) {
+          selectedDupPaths.delete(item.path);
+          updateCardVisualState(itemEl, false, isOriginal);
+        } else {
+          selectedDupPaths.add(item.path);
+          updateCardVisualState(itemEl, true, isOriginal);
+        }
+        updateDupSelectedCount();
+      });
 
       itemsGrid.appendChild(itemEl);
     });
@@ -705,19 +761,43 @@ export function renderDuplicatesResults(data, onNavigate, handlers) {
   updateDupSelectedCount();
 }
 
+function updateCardVisualState(card, isSelected, isOriginal) {
+  const checkCircle = card.querySelector('.dup-check-circle');
+  const badge = card.querySelector('.dup-status-badge');
+
+  if (isSelected) {
+    card.classList.add('selected-for-delete');
+    if (checkCircle) checkCircle.textContent = '✓';
+    if (badge) {
+      badge.className = 'dup-status-badge copy';
+      badge.innerHTML = '🗑️ 삭제 사본';
+    }
+  } else {
+    card.classList.remove('selected-for-delete');
+    if (checkCircle) checkCircle.textContent = '';
+    if (badge) {
+      if (isOriginal) {
+        badge.className = 'dup-status-badge orig';
+        badge.innerHTML = '👑 보관 원본';
+      } else {
+        badge.className = 'dup-status-badge kept';
+        badge.innerHTML = '✔️ 보관 유지';
+      }
+    }
+  }
+}
+
 export function autoSelectDuplicateCopies() {
   selectedDupPaths.clear();
-  const checkboxes = document.querySelectorAll('.dup-item-check');
-  checkboxes.forEach(cb => {
-    const itemCard = cb.closest('.dup-item-card');
-    const isOriginal = itemCard && itemCard.classList.contains('is-original');
+  const cards = document.querySelectorAll('.dup-item-card');
+  cards.forEach(card => {
+    const path = card.dataset.path;
+    const isOriginal = card.classList.contains('is-original');
     if (!isOriginal) {
-      cb.checked = true;
-      selectedDupPaths.add(cb.dataset.path);
-      if (itemCard) itemCard.classList.add('selected-for-delete');
+      selectedDupPaths.add(path);
+      updateCardVisualState(card, true, false);
     } else {
-      cb.checked = false;
-      if (itemCard) itemCard.classList.remove('selected-for-delete');
+      updateCardVisualState(card, false, true);
     }
   });
   updateDupSelectedCount();
@@ -725,13 +805,98 @@ export function autoSelectDuplicateCopies() {
 
 export function deselectAllDuplicates() {
   selectedDupPaths.clear();
-  const checkboxes = document.querySelectorAll('.dup-item-check');
-  checkboxes.forEach(cb => {
-    cb.checked = false;
-    const itemCard = cb.closest('.dup-item-card');
-    if (itemCard) itemCard.classList.remove('selected-for-delete');
+  const cards = document.querySelectorAll('.dup-item-card');
+  cards.forEach(card => {
+    const isOriginal = card.classList.contains('is-original');
+    updateCardVisualState(card, false, isOriginal);
   });
   updateDupSelectedCount();
+}
+
+export function openDuplicatesComparison(grp, focusItem) {
+  const modal = $('dupCompareModal');
+  const body = $('dupCompareBody');
+  const title = $('dupCompareTitle');
+  const sub = $('dupCompareSub');
+  if (!modal || !body) return;
+
+  if (title) {
+    title.textContent = `중복 사진 1:1 정밀 비교 (${grp.type_label || (grp.type === 'exact' ? '완전 일치' : '유사 사진')})`;
+  }
+  if (sub) {
+    sub.textContent = `총 ${grp.items.length}장의 사진을 비교합니다. 낭비 용량: ${grp.formatted_wasted_size} · 각 사진의 버튼을 눌러 보관/삭제를 변경하세요.`;
+  }
+
+  body.innerHTML = '';
+
+  grp.items.forEach((item) => {
+    const isOriginal = !!item.is_suggested_original;
+    const isSelected = selectedDupPaths.has(item.path);
+
+    const card = document.createElement('div');
+    card.className = `dup-compare-card ${isSelected ? 'is-delete' : 'is-keep'}`;
+    card.dataset.path = item.path;
+
+    const rawUrl = item.url || `${getApiBase()}/raw/${encodeURIComponent(item.path)}`;
+    const thumbUrl = item.thumb || `${getApiBase()}/thumb/${encodeURIComponent(item.path)}`;
+
+    card.innerHTML = `
+      <div class="dup-compare-img-box" title="원본 해상도 사진">
+        <img class="dup-compare-img" src="${rawUrl}" alt="${item.name}" loading="lazy" onerror="this.src='${thumbUrl}'">
+      </div>
+      <div class="dup-compare-card-footer">
+        <div class="dup-compare-file-info">
+          <div class="dup-compare-file-name" title="${item.name}">
+            ${isOriginal ? '👑 ' : ''}${item.name}
+          </div>
+          <div class="dup-compare-file-path" title="${item.folder_display || item.path}">
+            📁 ${item.folder_display || item.path}
+          </div>
+          <div class="dup-photo-sub">
+            <span>📅 ${item.mtime_str || ''}</span>
+            <span>💾 ${item.formatted_size}</span>
+          </div>
+        </div>
+
+        <button class="dup-compare-toggle-btn ${isSelected ? 'btn-delete' : 'btn-keep'}">
+          ${isSelected ? '🗑️ 삭제 사본 (클릭하여 보관)' : '👑 보관 유지 (클릭하여 삭제)'}
+        </button>
+      </div>
+    `;
+
+    const toggleBtn = card.querySelector('.dup-compare-toggle-btn');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        const nowSelected = selectedDupPaths.has(item.path);
+        const mainCard = document.querySelector(`.dup-item-card[data-path="${CSS.escape(item.path)}"]`);
+        if (nowSelected) {
+          selectedDupPaths.delete(item.path);
+          card.classList.remove('is-delete');
+          card.classList.add('is-keep');
+          toggleBtn.className = 'dup-compare-toggle-btn btn-keep';
+          toggleBtn.textContent = '👑 보관 유지 (클릭하여 삭제)';
+          if (mainCard) updateCardVisualState(mainCard, false, isOriginal);
+        } else {
+          selectedDupPaths.add(item.path);
+          card.classList.remove('is-keep');
+          card.classList.add('is-delete');
+          toggleBtn.className = 'dup-compare-toggle-btn btn-delete';
+          toggleBtn.textContent = '🗑️ 삭제 사본 (클릭하여 보관)';
+          if (mainCard) updateCardVisualState(mainCard, true, isOriginal);
+        }
+        updateDupSelectedCount();
+      });
+    }
+
+    body.appendChild(card);
+  });
+
+  modal.classList.remove('hidden');
+}
+
+export function closeDuplicatesComparison() {
+  const modal = $('dupCompareModal');
+  if (modal) modal.classList.add('hidden');
 }
 
 function updateDupSelectedCount() {
