@@ -396,16 +396,19 @@ async def upload_files(request: Request):
         else:
             raise HTTPException(status_code=404, detail="Target folder not found")
 
-    # Extract all uploaded files flexibly from form_data
+    # Extract all uploaded files flexibly from form_data (prioritize 'files', then fallback to others)
     upload_list: List[UploadFile] = []
     for key in ("files", "file", "upload"):
-        for item in form_data.getlist(key):
-            if hasattr(item, "filename") and item.filename:
-                upload_list.append(item)
+        items = [item for item in form_data.getlist(key) if hasattr(item, "filename") and item.filename]
+        if items:
+            upload_list.extend(items)
+            break
 
     if not upload_list:
+        seen_filenames = set()
         for key, item in form_data.multi_items():
-            if hasattr(item, "filename") and item.filename and item not in upload_list:
+            if hasattr(item, "filename") and item.filename and item.filename not in seen_filenames:
+                seen_filenames.add(item.filename)
                 upload_list.append(item)
 
     if not upload_list:

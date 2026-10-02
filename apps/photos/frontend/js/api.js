@@ -54,7 +54,6 @@ export function uploadSingleFile(fileItem, mode, onProgress) {
     formData.append('mode', mode || state.currentUploadMode || 'copy');
     formData.append('relative_path', relPath);
     formData.append('files', file, fileName);
-    formData.append('file', file, fileName);
 
     const base = getApiBase();
     const xhr = new XMLHttpRequest();
