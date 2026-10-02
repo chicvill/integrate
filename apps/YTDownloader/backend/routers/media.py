@@ -11,6 +11,7 @@ from apps.YTDownloader.backend.db.database import get_db
 from apps.YTDownloader.backend.db import models
 from apps.YTDownloader.backend.schemas import MediaFileItem
 from apps.YTDownloader.backend.config import settings
+from apps.YTDownloader.backend.routers.download import safe_content_disposition, locate_disk_file
 
 router = APIRouter(prefix="", tags=["Media Archive"])
 
@@ -28,8 +29,8 @@ def get_recent_downloads(db: Session = Depends(get_db)):
             # 1. 완료된 작업
             if job.status == "COMPLETED" and job.filename:
                 seen_filenames.add(job.filename)
-                disk_path = os.path.join(settings.DOWNLOADS_DIR, job.filename)
-                real_size = round(os.path.getsize(disk_path) / (1024 * 1024), 2) if os.path.exists(disk_path) else job.file_size_mb
+                disk_path = locate_disk_file(job.filename)
+                real_size = round(os.path.getsize(disk_path) / (1024 * 1024), 2) if disk_path and os.path.exists(disk_path) else job.file_size_mb
 
                 items.append(MediaFileItem(
                     filename=job.filename,
@@ -104,28 +105,12 @@ def stream_media_file(filename: str, download: bool = False):
     import urllib.parse
     decoded_name = urllib.parse.unquote(filename)
     safe_name = os.path.basename(decoded_name)
-    file_path = os.path.join(settings.DOWNLOADS_DIR, safe_name)
+    file_path = locate_disk_file(safe_name)
 
-    if not os.path.exists(file_path):
-        # 디스크의 실제 파일명과 정규화 비교
-        matched = False
-        if os.path.exists(settings.DOWNLOADS_DIR):
-            for real_f in os.listdir(settings.DOWNLOADS_DIR):
-                if real_f == safe_name or real_f == filename or urllib.parse.unquote(real_f) == decoded_name:
-                    file_path = os.path.join(settings.DOWNLOADS_DIR, real_f)
-                    safe_name = real_f
-                    matched = True
-                    break
-        if not matched or not os.path.exists(file_path):
-            raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
+    if not file_path or not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
 
-    import re
-    ascii_clean = re.sub(r'[^\w\s\.-]', '', safe_name)
-    ascii_clean = re.sub(r'\s+', '_', ascii_clean).strip('._') or "media_stream.mp4"
-    encoded_name = urllib.parse.quote(safe_name, safe='')
-    disposition = "attachment" if download else "inline"
-    cd_header = f'{disposition}; filename="{ascii_clean}"; filename*=UTF-8\'\'{encoded_name}'
-
+    cd_header = safe_content_disposition(os.path.basename(file_path), as_attachment=download)
     media_type = "audio/mp4" if safe_name.lower().endswith((".m4a", ".mp3", ".aac", ".wav")) else "video/mp4"
     return FileResponse(
         path=file_path,
@@ -151,8 +136,8 @@ def delete_media_item(target: str, db: Session = Depends(get_db)):
         job = db.query(models.DownloadJob).filter(models.DownloadJob.id == job_id).first()
         if job:
             if job.filename:
-                file_path = os.path.join(settings.DOWNLOADS_DIR, job.filename)
-                if os.path.exists(file_path):
+                file_path = locate_disk_file(job.filename)
+                if file_path and os.path.exists(file_path):
                     try:
                         os.remove(file_path)
                         deleted_disk = True
@@ -171,13 +156,14 @@ def delete_media_item(target: str, db: Session = Depends(get_db)):
 
     # 3. 물리 디스크 파일 삭제
     safe_name = os.path.basename(decoded_target)
-    file_path = os.path.join(settings.DOWNLOADS_DIR, safe_name)
-    if os.path.exists(file_path):
+    file_path = locate_disk_file(safe_name)
+    if file_path and os.path.exists(file_path):
         try:
             os.remove(file_path)
             deleted_disk = True
         except Exception:
             pass
+
     elif os.path.exists(settings.DOWNLOADS_DIR):
         for real_f in os.listdir(settings.DOWNLOADS_DIR):
             if real_f == safe_name or real_f == decoded_target or urllib.parse.unquote(real_f) == decoded_target:

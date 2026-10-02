@@ -17,7 +17,19 @@ class YTDownloaderConfig(BaseConfig):
     SECRET_KEY: str = os.getenv("SECRET_KEY", "mqnet_ytdownloader_unified_secret_key_2026")
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./ytdownloader.db")
 
-    DOWNLOADS_DIR: str = os.path.join(os.path.dirname(__file__), "downloads")
+    @property
+    def DOWNLOADS_DIR(self) -> str:
+        media_root = os.getenv("MEDIA_STORAGE_PATH", os.getenv("MEDIA_PATH", "/media"))
+        if os.path.exists(media_root):
+            target = os.path.join(media_root, "downloads")
+            try:
+                os.makedirs(target, exist_ok=True)
+                return target
+            except Exception:
+                pass
+        fallback = os.path.join(os.path.dirname(__file__), "downloads")
+        os.makedirs(fallback, exist_ok=True)
+        return fallback
 
     @property
     def is_standalone(self) -> bool:
@@ -25,7 +37,6 @@ class YTDownloaderConfig(BaseConfig):
 
 
 settings = YTDownloaderConfig()
-os.makedirs(settings.DOWNLOADS_DIR, exist_ok=True)
 
 
 def get_settings() -> YTDownloaderConfig:

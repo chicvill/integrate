@@ -25,8 +25,11 @@ def normalize_youtube_url(url: str) -> str:
 
 class YTDLPEngine:
     def __init__(self):
-        self.downloads_dir = settings.DOWNLOADS_DIR
         self._setup_ffmpeg_path()
+
+    @property
+    def downloads_dir(self):
+        return settings.DOWNLOADS_DIR
 
     def _setup_ffmpeg_path(self):
         if os.name == 'nt':

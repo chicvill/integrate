@@ -133,41 +133,68 @@ import urllib.parse
 
 
 def safe_content_disposition(filename: str, as_attachment: bool = True) -> str:
-    """이모지 및 특수문자 제거한 ASCII fallback 및 RFC 5987 UTF-8 인코딩 헤더 생성"""
-    ascii_clean = re.sub(r'[^\w\s\.-]', '', filename)
-    ascii_clean = re.sub(r'\s+', '_', ascii_clean).strip('._')
-    if not ascii_clean:
-        ascii_clean = "media_download.mp4"
+    """ASCII fallback 및 RFC 5987 UTF-8 인코딩 헤더 생성 (latin-1 100% 안전 보장)"""
+    if not filename:
+        filename = "media_download.mp4"
+
+    # 1. 확장자 추출
+    _, ext = os.path.splitext(filename)
+    if not ext:
+        ext = ".m4a" if not as_attachment else ".mp4"
+
+    # 2. 오직 순수 ASCII 영문/숫자/언더바/대시만 추출 (한글 및 특수문자 치환)
+    ascii_clean = re.sub(r'[^a-zA-Z0-9_\.-]', '_', filename)
+    ascii_clean = re.sub(r'_+', '_', ascii_clean).strip('._')
+
+    try:
+        ascii_clean = ascii_clean.encode('ascii', 'ignore').decode('ascii')
+    except Exception:
+        ascii_clean = ""
+
+    if not ascii_clean or ascii_clean == ext.lstrip('.'):
+        ascii_clean = f"media_{int(time.time())}{ext}"
+    elif not ascii_clean.lower().endswith(ext.lower()):
+        ascii_clean = f"{ascii_clean}{ext}"
+
+    # 3. RFC 5987 UTF-8 인코딩 (브라우저가 다운로드 시 실제 표시하는 원본 파일명)
     encoded_name = urllib.parse.quote(filename, safe='')
     disposition = "attachment" if as_attachment else "inline"
     return f'{disposition}; filename="{ascii_clean}"; filename*=UTF-8\'\'{encoded_name}'
 
 
 def locate_disk_file(filename: str) -> str:
-    """파일명이나 타임스탬프 접미사로 실제 디스크 파일 100% 매칭"""
+    """파일명이나 타임스탬프 접미사로 실제 디스크 파일 100% 매칭 (다중 볼륨 경로 지원)"""
     if not filename:
         return ""
-    direct_path = os.path.join(settings.DOWNLOADS_DIR, filename)
-    if os.path.exists(direct_path):
-        return direct_path
 
-    if not os.path.exists(settings.DOWNLOADS_DIR):
-        return ""
+    search_dirs = [
+        settings.DOWNLOADS_DIR,
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "downloads")),
+        "/media/downloads",
+        "/media/ytdownloader",
+        "/media",
+    ]
+    for sdir in search_dirs:
+        if not sdir or not os.path.exists(sdir):
+            continue
+        direct_path = os.path.join(sdir, filename)
+        if os.path.exists(direct_path):
+            return direct_path
 
-    # 1. 파일명에서 타임스탬프 추출 (예: _1790923156.m4a)
-    suffix_match = re.search(r'_\d+\.(mp4|m4a|webm|mp3|mkv)$', filename)
-    if suffix_match:
-        suffix = suffix_match.group(0)
-        for real_f in os.listdir(settings.DOWNLOADS_DIR):
-            if real_f.endswith(suffix):
-                return os.path.join(settings.DOWNLOADS_DIR, real_f)
+        # 1. 파일명에서 타임스탬프 추출 (예: _1790923874.m4a)
+        suffix_match = re.search(r'_\d+\.(mp4|m4a|webm|mp3|mkv)$', filename)
+        if suffix_match:
+            suffix = suffix_match.group(0)
+            for real_f in os.listdir(sdir):
+                if real_f.endswith(suffix):
+                    return os.path.join(sdir, real_f)
 
-    # 2. 파일명 일부분 매칭
-    clean_keyword = re.sub(r'[^\w가-힣]', '', filename)[:15]
-    if clean_keyword:
-        for real_f in os.listdir(settings.DOWNLOADS_DIR):
-            if clean_keyword in re.sub(r'[^\w가-힣]', '', real_f):
-                return os.path.join(settings.DOWNLOADS_DIR, real_f)
+        # 2. 파일명 일부분 매칭
+        clean_keyword = re.sub(r'[^\w가-힣]', '', filename)[:15]
+        if clean_keyword:
+            for real_f in os.listdir(sdir):
+                if clean_keyword in re.sub(r'[^\w가-힣]', '', real_f):
+                    return os.path.join(sdir, real_f)
 
     return ""
 
@@ -208,4 +235,24 @@ def stream_file(job_id: int, db: Session = Depends(get_db)):
         path=file_path,
         media_type=media_type,
         headers={"Content-Disposition": cd_header, "Accept-Ranges": "bytes"}
+    )
+
+
+@router.get("/summary-file/{job_id}")
+def download_summary_file(job_id: int, db: Session = Depends(get_db)):
+    """AI 요약 마크다운 (.md) 파일 다운로드"""
+    from fastapi.responses import Response
+    job = db.query(models.DownloadJob).filter(models.DownloadJob.id == job_id).first()
+    if not job or not job.ai_summary:
+        raise HTTPException(status_code=404, detail="AI 요약 내용이 준비되지 않았습니다.")
+
+    title = job.title or "ai_summary"
+    safe_title = re.sub(r'[\\/*?:"<>|]', '_', title)
+    summary_filename = f"{safe_title}_요약.md"
+    cd_header = safe_content_disposition(summary_filename, as_attachment=True)
+
+    return Response(
+        content=job.ai_summary.encode("utf-8"),
+        media_type="text/markdown; charset=utf-8",
+        headers={"Content-Disposition": cd_header}
     )
