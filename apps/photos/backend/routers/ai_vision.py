@@ -17,7 +17,7 @@ async def analyze_photo(file_path: str = Query(...)):
 
     try:
         image_bytes = abs_path.read_bytes()
-        res = photos_ai_engine.analyze_image_tags(image_bytes, filename=abs_path.name)
+        res = await photos_ai_engine.analyze_image_tags(image_bytes, filename=abs_path.name)
         return {
             "success": True,
             "filename": abs_path.name,

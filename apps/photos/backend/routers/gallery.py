@@ -1,9 +1,10 @@
 """
 apps/photos/backend/routers/gallery.py
-Gallery & Media file operations router.
+Gallery & Media file operations router adhering to the MQnet Canonical SaaS Template.
 """
 import os
 import io
+import shutil
 import hashlib
 import mimetypes
 import unicodedata
@@ -11,12 +12,13 @@ import urllib.parse
 from pathlib import Path
 from typing import Optional, List
 
-from fastapi import APIRouter, HTTPException, Request, Response, UploadFile, File, Form, Query, Depends
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi import APIRouter, HTTPException, Request, Response, UploadFile, File, Form, Query
+from fastapi.responses import JSONResponse, StreamingResponse
 import aiofiles
 import aiofiles.os
 
 from apps.photos.backend.config import settings
+from shared.core.responses import safe_file_response, build_safe_content_disposition
 
 try:
     from PIL import Image, ExifTags
@@ -26,9 +28,6 @@ except ImportError:
 
 router = APIRouter(prefix="", tags=["Photos & Media Gallery"])
 
-MEDIA_ROOT = Path(settings.PHOTOS_DIR)
-CACHE_DIR = Path(settings.CACHE_DIR)
-
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"}
 VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
 TEXT_EXTENSIONS = {".txt", ".md", ".py", ".js", ".json", ".csv", ".html", ".css", ".log"}
@@ -37,12 +36,25 @@ DOCUMENT_EXTENSIONS = {
     ".zip", ".rar", ".7z", ".tar", ".gz"
 } | TEXT_EXTENSIONS
 
-EXCLUDE_DIRS = {"$recycle.bin", "system volume information", ".git", ".vscode", "usb_temp"}
+EXCLUDE_DIRS = {"$recycle.bin", "system volume information", ".git", ".vscode", "usb_temp", "__pycache__"}
 THUMB_SIZE = (settings.THUMB_WIDTH, settings.THUMB_HEIGHT)
 THUMB_QUALITY = settings.THUMB_QUALITY
 
 
+def get_media_root() -> Path:
+    p = Path(settings.PHOTOS_DIR).resolve()
+    p.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+def get_cache_dir() -> Path:
+    p = Path(settings.CACHE_DIR).resolve()
+    p.mkdir(parents=True, exist_ok=True)
+    return p
+
+
 def resolve_nfc_nfd(abs_path: Path) -> Path:
+    """Normalize and match Unicode filenames across macOS (NFD) and Windows/Linux (NFC)."""
     if abs_path.exists() or os.path.lexists(abs_path):
         return abs_path
 
@@ -56,9 +68,10 @@ def resolve_nfc_nfd(abs_path: Path) -> Path:
     if nfd_path.exists() or os.path.lexists(nfd_path):
         return nfd_path
 
+    media_root = get_media_root()
     try:
-        rel = abs_path.relative_to(MEDIA_ROOT.resolve())
-        curr = MEDIA_ROOT.resolve()
+        rel = abs_path.relative_to(media_root)
+        curr = media_root
         for part in rel.parts:
             part_nfc = unicodedata.normalize('NFC', part)
             matched = False
@@ -78,23 +91,24 @@ def resolve_nfc_nfd(abs_path: Path) -> Path:
 
 
 def safe_path(relative: str) -> Optional[Path]:
+    """Safely resolve user path under the isolated media directory, preventing directory traversal."""
+    media_root = get_media_root()
     raw = urllib.parse.unquote(relative or "")
     cleaned = raw.lstrip("/").lstrip("\\")
 
-    media_name = MEDIA_ROOT.name
+    media_name = media_root.name
     if media_name:
         if cleaned == media_name:
             cleaned = ""
         elif cleaned.startswith(f"{media_name}/") or cleaned.startswith(f"{media_name}\\"):
             cleaned = cleaned[len(media_name) + 1:]
 
-    abs_path = (MEDIA_ROOT / cleaned).resolve()
+    abs_path = (media_root / cleaned).resolve()
     try:
-        abs_path.relative_to(MEDIA_ROOT.resolve())
+        abs_path.relative_to(media_root)
         return resolve_nfc_nfd(abs_path)
     except ValueError:
         return None
-
 
 
 def is_valid_entry(name: str) -> bool:
@@ -112,7 +126,7 @@ def thumb_cache_path(abs_path: Path) -> Path:
         mtime = 0
     key = f"{abs_path}:{mtime}"
     h = hashlib.md5(key.encode()).hexdigest()
-    return CACHE_DIR / f"{h}.jpg"
+    return get_cache_dir() / f"{h}.jpg"
 
 
 def make_thumbnail(abs_path: Path) -> Optional[bytes]:
@@ -158,16 +172,22 @@ def get_doc_category(ext: str) -> str:
     return "general"
 
 
+def get_route_prefix(request: Optional[Request] = None) -> str:
+    if request and "/photos" in request.url.path:
+        return "/api/photos"
+    return "/api"
+
+
 # ─── API: Album & File listing ────────────────────────────────────────────────
 @router.get("/albums")
 @router.get("/list")
-async def list_albums(folder: str = ""):
+async def list_albums(folder: str = "", request: Request = None):
+    media_root = get_media_root()
     abs_folder = safe_path(folder)
     if not abs_folder or not abs_folder.exists() or not abs_folder.is_dir():
-        # Auto-create if empty root
         if not folder:
-            MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
-            abs_folder = MEDIA_ROOT
+            media_root.mkdir(parents=True, exist_ok=True)
+            abs_folder = media_root
         else:
             raise HTTPException(status_code=404, detail="Folder not found")
 
@@ -176,7 +196,9 @@ async def list_albums(folder: str = ""):
     except Exception:
         entries = []
 
+    prefix = get_route_prefix(request)
     folders, files = [], []
+
     for entry in entries:
         if not is_valid_entry(entry):
             continue
@@ -186,9 +208,13 @@ async def list_albums(folder: str = ""):
         ext = entry_path.suffix.lower()
         quoted = urllib.parse.quote(rel)
 
-        stat = entry_path.stat()
-        mtime = int(stat.st_mtime)
-        size = stat.st_size
+        try:
+            stat = entry_path.stat()
+            mtime = int(stat.st_mtime)
+            size = stat.st_size
+        except Exception:
+            mtime = 0
+            size = 0
 
         if entry_path.is_dir():
             cover_url = "/assets/folder-placeholder.svg"
@@ -197,7 +223,7 @@ async def list_albums(folder: str = ""):
                 for se in sub_entries:
                     if Path(se).suffix.lower() in IMAGE_EXTENSIONS:
                         cover_rel = urllib.parse.quote(f"{rel}/{se}")
-                        cover_url = f"/api/thumb/{cover_rel}"
+                        cover_url = f"{prefix}/thumb/{cover_rel}"
                         break
             except Exception:
                 pass
@@ -215,8 +241,8 @@ async def list_albums(folder: str = ""):
                 "type": "image",
                 "name": entry,
                 "path": rel,
-                "url": f"/api/raw/{quoted}",
-                "thumb_url": f"/api/thumb/{quoted}",
+                "url": f"{prefix}/raw/{quoted}",
+                "thumb_url": f"{prefix}/thumb/{quoted}",
                 "mtime": mtime,
                 "size": size,
             })
@@ -225,8 +251,8 @@ async def list_albums(folder: str = ""):
                 "type": "video",
                 "name": entry,
                 "path": rel,
-                "url": f"/api/raw/{quoted}",
-                "thumb_url": f"/api/thumb/{quoted}",
+                "url": f"{prefix}/raw/{quoted}",
+                "thumb_url": f"{prefix}/thumb/{quoted}",
                 "mtime": mtime,
                 "size": size,
             })
@@ -236,8 +262,8 @@ async def list_albums(folder: str = ""):
                 "doc_category": get_doc_category(ext),
                 "name": entry,
                 "path": rel,
-                "url": f"/api/raw/{quoted}",
-                "thumb_url": f"/api/raw/{quoted}",
+                "url": f"{prefix}/raw/{quoted}",
+                "thumb_url": f"{prefix}/raw/{quoted}",
                 "mtime": mtime,
                 "size": size,
             })
@@ -258,38 +284,43 @@ async def list_albums(folder: str = ""):
 async def get_thumbnail(file_path: str):
     abs_path = safe_path(urllib.parse.unquote(file_path))
     if not abs_path or not abs_path.exists():
-        raise HTTPException(status_code=404)
+        raise HTTPException(status_code=404, detail="Thumbnail source file not found")
 
     ext = abs_path.suffix.lower()
     if ext not in IMAGE_EXTENSIONS:
-        return FileResponse(abs_path)
+        return safe_file_response(str(abs_path), filename=abs_path.name, as_attachment=False)
 
     cache = thumb_cache_path(abs_path)
     if cache.exists():
-        return Response(
-            content=cache.read_bytes(),
+        return safe_file_response(
+            str(cache),
+            filename=f"thumb_{abs_path.name}.jpg",
             media_type="image/jpeg",
-            headers={"Cache-Control": "public, max-age=604800"},
+            as_attachment=False,
+            headers={"Cache-Control": "public, max-age=604800"}
         )
 
     data = make_thumbnail(abs_path)
     if data:
+        cache.parent.mkdir(parents=True, exist_ok=True)
         cache.write_bytes(data)
-        return Response(
-            content=data,
+        return safe_file_response(
+            str(cache),
+            filename=f"thumb_{abs_path.name}.jpg",
             media_type="image/jpeg",
-            headers={"Cache-Control": "public, max-age=604800"},
+            as_attachment=False,
+            headers={"Cache-Control": "public, max-age=604800"}
         )
     else:
-        return FileResponse(abs_path)
+        return safe_file_response(str(abs_path), filename=abs_path.name, as_attachment=False)
 
 
-# ─── API: Raw File Streaming ──────────────────────────────────────────────────
+# ─── API: Raw File Streaming & Range Playback ────────────────────────────────
 @router.get("/raw/{file_path:path}")
 async def get_raw(file_path: str, request: Request):
     abs_path = safe_path(urllib.parse.unquote(file_path))
     if not abs_path or not abs_path.exists() or not abs_path.is_file():
-        raise HTTPException(status_code=404)
+        raise HTTPException(status_code=404, detail="Media file not found")
 
     file_size = abs_path.stat().st_size
     mime_type, _ = mimetypes.guess_type(str(abs_path))
@@ -299,7 +330,6 @@ async def get_raw(file_path: str, request: Request):
         mime_type = f"{mime_type}; charset=utf-8"
 
     range_header = request.headers.get("range")
-
     if range_header:
         try:
             range_val = range_header.replace("bytes=", "")
@@ -321,6 +351,7 @@ async def get_raw(file_path: str, request: Request):
                         remaining -= len(data)
                         yield data
 
+            cd_header = build_safe_content_disposition(abs_path.name, as_attachment=False)
             return StreamingResponse(
                 range_stream(),
                 status_code=206,
@@ -329,19 +360,22 @@ async def get_raw(file_path: str, request: Request):
                     "Content-Range": f"bytes {start}-{end}/{file_size}",
                     "Accept-Ranges": "bytes",
                     "Content-Length": str(chunk_size),
+                    "Content-Disposition": cd_header,
                     "Cache-Control": "public, max-age=86400",
                 },
             )
         except Exception:
             raise HTTPException(status_code=416, detail="Invalid range")
 
-    return FileResponse(
-        abs_path,
+    return safe_file_response(
+        str(abs_path),
+        filename=abs_path.name,
+        as_attachment=False,
         media_type=mime_type,
         headers={
             "Accept-Ranges": "bytes",
             "Cache-Control": "public, max-age=86400",
-        },
+        }
     )
 
 
@@ -353,11 +387,12 @@ async def upload_files(
     relative_path: str = Form(""),
     files: List[UploadFile] = File(...),
 ):
+    media_root = get_media_root()
     abs_folder = safe_path(folder)
     if not abs_folder or not abs_folder.exists() or not abs_folder.is_dir():
         if not folder:
-            MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
-            abs_folder = MEDIA_ROOT
+            media_root.mkdir(parents=True, exist_ok=True)
+            abs_folder = media_root
         else:
             raise HTTPException(status_code=404, detail="Target folder not found")
 
@@ -369,6 +404,8 @@ async def upload_files(
             continue
 
         raw_rel = relative_path.strip() if relative_path else file.filename
+        # Normalize Korean Unicode (NFC)
+        raw_rel = unicodedata.normalize("NFC", raw_rel)
         rel_p = Path(raw_rel)
 
         if any(part.startswith(".") or part.startswith("$") for part in rel_p.parts):
@@ -428,26 +465,31 @@ async def download_folder_zip(folder: str = Query("")):
                 zip_file.write(file_path, arcname)
 
     zip_buffer.seek(0)
+    cd_header = build_safe_content_disposition(zip_filename, as_attachment=True)
     return StreamingResponse(
         zip_buffer,
         media_type="application/zip",
-        headers={"Content-Disposition": f'attachment; filename="{zip_filename}"'}
+        headers={
+            "Content-Disposition": cd_header,
+            "Cache-Control": "no-cache"
+        }
     )
 
 
 # ─── API: Storage Usage ──────────────────────────────────────────────────────
 @router.get("/storage")
 async def get_storage_info():
-    import shutil
     try:
-        total, used, free = shutil.disk_usage(MEDIA_ROOT)
-        percent = round((used / total) * 100, 1)
+        media_root = get_media_root()
+        total, used, free = shutil.disk_usage(media_root)
+        percent = round((used / total) * 100, 1) if total > 0 else 0.0
         return JSONResponse({
             "success": True,
             "total": total,
             "used": used,
             "free": free,
-            "percent": percent
+            "percent": percent,
+            "storage_path": str(media_root)
         })
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -456,7 +498,6 @@ async def get_storage_info():
 # ─── API: Move / Copy / Delete / Mkdir ─────────────────────────────────────────
 @router.post("/move")
 async def move_item(src: str = Form(...), dest_folder: str = Form("")):
-    import shutil
     abs_src = safe_path(src)
     abs_dest = safe_path(dest_folder)
     if not abs_src or not abs_src.exists():
@@ -471,7 +512,6 @@ async def move_item(src: str = Form(...), dest_folder: str = Form("")):
 
 @router.post("/copy")
 async def copy_item(src: str = Form(...), dest_folder: str = Form("")):
-    import shutil
     abs_src = safe_path(src)
     abs_dest = safe_path(dest_folder)
     if not abs_src or not abs_src.exists():
@@ -489,7 +529,6 @@ async def copy_item(src: str = Form(...), dest_folder: str = Form("")):
 
 @router.post("/delete")
 async def delete_item(path: str = Form(...)):
-    import shutil
     abs_path = safe_path(path)
     if not abs_path or not abs_path.exists():
         return JSONResponse({"success": True, "note": "Already removed"})
@@ -508,7 +547,6 @@ async def delete_item(path: str = Form(...)):
 
 @router.post("/batch_delete")
 async def batch_delete_items(paths: List[str] = Form(...)):
-    import shutil
     deleted, errors = [], []
     for path in paths:
         abs_path = safe_path(path)
@@ -531,19 +569,20 @@ async def batch_delete_items(paths: List[str] = Form(...)):
 
 @router.post("/mkdir")
 async def create_directory(folder: str = Form(""), name: str = Form(...)):
+    media_root = get_media_root()
     abs_folder = safe_path(folder)
     if not abs_folder or not abs_folder.exists() or not abs_folder.is_dir():
         if not folder:
-            MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
-            abs_folder = MEDIA_ROOT
+            media_root.mkdir(parents=True, exist_ok=True)
+            abs_folder = media_root
         else:
             raise HTTPException(status_code=404, detail="Parent folder not found")
 
-    folder_name = name.strip()
+    folder_name = unicodedata.normalize("NFC", name.strip())
     if not folder_name or folder_name.startswith(".") or folder_name.startswith("$"):
         raise HTTPException(status_code=400, detail="Invalid folder name")
 
     new_dir = abs_folder / folder_name
     new_dir.mkdir(parents=True, exist_ok=True)
-    rel_created = str(new_dir.relative_to(MEDIA_ROOT)).replace("\\", "/")
+    rel_created = str(new_dir.relative_to(media_root)).replace("\\", "/")
     return JSONResponse({"success": True, "folder": rel_created, "name": folder_name})

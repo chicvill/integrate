@@ -126,6 +126,8 @@ async def subdomain_host_router_middleware(request: Request, call_next):
             "file.chicvill.store": "/filebrowser/",
             "files.chicvill.store": "/filebrowser/",
             "filebrowser.chicvill.store": "/filebrowser/",
+            "photos.chicvill.store": "/photos/",
+            "gallery.chicvill.store": "/photos/",
         }
         if host in subdomain_routes:
             return RedirectResponse(url=subdomain_routes[host], status_code=307)
@@ -213,8 +215,22 @@ def get_system_status():
         "status": "HEALTHY"
     }
 app.include_router(photos_gallery_router, prefix="/api", include_in_schema=False)
+app.include_router(photos_ai_router, prefix="/api", include_in_schema=False)
 app.include_router(yt_download_router, prefix="/api/download", include_in_schema=False)
 app.include_router(yt_media_router, prefix="/api/media", include_in_schema=False)
+
+@app.get("/api/photos/system-status", tags=["미디어 & 사진 갤러리"])
+def get_photos_gateway_system_status():
+    from apps.photos.backend.config import settings as photos_settings
+    return {
+        "app_id": photos_settings.APP_ID,
+        "app_name": photos_settings.APP_NAME,
+        "deployment_mode": photos_settings.DEPLOYMENT_MODE,
+        "photos_dir": photos_settings.PHOTOS_DIR,
+        "cache_dir": photos_settings.CACHE_DIR,
+        "status": "HEALTHY",
+        "features": photos_settings.get_app_info()["features"]
+    }
 
 @app.get("/api/ytdownloader/system-status", tags=["유튜브 다운로더"])
 @app.get("/api/download/system-status", include_in_schema=False)

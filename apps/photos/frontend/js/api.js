@@ -1,9 +1,29 @@
 import { state } from './state.js';
 
+/**
+ * Determine API base path adaptively:
+ * If accessed via Gateway (/photos/...), use /api/photos or /api
+ * If accessed standalone, use /api
+ */
+export function getApiBase() {
+  const p = window.location.pathname;
+  if (p.startsWith('/photos') || p.startsWith('/gallery')) {
+    return '/api/photos';
+  }
+  return '/api';
+}
+
 export async function fetchFolderData(folderPath) {
-  const url = `/api/list?folder=${encodeURIComponent(folderPath)}&t=${Date.now()}`;
+  const base = getApiBase();
+  const url = `${base}/list?folder=${encodeURIComponent(folderPath)}&t=${Date.now()}`;
   const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) {
+    // If /api/photos/list returned 404, fallback to /api/list
+    if (base !== '/api') {
+      const fbUrl = `/api/list?folder=${encodeURIComponent(folderPath)}&t=${Date.now()}`;
+      const fbRes = await fetch(fbUrl, { cache: 'no-store' });
+      if (fbRes.ok) return await fbRes.json();
+    }
     throw new Error(`HTTP ${res.status}: 폴더 데이터를 불러올 수 없습니다.`);
   }
   return await res.json();
@@ -19,8 +39,9 @@ export function uploadSingleFile(file, mode, onProgress) {
     formData.append('relative_path', relPath);
     formData.append('files', file);
 
+    const base = getApiBase();
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/upload');
+    xhr.open('POST', `${base}/upload`);
 
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable && onProgress) {
@@ -50,10 +71,14 @@ export function uploadSingleFile(file, mode, onProgress) {
 }
 
 export async function createFolderApi(folder, name) {
+  const base = getApiBase();
   const formData = new FormData();
   formData.append('folder', folder);
   formData.append('name', name);
-  const res = await fetch('/api/mkdir', { method: 'POST', body: formData });
+  let res = await fetch(`${base}/mkdir`, { method: 'POST', body: formData });
+  if (!res.ok && base !== '/api') {
+    res = await fetch('/api/mkdir', { method: 'POST', body: formData });
+  }
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.detail || '폴더 생성 실패');
@@ -62,9 +87,13 @@ export async function createFolderApi(folder, name) {
 }
 
 export async function deleteItemApi(path) {
+  const base = getApiBase();
   const formData = new FormData();
   formData.append('path', path);
-  const res = await fetch('/api/delete', { method: 'POST', body: formData });
+  let res = await fetch(`${base}/delete`, { method: 'POST', body: formData });
+  if (!res.ok && base !== '/api') {
+    res = await fetch('/api/delete', { method: 'POST', body: formData });
+  }
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.detail || '삭제 실패');
@@ -73,9 +102,13 @@ export async function deleteItemApi(path) {
 }
 
 export async function batchDeleteApi(paths) {
+  const base = getApiBase();
   const formData = new FormData();
   paths.forEach(p => formData.append('paths', p));
-  const res = await fetch('/api/batch_delete', { method: 'POST', body: formData });
+  let res = await fetch(`${base}/batch_delete`, { method: 'POST', body: formData });
+  if (!res.ok && base !== '/api') {
+    res = await fetch('/api/batch_delete', { method: 'POST', body: formData });
+  }
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.detail || '다중 삭제 실패');
@@ -84,8 +117,12 @@ export async function batchDeleteApi(paths) {
 }
 
 export async function fetchStorageInfo() {
+  const base = getApiBase();
   try {
-    const res = await fetch('/api/storage');
+    let res = await fetch(`${base}/storage`);
+    if (!res.ok && base !== '/api') {
+      res = await fetch('/api/storage');
+    }
     if (!res.ok) return null;
     return await res.json();
   } catch (err) {
@@ -93,3 +130,19 @@ export async function fetchStorageInfo() {
   }
 }
 
+export async function analyzePhotoApi(filePath) {
+  const base = getApiBase();
+  try {
+    let res = await fetch(`${base}/ai/analyze?file_path=${encodeURIComponent(filePath)}`);
+    if (!res.ok && base !== '/api') {
+      res = await fetch(`/api/ai/analyze?file_path=${encodeURIComponent(filePath)}`);
+    }
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'AI 분석 실패');
+    }
+    return await res.json();
+  } catch (err) {
+    throw err;
+  }
+}

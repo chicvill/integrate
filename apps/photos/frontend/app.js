@@ -419,7 +419,8 @@ function initEvents() {
 
   if (downloadFolderZipBtn) {
     downloadFolderZipBtn.addEventListener('click', () => {
-      const url = '/api/download_folder?folder=' + encodeURIComponent(state.currentFolder);
+      const apiBase = window.location.pathname.startsWith('/photos') ? '/api/photos' : '/api';
+      const url = apiBase + '/download_folder?folder=' + encodeURIComponent(state.currentFolder);
       window.location.href = url;
     });
   }
