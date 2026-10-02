@@ -1,6 +1,6 @@
-import { $, state, formatBytes, saveFavorites } from './state.js';
-import { createFolderApi, deleteItemApi, batchDeleteApi, batchMoveApi, moveItemApi, fetchFoldersApi, fetchDuplicatesApi } from './api.js';
-import { copyLinkToClipboard, renderGallery, shareItem } from './ui.js';
+import { $, state, formatBytes, saveFavorites } from './state.js?v=5.9';
+import { createFolderApi, deleteItemApi, batchDeleteApi, batchMoveApi, moveItemApi, fetchFoldersApi, fetchDuplicatesApi } from './api.js?v=5.9';
+import { copyLinkToClipboard, renderGallery, shareItem } from './ui.js?v=5.9';
 
 // ── Lightbox Controller ────────────────────────────────────────
 export function openLightbox(index) {
@@ -195,13 +195,45 @@ export async function handleCreateFolder(onNavigate) {
 }
 
 // ── Upload Mode Modal Controller ──────────────────────────────
-export function openUploadOptModal() {
+export async function openUploadOptModal() {
   const uploadOptModal    = $('uploadOptModal');
   const uploadOptLocation = $('uploadOptLocation');
+  const uploadDestSelect  = $('uploadDestSelect');
   if (!uploadOptModal) return;
-  const currentPath = state.currentFolder ? `L:\\${state.currentFolder.replace(/\//g, '\\')}` : 'L:\\ (루트)';
-  if (uploadOptLocation) uploadOptLocation.textContent = `저장 위치: ${currentPath}`;
+
+  const currentPath = state.currentFolder ? `L:\\${state.currentFolder.replace(/\//g, '\\')}` : 'L:\\ (최상위 루트)';
+  if (uploadOptLocation) uploadOptLocation.textContent = `현재 열린 위치: ${currentPath}`;
+
+  if (uploadDestSelect) {
+    uploadDestSelect.innerHTML = '<option value="">L:\\ (최상위 루트)</option>';
+    try {
+      const data = await fetchFoldersApi();
+      const folders = data.folders || [];
+      uploadDestSelect.innerHTML = '';
+      folders.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f.path;
+        const prefix = (f.depth && f.depth > 0) ? '　'.repeat(f.depth) + '└ ' : '';
+        opt.textContent = `${prefix}${f.name || 'L:\\ (최상위 루트)'}`;
+        if (f.path === (state.currentFolder || '')) {
+          opt.selected = true;
+        }
+        uploadDestSelect.appendChild(opt);
+      });
+    } catch (e) {
+      console.warn('Failed to populate uploadDestSelect:', e);
+    }
+  }
+
   uploadOptModal.classList.remove('hidden');
+}
+
+export function getSelectedUploadFolder() {
+  const uploadDestSelect = $('uploadDestSelect');
+  if (uploadDestSelect) {
+    return uploadDestSelect.value;
+  }
+  return state.currentFolder || '';
 }
 
 export function closeUploadOptModal() {

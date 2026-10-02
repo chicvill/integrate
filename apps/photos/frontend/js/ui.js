@@ -1,4 +1,4 @@
-import { $, DOC_ICONS, state, formatBytes, saveFavorites } from './state.js';
+import { $, DOC_ICONS, state, formatBytes, saveFavorites } from './state.js?v=5.9';
 
 export const lazyObserver = new IntersectionObserver((entries, obs) => {
   entries.forEach(entry => {
@@ -21,8 +21,6 @@ export function cleanupDragState() {
   document.querySelectorAll('.card.is-dragging').forEach(c => c.classList.remove('is-dragging'));
   document.querySelectorAll('.card.folder.drag-target-hover').forEach(c => c.classList.remove('drag-target-hover'));
   document.querySelectorAll('.crumb.crumb-drag-hover').forEach(c => c.classList.remove('crumb-drag-hover'));
-  const dropzone = document.getElementById('dropzoneOverlay');
-  if (dropzone) dropzone.classList.add('hidden');
 }
 
 export function renderBreadcrumb(folder, onNavigate, handlers) {

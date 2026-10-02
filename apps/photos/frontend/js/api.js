@@ -1,4 +1,4 @@
-import { state } from './state.js';
+import { state } from './state.js?v=5.9';
 
 /**
  * Determine API base path adaptively:
@@ -16,29 +16,43 @@ export function getApiBase() {
 export async function fetchFolderData(folderPath) {
   const base = getApiBase();
   const url = `${base}/list?folder=${encodeURIComponent(folderPath)}&t=${Date.now()}`;
-  const res = await fetch(url, { cache: 'no-store' });
-  if (!res.ok) {
-    // If /api/photos/list returned 404, fallback to /api/list
-    if (base !== '/api') {
-      const fbUrl = `/api/list?folder=${encodeURIComponent(folderPath)}&t=${Date.now()}`;
-      const fbRes = await fetch(fbUrl, { cache: 'no-store' });
-      if (fbRes.ok) return await fbRes.json();
+  let lastErr = null;
+
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (res.ok) {
+        return await res.json();
+      }
+      // If /api/photos/list returned 404, fallback to /api/list
+      if (base !== '/api') {
+        const fbUrl = `/api/list?folder=${encodeURIComponent(folderPath)}&t=${Date.now()}`;
+        const fbRes = await fetch(fbUrl, { cache: 'no-store' });
+        if (fbRes.ok) return await fbRes.json();
+      }
+      lastErr = new Error(`HTTP ${res.status}: 폴더 데이터를 불러올 수 없습니다.`);
+    } catch (e) {
+      lastErr = e;
     }
-    throw new Error(`HTTP ${res.status}: 폴더 데이터를 불러올 수 없습니다.`);
+    if (attempt < 2) {
+      await new Promise(r => setTimeout(r, 600));
+    }
   }
-  return await res.json();
+  throw lastErr || new Error('폴더 데이터를 불러올 수 없습니다.');
 }
 
-export function uploadSingleFile(fileItem, mode, onProgress) {
+export function uploadSingleFile(fileItem, mode, onProgress, targetFolder) {
   return new Promise((resolve, reject) => {
     const file = (fileItem && fileItem.file) ? fileItem.file : fileItem;
     const relPath = (fileItem && fileItem.relativePath) ? fileItem.relativePath : (file.webkitRelativePath || file.name);
+
+    const uploadFolder = (targetFolder !== undefined && targetFolder !== null) ? targetFolder : (state.currentFolder || '');
 
     // Guard: If a directory handle is passed as File (size 0, no type, no extension)
     if (!file || (file.size === 0 && !file.type && !file.name.includes('.'))) {
       const folderName = (file && file.name) ? file.name : (relPath || '');
       if (folderName && folderName !== 'undefined') {
-        createFolderApi(state.currentFolder, folderName)
+        createFolderApi(uploadFolder, folderName)
           .then(() => resolve(JSON.stringify({ success: true, folder: folderName })))
           .catch(err => reject(err));
       } else {
@@ -50,7 +64,7 @@ export function uploadSingleFile(fileItem, mode, onProgress) {
     const fileName = (file && file.name) ? file.name : (relPath.split('/').pop() || 'photo.jpg');
 
     const formData = new FormData();
-    formData.append('folder', state.currentFolder);
+    formData.append('folder', uploadFolder);
     formData.append('mode', mode || state.currentUploadMode || 'copy');
     formData.append('relative_path', relPath);
     formData.append('files', file, fileName);

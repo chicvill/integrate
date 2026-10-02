@@ -233,9 +233,19 @@
   <div class="upload-opt-modal hidden" id="uploadOptModal">
     <div class="upload-opt-backdrop" id="uploadOptBackdrop"></div>
     <div class="upload-opt-box">
-      <h3 class="upload-opt-title">📤 파일 업로드 방식 선택</h3>
-      <p class="upload-opt-sub" id="uploadOptLocation">저장 위치: L:\</p>
+      <h3 class="upload-opt-title">📤 파일 업로드 방식 및 위치 선택</h3>
+      <p class="upload-opt-sub" id="uploadOptLocation">현재 위치: L:\</p>
       
+      <!-- Destination Folder Selector -->
+      <div class="upload-dest-group">
+        <label for="uploadDestSelect" class="upload-dest-label">📁 저장할 대상 폴더 선택:</label>
+        <div class="upload-dest-select-wrap">
+          <select id="uploadDestSelect" class="upload-dest-select">
+            <option value="">L:\ (최상위 루트)</option>
+          </select>
+        </div>
+      </div>
+
       <div class="upload-mode-selector">
         <label class="mode-option active" id="modeCopyLabel">
           <input type="radio" name="uploadMode" value="copy" checked>
@@ -259,15 +269,6 @@
         <button class="mkdir-btn-action confirm" id="uploadOptSelectFilesBtn">📄 파일 선택</button>
         <button class="mkdir-btn-action confirm" id="uploadOptSelectFolderBtn" style="background:#6366f1;">📁 폴더 선택</button>
       </div>
-    </div>
-  </div>
-
-  <!-- ── Full-screen Dropzone Overlay ─────────────────────── -->
-  <div class="dropzone-overlay hidden" id="dropzoneOverlay">
-    <div class="dropzone-box">
-      <div class="dropzone-icon">📤</div>
-      <p class="dropzone-title">파일을 여기에 끌어다 놓으세요</p>
-      <p class="dropzone-sub">현재 폴더로 사진, 동영상, 문서가 업로드됩니다.</p>
     </div>
   </div>
 
@@ -468,8 +469,6 @@
     </button>
   </div>
 
-  <script type="module" src="./app.js?v=5.7"></script>
-
-
+  <script type="module" src="./app.js?v=5.9"></script>
 </body>
 </html>

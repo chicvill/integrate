@@ -1,14 +1,14 @@
-import { $, state, formatBytes, saveFavorites } from './js/state.js';
-import { fetchFolderData, uploadSingleFile, deleteItemApi, fetchStorageInfo, createFolderApi, batchMoveApi } from './js/api.js';
-import { renderBreadcrumb, renderSidebarStats, renderGallery, copyLinkToClipboard, shareItem, cleanupDragState } from './js/ui.js';
+import { $, state, formatBytes, saveFavorites } from './js/state.js?v=5.9';
+import { fetchFolderData, uploadSingleFile, deleteItemApi, fetchStorageInfo, createFolderApi, batchMoveApi } from './js/api.js?v=5.9';
+import { renderBreadcrumb, renderSidebarStats, renderGallery, copyLinkToClipboard, shareItem, cleanupDragState } from './js/ui.js?v=5.9';
 import {
   openLightbox, closeLightbox, renderLightboxItem, rotateLightboxImage, toggleSlideshow,
   openMkdirModal, closeMkdirModal, handleCreateFolder,
-  openUploadOptModal, closeUploadOptModal,
+  openUploadOptModal, closeUploadOptModal, getSelectedUploadFolder,
   enableSelectMode, toggleSelectMode, toggleItemSelection, updateSelectionUI, handleBatchShare, handleBatchDelete,
   openMoveModal, closeMoveModal, handleConfirmMove, handleMoveModalNewFolder, showToast,
   openDuplicatesModal, closeDuplicatesModal, handleScanDuplicates, handleDeleteSelectedDuplicates, autoSelectDuplicateCopies, deselectAllDuplicates
-} from './js/modals.js';
+} from './js/modals.js?v=5.9';
 
 // Handlers object passed to card rendering
 const cardHandlers = {
@@ -43,16 +43,29 @@ async function handleMoveItems(paths, destFolder) {
 }
 
 async function handleUploadToFolder(dataTransfer, targetFolder) {
-  const origFolder = state.currentFolder;
-  state.currentFolder = targetFolder;
   try {
-    const syncFiles = Array.from(dataTransfer.files || []);
-    if (syncFiles.length > 0) {
-      await uploadFiles(syncFiles);
+    const destName = targetFolder ? targetFolder.split('/').pop() : 'L:\\ (최상위 루트)';
+    showToast(`'${destName}' 폴더로 업로드를 시작합니다...`, '📤');
+
+    const extracted = await extractDroppedFiles(dataTransfer);
+    for (const emptyDir of extracted.emptyDirs) {
+      try {
+        await createFolderApi(targetFolder, emptyDir);
+      } catch (err) {
+        console.warn('Failed to create empty folder:', emptyDir, err);
+      }
     }
-  } finally {
-    state.currentFolder = origFolder;
-    await navigateTo(state.currentFolder);
+    if (extracted.files && extracted.files.length > 0) {
+      await uploadFiles(extracted.files, targetFolder);
+    } else {
+      const syncFiles = Array.from(dataTransfer.files || []);
+      if (syncFiles.length > 0) {
+        await uploadFiles(syncFiles, targetFolder);
+      }
+    }
+  } catch (err) {
+    console.error('Upload to folder failed:', err);
+    alert(`폴더 업로드 오류: ${err.message}`);
   }
 }
 
@@ -74,20 +87,31 @@ async function navigateTo(folder) {
   try {
     const [data, storageData] = await Promise.all([
       fetchFolderData(folder),
-      fetchStorageInfo()
+      fetchStorageInfo().catch(() => null)
     ]);
-    state.items = data.items || [];
+    state.items = (data && data.items) || [];
     state.filteredItems = [...state.items];
     renderSidebarStats(data.counts || {}, storageData);
     renderGallery(state.filteredItems, cardHandlers);
   } catch (err) {
+    console.error('navigateTo error:', err);
     if (galleryGrid) {
-      galleryGrid.innerHTML = `<div class="empty-state"><p class="empty-title">⚠️ 오류 발생</p><p class="empty-sub">${err.message}</p></div>`;
+      galleryGrid.innerHTML = `
+        <div class="empty-state" style="padding: 48px 24px; text-align: center;">
+          <div class="empty-icon" style="font-size: 48px; margin-bottom: 12px;">⚠️</div>
+          <p class="empty-title" style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">사진 목록을 불러오지 못했습니다</p>
+          <p class="empty-sub" style="font-size: 14px; color: var(--text-secondary); margin-bottom: 20px;">서버 재시작 중이거나 일시적인 연결 지연일 수 있습니다. (${err.message})</p>
+          <button class="mkdir-btn" style="display:inline-flex; align-items:center; gap:8px; padding:10px 20px; font-size:14px; margin:0 auto;" onclick="window.photosReload ? window.photosReload() : location.reload()">
+            🔄 다시 시도 (새로고침)
+          </button>
+        </div>`;
     }
   } finally {
     if (loadingSpinner) loadingSpinner.classList.add('hidden');
   }
 }
+
+window.photosReload = () => navigateTo(state.currentFolder || '');
 
 // ── Search & Filter ───────────────────────────────────────────
 function filterItems(query) {
@@ -208,24 +232,25 @@ async function extractDroppedFiles(dataTransfer) {
 }
 
 // ── File Upload Process ───────────────────────────────────────
-async function uploadFiles(fileList) {
+async function uploadFiles(fileList, targetFolder) {
   if (!fileList || fileList.length === 0) return;
   const files = Array.from(fileList);
   const totalCount = files.length;
   let successCount = 0;
   let failCount = 0;
 
+  const uploadFolder = (targetFolder !== undefined && targetFolder !== null) ? targetFolder : (state.currentFolder || '');
+  const destName = uploadFolder ? `L:\\${uploadFolder.replace(/\//g, '\\')}` : 'L:\\ (최상위 루트)';
+
   const uploadModal        = $('uploadModal');
   const uploadStatusTitle  = $('uploadStatusTitle');
   const uploadProgressFill = $('uploadProgressFill');
   const uploadStatusDetail = $('uploadStatusDetail');
 
-  const destPath = state.currentFolder ? state.currentFolder : '루트 폴더';
-
   if (uploadModal) {
     if (uploadStatusTitle) uploadStatusTitle.textContent = `📤 파일 업로드 준비 중… (0 / ${totalCount})`;
     if (uploadProgressFill) uploadProgressFill.style.width = '0%';
-    if (uploadStatusDetail) uploadStatusDetail.textContent = `저장 위치: ${destPath}`;
+    if (uploadStatusDetail) uploadStatusDetail.textContent = `저장 위치: ${destName}`;
     uploadModal.classList.remove('hidden');
   }
 
@@ -257,7 +282,7 @@ async function uploadFiles(fileList) {
             if (uploadStatusDetail) {
               uploadStatusDetail.textContent = `${fileName} (${percent}% - ${formatBytes(loaded)} / ${formatBytes(total)})`;
             }
-          });
+          }, uploadFolder);
           fileUploaded = true;
           break;
         } catch (err) {
@@ -281,9 +306,9 @@ async function uploadFiles(fileList) {
     if (failCount === 0) {
       uploadStatusTitle.textContent = '✅ 전체 업로드 완료!';
       if (state.currentUploadMode === 'overwrite') {
-        uploadStatusDetail.textContent = `🚚 ${successCount}개 파일이 서버에 안전하게 저장되었습니다.`;
+        uploadStatusDetail.textContent = `🚚 ${successCount}개 파일이 '${destName}'(으)로 안전하게 저장되었습니다.`;
       } else {
-        uploadStatusDetail.textContent = `📋 ${successCount}개 파일이 안전하게 사본 저장되었습니다.`;
+        uploadStatusDetail.textContent = `📋 ${successCount}개 파일이 '${destName}'(으)로 안전하게 사본 저장되었습니다.`;
       }
     } else {
       uploadStatusTitle.textContent = `⚠️ 업로드 완료 (${successCount} 성공, ${failCount} 실패)`;
@@ -518,6 +543,7 @@ function initEvents() {
 
   if (uploadOptSelectFilesBtn && fileInput) {
     uploadOptSelectFilesBtn.addEventListener('click', () => {
+      state.selectedUploadFolder = getSelectedUploadFolder();
       closeUploadOptModal();
       fileInput.click();
     });
@@ -525,6 +551,7 @@ function initEvents() {
 
   if (uploadOptSelectFolderBtn && folderInput) {
     uploadOptSelectFolderBtn.addEventListener('click', () => {
+      state.selectedUploadFolder = getSelectedUploadFolder();
       closeUploadOptModal();
       folderInput.click();
     });
@@ -533,7 +560,8 @@ function initEvents() {
   if (fileInput) {
     fileInput.addEventListener('change', (e) => {
       if (e.target.files && e.target.files.length > 0) {
-        uploadFiles(e.target.files);
+        const dest = (state.selectedUploadFolder !== undefined) ? state.selectedUploadFolder : state.currentFolder;
+        uploadFiles(e.target.files, dest);
         fileInput.value = '';
       }
     });
@@ -542,7 +570,8 @@ function initEvents() {
   if (folderInput) {
     folderInput.addEventListener('change', (e) => {
       if (e.target.files && e.target.files.length > 0) {
-        uploadFiles(e.target.files);
+        const dest = (state.selectedUploadFolder !== undefined) ? state.selectedUploadFolder : state.currentFolder;
+        uploadFiles(e.target.files, dest);
         folderInput.value = '';
       }
     });
@@ -768,9 +797,6 @@ function initEvents() {
   }
 
   // ── Drag & Drop File, Folder & Internal Item Move ────────────
-  const dropzoneOverlay = $('dropzoneOverlay');
-  let dragCounter = 0;
-
   const isInternalCardDrag = (e) => {
     if (state.isDraggingItems) return true;
     if (document.body.classList.contains('is-dragging-card')) return true;
@@ -784,19 +810,12 @@ function initEvents() {
 
   const handleDragEnter = (e) => {
     e.preventDefault();
-    if (isInternalCardDrag(e)) {
-      if (dropzoneOverlay) dropzoneOverlay.classList.add('hidden');
-      return;
-    }
-    dragCounter++;
-    if (dropzoneOverlay) dropzoneOverlay.classList.remove('hidden');
   };
 
   const handleDragOver = (e) => {
     e.preventDefault();
     if (isInternalCardDrag(e)) {
       e.dataTransfer.dropEffect = 'move';
-      if (dropzoneOverlay) dropzoneOverlay.classList.add('hidden');
       return;
     }
     if (e.dataTransfer) {
@@ -806,12 +825,6 @@ function initEvents() {
 
   const handleDragLeave = (e) => {
     e.preventDefault();
-    if (isInternalCardDrag(e)) return;
-    dragCounter--;
-    if (dragCounter <= 0) {
-      dragCounter = 0;
-      if (dropzoneOverlay) dropzoneOverlay.classList.add('hidden');
-    }
   };
 
   const handleDrop = async (e) => {
@@ -846,10 +859,8 @@ function initEvents() {
       return;
     }
 
-    // 2. External OS File / Folder Upload Drop
+    // 2. External OS File / Folder Upload Drop (onto window empty area)
     e.preventDefault();
-    dragCounter = 0;
-    if (dropzoneOverlay) dropzoneOverlay.classList.add('hidden');
 
     const dt = e.dataTransfer;
     if (!dt) return;
@@ -878,10 +889,10 @@ function initEvents() {
       }
     }
 
-    // Direct files dropped (no folder): Upload immediately using native File objects
+    // Direct files dropped (no folder): Upload immediately to current folder
     if (!hasDirectory && syncFiles.length > 0) {
-      console.log(`[DragDrop] Uploading ${syncFiles.length} direct file(s)...`);
-      await uploadFiles(syncFiles);
+      console.log(`[DragDrop] Uploading ${syncFiles.length} direct file(s) to current folder...`);
+      await uploadFiles(syncFiles, state.currentFolder);
       return;
     }
 
@@ -896,16 +907,16 @@ function initEvents() {
         }
       }
       if (extracted.files && extracted.files.length > 0) {
-        await uploadFiles(extracted.files);
+        await uploadFiles(extracted.files, state.currentFolder);
       } else if (extracted.emptyDirs.length > 0) {
         navigateTo(state.currentFolder);
       } else if (syncFiles.length > 0) {
-        await uploadFiles(syncFiles);
+        await uploadFiles(syncFiles, state.currentFolder);
       }
     } catch (err) {
       console.warn('Drag & Drop extraction fallback to sync files:', err);
       if (syncFiles.length > 0) {
-        await uploadFiles(syncFiles);
+        await uploadFiles(syncFiles, state.currentFolder);
       }
     }
   };

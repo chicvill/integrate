@@ -512,32 +512,40 @@
 }
 .upload-btn svg { width: 16px; height: 16px; }
 
-/* Fullscreen Dropzone Overlay */
-.dropzone-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(13, 14, 20, 0.85);
-  backdrop-filter: blur(8px);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  animation: fadeIn .2s ease-out;
+/* Upload Destination Folder Selector */
+.upload-dest-group {
+  margin-bottom: 16px;
+  text-align: left;
 }
-.dropzone-box {
-  border: 2px dashed var(--accent);
-  background: var(--bg-card);
-  padding: 40px 60px;
-  border-radius: var(--r-xl);
-  text-align: center;
-  box-shadow: var(--shadow-lg);
-  transform: scale(1);
-  animation: popIn .25s ease-out;
+.upload-dest-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
 }
-.dropzone-icon { font-size: 48px; margin-bottom: 12px; }
-.dropzone-title { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
-.dropzone-sub { font-size: 14px; color: var(--text-secondary); }
+.upload-dest-select-wrap {
+  position: relative;
+  width: 100%;
+}
+.upload-dest-select {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--r-md);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease;
+  appearance: auto;
+}
+.upload-dest-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
 
 /* Upload Progress Modal */
 .upload-modal {
@@ -970,9 +978,9 @@
   box-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
 }
 
-/* Force-hide dropzone overlay completely when dragging internal cards */
-body.is-dragging-card .dropzone-overlay,
-body.is-dragging-card #dropzoneOverlay {
+/* Suppress any legacy dropzone overlay completely */
+.dropzone-overlay,
+#dropzoneOverlay {
   display: none !important;
   opacity: 0 !important;
   visibility: hidden !important;

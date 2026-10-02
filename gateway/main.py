@@ -277,9 +277,17 @@ mqfarm_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "app
 if os.path.exists(mqfarm_dist):
     app.mount("/mqfarm", StaticFiles(directory=mqfarm_dist, html=True), name="mqfarm_react_app")
 
+class NoCacheStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
+
 photos_frontend = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "photos", "frontend"))
 if os.path.exists(photos_frontend):
-    app.mount("/photos", StaticFiles(directory=photos_frontend, html=True), name="photos_app")
+    app.mount("/photos", NoCacheStaticFiles(directory=photos_frontend, html=True), name="photos_app")
 
 gwansang_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "ai_gwansang", "frontend", "dist"))
 if not os.path.exists(gwansang_dist):
