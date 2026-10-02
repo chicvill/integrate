@@ -131,9 +131,12 @@ def delete_media_item(target: str, db: Session = Depends(get_db)):
     deleted_db = False
     deleted_disk = False
 
+    import re
+    clean_target = re.sub(r'^(delete/|file/)', '', decoded_target).strip()
+
     # 1. 숫자인 경우 Job ID로 조회 및 삭제
-    if decoded_target.isdigit():
-        job_id = int(decoded_target)
+    if clean_target.isdigit():
+        job_id = int(clean_target)
         job = db.query(models.DownloadJob).filter(models.DownloadJob.id == job_id).first()
         if job:
             if job.filename:
