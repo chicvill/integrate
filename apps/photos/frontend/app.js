@@ -83,6 +83,31 @@ async function extractDroppedFiles(dataTransfer) {
   const fileEntries = [];
   const emptyDirs = [];
 
+  // 1. Check if any item is a directory
+  let hasDirectory = false;
+  if (dataTransfer.items && dataTransfer.items.length > 0) {
+    for (let i = 0; i < dataTransfer.items.length; i++) {
+      const item = dataTransfer.items[i];
+      if (item.webkitGetAsEntry) {
+        const entry = item.webkitGetAsEntry();
+        if (entry && entry.isDirectory) {
+          hasDirectory = true;
+          break;
+        }
+      }
+    }
+  }
+
+  // 2. If NO directory was dropped, use native dataTransfer.files directly (identical to file picker)
+  if (!hasDirectory && dataTransfer.files && dataTransfer.files.length > 0) {
+    for (let i = 0; i < dataTransfer.files.length; i++) {
+      const f = dataTransfer.files[i];
+      fileEntries.push({ file: f, relativePath: f.name });
+    }
+    return { files: fileEntries, emptyDirs };
+  }
+
+  // 3. If a directory was dropped, traverse entries
   if (dataTransfer.items && dataTransfer.items.length > 0) {
     const queue = [];
     for (let i = 0; i < dataTransfer.items.length; i++) {
@@ -100,14 +125,10 @@ async function extractDroppedFiles(dataTransfer) {
       const entry = queue.shift();
       if (entry.isFile) {
         try {
-          const rawFile = await new Promise((res, rej) => entry.file(res, rej));
-          const fileName = rawFile.name || entry.name || 'photo.jpg';
-          const safeFile = new File([rawFile], fileName, {
-            type: rawFile.type || 'application/octet-stream',
-            lastModified: rawFile.lastModified || Date.now()
-          });
+          const file = await new Promise((res, rej) => entry.file(res, rej));
+          const fileName = file.name || entry.name || 'photo.jpg';
           const relPath = entry.fullPath ? entry.fullPath.replace(/^\//, '') : fileName;
-          fileEntries.push({ file: safeFile, relativePath: relPath });
+          fileEntries.push({ file: file, relativePath: relPath });
         } catch (err) {
           console.warn('Error reading dropped file entry:', entry, err);
         }

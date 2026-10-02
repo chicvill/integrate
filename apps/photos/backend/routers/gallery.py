@@ -381,13 +381,12 @@ async def get_raw(file_path: str, request: Request):
 
 # ─── API: Upload ─────────────────────────────────────────────────────────────
 @router.post("/upload")
-async def upload_files(
-    request: Request,
-    folder: str = Form(""),
-    mode: str = Form("copy"),
-    relative_path: str = Form(""),
-    files: Optional[List[UploadFile]] = File(None),
-):
+async def upload_files(request: Request):
+    form_data = await request.form()
+    folder = str(form_data.get("folder") or "")
+    mode = str(form_data.get("mode") or "copy")
+    relative_path = str(form_data.get("relative_path") or "")
+
     media_root = get_media_root()
     abs_folder = safe_path(folder)
     if not abs_folder or not abs_folder.exists() or not abs_folder.is_dir():
@@ -397,19 +396,17 @@ async def upload_files(
         else:
             raise HTTPException(status_code=404, detail="Target folder not found")
 
-    # Extract all uploaded files flexibly
+    # Extract all uploaded files flexibly from form_data
     upload_list: List[UploadFile] = []
-    if files:
-        upload_list.extend(files)
+    for key in ("files", "file", "upload"):
+        for item in form_data.getlist(key):
+            if hasattr(item, "filename") and item.filename:
+                upload_list.append(item)
 
-    try:
-        form_data = await request.form()
-        for field_name in ("files", "file", "upload"):
-            for item in form_data.getlist(field_name):
-                if hasattr(item, "filename") and item.filename and item not in upload_list:
-                    upload_list.append(item)
-    except Exception:
-        pass
+    if not upload_list:
+        for key, item in form_data.multi_items():
+            if hasattr(item, "filename") and item.filename and item not in upload_list:
+                upload_list.append(item)
 
     if not upload_list:
         # Check if relative_path was just requesting to create a subfolder
