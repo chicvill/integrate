@@ -72,7 +72,7 @@ class YTDLPEngine:
         candidate_cookies = [
             "/media/cookies.txt",
             "/media/ytdownloader/cookies.txt",
-            os.path.join(settings.DATA_DIR, "cookies.txt"),
+            os.path.join(settings.MEDIA_PATH, "cookies.txt"),
             os.path.join(os.path.dirname(__file__), "..", "..", "cookies.txt")
         ]
         for cpath in candidate_cookies:
