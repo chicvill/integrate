@@ -49,7 +49,12 @@ def get_database_url() -> str:
                             break
             except Exception:
                 pass
-    return url or "sqlite:///./integrat.db"
+    if url:
+        return url
+    media_path = os.getenv("MEDIA_STORAGE_PATH", os.getenv("MEDIA_PATH", "/media"))
+    if os.path.exists(media_path):
+        return f"sqlite:///{os.path.join(media_path, 'integrat.db')}"
+    return "sqlite:///./integrat.db"
 
 
 class BaseDatabase:
@@ -73,8 +78,12 @@ class BaseDatabase:
             self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
             logger.info(f"DB 연결 성공: {self.database_url[:30]}...")
         except Exception as e:
-            logger.warning(f"원격 DB 연결 불가 ({e}). 로컬 SQLite로 안전 전환합니다.")
-            self.database_url = "sqlite:///./integrat.db"
+            media_root = os.getenv("MEDIA_STORAGE_PATH", os.getenv("MEDIA_PATH", "/media"))
+            if os.path.exists(media_root):
+                self.database_url = f"sqlite:///{os.path.join(media_root, 'integrat.db')}"
+            else:
+                self.database_url = "sqlite:///./integrat.db"
+            logger.warning(f"원격 DB 연결 불가 ({e}). 로컬 SQLite ({self.database_url})로 안전 전환합니다.")
             self.engine = create_engine(
                 self.database_url,
                 connect_args={"check_same_thread": False, "timeout": 15},
