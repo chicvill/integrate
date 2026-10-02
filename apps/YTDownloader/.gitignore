@@ -6,9 +6,9 @@ node_modules/
 venv/
 **/venv/
 
-# Build outputs
-dist/
-**/dist/
+# Build outputs (gateway 정적 서빙을 위해 dist 보존)
+# dist/
+# **/dist/
 build/
 **/build/
 
