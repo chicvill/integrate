@@ -1,6 +1,6 @@
-import { $, state, formatBytes, saveFavorites } from './js/state.js?v=5.9';
-import { fetchFolderData, uploadSingleFile, deleteItemApi, fetchStorageInfo, createFolderApi, batchMoveApi } from './js/api.js?v=5.9';
-import { renderBreadcrumb, renderSidebarStats, renderGallery, copyLinkToClipboard, shareItem, cleanupDragState } from './js/ui.js?v=5.9';
+import { $, state, formatBytes, saveFavorites } from './js/state.js?v=6.0';
+import { fetchFolderData, uploadSingleFile, deleteItemApi, fetchStorageInfo, createFolderApi, batchMoveApi } from './js/api.js?v=6.0';
+import { renderBreadcrumb, renderSidebarStats, renderGallery, copyLinkToClipboard, shareItem, cleanupDragState } from './js/ui.js?v=6.0';
 import {
   openLightbox, closeLightbox, renderLightboxItem, rotateLightboxImage, toggleSlideshow,
   openMkdirModal, closeMkdirModal, handleCreateFolder,
@@ -8,7 +8,7 @@ import {
   enableSelectMode, toggleSelectMode, toggleItemSelection, updateSelectionUI, handleBatchShare, handleBatchDelete,
   openMoveModal, closeMoveModal, handleConfirmMove, handleMoveModalNewFolder, showToast,
   openDuplicatesModal, closeDuplicatesModal, handleScanDuplicates, handleDeleteSelectedDuplicates, autoSelectDuplicateCopies, deselectAllDuplicates
-} from './js/modals.js?v=5.9';
+} from './js/modals.js?v=6.0';
 
 // Handlers object passed to card rendering
 const cardHandlers = {

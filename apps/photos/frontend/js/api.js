@@ -1,4 +1,4 @@
-import { state } from './state.js?v=5.9';
+import { state } from './state.js?v=6.0';
 
 /**
  * Determine API base path adaptively:

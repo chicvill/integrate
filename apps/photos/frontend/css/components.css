@@ -1440,12 +1440,25 @@
   color: var(--text-primary);
 }
 .dup-badge-type {
-  padding: 2px 7px;
+  padding: 3px 8px;
   border-radius: 4px;
   background: rgba(14, 165, 233, 0.15);
   color: #38bdf8;
   font-size: 11px;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.dup-badge-type.exact {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+.dup-badge-type.visual {
+  background: rgba(168, 85, 247, 0.18);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.4);
 }
 .dup-group-size {
   color: var(--text-muted);

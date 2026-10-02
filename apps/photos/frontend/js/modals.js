@@ -1,6 +1,6 @@
-import { $, state, formatBytes, saveFavorites } from './state.js?v=5.9';
-import { createFolderApi, deleteItemApi, batchDeleteApi, batchMoveApi, moveItemApi, fetchFoldersApi, fetchDuplicatesApi } from './api.js?v=5.9';
-import { copyLinkToClipboard, renderGallery, shareItem } from './ui.js?v=5.9';
+import { $, state, formatBytes, saveFavorites } from './state.js?v=6.0';
+import { createFolderApi, deleteItemApi, batchDeleteApi, batchMoveApi, moveItemApi, fetchFoldersApi, fetchDuplicatesApi } from './api.js?v=6.0';
+import { copyLinkToClipboard, renderGallery, shareItem } from './ui.js?v=6.0';
 
 // ── Lightbox Controller ────────────────────────────────────────
 export function openLightbox(index) {
@@ -560,7 +560,7 @@ export async function handleScanDuplicates(onNavigate, handlers) {
   const container = $('dupResultsContainer');
   const summaryBar = $('dupSummaryBar');
   const scope = $('dupScopeSelect') ? $('dupScopeSelect').value : 'all';
-  const mode = $('dupModeSelect') ? $('dupModeSelect').value : 'exact';
+  const mode = $('dupModeSelect') ? $('dupModeSelect').value : 'all';
   const folder = (scope === 'current') ? state.currentFolder : '';
 
   if (summaryBar) summaryBar.classList.add('hidden');
@@ -571,8 +571,8 @@ export async function handleScanDuplicates(onNavigate, handlers) {
     container.innerHTML = `
       <div class="dup-loading">
         <div class="dup-spinner"></div>
-        <p class="dup-loading-title">L: 드라이브 중복 사진 및 사본 분석 중…</p>
-        <p class="dup-loading-sub">파일 크기 대조 및 정밀 해시(SHA-256) 검사를 수행하고 있습니다. 잠시만 기다려 주세요.</p>
+        <p class="dup-loading-title">L: 드라이브 중복 및 유사 사진 분석 중…</p>
+        <p class="dup-loading-sub">초고속 멀티스레드 해시 및 시각적 지문 대조를 병렬 수행하고 있습니다. 잠시만 기다려 주세요.</p>
       </div>
     `;
   }
@@ -633,7 +633,7 @@ export function renderDuplicatesResults(data, onNavigate, handlers) {
     groupHeader.innerHTML = `
       <div class="dup-group-meta">
         <span class="dup-group-num">#${grpIdx + 1}</span>
-        <span class="dup-badge-type">${grp.type_label || (grp.type === 'exact' ? '동일 파일' : '유사 사진')}</span>
+        <span class="dup-badge-type ${grp.type || 'exact'}">${grp.type_label || (grp.type === 'exact' ? '👑 완전 일치' : '📷 유사 사진')}</span>
         <span class="dup-group-size">파일당: ${grp.formatted_size}</span>
       </div>
       <div class="dup-group-waste">

@@ -408,8 +408,9 @@
         <div class="dup-control-group">
           <label class="dup-control-label">감지 방식:</label>
           <select class="dup-select" id="dupModeSelect">
-            <option value="exact" selected>완전 일치 (동일 파일 / 100% 안전)</option>
-            <option value="visual">유사 사진 (비슷한 구도/연사)</option>
+            <option value="all" selected>통합 감지 (완전 일치 + 유사 사진 모두 포함 / 추천)</option>
+            <option value="exact">완전 일치만 (동일 파일 / 100% 안전)</option>
+            <option value="visual">유사 사진 (비슷한 구도/연사 + 일치 파일 포함)</option>
           </select>
         </div>
 
@@ -469,6 +470,6 @@
     </button>
   </div>
 
-  <script type="module" src="./app.js?v=5.9"></script>
+  <script type="module" src="./app.js?v=6.0"></script>
 </body>
 </html>

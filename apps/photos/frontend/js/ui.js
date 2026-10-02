@@ -1,4 +1,4 @@
-import { $, DOC_ICONS, state, formatBytes, saveFavorites } from './state.js?v=5.9';
+import { $, DOC_ICONS, state, formatBytes, saveFavorites } from './state.js?v=6.0';
 
 export const lazyObserver = new IntersectionObserver((entries, obs) => {
   entries.forEach(entry => {
