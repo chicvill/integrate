@@ -673,53 +673,34 @@ function initEvents() {
     });
   }
 
-  // Window & Document level Drag & Drop File & Folder Upload
+  // ── Drag & Drop File & Folder Upload ──────────────────────────
   const dropzoneOverlay = $('dropzoneOverlay');
   let dragCounter = 0;
-
-  function preventDefaults(e) {
-    e.preventDefault();
-    e.stopPropagation();
-  }
-
-  // Prevent default OS file opening behavior on both window and document
-  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
-    window.addEventListener(eventName, preventDefaults, false);
-    document.addEventListener(eventName, preventDefaults, false);
-  });
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.dataTransfer) {
-      e.dataTransfer.dropEffect = 'copy';
-    }
-  };
-  window.addEventListener('dragover', handleDragOver, false);
-  document.addEventListener('dragover', handleDragOver, false);
 
   const handleDragEnter = (e) => {
     e.preventDefault();
     dragCounter++;
     if (dropzoneOverlay) dropzoneOverlay.classList.remove('hidden');
   };
-  window.addEventListener('dragenter', handleDragEnter, false);
-  document.addEventListener('dragenter', handleDragEnter, false);
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
+  };
 
   const handleDragLeave = (e) => {
     e.preventDefault();
     dragCounter--;
-    if (dragCounter <= 0 && dropzoneOverlay) {
+    if (dragCounter <= 0) {
       dragCounter = 0;
-      dropzoneOverlay.classList.add('hidden');
+      if (dropzoneOverlay) dropzoneOverlay.classList.add('hidden');
     }
   };
-  window.addEventListener('dragleave', handleDragLeave, false);
-  document.addEventListener('dragleave', handleDragLeave, false);
 
-  window.addEventListener('drop', async (e) => {
+  const handleDrop = async (e) => {
     e.preventDefault();
-    e.stopPropagation();
     dragCounter = 0;
     if (dropzoneOverlay) dropzoneOverlay.classList.add('hidden');
 
@@ -728,6 +709,7 @@ function initEvents() {
 
     // Synchronously capture dropped native File list before any async execution tick
     const syncFiles = Array.from(dt.files || []);
+    console.log('[DragDrop] Drop event received, syncFiles count:', syncFiles.length);
 
     // Check whether any item is a directory
     let hasDirectory = false;
@@ -779,7 +761,13 @@ function initEvents() {
         await uploadFiles(syncFiles);
       }
     }
-  }, false);
+  };
+
+  // Register clean window-level listeners
+  window.addEventListener('dragenter', handleDragEnter);
+  window.addEventListener('dragover', handleDragOver);
+  window.addEventListener('dragleave', handleDragLeave);
+  window.addEventListener('drop', handleDrop);
 }
 
 // ── App Start ─────────────────────────────────────────────────
