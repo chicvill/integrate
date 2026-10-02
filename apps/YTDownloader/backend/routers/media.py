@@ -134,7 +134,7 @@ def delete_media_item(target: str, db: Session = Depends(get_db)):
     import re
     clean_target = re.sub(r'^(delete/|file/)', '', decoded_target).strip()
 
-    # 1. 숫자인 경우 Job ID로 조회 및 삭제
+    # 1. 숫자인 경우 Job ID로 조회 및 삭제 (절대 파일 탐색으로 넘어가지 않음)
     if clean_target.isdigit():
         job_id = int(clean_target)
         job = db.query(models.DownloadJob).filter(models.DownloadJob.id == job_id).first()
@@ -150,6 +150,7 @@ def delete_media_item(target: str, db: Session = Depends(get_db)):
             db.delete(job)
             db.commit()
             return {"status": "ok", "message": f"작업 #{job_id} 및 파일이 성공적으로 삭제되었습니다."}
+        return {"status": "ok", "message": f"작업 #{job_id}는 이미 존재하지 않습니다."}
 
     # 2. 파일명으로 DB 매칭 삭제
     job = db.query(models.DownloadJob).filter(models.DownloadJob.filename == decoded_target).first()
@@ -158,24 +159,24 @@ def delete_media_item(target: str, db: Session = Depends(get_db)):
         db.commit()
         deleted_db = True
 
-    # 3. 물리 디스크 파일 삭제
+    # 3. 물리 디스크 파일 안전 삭제 (최소 3자 이상 파일명일 때만)
     safe_name = os.path.basename(decoded_target)
-    file_path = locate_disk_file(safe_name)
-    if file_path and os.path.exists(file_path):
-        try:
-            os.remove(file_path)
-            deleted_disk = True
-        except Exception:
-            pass
-
-    elif os.path.exists(settings.DOWNLOADS_DIR):
-        for real_f in os.listdir(settings.DOWNLOADS_DIR):
-            if real_f == safe_name or real_f == decoded_target or urllib.parse.unquote(real_f) == decoded_target:
-                try:
-                    os.remove(os.path.join(settings.DOWNLOADS_DIR, real_f))
-                    deleted_disk = True
-                except Exception:
-                    pass
-                break
+    if len(safe_name) >= 3 and not safe_name.isdigit():
+        file_path = locate_disk_file(safe_name)
+        if file_path and os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+                deleted_disk = True
+            except Exception:
+                pass
+        elif os.path.exists(settings.DOWNLOADS_DIR):
+            for real_f in os.listdir(settings.DOWNLOADS_DIR):
+                if real_f == safe_name or real_f == decoded_target or urllib.parse.unquote(real_f) == decoded_target:
+                    try:
+                        os.remove(os.path.join(settings.DOWNLOADS_DIR, real_f))
+                        deleted_disk = True
+                    except Exception:
+                        pass
+                    break
 
     return {"status": "ok", "deleted_db": deleted_db, "deleted_disk": deleted_disk}

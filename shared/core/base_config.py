@@ -162,9 +162,9 @@ class BaseConfig(BaseSettings):
                 except Exception:
                     pass
 
-            # 키워드 매칭
+            # 키워드 매칭 (최소 4자 이상, 순수 숫자가 아닐 때만 안전하게 매칭)
             clean_keyword = re.sub(r'[^\w가-힣]', '', filename)[:15]
-            if clean_keyword:
+            if clean_keyword and len(clean_keyword) >= 4 and not clean_keyword.isdigit():
                 try:
                     for real_f in os.listdir(sdir):
                         if clean_keyword in re.sub(r'[^\w가-힣]', '', real_f):
