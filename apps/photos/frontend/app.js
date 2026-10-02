@@ -673,36 +673,92 @@ function initEvents() {
     });
   }
 
-  // Drag & Drop File Upload
+  // Window & Document level Drag & Drop File & Folder Upload
   const dropzoneOverlay = $('dropzoneOverlay');
   let dragCounter = 0;
 
-  document.body.addEventListener('dragenter', (e) => {
+  function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  // Prevent default OS file opening behavior on both window and document
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
+    window.addEventListener(eventName, preventDefaults, false);
+    document.addEventListener(eventName, preventDefaults, false);
+  });
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
+  };
+  window.addEventListener('dragover', handleDragOver, false);
+  document.addEventListener('dragover', handleDragOver, false);
+
+  const handleDragEnter = (e) => {
     e.preventDefault();
     dragCounter++;
     if (dropzoneOverlay) dropzoneOverlay.classList.remove('hidden');
-  });
+  };
+  window.addEventListener('dragenter', handleDragEnter, false);
+  document.addEventListener('dragenter', handleDragEnter, false);
 
-  document.body.addEventListener('dragover', (e) => {
-    e.preventDefault();
-  });
-
-  document.body.addEventListener('dragleave', (e) => {
+  const handleDragLeave = (e) => {
     e.preventDefault();
     dragCounter--;
     if (dragCounter <= 0 && dropzoneOverlay) {
       dragCounter = 0;
       dropzoneOverlay.classList.add('hidden');
     }
-  });
+  };
+  window.addEventListener('dragleave', handleDragLeave, false);
+  document.addEventListener('dragleave', handleDragLeave, false);
 
-  document.body.addEventListener('drop', async (e) => {
+  window.addEventListener('drop', async (e) => {
     e.preventDefault();
+    e.stopPropagation();
     dragCounter = 0;
     if (dropzoneOverlay) dropzoneOverlay.classList.add('hidden');
-    if (e.dataTransfer) {
-      const extracted = await extractDroppedFiles(e.dataTransfer);
-      // Create any empty folders dropped
+
+    const dt = e.dataTransfer;
+    if (!dt) return;
+
+    // Synchronously capture dropped native File list before any async execution tick
+    const syncFiles = Array.from(dt.files || []);
+
+    // Check whether any item is a directory
+    let hasDirectory = false;
+    const items = dt.items;
+    if (items && items.length > 0) {
+      for (let i = 0; i < items.length; i++) {
+        try {
+          const item = items[i];
+          if (item && item.webkitGetAsEntry) {
+            const entry = item.webkitGetAsEntry();
+            if (entry && entry.isDirectory) {
+              hasDirectory = true;
+              break;
+            }
+          }
+        } catch (err) {
+          console.warn('Error probing webkitGetAsEntry:', err);
+        }
+      }
+    }
+
+    // Direct files dropped (no folder): Upload immediately using native File objects
+    if (!hasDirectory && syncFiles.length > 0) {
+      console.log(`[DragDrop] Uploading ${syncFiles.length} direct file(s)...`);
+      await uploadFiles(syncFiles);
+      return;
+    }
+
+    // Folder dropped or directory entry found: Traverse recursively
+    try {
+      const extracted = await extractDroppedFiles(dt);
       for (const emptyDir of extracted.emptyDirs) {
         try {
           await createFolderApi(state.currentFolder, emptyDir);
@@ -710,14 +766,20 @@ function initEvents() {
           console.warn('Failed to create empty folder:', emptyDir, err);
         }
       }
-      // Upload all extracted files (with relative paths preserved)
       if (extracted.files && extracted.files.length > 0) {
         await uploadFiles(extracted.files);
       } else if (extracted.emptyDirs.length > 0) {
         navigateTo(state.currentFolder);
+      } else if (syncFiles.length > 0) {
+        await uploadFiles(syncFiles);
+      }
+    } catch (err) {
+      console.warn('Drag & Drop extraction fallback to sync files:', err);
+      if (syncFiles.length > 0) {
+        await uploadFiles(syncFiles);
       }
     }
-  });
+  }, false);
 }
 
 // ── App Start ─────────────────────────────────────────────────
