@@ -10,7 +10,7 @@ logger = logging.getLogger("ytdlp_engine")
 
 
 def normalize_youtube_url(url: str) -> str:
-    """쇼츠(Shorts) 및 단축 URL을 표준 watch?v= URL로 변환"""
+    """쇼츠(Shorts), 단축 URL, 재생목록 파라미터가 포함된 URL을 순수 watch?v= URL로 정규화"""
     if not url:
         return url
     url = url.strip()
@@ -20,6 +20,9 @@ def normalize_youtube_url(url: str) -> str:
     short_url_match = re.search(r'youtu\.be/([a-zA-Z0-9_-]+)', url)
     if short_url_match:
         return f"https://www.youtube.com/watch?v={short_url_match.group(1)}"
+    watch_match = re.search(r'[?&]v=([a-zA-Z0-9_-]+)', url)
+    if watch_match:
+        return f"https://www.youtube.com/watch?v={watch_match.group(1)}"
     return url
 
 
@@ -145,7 +148,7 @@ class YTDLPEngine:
             ydl_opts['progress_hooks'] = [_yt_progress_hook]
 
         if mode == 'audio':
-            ydl_opts['format'] = 'bestaudio/best'
+            ydl_opts['format'] = 'ba[ext=m4a]/bestaudio[ext=m4a]/bestaudio/best'
             ydl_opts['postprocessors'] = [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'm4a',
