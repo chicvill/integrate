@@ -45,13 +45,17 @@ def get_recent_downloads(db: Session = Depends(get_db)):
                 ))
             # 2. 진행 중 작업
             elif job.status in ("DOWNLOADING", "PENDING"):
+                pct = round(getattr(job, "progress", 0.0) or 0.0, 1)
                 items.append(MediaFileItem(
-                    filename=f"⏳ [다운로드 중] {job.title or job.url}",
+                    filename=f"⏳ [다운로드 중 {pct}%] {job.title or job.url}",
                     size_mb=0.0,
                     modified_at=job.created_at.strftime("%Y-%m-%d %H:%M") if job.created_at else "",
                     file_type="audio" if job.mode == "audio" else "video",
                     download_url="",
                     status=job.status,
+                    progress=pct,
+                    speed=getattr(job, "speed", None),
+                    eta=getattr(job, "eta", None),
                     title=job.title,
                     job_id=job.id
                 ))

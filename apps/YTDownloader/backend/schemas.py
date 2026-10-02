@@ -16,6 +16,9 @@ class DownloadResponse(BaseModel):
     filename: Optional[str] = None
     file_size_mb: float = 0.0
     status: str
+    progress: float = 0.0
+    speed: Optional[str] = None
+    eta: Optional[str] = None
     error_message: Optional[str] = None
     ai_summary: Optional[str] = None
     created_at: datetime.datetime
@@ -31,5 +34,8 @@ class MediaFileItem(BaseModel):
     download_url: str = ""
     stream_url: Optional[str] = ""
     status: Optional[str] = "COMPLETED"
+    progress: Optional[float] = 0.0
+    speed: Optional[str] = None
+    eta: Optional[str] = None
     title: Optional[str] = None
     job_id: Optional[int] = None

@@ -13,9 +13,13 @@ export default function DownloaderPage() {
 
   useEffect(() => {
     fetchJobs();
-    const interval = setInterval(fetchJobs, 3000);
-    return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const hasActive = jobs.some(j => j.status === 'DOWNLOADING' || j.status === 'PENDING');
+    const interval = setInterval(fetchJobs, hasActive ? 1000 : 3000);
+    return () => clearInterval(interval);
+  }, [jobs]);
 
   const handleDeleteJob = async (jobId) => {
     try {
@@ -215,11 +219,13 @@ export default function DownloaderPage() {
                     <span style={{
                       fontSize: '0.8rem',
                       fontWeight: 'bold',
-                      color: job.status === 'COMPLETED' ? '#34d399' : job.status === 'FAILED' ? '#f43f5e' : '#fbbf24'
+                      color: job.status === 'COMPLETED' ? '#34d399' : job.status === 'FAILED' ? '#f43f5e' : '#fbbf24',
+                      display: 'inline-flex',
+                      alignItems: 'center'
                     }}>
                       {job.status === 'COMPLETED' && <CheckCircle2 size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />}
-                      {job.status === 'DOWNLOADING' && <Clock size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />}
-                      {job.status}
+                      {job.status === 'DOWNLOADING' && <Clock size={14} className="spin-icon" style={{ verticalAlign: 'middle', marginRight: '4px' }} />}
+                      {job.status === 'DOWNLOADING' ? `DOWNLOADING ${(job.progress || 0).toFixed(1)}%` : job.status}
                     </span>
                     <button
                       onClick={() => handleDeleteJob(job.id)}
@@ -241,6 +247,43 @@ export default function DownloaderPage() {
                     </button>
                   </div>
                 </div>
+
+                {job.status === 'DOWNLOADING' && (
+                  <div style={{ marginTop: '10px' }}>
+                    <div style={{
+                      width: '100%',
+                      height: '8px',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      borderRadius: '4px',
+                      overflow: 'hidden',
+                      position: 'relative'
+                    }}>
+                      <div style={{
+                        width: `${Math.min(100, Math.max(0, job.progress || 0))}%`,
+                        height: '100%',
+                        background: 'linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899)',
+                        borderRadius: '4px',
+                        transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        boxShadow: '0 0 10px rgba(139, 92, 246, 0.5)'
+                      }} />
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginTop: '6px',
+                      fontSize: '0.78rem',
+                      color: '#94a3b8'
+                    }}>
+                      <span style={{ color: '#38bdf8', fontWeight: 600 }}>
+                        {(job.progress || 0).toFixed(1)}% 다운로드 중...
+                      </span>
+                      <span>
+                        {job.speed ? `⚡ ${job.speed}` : ''} {job.eta ? `· ⏱ 남은 시간: ${job.eta}` : ''}
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 {job.filename && (
                   <div style={{ marginTop: '6px', fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

@@ -105,7 +105,7 @@ class YTDLPEngine:
                 "view_count": info.get('view_count', 0)
             }
 
-    def download_media(self, url: str, mode: str = "video", quality: str = "720p") -> dict:
+    def download_media(self, url: str, mode: str = "video", quality: str = "720p", progress_callback=None) -> dict:
         target_url = normalize_youtube_url(url)
         unique_suffix = f"_{int(time.time())}"
         
@@ -115,6 +115,34 @@ class YTDLPEngine:
             'retries': 3,
             'fragment_retries': 3,
         })
+
+        if progress_callback:
+            def _yt_progress_hook(d):
+                try:
+                    status = d.get('status')
+                    if status == 'downloading':
+                        total = d.get('total_bytes') or d.get('total_bytes_estimate') or 0
+                        downloaded = d.get('downloaded_bytes', 0)
+                        percent = 0.0
+                        if total > 0:
+                            percent = round((downloaded / total) * 100, 1)
+                        else:
+                            p_str = d.get('_percent_str', '').strip().replace('%', '')
+                            try:
+                                percent = float(p_str)
+                            except Exception:
+                                percent = 0.0
+                        speed = d.get('_speed_str', '').strip()
+                        eta = d.get('_eta_str', '').strip()
+                        info_dict = d.get('info_dict', {})
+                        title = info_dict.get('title')
+                        progress_callback(percent, speed, eta, title)
+                    elif status == 'finished':
+                        progress_callback(100.0, "", "", None)
+                except Exception:
+                    pass
+
+            ydl_opts['progress_hooks'] = [_yt_progress_hook]
 
         if mode == 'audio':
             ydl_opts['format'] = 'bestaudio/best'

@@ -14,12 +14,24 @@ from apps.YTDownloader.backend.services.ytdlp_engine import ytdlp_engine
 from apps.YTDownloader.backend.services.ai_transcribe import ai_transcribe_engine
 from apps.YTDownloader.backend.config import settings
 
-# DB 테이블 자동 생성 보장
+# DB 테이블 및 컬럼 자동 마이그레이션 보장
 try:
     Base.metadata.create_all(bind=engine)
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        for col_name, col_type in [
+            ("progress", "FLOAT DEFAULT 0.0"),
+            ("speed", "VARCHAR(50)"),
+            ("eta", "VARCHAR(50)")
+        ]:
+            try:
+                conn.execute(text(f"ALTER TABLE download_jobs ADD COLUMN {col_name} {col_type}"))
+                conn.commit()
+            except Exception:
+                pass
 except Exception as e:
     import logging
-    logging.getLogger("ytdownloader").warning(f"DB 테이블 자동 생성 실패(무시가능): {e}")
+    logging.getLogger("ytdownloader").warning(f"DB 테이블/컬럼 마이그레이션 확인: {e}")
 
 router = APIRouter(prefix="", tags=["YouTube Downloader"])
 
@@ -49,19 +61,57 @@ def preview_video(payload: DownloadRequest):
 
 
 def process_download_background(job_id: int, url: str, mode: str, quality: str):
+    import time
     db = SessionLocal()
     try:
         job = db.query(models.DownloadJob).filter(models.DownloadJob.id == job_id).first()
         if not job:
             return
         job.status = "DOWNLOADING"
+        job.progress = 0.0
         db.commit()
 
-        # 1. 미디어 다운로드 실행 (타임아웃 및 코덱 최적화 적용)
-        result = ytdlp_engine.download_media(url=url, mode=mode, quality=quality)
+        # 사전 메타데이터 조회 시도 (큐에 "Processing..." 대신 실제 영상 제목 즉시 반영)
+        try:
+            info = ytdlp_engine.get_video_info(url)
+            if info and info.get("title") and (not job.title or job.title == "Processing..."):
+                job.title = info["title"]
+                db.commit()
+        except Exception:
+            pass
+
+        last_update = [0.0]
+        last_percent = [0.0]
+
+        def on_progress(percent: float, speed: str, eta: str, title: str = None):
+            now = time.time()
+            if (now - last_update[0] >= 0.3) or (abs(percent - last_percent[0]) >= 1.5) or percent >= 100.0:
+                last_update[0] = now
+                last_percent[0] = percent
+                try:
+                    p_db = SessionLocal()
+                    p_job = p_db.query(models.DownloadJob).filter(models.DownloadJob.id == job_id).first()
+                    if p_job and p_job.status == "DOWNLOADING":
+                        p_job.progress = percent
+                        if speed:
+                            p_job.speed = speed
+                        if eta:
+                            p_job.eta = eta
+                        if title and (not p_job.title or p_job.title == "Processing..."):
+                            p_job.title = title
+                        p_db.commit()
+                    p_db.close()
+                except Exception:
+                    pass
+
+        # 1. 미디어 다운로드 실행 (실시간 진행률 콜백 결합)
+        result = ytdlp_engine.download_media(url=url, mode=mode, quality=quality, progress_callback=on_progress)
         job.title = result["title"]
         job.filename = result["filename"]
         job.file_size_mb = result["size_mb"]
+        job.progress = 100.0
+        job.speed = None
+        job.eta = None
         job.status = "COMPLETED"
         db.commit()  # 다운로드 완료 즉시 화면 반영!
 

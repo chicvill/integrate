@@ -96,3 +96,12 @@ body {
   background: rgba(6, 182, 212, 0.2);
   color: #22d3ee;
 }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin-icon {
+  animation: spin 1.5s linear infinite;
+}

@@ -13,6 +13,9 @@ class DownloadJob(Base):
     filename = Column(String(255), nullable=True)
     file_size_mb = Column(Float, default=0.0)
     status = Column(String(20), default="PENDING") # PENDING, DOWNLOADING, COMPLETED, FAILED
+    progress = Column(Float, default=0.0)
+    speed = Column(String(50), nullable=True)
+    eta = Column(String(50), nullable=True)
     error_message = Column(Text, nullable=True)
     ai_summary = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
