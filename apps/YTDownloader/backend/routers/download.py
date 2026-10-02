@@ -118,6 +118,21 @@ def get_download_status(job_id: int, db: Session = Depends(get_db)):
     return job
 
 
+import re
+import urllib.parse
+
+
+def safe_content_disposition(filename: str, as_attachment: bool = True) -> str:
+    """이모지 및 특수문자 제거한 ASCII fallback 및 RFC 5987 UTF-8 인코딩 헤더 생성"""
+    ascii_clean = re.sub(r'[^\w\s\.-]', '', filename)
+    ascii_clean = re.sub(r'\s+', '_', ascii_clean).strip('._')
+    if not ascii_clean:
+        ascii_clean = "media_download.mp4"
+    encoded_name = urllib.parse.quote(filename, safe='')
+    disposition = "attachment" if as_attachment else "inline"
+    return f'{disposition}; filename="{ascii_clean}"; filename*=UTF-8\'\'{encoded_name}'
+
+
 @router.get("/file/{job_id}")
 def download_file(job_id: int, db: Session = Depends(get_db)):
     job = db.query(models.DownloadJob).filter(models.DownloadJob.id == job_id).first()
@@ -129,4 +144,9 @@ def download_file(job_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="다운로드된 파일을 디스크에서 찾을 수 없습니다.")
 
     media_type = "video/mp4" if job.mode == "video" else "audio/mp4"
-    return FileResponse(path=file_path, filename=job.filename, media_type=media_type)
+    cd_header = safe_content_disposition(job.filename, as_attachment=True)
+    return FileResponse(
+        path=file_path,
+        media_type=media_type,
+        headers={"Content-Disposition": cd_header, "Accept-Ranges": "bytes"}
+    )

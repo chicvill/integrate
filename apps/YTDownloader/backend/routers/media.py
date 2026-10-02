@@ -118,8 +118,18 @@ def stream_media_file(filename: str):
         if not matched or not os.path.exists(file_path):
             raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
 
+    import re
+    ascii_clean = re.sub(r'[^\w\s\.-]', '', safe_name)
+    ascii_clean = re.sub(r'\s+', '_', ascii_clean).strip('._') or "media_stream.mp4"
+    encoded_name = urllib.parse.quote(safe_name, safe='')
+    cd_header = f'inline; filename="{ascii_clean}"; filename*=UTF-8\'\'{encoded_name}'
+
     media_type = "audio/mp4" if safe_name.lower().endswith((".m4a", ".mp3", ".aac", ".wav")) else "video/mp4"
-    return FileResponse(path=file_path, filename=safe_name, media_type=media_type)
+    return FileResponse(
+        path=file_path,
+        media_type=media_type,
+        headers={"Content-Disposition": cd_header, "Accept-Ranges": "bytes"}
+    )
 
 
 @router.delete("/delete/{target:path}")
