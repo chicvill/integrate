@@ -37,6 +37,7 @@ def get_recent_downloads(db: Session = Depends(get_db)):
                     modified_at=job.created_at.strftime("%Y-%m-%d %H:%M") if job.created_at else "",
                     file_type="audio" if job.mode == "audio" else "video",
                     download_url=f"/api/download/file/{job.id}",
+                    stream_url=f"/api/download/stream/{job.id}",
                     status="COMPLETED",
                     title=job.title,
                     job_id=job.id
@@ -98,7 +99,7 @@ def get_recent_downloads(db: Session = Depends(get_db)):
 
 
 @router.get("/stream/{filename:path}")
-def stream_media_file(filename: str):
+def stream_media_file(filename: str, download: bool = False):
     """디스크 파일 직접 스트리밍/다운로드 (한글/특수문자 URL 디코딩 지원)"""
     import urllib.parse
     decoded_name = urllib.parse.unquote(filename)
@@ -122,7 +123,8 @@ def stream_media_file(filename: str):
     ascii_clean = re.sub(r'[^\w\s\.-]', '', safe_name)
     ascii_clean = re.sub(r'\s+', '_', ascii_clean).strip('._') or "media_stream.mp4"
     encoded_name = urllib.parse.quote(safe_name, safe='')
-    cd_header = f'inline; filename="{ascii_clean}"; filename*=UTF-8\'\'{encoded_name}'
+    disposition = "attachment" if download else "inline"
+    cd_header = f'{disposition}; filename="{ascii_clean}"; filename*=UTF-8\'\'{encoded_name}'
 
     media_type = "audio/mp4" if safe_name.lower().endswith((".m4a", ".mp3", ".aac", ".wav")) else "video/mp4"
     return FileResponse(

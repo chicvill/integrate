@@ -29,6 +29,7 @@ class MediaFileItem(BaseModel):
     modified_at: str = ""
     file_type: str = "video" # video | audio
     download_url: str = ""
+    stream_url: Optional[str] = ""
     status: Optional[str] = "COMPLETED"
     title: Optional[str] = None
     job_id: Optional[int] = None

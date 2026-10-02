@@ -247,15 +247,27 @@ export default function DownloaderPage() {
                     <span>파일: {job.filename} ({job.file_size_mb} MB)</span>
 
                     {job.status === 'COMPLETED' && (
-                      <a
-                        href={`/api/download/summary-file/${job.id}`}
-                        download
-                        className="btn-primary"
-                        style={{ background: 'rgba(192, 132, 252, 0.2)', border: '1px solid #c084fc', color: '#c084fc', padding: '0.3rem 0.6rem', fontSize: '0.75rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
-                      >
-                        <FileText size={12} style={{ marginRight: '4px' }} />
-                        📄 AI 요약 노트 (.md) 다운로드
-                      </a>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <a
+                          href={`/api/download/file/${job.id}`}
+                          download={job.filename}
+                          target="_blank"
+                          className="btn-primary"
+                          style={{ background: 'rgba(56, 189, 248, 0.2)', border: '1px solid #38bdf8', color: '#38bdf8', padding: '0.3rem 0.6rem', fontSize: '0.75rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+                        >
+                          <Download size={12} style={{ marginRight: '4px' }} />
+                          📥 {job.mode === 'audio' ? '오디오 파일' : '비디오 파일'} 다운로드
+                        </a>
+                        <a
+                          href={`/api/download/summary-file/${job.id}`}
+                          download
+                          className="btn-primary"
+                          style={{ background: 'rgba(192, 132, 252, 0.2)', border: '1px solid #c084fc', color: '#c084fc', padding: '0.3rem 0.6rem', fontSize: '0.75rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+                        >
+                          <FileText size={12} style={{ marginRight: '4px' }} />
+                          📄 AI 요약 (.md)
+                        </a>
+                      </div>
                     )}
                   </div>
                 )}

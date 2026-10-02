@@ -137,9 +137,9 @@ export default function LibraryPage() {
             </button>
           </div>
           {playingFile.file_type === 'video' ? (
-            <video controls autoPlay src={playingFile.download_url} style={{ width: '100%', maxHeight: '420px', borderRadius: '8px' }} />
+            <video controls autoPlay src={playingFile.stream_url || playingFile.download_url} style={{ width: '100%', maxHeight: '420px', borderRadius: '8px' }} />
           ) : (
-            <audio controls autoPlay src={playingFile.download_url} style={{ width: '100%', marginTop: '1rem' }} />
+            <audio controls autoPlay src={playingFile.stream_url || playingFile.download_url} style={{ width: '100%', marginTop: '1rem' }} />
           )}
         </div>
       )}
@@ -202,6 +202,8 @@ export default function LibraryPage() {
                         <a
                           href={file.download_url}
                           download={file.filename}
+                          target="_blank"
+                          rel="noreferrer"
                           className="btn-primary"
                           style={{ background: 'var(--bg-card)', padding: '0.4rem 0.8rem', fontSize: '0.85rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
                         >

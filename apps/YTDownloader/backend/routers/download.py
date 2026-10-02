@@ -143,18 +143,67 @@ def safe_content_disposition(filename: str, as_attachment: bool = True) -> str:
     return f'{disposition}; filename="{ascii_clean}"; filename*=UTF-8\'\'{encoded_name}'
 
 
+def locate_disk_file(filename: str) -> str:
+    """파일명이나 타임스탬프 접미사로 실제 디스크 파일 100% 매칭"""
+    if not filename:
+        return ""
+    direct_path = os.path.join(settings.DOWNLOADS_DIR, filename)
+    if os.path.exists(direct_path):
+        return direct_path
+
+    if not os.path.exists(settings.DOWNLOADS_DIR):
+        return ""
+
+    # 1. 파일명에서 타임스탬프 추출 (예: _1790923156.m4a)
+    suffix_match = re.search(r'_\d+\.(mp4|m4a|webm|mp3|mkv)$', filename)
+    if suffix_match:
+        suffix = suffix_match.group(0)
+        for real_f in os.listdir(settings.DOWNLOADS_DIR):
+            if real_f.endswith(suffix):
+                return os.path.join(settings.DOWNLOADS_DIR, real_f)
+
+    # 2. 파일명 일부분 매칭
+    clean_keyword = re.sub(r'[^\w가-힣]', '', filename)[:15]
+    if clean_keyword:
+        for real_f in os.listdir(settings.DOWNLOADS_DIR):
+            if clean_keyword in re.sub(r'[^\w가-힣]', '', real_f):
+                return os.path.join(settings.DOWNLOADS_DIR, real_f)
+
+    return ""
+
+
 @router.get("/file/{job_id}")
 def download_file(job_id: int, db: Session = Depends(get_db)):
     job = db.query(models.DownloadJob).filter(models.DownloadJob.id == job_id).first()
     if not job or job.status != "COMPLETED" or not job.filename:
         raise HTTPException(status_code=404, detail="파일이 아직 준비되지 않았거나 다운로드에 실패했습니다.")
 
-    file_path = os.path.join(settings.DOWNLOADS_DIR, job.filename)
-    if not os.path.exists(file_path):
+    file_path = locate_disk_file(job.filename)
+    if not file_path or not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="다운로드된 파일을 디스크에서 찾을 수 없습니다.")
 
     media_type = "video/mp4" if job.mode == "video" else "audio/mp4"
-    cd_header = safe_content_disposition(job.filename, as_attachment=True)
+    cd_header = safe_content_disposition(os.path.basename(file_path), as_attachment=True)
+    return FileResponse(
+        path=file_path,
+        media_type=media_type,
+        headers={"Content-Disposition": cd_header, "Accept-Ranges": "bytes"}
+    )
+
+
+@router.get("/stream/{job_id}")
+def stream_file(job_id: int, db: Session = Depends(get_db)):
+    """플레이어 재생 전용 스트리밍 (inline Content-Disposition)"""
+    job = db.query(models.DownloadJob).filter(models.DownloadJob.id == job_id).first()
+    if not job or not job.filename:
+        raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
+
+    file_path = locate_disk_file(job.filename)
+    if not file_path or not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="다운로드된 파일을 디스크에서 찾을 수 없습니다.")
+
+    media_type = "video/mp4" if job.mode == "video" else "audio/mp4"
+    cd_header = safe_content_disposition(os.path.basename(file_path), as_attachment=False)
     return FileResponse(
         path=file_path,
         media_type=media_type,
