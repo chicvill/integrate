@@ -1,6 +1,6 @@
 import { $, state, formatBytes, saveFavorites } from './js/state.js';
 import { fetchFolderData, uploadSingleFile, deleteItemApi, fetchStorageInfo, createFolderApi, batchMoveApi } from './js/api.js';
-import { renderBreadcrumb, renderSidebarStats, renderGallery, copyLinkToClipboard, shareItem } from './js/ui.js';
+import { renderBreadcrumb, renderSidebarStats, renderGallery, copyLinkToClipboard, shareItem, cleanupDragState } from './js/ui.js';
 import {
   openLightbox, closeLightbox, renderLightboxItem, rotateLightboxImage, toggleSlideshow,
   openMkdirModal, closeMkdirModal, handleCreateFolder,
@@ -737,21 +737,38 @@ function initEvents() {
     });
   }
 
-  // ── Drag & Drop File & Folder Upload ──────────────────────────
+  // ── Drag & Drop File, Folder & Internal Item Move ────────────
   const dropzoneOverlay = $('dropzoneOverlay');
   let dragCounter = 0;
 
+  const isInternalCardDrag = (e) => {
+    if (state.isDraggingItems) return true;
+    if (document.body.classList.contains('is-dragging-card')) return true;
+    if (state.draggedPaths && state.draggedPaths.length > 0) return true;
+    if (e && e.dataTransfer && e.dataTransfer.types) {
+      const types = Array.from(e.dataTransfer.types);
+      if (!types.includes('Files')) return true;
+    }
+    return false;
+  };
+
   const handleDragEnter = (e) => {
     e.preventDefault();
-    if (state.isDraggingItems) return;
-    if (e.dataTransfer && e.dataTransfer.types && !e.dataTransfer.types.includes('Files')) return;
+    if (isInternalCardDrag(e)) {
+      if (dropzoneOverlay) dropzoneOverlay.classList.add('hidden');
+      return;
+    }
     dragCounter++;
     if (dropzoneOverlay) dropzoneOverlay.classList.remove('hidden');
   };
 
   const handleDragOver = (e) => {
     e.preventDefault();
-    if (state.isDraggingItems) return;
+    if (isInternalCardDrag(e)) {
+      e.dataTransfer.dropEffect = 'move';
+      if (dropzoneOverlay) dropzoneOverlay.classList.add('hidden');
+      return;
+    }
     if (e.dataTransfer) {
       e.dataTransfer.dropEffect = 'copy';
     }
@@ -759,7 +776,7 @@ function initEvents() {
 
   const handleDragLeave = (e) => {
     e.preventDefault();
-    if (state.isDraggingItems) return;
+    if (isInternalCardDrag(e)) return;
     dragCounter--;
     if (dragCounter <= 0) {
       dragCounter = 0;
@@ -768,7 +785,38 @@ function initEvents() {
   };
 
   const handleDrop = async (e) => {
-    if (state.isDraggingItems) return;
+    // 1. Internal Card Drag & Drop (Windows Explorer-like behavior)
+    if (isInternalCardDrag(e)) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // If dropped directly on a folder card or breadcrumb, that child's listener handles moving into it.
+      if (e.target && (e.target.closest('.card.folder') || e.target.closest('.crumb'))) {
+        return;
+      }
+
+      const targets = [...(state.draggedPaths || [])];
+      cleanupDragState();
+
+      if (!targets || targets.length === 0) return;
+
+      // Specification: "폴더 이외에 멈추면 상위 폴더로 이동하도록 수정"
+      if (!state.currentFolder) {
+        showToast('이미 최상위 루트 폴더(L:\\)에 위치해 있습니다.', 'ℹ️');
+        return;
+      }
+
+      const parts = state.currentFolder.split('/').filter(Boolean);
+      parts.pop();
+      const parentFolder = parts.join('/');
+      const parentName = parentFolder ? parentFolder.split('/').pop() : 'L:\\ (최상위 루트)';
+
+      showToast(`${targets.length}개 항목을 상위 폴더 '${parentName}'(으)로 이동합니다.`, '🚚');
+      await handleMoveItems(targets, parentFolder);
+      return;
+    }
+
+    // 2. External OS File / Folder Upload Drop
     e.preventDefault();
     dragCounter = 0;
     if (dropzoneOverlay) dropzoneOverlay.classList.add('hidden');

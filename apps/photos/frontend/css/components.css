@@ -10,6 +10,11 @@
   user-select: none;
   -webkit-user-select: none;
 }
+.card img {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
 .card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-md), 0 0 0 1px var(--border-active);
@@ -942,17 +947,18 @@
   cursor: grabbing;
 }
 .card.is-dragging {
-  opacity: 0.4;
-  transform: scale(0.96);
-  border: 2px dashed #0ea5e9 !important;
-  box-shadow: 0 8px 24px rgba(14, 165, 233, 0.25);
+  opacity: 0.45 !important;
+  transform: scale(0.98);
+  outline: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
 }
 .card.folder.drag-target-hover {
-  outline: 3px solid #38bdf8 !important;
-  outline-offset: 3px;
-  transform: scale(1.05) translateY(-3px);
-  box-shadow: 0 0 25px rgba(56, 189, 248, 0.6) !important;
-  background: rgba(56, 189, 248, 0.15) !important;
+  outline: 2px solid #38bdf8 !important;
+  outline-offset: -2px;
+  transform: scale(1.03);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.4) !important;
+  background: rgba(56, 189, 248, 0.16) !important;
   z-index: 20;
   transition: all 0.15s ease-out;
 }
@@ -962,6 +968,15 @@
   border-color: #38bdf8 !important;
   transform: scale(1.08);
   box-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
+}
+
+/* Force-hide dropzone overlay completely when dragging internal cards */
+body.is-dragging-card .dropzone-overlay,
+body.is-dragging-card #dropzoneOverlay {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 /* ── Move Modal ───────────────────────────────────────────── */

@@ -559,10 +559,12 @@
     grid-template-columns: repeat(3, 1fr);
     gap: 4px;
   }
-  .topbar-actions .upload-btn span {
+  .topbar-actions .upload-btn span,
+  .topbar-actions .move-btn span {
     display: none;
   }
-  .topbar-actions .upload-btn {
+  .topbar-actions .upload-btn,
+  .topbar-actions .move-btn {
     padding: 7px 9px;
   }
 }

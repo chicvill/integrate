@@ -14,6 +14,17 @@ export const lazyObserver = new IntersectionObserver((entries, obs) => {
   });
 }, { rootMargin: '200px' });
 
+export function cleanupDragState() {
+  state.isDraggingItems = false;
+  state.draggedPaths = [];
+  document.body.classList.remove('is-dragging-card');
+  document.querySelectorAll('.card.is-dragging').forEach(c => c.classList.remove('is-dragging'));
+  document.querySelectorAll('.card.folder.drag-target-hover').forEach(c => c.classList.remove('drag-target-hover'));
+  document.querySelectorAll('.crumb.crumb-drag-hover').forEach(c => c.classList.remove('crumb-drag-hover'));
+  const dropzone = document.getElementById('dropzoneOverlay');
+  if (dropzone) dropzone.classList.add('hidden');
+}
+
 export function renderBreadcrumb(folder, onNavigate, handlers) {
   const breadcrumb = $('breadcrumb');
   if (!breadcrumb) return;
@@ -31,6 +42,7 @@ export function renderBreadcrumb(folder, onNavigate, handlers) {
       if (state.isDraggingItems && state.draggedPaths && state.draggedPaths.length > 0) {
         if (path !== state.currentFolder) {
           e.preventDefault();
+          e.stopPropagation();
           e.dataTransfer.dropEffect = 'move';
           btn.classList.add('crumb-drag-hover');
         }
@@ -48,8 +60,7 @@ export function renderBreadcrumb(folder, onNavigate, handlers) {
           e.preventDefault();
           e.stopPropagation();
           const targets = [...state.draggedPaths];
-          state.isDraggingItems = false;
-          state.draggedPaths = [];
+          cleanupDragState();
           if (handlers && handlers.onMoveItems) {
             await handlers.onMoveItems(targets, path);
           }
@@ -224,6 +235,7 @@ const FOLDER_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.or
 
     state.isDraggingItems = true;
     state.draggedPaths = targets;
+    document.body.classList.add('is-dragging-card');
 
     e.dataTransfer.setData('text/plain', JSON.stringify({
       type: 'mqnet-media-move',
@@ -241,11 +253,7 @@ const FOLDER_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.or
   });
 
   card.addEventListener('dragend', () => {
-    state.isDraggingItems = false;
-    state.draggedPaths = [];
-    document.querySelectorAll('.card.is-dragging').forEach(c => c.classList.remove('is-dragging'));
-    document.querySelectorAll('.card.folder.drag-target-hover').forEach(c => c.classList.remove('drag-target-hover'));
-    document.querySelectorAll('.crumb.crumb-drag-hover').forEach(c => c.classList.remove('crumb-drag-hover'));
+    cleanupDragState();
   });
 
   // If this card is a folder, handle dragover & drop to move items into it
@@ -256,10 +264,12 @@ const FOLDER_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.or
         if (state.draggedPaths.some(p => item.path.startsWith(p + '/'))) return;
 
         e.preventDefault();
+        e.stopPropagation();
         e.dataTransfer.dropEffect = 'move';
         card.classList.add('drag-target-hover');
-      } else if (e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.includes('Files')) {
+      } else if (e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.includes('Files') && !state.isDraggingItems) {
         e.preventDefault();
+        e.stopPropagation();
         e.dataTransfer.dropEffect = 'copy';
         card.classList.add('drag-target-hover');
       }
@@ -278,8 +288,7 @@ const FOLDER_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.or
         e.preventDefault();
         e.stopPropagation();
         const targets = [...state.draggedPaths];
-        state.isDraggingItems = false;
-        state.draggedPaths = [];
+        cleanupDragState();
         if (handlers && handlers.onMoveItems) {
           await handlers.onMoveItems(targets, item.path);
         }
