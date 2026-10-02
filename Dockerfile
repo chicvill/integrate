@@ -9,7 +9,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ffmpeg \
     nodejs \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -fsSL https://deno.land/install.sh | sh \
+    && mv /root/.deno/bin/deno /usr/local/bin/deno
 
 # 파이썬 의존성 설치
 COPY requirements.txt .

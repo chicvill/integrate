@@ -37,6 +37,18 @@ services:
           - mqnet-ytdownloader
     restart: unless-stopped
 
+  bgutil-provider:
+    image: brainicism/bgutil-ytdlp-pot-provider:latest
+    container_name: mqnet-bgutil-provider
+    logging: *default-logging
+    restart: unless-stopped
+    init: true
+    networks:
+      default:
+        aliases:
+          - bgutil-provider
+
+
   studycafe:
     build: *default-build
     image: mqnet-studycafe:latest

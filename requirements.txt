@@ -42,5 +42,8 @@ pillow>=10.0.0      # 이미지 처리
 qrcode>=7.4.0       # QR 코드 생성
 pytz>=2024.1        # 시간대 처리
 yt-dlp>=2025.1.26   # 유튜브 미디어 다운로더
+yt-dlp-ejs>=0.8.0   # JS challenge plugin
+bgutil-ytdlp-pot-provider>=2.0.1  # Proof-of-Origin token provider for yt-dlp
+curl_cffi>=0.16.0   # 브라우저 위장 HTTP 클라이언트
 
 

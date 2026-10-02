@@ -38,20 +38,61 @@ class YTDLPEngine:
             if os.path.exists(winget_ffmpeg) and winget_ffmpeg not in current_path:
                 os.environ['PATH'] = winget_ffmpeg + os.pathsep + current_path
 
+    def _build_base_ydl_opts(self) -> dict:
+        pot_url = os.environ.get("POT_PROVIDER_URL", "http://bgutil-provider:4416")
+        opts = {
+            'noplaylist': True,
+            'ignoreerrors': False,
+            'socket_timeout': 30,
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
+                'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+            },
+            'extractor_args': {
+                'youtubepot-bgutilhttp': {
+                    'base_url': [pot_url]
+                }
+            }
+        }
+
+        # JS 런타임 바인딩 (Deno & Node.js)
+        js_runtimes = {}
+        for deno_cmd in ["deno", "/usr/local/bin/deno"]:
+            if shutil.which(deno_cmd) or os.path.exists(deno_cmd):
+                js_runtimes['deno'] = {'path': deno_cmd}
+                break
+        for node_cmd in ["node", "/usr/bin/node", "/usr/local/bin/node"]:
+            if shutil.which(node_cmd) or os.path.exists(node_cmd):
+                js_runtimes['node'] = {'path': node_cmd}
+                break
+        if js_runtimes:
+            opts['js_runtimes'] = js_runtimes
+
+        # 영구 볼륨 쿠키 파일 탐색 (/media/cookies.txt)
+        candidate_cookies = [
+            "/media/cookies.txt",
+            "/media/ytdownloader/cookies.txt",
+            os.path.join(settings.DATA_DIR, "cookies.txt"),
+            os.path.join(os.path.dirname(__file__), "..", "..", "cookies.txt")
+        ]
+        for cpath in candidate_cookies:
+            if os.path.exists(cpath):
+                opts['cookiefile'] = cpath
+                logger.info(f"Loaded YouTube cookies from {cpath}")
+                break
+
+        return opts
+
     def get_video_info(self, url: str) -> dict:
         """Fast metadata extraction (title, thumbnail, duration) without downloading."""
         target_url = normalize_youtube_url(url)
-        ydl_opts = {
+        ydl_opts = self._build_base_ydl_opts()
+        ydl_opts.update({
             'skip_download': True,
             'quiet': True,
             'extract_flat': False,
             'socket_timeout': 15,
-            'extractor_args': {
-                'youtube': {
-                    'player_client': ['ios', 'android', 'web'],
-                }
-            }
-        }
+        })
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(target_url, download=False)
             duration_sec = info.get('duration', 0)
@@ -68,37 +109,12 @@ class YTDLPEngine:
         target_url = normalize_youtube_url(url)
         unique_suffix = f"_{int(time.time())}"
         
-        ydl_opts = {
+        ydl_opts = self._build_base_ydl_opts()
+        ydl_opts.update({
             'outtmpl': os.path.join(self.downloads_dir, f'%(title).100s{unique_suffix}.%(ext)s'),
-            'noplaylist': True,
-            'ignoreerrors': False,
-            'socket_timeout': 30,
             'retries': 3,
             'fragment_retries': 3,
-            'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
-                'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
-            },
-            'extractor_args': {
-                'youtube': {
-                    'player_client': ['android', 'ios', 'web'],
-                }
-            }
-        }
-
-        # Node.js JS 런타임 자동 탐색 및 바인딩
-        for node_cmd in ["node", "/usr/bin/node", "/usr/local/bin/node"]:
-            if shutil.which(node_cmd) or os.path.exists(node_cmd):
-                ydl_opts['js_runtimes'] = {'node': {'path': node_cmd}}
-                break
-
-        # Check for cookies.txt (영구 볼륨 및 로컬)
-        root_cookies = os.path.join(os.path.dirname(__file__), "..", "..", "cookies.txt")
-        media_cookies = "/media/cookies.txt"
-        if os.path.exists(media_cookies):
-            ydl_opts['cookiefile'] = media_cookies
-        elif os.path.exists(root_cookies):
-            ydl_opts['cookiefile'] = root_cookies
+        })
 
         if mode == 'audio':
             ydl_opts['format'] = 'bestaudio/best'
