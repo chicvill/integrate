@@ -5,7 +5,7 @@ import {
   openLightbox, closeLightbox, renderLightboxItem, rotateLightboxImage, toggleSlideshow,
   openMkdirModal, closeMkdirModal, handleCreateFolder,
   openUploadOptModal, closeUploadOptModal,
-  enableSelectMode, toggleSelectMode, toggleItemSelection, handleBatchShare, handleBatchDelete,
+  enableSelectMode, toggleSelectMode, toggleItemSelection, updateSelectionUI, handleBatchShare, handleBatchDelete,
   openMoveModal, closeMoveModal, handleConfirmMove, handleMoveModalNewFolder, showToast
 } from './js/modals.js';
 
@@ -23,10 +23,18 @@ async function handleMoveItems(paths, destFolder) {
   if (!paths || paths.length === 0) return;
   try {
     const destName = destFolder ? destFolder.split('/').pop() : 'L:\\ (최상위 루트)';
-    await batchMoveApi(paths, destFolder);
+    const res = await batchMoveApi(paths, destFolder);
+    if (res && res.errors && res.errors.length > 0) {
+      if (res.moved && res.moved.length === 0) {
+        alert(`이동 실패: ${res.errors.join('\n')}`);
+        return;
+      }
+      showToast(`일부 항목 이동 완료 (${res.moved.length}개 성공, ${res.errors.length}개 실패)`, '⚠️');
+    } else {
+      showToast(`${paths.length}개 항목을 '${destName}'(으)로 이동했습니다.`, '🚚');
+    }
     state.selectedPaths.clear();
     updateSelectionUI();
-    showToast(`${paths.length}개 항목을 '${destName}'(으)로 이동했습니다.`, '🚚');
     await navigateTo(state.currentFolder);
   } catch (err) {
     alert(`이동 실패: ${err.message}`);
