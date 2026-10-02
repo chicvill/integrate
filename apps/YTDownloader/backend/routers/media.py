@@ -97,12 +97,26 @@ def get_recent_downloads(db: Session = Depends(get_db)):
     return items
 
 
-@router.get("/stream/{filename}")
+@router.get("/stream/{filename:path}")
 def stream_media_file(filename: str):
-    """디스크 파일 직접 스트리밍/다운로드"""
-    safe_name = os.path.basename(filename)
+    """디스크 파일 직접 스트리밍/다운로드 (한글/특수문자 URL 디코딩 지원)"""
+    import urllib.parse
+    decoded_name = urllib.parse.unquote(filename)
+    safe_name = os.path.basename(decoded_name)
     file_path = os.path.join(settings.DOWNLOADS_DIR, safe_name)
+
     if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
-    media_type = "audio/mp4" if safe_name.lower().endswith((".m4a", ".mp3")) else "video/mp4"
+        # 디스크의 실제 파일명과 정규화 비교
+        matched = False
+        if os.path.exists(settings.DOWNLOADS_DIR):
+            for real_f in os.listdir(settings.DOWNLOADS_DIR):
+                if real_f == safe_name or real_f == filename or urllib.parse.unquote(real_f) == decoded_name:
+                    file_path = os.path.join(settings.DOWNLOADS_DIR, real_f)
+                    safe_name = real_f
+                    matched = True
+                    break
+        if not matched or not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
+
+    media_type = "audio/mp4" if safe_name.lower().endswith((".m4a", ".mp3", ".aac", ".wav")) else "video/mp4"
     return FileResponse(path=file_path, filename=safe_name, media_type=media_type)
