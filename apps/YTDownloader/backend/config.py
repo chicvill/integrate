@@ -19,17 +19,7 @@ class YTDownloaderConfig(BaseConfig):
 
     @property
     def DOWNLOADS_DIR(self) -> str:
-        media_root = os.getenv("MEDIA_STORAGE_PATH", os.getenv("MEDIA_PATH", "/media"))
-        if os.path.exists(media_root):
-            target = os.path.join(media_root, "downloads")
-            try:
-                os.makedirs(target, exist_ok=True)
-                return target
-            except Exception:
-                pass
-        fallback = os.path.join(os.path.dirname(__file__), "downloads")
-        os.makedirs(fallback, exist_ok=True)
-        return fallback
+        return self.get_app_storage_dir("downloads")
 
     @property
     def is_standalone(self) -> bool:

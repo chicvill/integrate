@@ -110,13 +110,13 @@ def stream_media_file(filename: str, download: bool = False):
     if not file_path or not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
 
-    cd_header = safe_content_disposition(os.path.basename(file_path), as_attachment=download)
-    media_type = "audio/mp4" if safe_name.lower().endswith((".m4a", ".mp3", ".aac", ".wav")) else "video/mp4"
-    return FileResponse(
+    from shared.core.responses import safe_file_response
+    return safe_file_response(
         path=file_path,
-        media_type=media_type,
-        headers={"Content-Disposition": cd_header, "Accept-Ranges": "bytes"}
+        filename=os.path.basename(file_path),
+        as_attachment=download
     )
+
 
 
 @router.delete("/delete/{target:path}")

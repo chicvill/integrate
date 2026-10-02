@@ -95,6 +95,84 @@ class BaseConfig(BaseSettings):
             },
         }
 
+    def get_app_storage_dir(self, sub_dir: str = "") -> str:
+        """
+        15개 모든 SaaS 앱이 공통으로 사용하는 영구 스토리지 경로 해석기.
+        1. 도커 영구 마운트 볼륨 (/media 또는 MEDIA_STORAGE_PATH) 우선 연결
+        2. 볼륨 내 앱 전용 폴더 (/media/{APP_ID}/{sub_dir}) 또는 /media/{sub_dir} 생성
+        3. 로컬 독립 실행 시 로컬 폴백 폴더 생성
+        """
+        media_root = os.getenv("MEDIA_STORAGE_PATH", os.getenv("MEDIA_PATH", "/media"))
+        if os.path.exists(media_root):
+            if sub_dir:
+                target = os.path.join(media_root, sub_dir)
+            else:
+                target = os.path.join(media_root, self.APP_ID)
+            try:
+                os.makedirs(target, exist_ok=True)
+                return target
+            except Exception:
+                pass
+
+        # 로컬 환경 폴백
+        local_base = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "media"))
+        if sub_dir:
+            fallback = os.path.join(local_base, sub_dir)
+        else:
+            fallback = os.path.join(local_base, self.APP_ID)
+        os.makedirs(fallback, exist_ok=True)
+        return fallback
+
+    def locate_file(self, filename: str, sub_dir: str = "") -> str:
+        """
+        영구 볼륨 및 로컬 폴백 경로를 모두 탐색하여 실제 물리 파일 절대 경로를 반환.
+        - 타임스탬프 접미사 (_12345678.ext) 매칭
+        - 한글 키워드 매칭
+        """
+        if not filename:
+            return ""
+
+        import re
+        search_dirs = [
+            self.get_app_storage_dir(sub_dir),
+            os.getenv("MEDIA_STORAGE_PATH", os.getenv("MEDIA_PATH", "/media")),
+            os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "media")),
+            os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "media", "downloads")),
+        ]
+        media_root = os.getenv("MEDIA_STORAGE_PATH", os.getenv("MEDIA_PATH", "/media"))
+        if sub_dir and os.path.exists(media_root):
+            search_dirs.append(os.path.join(media_root, sub_dir))
+
+        for sdir in search_dirs:
+            if not sdir or not os.path.exists(sdir):
+                continue
+            direct_path = os.path.join(sdir, filename)
+            if os.path.exists(direct_path):
+                return direct_path
+
+            # 타임스탬프 매칭
+            suffix_match = re.search(r'_\d+\.([a-zA-Z0-9]+)$', filename)
+            if suffix_match:
+                suffix = suffix_match.group(0)
+                try:
+                    for real_f in os.listdir(sdir):
+                        if real_f.endswith(suffix):
+                            return os.path.join(sdir, real_f)
+                except Exception:
+                    pass
+
+            # 키워드 매칭
+            clean_keyword = re.sub(r'[^\w가-힣]', '', filename)[:15]
+            if clean_keyword:
+                try:
+                    for real_f in os.listdir(sdir):
+                        if clean_keyword in re.sub(r'[^\w가-힣]', '', real_f):
+                            return os.path.join(sdir, real_f)
+                except Exception:
+                    pass
+
+        return ""
+
 
 @lru_cache()
 def get_base_settings() -> BaseConfig:
