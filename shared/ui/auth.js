@@ -194,8 +194,7 @@ export const MQnetAuth = {
 
   // ── 로그아웃 ─────────────────────────────────────────────
   logout() {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    _clearAuth();
     this._notify(null);
   },
 
@@ -293,10 +292,11 @@ export const MQnetAuth = {
           <button class="mqnet-modal-close" id="mqnetAuthCloseBtn">✕</button>
         </div>
 
-        <!-- 탭 전환: 로그인 / 회원가입 -->
+        <!-- 탭 전환: 로그인 / 회원가입 / 비밀번호 찾기 (Priority 2) -->
         <div class="mqnet-auth-tabs">
           <button class="mqnet-auth-tab active" id="mqnetTabLogin">로그인</button>
           <button class="mqnet-auth-tab" id="mqnetTabRegister">회원가입</button>
+          <button class="mqnet-auth-tab" id="mqnetTabReset">비밀번호 찾기</button>
         </div>
 
         <div class="mqnet-auth-body">
@@ -318,9 +318,8 @@ export const MQnetAuth = {
             <span>또는 이메일로 계속하기</span>
           </div>
 
-          <!-- 공통 이메일 -->
           <!-- 공통 아이디/이메일 -->
-          <div class="mqnet-form-group">
+          <div class="mqnet-form-group" id="mqnetEmailGroup">
             <label class="mqnet-label">아이디 또는 이메일</label>
             <input id="mqnetEmail" type="text" class="mqnet-input" placeholder="admin 또는 user@example.com" autocomplete="username">
           </div>
@@ -332,9 +331,42 @@ export const MQnetAuth = {
           </div>
 
           <!-- 비밀번호 -->
-          <div class="mqnet-form-group">
+          <div class="mqnet-form-group" id="mqnetPwGroup">
             <label class="mqnet-label">비밀번호</label>
             <input id="mqnetPassword" type="password" class="mqnet-input" placeholder="비밀번호 (기본: 1212)" autocomplete="current-password">
+          </div>
+
+          <!-- 로그인 상태 유지 & 비밀번호 찾기 (Priority 2) -->
+          <div class="mqnet-login-options" id="mqnetLoginOptions" style="display:flex;align-items:center;justify-content:space-between;margin:-0.2rem 0 0.3rem">
+            <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.8rem;color:#94a3b8;cursor:pointer">
+              <input type="checkbox" id="mqnetRememberMe" checked style="accent-color:#6366f1;cursor:pointer">
+              <span>로그인 상태 유지</span>
+            </label>
+            <button type="button" id="mqnetForgotPwLink" style="background:none;border:none;color:#38bdf8;font-size:0.8rem;cursor:pointer;padding:0;text-decoration:underline">비밀번호 찾기</button>
+          </div>
+
+          <!-- 비밀번호 재설정 전용 구역 (Priority 2) -->
+          <div id="mqnetResetGroup" class="hidden" style="display:flex;flex-direction:column;gap:0.75rem;margin:0.2rem 0">
+            <div style="font-size:0.78rem;color:#94a3b8;line-height:1.4">
+              등록된 아이디 또는 이메일로 6자리 인증 코드를 발급받아 새 비밀번호를 설정하세요.
+            </div>
+            <div style="display:flex;gap:0.5rem">
+              <input id="mqnetResetEmail" type="text" class="mqnet-input" placeholder="아이디 또는 이메일" style="flex:1">
+              <button type="button" id="mqnetBtnSendResetCode" class="mqnet-auth-submit-btn" style="width:auto;padding:0 0.9rem;font-size:0.8rem;white-space:nowrap;background:linear-gradient(135deg,#6366f1,#38bdf8)">코드 발급</button>
+            </div>
+            <div id="mqnetResetCodeNotice" class="hidden" style="font-size:0.75rem;padding:0.5rem;border-radius:6px;background:rgba(56,189,248,0.1);color:#38bdf8;border:1px solid rgba(56,189,248,0.3)"></div>
+            <div class="mqnet-form-group">
+              <label class="mqnet-label">인증 코드 (6자리)</label>
+              <input id="mqnetResetCode" type="text" class="mqnet-input" placeholder="인증 코드 6자리 입력" maxlength="6">
+            </div>
+            <div class="mqnet-form-group">
+              <label class="mqnet-label">새 비밀번호</label>
+              <input id="mqnetResetNewPw" type="password" class="mqnet-input" placeholder="새 비밀번호 (4자 이상)">
+            </div>
+            <div class="mqnet-form-group">
+              <label class="mqnet-label">새 비밀번호 확인</label>
+              <input id="mqnetResetConfirmPw" type="password" class="mqnet-input" placeholder="새 비밀번호 재입력">
+            </div>
           </div>
 
           <!-- 역할별 원클릭 데모 계정 선택기 -->
@@ -360,7 +392,12 @@ export const MQnetAuth = {
     const closeBtn = document.getElementById('mqnetAuthCloseBtn');
     const tabLogin = document.getElementById('mqnetTabLogin');
     const tabRegister = document.getElementById('mqnetTabRegister');
+    const tabReset = document.getElementById('mqnetTabReset');
+    const emailGroup = document.getElementById('mqnetEmailGroup');
+    const pwGroup = document.getElementById('mqnetPwGroup');
     const nameGroup = document.getElementById('mqnetNameGroup');
+    const loginOptions = document.getElementById('mqnetLoginOptions');
+    const resetGroup = document.getElementById('mqnetResetGroup');
     const submitBtn = document.getElementById('mqnetAuthSubmit');
     const emailInput = document.getElementById('mqnetEmail');
     const passInput = document.getElementById('mqnetPassword');
@@ -369,29 +406,97 @@ export const MQnetAuth = {
     const btnGoogle = document.getElementById('mqnetBtnGoogle');
     const btnNaver = document.getElementById('mqnetBtnNaver');
     const demoSection = document.getElementById('mqnetDemoSection');
+    const socialSection = backdrop.querySelector('.mqnet-social-section');
+    const divider = backdrop.querySelector('.mqnet-divider');
 
-    let mode = 'login'; // 'login' | 'register'
+    // 리셋 구역 요소
+    const btnSendCode = document.getElementById('mqnetBtnSendResetCode');
+    const resetEmailInput = document.getElementById('mqnetResetEmail');
+    const resetNotice = document.getElementById('mqnetResetCodeNotice');
+    const resetCodeInput = document.getElementById('mqnetResetCode');
+    const resetNewPwInput = document.getElementById('mqnetResetNewPw');
+    const resetConfirmPwInput = document.getElementById('mqnetResetConfirmPw');
+
+    let mode = 'login'; // 'login' | 'register' | 'reset'
 
     const setMode = (m) => {
       mode = m;
       errorBox.classList.add('hidden');
+      tabLogin.classList.toggle('active', mode === 'login');
+      tabRegister.classList.toggle('active', mode === 'register');
+      tabReset.classList.toggle('active', mode === 'reset');
+
       if (mode === 'login') {
-        tabLogin.classList.add('active');
-        tabRegister.classList.remove('active');
+        socialSection.classList.remove('hidden');
+        divider.classList.remove('hidden');
+        emailGroup.classList.remove('hidden');
+        pwGroup.classList.remove('hidden');
         nameGroup.classList.add('hidden');
+        loginOptions.classList.remove('hidden');
         demoSection.classList.remove('hidden');
+        resetGroup.classList.add('hidden');
         submitBtn.textContent = '로그인';
-      } else {
-        tabRegister.classList.add('active');
-        tabLogin.classList.remove('active');
+      } else if (mode === 'register') {
+        socialSection.classList.remove('hidden');
+        divider.classList.remove('hidden');
+        emailGroup.classList.remove('hidden');
+        pwGroup.classList.remove('hidden');
         nameGroup.classList.remove('hidden');
+        loginOptions.classList.add('hidden');
         demoSection.classList.add('hidden');
+        resetGroup.classList.add('hidden');
         submitBtn.textContent = '회원가입 완료';
+      } else if (mode === 'reset') {
+        socialSection.classList.add('hidden');
+        divider.classList.add('hidden');
+        emailGroup.classList.add('hidden');
+        pwGroup.classList.add('hidden');
+        nameGroup.classList.add('hidden');
+        loginOptions.classList.add('hidden');
+        demoSection.classList.add('hidden');
+        resetGroup.classList.remove('hidden');
+        resetEmailInput.value = emailInput.value || '';
+        submitBtn.textContent = '비밀번호 재설정 완료';
       }
     };
 
     tabLogin.addEventListener('click', () => setMode('login'));
     tabRegister.addEventListener('click', () => setMode('register'));
+    tabReset.addEventListener('click', () => setMode('reset'));
+    document.getElementById('mqnetForgotPwLink')?.addEventListener('click', () => setMode('reset'));
+
+    // 인증 코드 발급 요청 핸들러
+    btnSendCode?.addEventListener('click', async () => {
+      const ident = resetEmailInput.value.trim() || emailInput.value.trim();
+      if (!ident) {
+        showError('아이디 또는 이메일을 입력해 주세요.');
+        return;
+      }
+      btnSendCode.disabled = true;
+      btnSendCode.textContent = '발급 중...';
+      errorBox.classList.add('hidden');
+      try {
+        const res = await fetch('/auth/password-reset/request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: ident })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || '인증 코드 발급 실패');
+
+        resetNotice.classList.remove('hidden');
+        resetNotice.textContent = data.message || '인증 코드가 발급되었습니다. 10분 내에 입력하세요.';
+        if (data.dev_code) {
+          resetCodeInput.value = data.dev_code;
+          resetNotice.textContent += ` (코드: ${data.dev_code})`;
+        }
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        btnSendCode.disabled = false;
+        btnSendCode.textContent = '코드 발급';
+      }
+    });
 
     // 소셜 로그인 처리 핸들러
     const handleOAuth = async (provider) => {
@@ -399,7 +504,6 @@ export const MQnetAuth = {
         submitBtn.disabled = true;
         errorBox.classList.add('hidden');
 
-        // 데모 환경에서는 빠른 소셜 인증 시뮬레이션 지원
         const mockSocialUser = provider === 'google' 
           ? { email: 'google_user@gmail.com', full_name: '구글 사용자', provider: 'google', auth_code_or_token: 'google_oauth_token' }
           : { email: 'naver_user@naver.com', full_name: '네이버 사용자', provider: 'naver', auth_code_or_token: 'naver_oauth_token' };
@@ -412,8 +516,7 @@ export const MQnetAuth = {
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || `${provider} 로그인 실패`);
 
-        localStorage.setItem(TOKEN_KEY, data.access_token);
-        localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+        _saveAuth(data.access_token, data.user, true);
 
         closeModal();
         this._notify(data.user);
@@ -431,6 +534,7 @@ export const MQnetAuth = {
     // 역할별 데모 칩 클릭
     demoSection.querySelectorAll('.mqnet-chip').forEach(chip => {
       chip.addEventListener('click', () => {
+        setMode('login');
         emailInput.value = chip.dataset.email;
         passInput.value = chip.dataset.pw || 'demo1234!';
         handleSubmit();
@@ -448,9 +552,64 @@ export const MQnetAuth = {
 
     // 폼 제출
     const handleSubmit = async () => {
+      errorBox.classList.add('hidden');
+
+      // 1. 비밀번호 재설정 모드
+      if (mode === 'reset') {
+        const ident = resetEmailInput.value.trim() || emailInput.value.trim();
+        const code = resetCodeInput.value.trim();
+        const newPw = resetNewPwInput.value.trim();
+        const confirmPw = resetConfirmPwInput.value.trim();
+
+        if (!ident || !code || !newPw) {
+          showError('아이디/이메일, 인증 코드, 새 비밀번호를 모두 입력해 주세요.');
+          return;
+        }
+        if (newPw.length < 4) {
+          showError('새 비밀번호는 최소 4자 이상이어야 합니다.');
+          return;
+        }
+        if (newPw !== confirmPw) {
+          showError('새 비밀번호와 확인 입력이 일치하지 않습니다.');
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = '재설정 중...';
+        try {
+          const res = await fetch('/auth/password-reset/confirm', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: ident, code, new_password: newPw })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || '비밀번호 재설정 실패');
+
+          resetNotice.classList.remove('hidden');
+          resetNotice.style.color = '#86efac';
+          resetNotice.style.borderColor = 'rgba(34,197,94,0.4)';
+          resetNotice.style.background = 'rgba(34,197,94,0.1)';
+          resetNotice.textContent = '✅ 비밀번호가 재설정되었습니다! 잠시 후 로그인 화면으로 이동합니다.';
+
+          setTimeout(() => {
+            emailInput.value = ident;
+            passInput.value = '';
+            setMode('login');
+          }, 1500);
+        } catch (err) {
+          showError(err.message);
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = '비밀번호 재설정 완료';
+        }
+        return;
+      }
+
+      // 2. 로그인 또는 회원가입 모드
       const email = emailInput.value.trim();
       const password = passInput.value.trim();
       const fullName = nameInput.value.trim();
+      const remember = document.getElementById('mqnetRememberMe')?.checked !== false;
 
       if (!email || !password) {
         showError('아이디 또는 이메일과 비밀번호를 입력해주세요.');
@@ -463,7 +622,6 @@ export const MQnetAuth = {
 
       submitBtn.disabled = true;
       submitBtn.textContent = '처리 중...';
-      errorBox.classList.add('hidden');
 
       try {
         let user;
@@ -476,8 +634,7 @@ export const MQnetAuth = {
           const data = await res.json();
           if (!res.ok) throw new Error(data.detail || '로그인 실패');
 
-          localStorage.setItem(TOKEN_KEY, data.access_token);
-          localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+          _saveAuth(data.access_token, data.user, remember);
           user = data.user;
         } else {
           // 회원가입 후 자동 로그인
@@ -498,8 +655,7 @@ export const MQnetAuth = {
           const loginData = await loginRes.json();
           if (!loginRes.ok) throw new Error('회원가입 완료 후 로그인 실패');
 
-          localStorage.setItem(TOKEN_KEY, loginData.access_token);
-          localStorage.setItem(USER_KEY, JSON.stringify(loginData.user));
+          _saveAuth(loginData.access_token, loginData.user, true);
           user = loginData.user;
         }
 
@@ -520,8 +676,8 @@ export const MQnetAuth = {
     };
 
     submitBtn.addEventListener('click', handleSubmit);
-    [emailInput, passInput, nameInput].forEach(inp => {
-      inp.addEventListener('keydown', (e) => {
+    [emailInput, passInput, nameInput, resetNewPwInput, resetConfirmPwInput].forEach(inp => {
+      inp?.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') handleSubmit();
       });
     });
@@ -576,6 +732,25 @@ export const MQnetAuth = {
             </span>
           </div>
 
+          <!-- 1순위: 실시간 스토리지 사용량 & Pro 업그레이드 -->
+          <div id="mqnetProfStorageCard" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:0.85rem;display:flex;flex-direction:column;gap:0.45rem">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:0.8rem;font-weight:700;color:#cbd5e1;display:flex;align-items:center;gap:0.35rem">
+                <span>💾</span> 실시간 클라우드 스토리지
+              </span>
+              <span id="mqnetProfStorageText" style="font-size:0.75rem;color:#94a3b8;font-weight:600">조회 중...</span>
+            </div>
+            <div style="width:100%;height:8px;background:rgba(255,255,255,0.08);border-radius:999px;overflow:hidden;position:relative">
+              <div id="mqnetProfStorageBar" style="height:100%;width:0%;background:linear-gradient(90deg,#38bdf8,#6366f1);border-radius:999px;transition:width 0.5s ease"></div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:0.1rem">
+              <span id="mqnetProfStorageSub" style="font-size:0.72rem;color:#64748b">남은 용량 계산 중...</span>
+              <button type="button" id="mqnetProfUpgradeBtn" style="background:none;border:none;padding:0;font-size:0.75rem;font-weight:700;color:#f59e0b;cursor:pointer;display:inline-flex;align-items:center;gap:0.2rem">
+                ⚡ Pro 플랜 업그레이드
+              </button>
+            </div>
+          </div>
+
           <div class="mqnet-form-group">
             <label class="mqnet-label">이름 / 닉네임</label>
             <input id="mqnetProfName" type="text" class="mqnet-input" value="${escHtml(user.full_name || '')}" placeholder="성명 또는 상호">
@@ -615,6 +790,35 @@ export const MQnetAuth = {
             <button class="mqnet-auth-submit-btn" id="mqnetProfileCancel" style="background:rgba(255,255,255,0.08);color:#94a3b8;flex:1" type="button">취소</button>
             <button class="mqnet-auth-submit-btn" id="mqnetProfileSave" style="flex:2" type="button">수정 내용 저장</button>
           </div>
+
+          <!-- 3순위: 회원 탈퇴 영역 -->
+          <div style="margin-top:0.5rem;padding-top:0.75rem;border-top:1px dashed rgba(239,68,68,0.25)">
+            <button type="button" id="mqnetWithdrawToggle" style="background:none;border:none;color:#ef4444;font-size:0.78rem;font-weight:600;cursor:pointer;padding:0;display:flex;align-items:center;gap:0.3rem">
+              <span>⚠️</span> 회원 탈퇴 및 데이터 초기화 안내 ▼
+            </button>
+            <div id="mqnetWithdrawSection" class="hidden" style="margin-top:0.6rem;padding:0.75rem;border-radius:8px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);display:flex;flex-direction:column;gap:0.55rem">
+              <p style="font-size:0.74rem;color:#fca5a5;margin:0;line-height:1.45">
+                회원 탈퇴 시 업로드한 모든 파일, 미디어 다운로드 내역, 개인 데이터가 <strong>즉시 영구 삭제</strong>되며 절대 복구할 수 없습니다.
+              </p>
+              ${user.id === 'admin' ? `
+                <div style="font-size:0.74rem;color:#fbbf24;font-weight:700;padding:0.45rem;background:rgba(251,191,36,0.1);border-radius:6px">
+                  ⚠️ 기본 관리자(admin) 계정은 시스템 보호를 위해 탈퇴할 수 없습니다.
+                </div>
+              ` : `
+                <div class="mqnet-form-group" style="margin:0">
+                  <label class="mqnet-label" style="color:#fca5a5;font-size:0.74rem">계정 비밀번호 확인</label>
+                  <input id="mqnetWithdrawPw" type="password" class="mqnet-input" placeholder="현재 계정 비밀번호" style="border-color:rgba(239,68,68,0.3);background:rgba(0,0,0,0.3)">
+                </div>
+                <div class="mqnet-form-group" style="margin:0">
+                  <label class="mqnet-label" style="color:#fca5a5;font-size:0.74rem">확인 문구 입력 (정확히 '탈퇴합니다' 입력)</label>
+                  <input id="mqnetWithdrawConfirm" type="text" class="mqnet-input" placeholder="탈퇴합니다" style="border-color:rgba(239,68,68,0.3);background:rgba(0,0,0,0.3)">
+                </div>
+                <button type="button" id="mqnetWithdrawSubmit" style="margin-top:0.2rem;padding:0.6rem;border-radius:8px;background:#ef4444;color:#fff;border:none;font-size:0.82rem;font-weight:700;cursor:pointer;transition:background 0.2s">
+                  모든 데이터 영구 삭제 및 회원 탈퇴
+                </button>
+              `}
+            </div>
+          </div>
         </div>
       </div>`;
 
@@ -631,6 +835,128 @@ export const MQnetAuth = {
     const confirmPwInput = document.getElementById('mqnetProfConfirmPw');
     const errBox = document.getElementById('mqnetProfileError');
     const succBox = document.getElementById('mqnetProfileSuccess');
+
+    // 1순위: 실시간 스토리지 사용량 로드
+    const storageText = document.getElementById('mqnetProfStorageText');
+    const storageBar = document.getElementById('mqnetProfStorageBar');
+    const storageSub = document.getElementById('mqnetProfStorageSub');
+    const upgradeBtn = document.getElementById('mqnetProfUpgradeBtn');
+
+    const loadStorage = async () => {
+      try {
+        const res = await fetch('/auth/me/storage', {
+          headers: {
+            'X-App-ID': this.appId,
+            ...this.getAuthHeader()
+          }
+        });
+        if (!res.ok) throw new Error('스토리지 정보 로드 실패');
+        const info = await res.json();
+
+        const pct = Math.min(100, Math.max(0, info.used_pct || 0));
+        if (storageText) storageText.textContent = `${info.used_human} / ${info.max_human} (${pct.toFixed(1)}%)`;
+        if (storageBar) {
+          storageBar.style.width = `${pct}%`;
+          if (pct >= 90) {
+            storageBar.style.background = 'linear-gradient(90deg, #f59e0b, #ef4444)';
+          } else if (pct >= 70) {
+            storageBar.style.background = 'linear-gradient(90deg, #38bdf8, #f59e0b)';
+          } else {
+            storageBar.style.background = 'linear-gradient(90deg, #38bdf8, #6366f1)';
+          }
+        }
+        if (storageSub) storageSub.textContent = `남은 용량: ${info.remaining_human} ${info.can_upload ? '' : '(용량 초과)'}`;
+
+        if (!info.can_upgrade && upgradeBtn) {
+          upgradeBtn.textContent = '👑 Pro 플랜 이용 중';
+          upgradeBtn.style.color = '#38bdf8';
+          upgradeBtn.disabled = true;
+          upgradeBtn.style.cursor = 'default';
+        }
+      } catch (e) {
+        if (storageText) storageText.textContent = '용량 정보 조회 불가';
+      }
+    };
+    loadStorage();
+
+    if (upgradeBtn) {
+      upgradeBtn.addEventListener('click', () => {
+        if (typeof this.onUpgradeRequest === 'function') {
+          this.onUpgradeRequest(user);
+          return;
+        }
+        alert('⚡ Pro 플랜 업그레이드 안내\n\n• 용량: 100 GB 대용량 스토리지 제공\n• 전송 속도: 최고속도 무제한 파일 전송\n• 혜택: 24/7 전용 우선 기술 지원\n\n구독 및 플랜 전환을 원하시면 고객센터 또는 관리자(contact@mqnet.com)로 문의해 주세요.');
+      });
+    }
+
+    // 3순위: 회원 탈퇴 토글 및 처리
+    const withdrawToggle = document.getElementById('mqnetWithdrawToggle');
+    const withdrawSection = document.getElementById('mqnetWithdrawSection');
+    const withdrawPwInput = document.getElementById('mqnetWithdrawPw');
+    const withdrawConfirmInput = document.getElementById('mqnetWithdrawConfirm');
+    const withdrawSubmitBtn = document.getElementById('mqnetWithdrawSubmit');
+
+    if (withdrawToggle && withdrawSection) {
+      withdrawToggle.addEventListener('click', () => {
+        withdrawSection.classList.toggle('hidden');
+        withdrawToggle.textContent = withdrawSection.classList.contains('hidden')
+          ? '⚠️ 회원 탈퇴 및 데이터 초기화 안내 ▼'
+          : '⚠️ 회원 탈퇴 및 데이터 초기화 안내 ▲';
+      });
+    }
+
+    if (withdrawSubmitBtn) {
+      withdrawSubmitBtn.addEventListener('click', async () => {
+        errBox.classList.add('hidden');
+        succBox.classList.add('hidden');
+
+        const pw = withdrawPwInput?.value.trim();
+        const confirmTxt = withdrawConfirmInput?.value.trim();
+
+        if (!pw) {
+          errBox.textContent = '탈퇴를 위해 계정 비밀번호를 입력해주세요.';
+          errBox.classList.remove('hidden');
+          return;
+        }
+        if (confirmTxt !== '탈퇴합니다') {
+          errBox.textContent = "확인 문구에 정확히 '탈퇴합니다'를 입력해주세요.";
+          errBox.classList.remove('hidden');
+          return;
+        }
+
+        if (!confirm('정말로 탈퇴하시겠습니까? 저장된 모든 파일과 계정 데이터가 즉시 영구 삭제되며 되돌릴 수 없습니다.')) {
+          return;
+        }
+
+        withdrawSubmitBtn.disabled = true;
+        withdrawSubmitBtn.textContent = '데이터 삭제 및 탈퇴 처리 중...';
+
+        try {
+          const res = await fetch('/auth/me', {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-App-ID': this.appId,
+              ...this.getAuthHeader()
+            },
+            body: JSON.stringify({ password: pw, confirm_text: confirmTxt })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || '회원 탈퇴 처리에 실패했습니다.');
+
+          _clearAuth();
+          alert('회원 탈퇴 및 모든 데이터 삭제가 정상 처리되었습니다. 이용해 주셔서 감사합니다.');
+          closeProf();
+          this._notify(null);
+          window.location.reload();
+        } catch (err) {
+          errBox.textContent = err.message;
+          errBox.classList.remove('hidden');
+          withdrawSubmitBtn.disabled = false;
+          withdrawSubmitBtn.textContent = '모든 데이터 영구 삭제 및 회원 탈퇴';
+        }
+      });
+    }
 
     const closeProf = () => {
       backdrop.classList.remove('open');
@@ -697,7 +1023,7 @@ export const MQnetAuth = {
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || '개인정보 변경에 실패했습니다.');
 
-        localStorage.setItem(USER_KEY, JSON.stringify(data));
+        _updateStoredUser(data);
         this._notify(data);
         if (typeof onSuccess === 'function') onSuccess(data);
 
