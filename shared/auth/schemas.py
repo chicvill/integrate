@@ -87,20 +87,27 @@ class UserUpdateRequest(BaseModel):
 
 
 class PasswordResetRequest(BaseModel):
-    """비밀번호 초기화 요청 스키마"""
-    email: EmailStr
+    """비밀번호 재설정 코드 요청 스키마 (아이디 또는 이메일)"""
+    email: str
 
 
 class PasswordResetConfirmRequest(BaseModel):
-    """비밀번호 초기화 확인 스키마"""
-    token: str
+    """비밀번호 재설정 확인 스키마 (6자리 인증 코드 + 새 비밀번호)"""
+    email: str
+    code: str
     new_password: str
 
     @validator("new_password")
     def password_min_length(cls, v):
-        if len(v) < 6:
-            raise ValueError("비밀번호는 최소 6자 이상이어야 합니다.")
+        if len(v) < 4:
+            raise ValueError("비밀번호는 최소 4자 이상이어야 합니다.")
         return v
+
+
+class WithdrawRequest(BaseModel):
+    """회원 탈퇴 요청 스키마 (본인 확인용 비밀번호 + 확인 문구)"""
+    password: Optional[str] = None
+    confirm_text: str
 
 
 TokenResponse.model_rebuild()

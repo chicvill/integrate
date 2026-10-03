@@ -23,6 +23,7 @@ from typing import Optional, List, Callable
 from shared.auth.schemas import (
     UserRegisterRequest, UserLoginRequest, OAuthLoginRequest,
     TokenResponse, UserResponse, UserUpdateRequest,
+    PasswordResetRequest, PasswordResetConfirmRequest, WithdrawRequest,
 )
 from shared.auth.service import AuthService
 from shared.auth.models import User
@@ -202,6 +203,50 @@ async def update_me(
     service = _get_auth_service(request)
     updated_user = await service.update_profile(db, current_user, body)
     return UserResponse(**updated_user.to_dict())
+
+
+@auth_router.get("/me/storage")
+async def get_my_storage(
+    request: Request,
+    current_user: User = Depends(get_current_user_dependency),
+):
+    """내 개인 스토리지 사용량(전체/앱별) 및 구독 플랜 현황"""
+    service = _get_auth_service(request)
+    return await service.get_storage_summary(current_user)
+
+
+@auth_router.delete("/me")
+async def withdraw_me(
+    request: Request,
+    body: WithdrawRequest,
+    current_user: User = Depends(get_current_user_dependency),
+    db: Session = Depends(get_db),
+):
+    """회원 탈퇴 (계정 + 개인 격리 스토리지 영구 삭제)"""
+    service = _get_auth_service(request)
+    return await service.withdraw(db, current_user, body.password, body.confirm_text)
+
+
+@auth_router.post("/password-reset/request")
+async def password_reset_request(
+    request: Request,
+    body: PasswordResetRequest,
+    db: Session = Depends(get_db),
+):
+    """비밀번호 찾기: 6자리 인증 코드 발급"""
+    service = _get_auth_service(request)
+    return await service.request_password_reset(db, body.email)
+
+
+@auth_router.post("/password-reset/confirm")
+async def password_reset_confirm(
+    request: Request,
+    body: PasswordResetConfirmRequest,
+    db: Session = Depends(get_db),
+):
+    """비밀번호 찾기: 인증 코드 확인 후 새 비밀번호 설정"""
+    service = _get_auth_service(request)
+    return await service.confirm_password_reset(db, body.email, body.code, body.new_password)
 
 
 @auth_router.get("/health", include_in_schema=False)

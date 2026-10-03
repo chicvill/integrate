@@ -5,6 +5,27 @@
 const TOKEN_KEY = 'mqnet_auth_token';
 const USER_KEY  = 'mqnet_auth_user';
 
+// ── 토큰 저장소 헬퍼 (로그인 상태 유지: localStorage / 브라우저 종료 시 만료: sessionStorage) ──
+function _readAuth(key) {
+  return localStorage.getItem(key) || sessionStorage.getItem(key);
+}
+function _saveAuth(token, user, remember = true) {
+  const store = remember ? localStorage : sessionStorage;
+  const other = remember ? sessionStorage : localStorage;
+  other.removeItem(TOKEN_KEY);
+  other.removeItem(USER_KEY);
+  if (token) store.setItem(TOKEN_KEY, token);
+  store.setItem(USER_KEY, JSON.stringify(user));
+}
+function _updateStoredUser(user) {
+  // 현재 토큰이 저장된 저장소에 사용자 정보만 갱신
+  const store = localStorage.getItem(TOKEN_KEY) ? localStorage : sessionStorage;
+  store.setItem(USER_KEY, JSON.stringify(user));
+}
+function _clearAuth() {
+  [localStorage, sessionStorage].forEach(s => { s.removeItem(TOKEN_KEY); s.removeItem(USER_KEY); });
+}
+
 // 역할별 친화적인 한글 명칭 및 컬러 매핑
 export const ROLE_LABELS = {
   superadmin: { name: '최고관리자', color: '#f43f5e' },
@@ -50,7 +71,7 @@ export class BaseAuthSessionUser {
       'X-App-ID': this.appId,
       'X-Session-ID': this.sessionId
     };
-    const token = localStorage.getItem(TOKEN_KEY);
+    const token = _readAuth(TOKEN_KEY);
     if (token) headers['Authorization'] = `Bearer ${token}`;
     return headers;
   }
@@ -97,9 +118,10 @@ export const MQnetAuth = {
   listeners: [],
 
   // ── 초기화 ───────────────────────────────────────────────
-  init({ appId = 'platform', onAuthChange = null, autoPrompt = false } = {}) {
+  init({ appId = 'platform', onAuthChange = null, autoPrompt = false, onUpgradeRequest = null } = {}) {
     this.appId = appId;
     if (onAuthChange) this.listeners.push(onAuthChange);
+    if (onUpgradeRequest) this.onUpgradeRequest = onUpgradeRequest;
     this._injectStyles();
     if (autoPrompt && !this.isLoggedIn()) {
       setTimeout(() => {
@@ -121,12 +143,12 @@ export const MQnetAuth = {
 
   // ── 토큰 & 사용자 정보 접근 ──────────────────────────────
   getToken() {
-    return localStorage.getItem(TOKEN_KEY) || '';
+    return _readAuth(TOKEN_KEY) || '';
   },
 
   getUser() {
     try {
-      const u = localStorage.getItem(USER_KEY);
+      const u = _readAuth(USER_KEY);
       return u ? JSON.parse(u) : null;
     } catch {
       return null;

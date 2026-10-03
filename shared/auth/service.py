@@ -5,7 +5,13 @@ shared/auth/service.py
 """
 import os
 import uuid
+import time
+import shutil
+import secrets
 import logging
+import smtplib
+from email.message import EmailMessage
+from pathlib import Path
 from typing import Optional, List, Dict
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
@@ -238,6 +244,14 @@ class AuthService:
         app_roles = user.app_roles or {}
         effective_role = app_roles.get(app_id, user.role)
 
+        # DB 구독 플랜을 스토리지 쿼터 캐시에 동기화 (미설정 시에만)
+        try:
+            from shared.storage import quota as _quota
+            if user.id not in _quota._user_plans and user.plan_id in _quota.PLAN_QUOTAS:
+                _quota.set_user_plan(user.id, user.plan_id)
+        except Exception:
+            pass
+
         # JWT 토큰 페이로드 생성
         token_data = {
             "sub": user.id,
@@ -368,8 +382,10 @@ class AuthService:
         if req.new_password:
             if len(req.new_password) < 4:
                 raise HTTPException(status_code=400, detail="새 비밀번호는 최소 4자 이상이어야 합니다.")
-            if req.current_password and not verify_password(req.current_password, user.hashed_password):
-                raise HTTPException(status_code=400, detail="현재 비밀번호가 일치하지 않습니다.")
+            # 로컬 계정은 반드시 현재 비밀번호 확인 (소셜 계정은 최초 설정 허용)
+            if (user.auth_provider or "local") == "local":
+                if not req.current_password or not verify_password(req.current_password, user.hashed_password):
+                    raise HTTPException(status_code=400, detail="현재 비밀번호가 일치하지 않습니다.")
             user.hashed_password = hash_password(req.new_password)
 
         db.add(user)
@@ -377,4 +393,167 @@ class AuthService:
         db.refresh(user)
         logger.info(f"사용자 개인정보 변경 완료: id={user.id}, email={user.email}")
         return user
+
+    # ── 비밀번호 찾기 / 재설정 ─────────────────────────────────
+    async def request_password_reset(self, db: Session, identifier: str) -> Dict:
+        """
+        6자리 인증 코드 발급 (10분 유효, 5회 시도 제한).
+        SMTP_HOST 환경변수가 설정되어 있으면 메일로 발송하고,
+        미설정(개발/데모) 환경에서는 응답에 코드를 포함하여 반환합니다.
+        """
+        ident = (identifier or "").strip()
+        user = _find_user_by_identifier(db, ident)
+        generic = {"sent": True, "message": "등록된 계정이라면 인증 코드가 발급되었습니다. (유효 10분) 메일을 받지 못하면 관리자에게 문의해 주세요."}
+        if not user or not user.is_active:
+            # 계정 존재 여부를 노출하지 않음 (계정 열거 공격 방지)
+            return generic
+
+        code = f"{secrets.randbelow(1_000_000):06d}"
+        _reset_codes[user.id] = {"code": code, "expires": time.time() + RESET_CODE_TTL, "attempts": 0}
+
+        if _send_reset_email(user.email, code):
+            logger.info(f"비밀번호 재설정 코드 메일 발송: {user.email}")
+            return generic
+
+        # SMTP 미설정: 기본적으로 서버 로그에만 기록 (관리자가 확인 후 전달)
+        # 로컬 개발 시에만 AUTH_RESET_DEV_MODE=true 로 응답에 코드 포함 허용
+        logger.warning(f"[RESET CODE] SMTP 미설정 - user={user.id} code={code} (10분 유효)")
+        if os.getenv("AUTH_RESET_DEV_MODE", "false").lower() == "true":
+            return {**generic, "dev_mode": True, "dev_code": code,
+                    "message": "개발 모드: 아래 인증 코드를 입력해 주세요."}
+        return generic
+
+    async def confirm_password_reset(self, db: Session, identifier: str, code: str, new_password: str) -> Dict:
+        """인증 코드 검증 후 새 비밀번호로 변경"""
+        user = _find_user_by_identifier(db, (identifier or "").strip())
+        entry = _reset_codes.get(user.id) if user else None
+        if not user or not entry:
+            raise HTTPException(status_code=400, detail="인증 코드가 유효하지 않습니다. 코드를 다시 요청해 주세요.")
+        if time.time() > entry["expires"]:
+            _reset_codes.pop(user.id, None)
+            raise HTTPException(status_code=400, detail="인증 코드가 만료되었습니다. 다시 요청해 주세요.")
+        entry["attempts"] += 1
+        if entry["attempts"] > RESET_MAX_ATTEMPTS:
+            _reset_codes.pop(user.id, None)
+            raise HTTPException(status_code=429, detail="시도 횟수를 초과했습니다. 코드를 다시 요청해 주세요.")
+        if not secrets.compare_digest(entry["code"], (code or "").strip()):
+            raise HTTPException(status_code=400, detail="인증 코드가 일치하지 않습니다.")
+
+        user.hashed_password = hash_password(new_password)
+        db.commit()
+        _reset_codes.pop(user.id, None)
+        logger.info(f"비밀번호 재설정 완료: user={user.id}")
+        return {"success": True, "message": "비밀번호가 재설정되었습니다. 새 비밀번호로 로그인해 주세요."}
+
+    # ── 회원 탈퇴 ──────────────────────────────────────────────
+    async def withdraw(self, db: Session, user: User, password: Optional[str], confirm_text: str) -> Dict:
+        """
+        회원 탈퇴: 본인 확인 후 계정 및 개인 격리 스토리지(/media/users/{id}) 영구 삭제.
+        기본 관리자(admin) 계정은 플랫폼 보호를 위해 탈퇴할 수 없습니다.
+        """
+        if user.id == DEFAULT_ADMIN_ID:
+            raise HTTPException(status_code=403, detail="기본 관리자 계정은 탈퇴할 수 없습니다.")
+        if (confirm_text or "").strip() != WITHDRAW_CONFIRM_TEXT:
+            raise HTTPException(status_code=400, detail=f"확인 문구 '{WITHDRAW_CONFIRM_TEXT}'를 정확히 입력해 주세요.")
+        if (user.auth_provider or "local") == "local":
+            if not password or not verify_password(password, user.hashed_password):
+                raise HTTPException(status_code=400, detail="비밀번호가 일치하지 않습니다.")
+
+        user_id = user.id
+        removed_bytes = 0
+        user_root = _user_storage_root(user_id)
+        if user_root and user_root.exists():
+            removed_bytes = _dir_size(user_root)
+            shutil.rmtree(user_root, ignore_errors=True)
+
+        db.delete(user)
+        db.commit()
+        _reset_codes.pop(user_id, None)
+        try:
+            from shared.storage import quota as _quota
+            _quota._user_plans.pop(user_id, None)
+        except Exception:
+            pass
+        logger.info(f"회원 탈퇴 처리 완료: user={user_id}, 삭제된 데이터={removed_bytes} bytes")
+        return {"success": True, "removed_bytes": removed_bytes,
+                "message": "회원 탈퇴가 완료되었습니다. 모든 개인 데이터가 삭제되었습니다."}
+
+    # ── 내 스토리지 / 구독 현황 ────────────────────────────────
+    async def get_storage_summary(self, user: User) -> Dict:
+        """사용자 개인 격리 스토리지 전체 사용량 + 앱별 사용량 + 구독 플랜 정보"""
+        from shared.storage import quota as _quota
+        plan = _quota._user_plans.get(user.id) or (user.plan_id if user.plan_id in _quota.PLAN_QUOTAS else "free")
+        _quota.set_user_plan(user.id, plan)
+
+        user_root = _user_storage_root(user.id)
+        summary = _quota.calculate_storage_quota(user_root, user_id=user.id) if user_root else {}
+
+        apps = []
+        if user_root and user_root.exists():
+            for child in sorted(user_root.iterdir()):
+                if child.is_dir():
+                    size = _dir_size(child)
+                    apps.append({"app_id": child.name, "bytes": size, "formatted": _quota.format_bytes(size)})
+        summary["apps"] = apps
+        summary["upgrade_available"] = plan != "pro"
+        return summary
+
+
+# ── 모듈 레벨 헬퍼 (비밀번호 재설정 / 탈퇴 / 스토리지) ────────────
+DEFAULT_ADMIN_ID = "admin"
+WITHDRAW_CONFIRM_TEXT = "탈퇴합니다"
+RESET_CODE_TTL = 600        # 10분
+RESET_MAX_ATTEMPTS = 5
+_reset_codes: Dict[str, Dict] = {}   # {user_id: {code, expires, attempts}} - 단일 프로세스 인메모리
+
+
+def _find_user_by_identifier(db: Session, ident: str) -> Optional[User]:
+    if not ident:
+        return None
+    return db.query(User).filter((User.email == ident) | (User.id == ident)).first()
+
+
+def _user_storage_root(user_id: str) -> Optional[Path]:
+    """/media/users/{user_id} 경로 (경로 조작 방지 검증 포함)"""
+    if not user_id or "/" in user_id or "\\" in user_id or user_id in (".", ".."):
+        return None
+    base = Path(os.getenv("MEDIA_STORAGE_PATH", os.getenv("MEDIA_PATH", "/media"))).resolve() / "users"
+    target = (base / user_id).resolve()
+    if base not in target.parents:
+        return None
+    return target
+
+
+def _dir_size(path: Path) -> int:
+    total = 0
+    for root, _dirs, files in os.walk(path):
+        for f in files:
+            try:
+                total += (Path(root) / f).stat().st_size
+            except OSError:
+                continue
+    return total
+
+
+def _send_reset_email(to_email: str, code: str) -> bool:
+    """SMTP 설정이 있으면 재설정 코드 메일 발송. 미설정/실패 시 False"""
+    host = os.getenv("SMTP_HOST")
+    if not host or not to_email or "@" not in to_email:
+        return False
+    try:
+        msg = EmailMessage()
+        msg["Subject"] = "[MQnet] 비밀번호 재설정 인증 코드"
+        msg["From"] = os.getenv("SMTP_FROM", os.getenv("SMTP_USER", "no-reply@mqnet.io"))
+        msg["To"] = to_email
+        msg.set_content(f"MQnet 비밀번호 재설정 인증 코드: {code}\n\n10분 이내에 입력해 주세요.")
+        with smtplib.SMTP(host, int(os.getenv("SMTP_PORT", "587")), timeout=10) as smtp:
+            smtp.starttls()
+            if os.getenv("SMTP_USER"):
+                smtp.login(os.getenv("SMTP_USER"), os.getenv("SMTP_PASSWORD", ""))
+            smtp.send_message(msg)
+        return True
+    except Exception as e:
+        logger.error(f"재설정 메일 발송 실패: {e}")
+        return False
+
 
