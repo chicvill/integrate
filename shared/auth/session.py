@@ -147,18 +147,22 @@ def resolve_session_user(
     request: Request,
     app_id: str = "platform",
     session_cls: type = BaseAuthSession,
-    x_session_id: Optional[str] = Header(None, alias="X-Session-ID"),
-    authorization: Optional[str] = Header(None, alias="Authorization"),
+    x_session_id: Optional[str] = None,
+    authorization: Optional[str] = None,
 ) -> BaseAuthSession:
     """
     요청 헤더를 분석하여 정회원 JWT가 있으면 회원 세션 객체로,
     없으면 X-Session-ID 기반의 격리 게스트 세션 객체로 자동 인스턴스화합니다.
     """
-    effective_session_id = x_session_id or request.cookies.get("mqnet_session_id") or str(uuid.uuid4())
+    # 1. 헤더 추출 (FastAPI Header 객체 방어 처리)
+    auth_str = authorization if isinstance(authorization, str) else request.headers.get("authorization", "")
+    sess_id_str = x_session_id if isinstance(x_session_id, str) else request.headers.get("x-session-id", "")
 
-    # 1. JWT 토큰 검사
-    if authorization and authorization.startswith("Bearer "):
-        token = authorization.replace("Bearer ", "").strip()
+    effective_session_id = sess_id_str or request.cookies.get("mqnet_session_id") or str(uuid.uuid4())
+
+    # 2. JWT 토큰 검사
+    if auth_str and auth_str.startswith("Bearer "):
+        token = auth_str.replace("Bearer ", "").strip()
         from shared.utils.security import decode_access_token
         from shared.core.base_config import get_base_settings
         settings = getattr(request.state, "app_settings", None) or get_base_settings()

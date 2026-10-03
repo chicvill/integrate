@@ -475,6 +475,7 @@ async function init() {
   // 🔑 MQnet 통합 인증 초기화 및 배지 부착
   MQnetAuth.init({
     appId: 'files',
+    autoPrompt: true,
     onAuthChange: (user) => {
       state.currentUser = user ? user.id : 'demo_user';
       navigate('');

@@ -97,10 +97,17 @@ export const MQnetAuth = {
   listeners: [],
 
   // ── 초기화 ───────────────────────────────────────────────
-  init({ appId = 'platform', onAuthChange = null } = {}) {
+  init({ appId = 'platform', onAuthChange = null, autoPrompt = false } = {}) {
     this.appId = appId;
     if (onAuthChange) this.listeners.push(onAuthChange);
     this._injectStyles();
+    if (autoPrompt && !this.isLoggedIn()) {
+      setTimeout(() => {
+        if (!this.isLoggedIn()) {
+          this.openModal({ title: 'MQnet 서비스 이용을 위해 로그인해 주세요' });
+        }
+      }, 300);
+    }
     return this.getSessionUser();
   },
 

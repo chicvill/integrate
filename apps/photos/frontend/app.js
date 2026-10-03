@@ -972,16 +972,16 @@ function initEvents() {
   window.addEventListener('drop', handleDrop);
 }
 
-// ── App Start ─────────────────────────────────────────────────
-// 🔑 MQnet 통합 인증 초기화 및 배지 부착
 MQnetAuth.init({
   appId: 'photos',
+  autoPrompt: true,
   onAuthChange: (user) => {
     state.currentUser = user ? user.id : 'demo_user';
     navigateTo('');
     refreshQuota();
   }
 });
+
 MQnetAuth.renderBadge('userAuthBadge');
 
 const u = MQnetAuth.getUser();
