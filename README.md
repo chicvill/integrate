@@ -1,4 +1,4 @@
-﻿# MQnet 통합 멀티 SaaS 플랫폼
+# MQnet 통합 멀티 SaaS 플랫폼
 
 > 하나의 백엔드 서버에서 5개의 SaaS 서비스를 **상속 기반 공통 모듈**로 운영하는 통합 플랫폼
 
@@ -103,6 +103,9 @@ docker-compose up -d
 | `GET  /api/selfstudy/plans` | 학습 계획 조회 |
 
 ## 📦 공통 모듈 활용법
+
+> 📖 **신규 앱 개발 상세 표준 가이드**: [NEW_APP_DEVELOPMENT_GUIDE.md](file:///c:/Users/USER/Desktop/Workstation/integrated/NEW_APP_DEVELOPMENT_GUIDE.md)  
+> 백엔드/프론트엔드 표준 구조, 동적 라우팅, 캐시 무효화, CSS 압축 방지, 스레드 풀, 게이트웨이 연동 및 출시 전 체크리스트가 상세히 수록되어 있습니다.
 
 ### 새 앱 추가 방법 (3단계)
 

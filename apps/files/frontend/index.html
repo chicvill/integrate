@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ko" class="notranslate">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="google" content="notranslate">
+  <title>MQnet Files Hub — 통합 파일 스토리지 관리자</title>
+  <meta name="description" content="MQnet 통합 파일 스토리지 허브 — 폴더 탐색, 이미지/동영상/문서 미리보기, 파일 업로드/다운로드/삭제">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Pretendard:wght@400;500;600;700;800&display=swap">
+
+  <!-- CSS 모듈 직접 로드 + 버전 태그 (가이드 준수: @import 중첩 금지) -->
+  <link rel="stylesheet" href="./css/variables.css?v=1.0">
+  <link rel="stylesheet" href="./css/layout.css?v=1.0">
+  <link rel="stylesheet" href="./css/components.css?v=1.0">
+  <link rel="stylesheet" href="./style.css?v=1.0">
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Top Header ──────────────────────────────────────── -->
+  <header class="app-header">
+    <a class="brand-group" href="/files/">
+      <div class="brand-icon">📁</div>
+      <div class="brand-title">
+        <span class="brand-name">MQnet Files</span>
+        <span class="brand-badge">Storage Hub</span>
+      </div>
+    </a>
+
+    <div class="search-wrapper">
+      <span class="search-icon">🔍</span>
+      <input
+        id="globalSearchInput"
+        type="text"
+        class="search-input"
+        placeholder="파일 이름으로 검색..."
+        autocomplete="off"
+        spellcheck="false"
+      >
+      <span class="search-shortcut">/</span>
+    </div>
+
+    <div class="header-actions">
+      <div class="storage-badge" id="storageInfoBadge">
+        💾 <strong>—</strong>
+      </div>
+      <a href="/" class="btn btn-secondary" title="포털 대시보드">🏠</a>
+    </div>
+  </header>
+
+  <!-- ── Toolbar / Breadcrumbs ────────────────────────────── -->
+  <div class="app-toolbar">
+    <nav class="breadcrumbs" id="breadcrumbsNav" aria-label="경로 탐색">
+      <span class="breadcrumb-item active">🏠 홈</span>
+    </nav>
+
+    <div class="toolbar-actions">
+      <span class="hidden" id="selectionBadge" style="font-size:0.82rem;color:var(--accent-secondary);font-weight:700;padding:0.25rem 0.6rem;background:rgba(56,189,248,0.1);border-radius:var(--radius-full);border:1px solid rgba(56,189,248,0.2)"></span>
+      <button class="btn btn-danger hidden" id="deleteSelectedBtn" title="선택 항목 삭제">🗑 삭제</button>
+      <button class="btn btn-secondary" id="mkdirBtn" title="새 폴더 만들기">📁 새 폴더</button>
+      <button class="btn btn-secondary" id="toolbarUploadBtn" title="파일 업로드">⬆ 파일 업로드</button>
+      <button class="btn btn-secondary" id="toolbarUploadFolderBtn" title="폴더 업로드">📂 폴더 업로드</button>
+      <div style="width:1px;height:24px;background:var(--border-subtle)"></div>
+      <button class="btn-icon active" id="viewGridBtn" title="그리드 보기">⊞</button>
+      <button class="btn-icon" id="viewListBtn" title="목록 보기">☰</button>
+    </div>
+  </div>
+
+  <!-- ── Category Filter Bar ──────────────────────────────── -->
+  <div class="filter-bar" role="tablist" aria-label="파일 유형 필터">
+    <button class="filter-pill active" data-filter="all" role="tab">🗂 전체</button>
+    <button class="filter-pill" data-filter="image" role="tab">🖼️ 이미지</button>
+    <button class="filter-pill" data-filter="video" role="tab">🎬 영상</button>
+    <button class="filter-pill" data-filter="audio" role="tab">🎵 음악</button>
+    <button class="filter-pill" data-filter="document" role="tab">📄 문서</button>
+    <button class="filter-pill" data-filter="code" role="tab">💻 코드</button>
+    <button class="filter-pill" data-filter="archive" role="tab">🗜️ 압축</button>
+  </div>
+
+  <!-- ── Main Viewport ─────────────────────────────────────── -->
+  <main class="main-viewport" id="mainViewport">
+
+    <!-- 폴더 섹션 -->
+    <section id="folderSection">
+      <div class="section-header">
+        <div class="section-title">📁 폴더</div>
+      </div>
+      <div class="folder-grid" id="folderGridContainer"></div>
+    </section>
+
+    <!-- 파일 섹션 -->
+    <section id="fileSection">
+      <div class="section-header">
+        <div class="section-title">📄 파일</div>
+      </div>
+      <div id="fileGridContainer"></div>
+    </section>
+
+  </main>
+
+  <!-- ── Status Bar ────────────────────────────────────────── -->
+  <footer class="app-statusbar">
+    <span id="statusBarText" style="color:var(--text-dim)">로딩 중...</span>
+    <span style="color:var(--text-dim)">MQnet Files Hub v1.0</span>
+  </footer>
+
+  <!-- ── Drag & Drop Overlay ──────────────────────────────── -->
+  <div class="dropzone-overlay" id="dropzoneOverlay">
+    <div class="dropzone-icon">📂</div>
+    <p style="font-size:1.4rem;font-weight:700;color:#fff">여기에 파일을 놓으세요</p>
+    <p style="color:var(--text-muted);margin-top:0.5rem">자동으로 현재 폴더에 업로드됩니다</p>
+  </div>
+
+  <!-- ── 숨겨진 파일 입력 ──────────────────────────────────── -->
+  <input type="file" id="uploadFileInput" multiple style="display:none">
+  <input type="file" id="uploadFolderInput" webkitdirectory multiple style="display:none">
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- Modals                                                    -->
+  <!-- ════════════════════════════════════════════════════════ -->
+
+  <!-- 파일 미리보기 모달 -->
+  <div class="modal-backdrop" id="previewModal" role="dialog" aria-modal="true">
+    <div class="modal-box large">
+      <div class="modal-header">
+        <h2 class="modal-title" id="previewModalTitle">파일 미리보기</h2>
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          <a class="btn btn-secondary" id="previewDownloadBtn" download title="다운로드">⬇ 다운로드</a>
+          <button class="modal-close-btn" id="previewModalCloseBtn" title="닫기 (ESC)">✕</button>
+        </div>
+      </div>
+      <div class="modal-body" id="previewModalBody" style="max-height:80vh"></div>
+    </div>
+  </div>
+
+  <!-- 새 폴더 만들기 모달 -->
+  <div class="modal-backdrop" id="mkdirModal" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">📁 새 폴더 만들기</h2>
+        <button class="modal-close-btn" data-close-modal="mkdirModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="mkdirInput">폴더 이름</label>
+          <input id="mkdirInput" class="form-input" type="text" placeholder="새 폴더" autocomplete="off">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close-modal="mkdirModal">취소</button>
+        <button class="btn btn-primary" id="mkdirSubmitBtn">📁 만들기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 이름 변경 모달 -->
+  <div class="modal-backdrop" id="renameModal" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">✏️ 이름 변경</h2>
+        <button class="modal-close-btn" data-close-modal="renameModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="renameInput">새 이름</label>
+          <input id="renameInput" class="form-input" type="text" placeholder="새 이름 입력" autocomplete="off">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close-modal="renameModal">취소</button>
+        <button class="btn btn-primary" id="renameSubmitBtn">✏️ 변경</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 삭제 확인 모달 -->
+  <div class="modal-backdrop" id="deleteModal" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title" style="color:var(--danger)">🗑 삭제 확인</h2>
+        <button class="modal-close-btn" data-close-modal="deleteModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <p id="deleteModalDesc" style="line-height:1.7;color:var(--text-muted)">이 항목을 삭제하시겠습니까?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close-modal="deleteModal">취소</button>
+        <button class="btn btn-danger" id="deleteConfirmBtn">🗑 삭제</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast 알림 컨테이너 -->
+  <div class="toast-container" id="toastContainer"></div>
+
+</div>
+
+<!-- 메인 스크립트 (모듈, 버전 태그 필수) -->
+<script type="module" src="./app.js?v=1.0"></script>
+</body>
+</html>

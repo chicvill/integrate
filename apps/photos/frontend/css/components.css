@@ -1417,7 +1417,9 @@
   overflow: hidden;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
   transition: border-color 0.2s;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+  width: 100%;
 }
 .dup-group-card:hover {
   border-color: rgba(56, 189, 248, 0.4);
@@ -1806,11 +1808,10 @@
 }
 .dup-compare-body {
   flex: 1;
-  overflow-y: auto;
   overflow-x: auto;
-  padding: 20px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
   gap: 20px;
   background: var(--bg-body);
   align-items: stretch;
@@ -1823,6 +1824,8 @@
   display: flex;
   flex-direction: column;
   transition: all 0.2s ease;
+  flex: 0 0 380px;
+  width: 380px;
 }
 .dup-compare-card.is-keep {
   border-color: #10b981;
@@ -1833,8 +1836,7 @@
   box-shadow: 0 0 18px rgba(239, 68, 68, 0.35);
 }
 .dup-compare-img-box {
-  flex: 1;
-  min-height: 400px;
+  height: 270px;
   position: relative;
   background: #000;
   display: flex;

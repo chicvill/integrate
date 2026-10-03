@@ -1,6 +1,6 @@
-import { $, state, formatBytes, saveFavorites } from './js/state.js?v=6.5';
-import { fetchFolderData, uploadSingleFile, deleteItemApi, fetchStorageInfo, createFolderApi, batchMoveApi } from './js/api.js?v=6.5';
-import { renderBreadcrumb, renderSidebarStats, renderGallery, copyLinkToClipboard, shareItem, cleanupDragState } from './js/ui.js?v=6.5';
+import { $, state, formatBytes, saveFavorites } from './js/state.js?v=7.0';
+import { fetchFolderData, uploadSingleFile, deleteItemApi, fetchStorageInfo, createFolderApi, batchMoveApi } from './js/api.js?v=7.0';
+import { renderBreadcrumb, renderSidebarStats, renderGallery, copyLinkToClipboard, shareItem, cleanupDragState } from './js/ui.js?v=7.0';
 import {
   openLightbox, closeLightbox, renderLightboxItem, rotateLightboxImage, toggleSlideshow,
   openMkdirModal, closeMkdirModal, handleCreateFolder,
@@ -9,7 +9,7 @@ import {
   openMoveModal, closeMoveModal, handleConfirmMove, handleMoveModalNewFolder, showToast,
   openDuplicatesModal, closeDuplicatesModal, handleScanDuplicates, handleDeleteSelectedDuplicates, autoSelectDuplicateCopies, deselectAllDuplicates,
   closeDuplicatesComparison
-} from './js/modals.js?v=6.5';
+} from './js/modals.js?v=7.0';
 
 // Handlers object passed to card rendering
 const cardHandlers = {
