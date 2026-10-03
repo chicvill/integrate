@@ -18,6 +18,7 @@ class DownloadJob(Base):
     eta = Column(String(50), nullable=True)
     error_message = Column(Text, nullable=True)
     ai_summary = Column(Text, nullable=True)
+    session_id = Column(String(100), nullable=True, index=True) # 다중 클라이언트 동시 접속 세션 격리
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 class UserQuota(Base):

@@ -343,6 +343,97 @@ const res = await fetch(url, {
   - Pro 플랜(월 2,900원 / 10GB 제공) 업그레이드 안내 카드
   - 테스트용 `[⚡ Pro 플랜 업그레이드]` 및 `[🔄 무료(500KB)로 재설정]` 버튼 연동
 
+### 4.6. 통합 계정(SSO), 객체 지향 세션 상속 모델 및 RBAC 권한 분기 표준
+MQnet 통합 SaaS는 단일 계정(Universal Account)으로 가입하여 모든 앱에 접속하되, 각 앱마다 고유한 항목을 **객체 지향 상속(OOP Inheritance)**을 통해 확장하는 **`BaseAuthSession` 기반 중앙 집중식 SSO & RBAC** 구조를 따릅니다.
+
+#### 1. 공통 세션 객체와 앱별 상속 모델 (`shared/auth/session.py`):
+정회원(Member)과 비회원(Guest) 모두 동일한 기본 인터페이스(`BaseAuthSession`)를 공유하며, 각 앱은 이를 상속하여 독특한 필드를 추가합니다.
+
+```python
+# 1. 플랫폼 공통 기본 세션 객체
+class BaseAuthSession(BaseModel):
+    session_id: str = Field(...)           # 고유 세션 ID
+    user_id: Optional[str] = None          # 로그인 회원의 고유 ID (게스트는 None)
+    email: Optional[str] = None            # 이메일
+    role: str = "guest"                    # superadmin, owner, manager, staff, customer, guest
+    is_authenticated: bool = False         # 정식 로그인 여부 (게스트: False)
+    allowed_apps: List[str] = ["*"]        # 허용된 앱 목록
+    app_roles: Dict[str, str] = {}         # 앱별 역할 맵
+
+# 2. 매장 관리 앱 전용 상속 확장 객체
+class StoreAuthSession(BaseAuthSession):
+    app_id: str = "store"
+    store_code: Optional[str] = None       # 매장 지점 코드 (예: "store-gangnam-01")
+    pos_terminal_id: Optional[str] = None  # POS 단말기 번호
+    duty_shift: Optional[str] = None       # 근무 조 (오전, 오후, 마감)
+
+# 3. 유튜브 다운로더 전용 상속 확장 객체 (비로그인 임시 세션 물리 격리)
+class YTDownloadAuthSession(BaseAuthSession):
+    app_id: str = "ytdownload"
+    download_root: str = "/media/downloads"
+    
+    @property
+    def session_dir(self) -> str:
+        return os.path.join(self.download_root, "sessions", self.session_id)
+        
+    def cleanup(self) -> bool:
+        """세션 종료 시 해당 클라이언트의 임시 파일만 안전하게 선별 삭제"""
+        if os.path.exists(self.session_dir):
+            shutil.rmtree(self.session_dir, ignore_errors=True)
+            return True
+        return False
+```
+
+#### 2. 앱별 역할(Role) 분기 규칙 (매장 관리 앱 사례):
+하나의 계정이 매장 관리 앱에서는 다른 업무 권한을 가집니다.
+| 역할 코드 (`role`) | 명칭 | 허용 업무 및 접근 권한 범위 |
+| :--- | :--- | :--- |
+| **`owner`** | 점주 (대표) | 매장 전체 관리, 매출/정산 조회, 직원 권한 부여, 환경 설정, 세무 자료 |
+| **`manager`** | 점장 (매니저) | 매장 운영, 재고 관리, 발주, 주문 접수, 직원 근무표 및 근태 관리 |
+| **`staff`** | 점원 (스태프) | POS 주문 결제, 영수증 출력, 고객 응대, 배달 픽업 처리 |
+| **`customer`** | 고객 (단골) | 모바일 테이블 주문, 스탬프/포인트 적립 내역 조회, 리뷰 작성 |
+
+#### 3. 백엔드 RBAC 인가 1줄 적용 (`require_role`):
+```python
+from shared.auth.router import require_role
+
+# 점주(owner) 또는 점장(manager)만 정산 및 관리 데이터 조회 가능
+@router.get("/settlement")
+async def get_settlement(current_user: User = Depends(require_role("store", ["owner", "manager"]))):
+    return {"sales": 15000000}
+```
+
+#### 4. 프론트엔드 OOP 세션 객체 활용 (`MQnetAuth.getSessionUser()`):
+```javascript
+import { MQnetAuth } from '/shared/ui/auth.js?v=2.0';
+
+// 현재 앱에 맞는 확장 세션 객체 획득 (StoreSessionUser 또는 YTDownloadSessionUser)
+const session = MQnetAuth.getSessionUser();
+
+// 점주(owner) 전용 UI 탭 노출 제어
+if (session.isOwner) {
+  document.getElementById('settlementMenu').style.display = 'block';
+}
+```
+
+---
+
+### 4.7. YTDownloader 및 세션 격리(동시 접속자 임시자료 격리) 표준
+다수의 클라이언트가 동시에 접속하는 다운로더/변환기/임시작업 앱(`YTDownloader` 등)은 **공통 상속 세션 객체(`YTDownloadAuthSession`)를 기반으로 세션이 살아있는 동안 완벽한 물리 격리 및 자동 청소**를 수행합니다.
+
+#### 1. 고유 세션 ID (`session_id`) 발급 및 영속:
+- 클라이언트 접속 시 브라우저 `sessionStorage`에 UUID 기반의 `session_id`를 발급하고, 모든 API 요청 헤더에 `X-Session-ID: {session_id}`를 전달합니다.
+- 비로그인 이용자라도 백엔드에서는 **`YTDownloadAuthSession(is_guest=True, role="guest")` 임시 로그인 객체**로 정형화되어 안전하게 다루어집니다.
+
+#### 2. 세션별 전용 격리 디렉토리 저장:
+- 다운로드/변환 파일은 공용 루트가 아닌 **`/media/downloads/sessions/{session_id}/`** 디렉토리에 개별 저장됩니다.
+- 타 세션의 클라이언트는 다른 세션의 임시 파일 목록을 조회하거나 다운로드할 수 없습니다.
+
+#### 3. 세션 종료 및 브라우저 이탈 시 자동 정리 (Cleanup):
+- 브라우저 창 종료/이탈(`beforeunload` 이벤트) 시 `navigator.sendBeacon('/api/download/session/cleanup')` 호출.
+- 사용자가 UI에서 `[🧹 내 세션 임시자료 초기화]` 버튼을 클릭했을 때도 동일하게 `session.cleanup()`이 실행되어 **자신의 임시 디렉토리만 안전하게 삭제 (`shutil.rmtree`)** 합니다.
+- 다른 클라이언트가 다운로드 중인 임시 파일에는 아무런 영향을 주지 않습니다.
+
 ---
 
 ## 5. 게이트웨이 (`gateway/main.py`) 연동 규격

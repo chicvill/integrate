@@ -1,5 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Youtube, Music, Video, Sparkles, CheckCircle2, Clock, Clipboard, FileText, ExternalLink, Trash2 } from 'lucide-react';
+import { Download, Youtube, Music, Video, Sparkles, CheckCircle2, Clock, Clipboard, FileText, ExternalLink, Trash2, RefreshCw } from 'lucide-react';
+
+// 세션 고유 ID 획득 유틸리티 (다중 클라이언트 동시 접속 격리)
+const getSessionId = () => {
+  let sid = sessionStorage.getItem('mqnet_session_id');
+  if (!sid) {
+    sid = 'sess_' + (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
+    sessionStorage.setItem('mqnet_session_id', sid);
+  }
+  return sid;
+};
+
+const getSessionHeaders = () => ({
+  'Content-Type': 'application/json',
+  'X-Session-ID': getSessionId(),
+  'X-App-ID': 'ytdownload'
+});
 
 export default function DownloaderPage() {
   const [url, setUrl] = useState('');
@@ -10,9 +26,20 @@ export default function DownloaderPage() {
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
 
   useEffect(() => {
     fetchJobs();
+
+    // 페이지 이탈(창 닫기) 시 현재 세션 임시자료 자동 정리
+    const handleUnload = () => {
+      const sid = sessionStorage.getItem('mqnet_session_id');
+      if (sid && navigator.sendBeacon) {
+        navigator.sendBeacon('/api/download/session/cleanup', JSON.stringify({ session_id: sid }));
+      }
+    };
+    window.addEventListener('beforeunload', handleUnload);
+    return () => window.removeEventListener('beforeunload', handleUnload);
   }, []);
 
   useEffect(() => {
@@ -23,16 +50,40 @@ export default function DownloaderPage() {
 
   const handleDeleteJob = async (jobId) => {
     try {
-      await fetch(`/api/media/${jobId}`, { method: 'DELETE' });
+      await fetch(`/api/media/${jobId}`, { 
+        method: 'DELETE',
+        headers: getSessionHeaders()
+      });
       fetchJobs();
     } catch (err) {
       console.error(err);
     }
   };
 
+  const handleCleanupSession = async () => {
+    if (!confirm('현재 세션에서 다운로드한 모든 임시 파일을 초기화하시겠습니까?')) return;
+    setCleaning(true);
+    try {
+      const res = await fetch('/api/download/session/cleanup', {
+        method: 'POST',
+        headers: getSessionHeaders()
+      });
+      if (res.ok) {
+        setMsg('🧹 세션 임시 다운로드 파일이 성공적으로 초기화되었습니다.');
+        fetchJobs();
+      }
+    } catch (err) {
+      setMsg('초기화 중 오류 발생: ' + err.message);
+    } finally {
+      setCleaning(false);
+    }
+  };
+
   const fetchJobs = async () => {
     try {
-      const res = await fetch('/api/download/jobs');
+      const res = await fetch('/api/download/jobs', {
+        headers: getSessionHeaders()
+      });
       if (!res.ok) {
         setJobs([]);
         return;
@@ -66,7 +117,7 @@ export default function DownloaderPage() {
     try {
       const res = await fetch('/api/download/preview', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getSessionHeaders(),
         body: JSON.stringify({ url: inputUrl })
       });
       if (res.ok) {
@@ -90,7 +141,7 @@ export default function DownloaderPage() {
     try {
       const res = await fetch('/api/download/process', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getSessionHeaders(),
         body: JSON.stringify({ url, mode, quality })
       });
       let data = {};
@@ -100,7 +151,7 @@ export default function DownloaderPage() {
         data = { detail: `서버 응답 오류 (HTTP ${res.status})` };
       }
       if (res.ok) {
-        setMsg(`[성공] 다운로드 큐 등록 완료! (Job ID: ${data.id})`);
+        setMsg(`[성공] 다운로드 큐 등록 완료! (세션 전용 격리 저장소에 보관됩니다)`);
         setUrl('');
         setPreview(null);
         fetchJobs();
@@ -196,7 +247,19 @@ export default function DownloaderPage() {
       </div>
 
       <div className="glass-card">
-        <h3>다운로드 & AI 요약 작업 큐 (Active Download Queue)</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
+          <h3 style={{ margin: 0 }}>다운로드 & AI 요약 작업 큐 (내 세션 격리)</h3>
+          <button 
+            onClick={handleCleanupSession} 
+            disabled={cleaning}
+            className="btn-primary" 
+            style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#fca5a5', padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}
+            title="현재 내 세션의 임시 다운로드 파일만 삭제하여 저장소를 초기화합니다"
+          >
+            <RefreshCw size={13} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+            {cleaning ? "초기화 중..." : "🧹 내 세션 임시자료 초기화"}
+          </button>
+        </div>
         <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
           {jobs.length === 0 ? (
             <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '2rem' }}>

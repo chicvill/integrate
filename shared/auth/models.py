@@ -1,10 +1,10 @@
-﻿"""
+"""
 shared/auth/models.py
 모든 앱이 공통으로 사용하는 User ORM 모델.
 app_id 컬럼으로 어떤 앱의 회원인지 구분합니다.
 """
 import uuid
-from sqlalchemy import Column, String, Boolean, DateTime
+from sqlalchemy import Column, String, Boolean, DateTime, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from shared.core.base_database import Base, TimestampMixin, AppIdMixin
@@ -34,14 +34,19 @@ class User(Base, TimestampMixin, AppIdMixin):
     full_name = Column(String(100), nullable=False)
     phone = Column(String(20), nullable=True)
     
-    # 권한/역할
+    # 권한/역할 및 앱별 권한 매핑 (RBAC)
     role = Column(String(50), nullable=False, default="user")
-    # role 값 예시:
-    #   "user"       - 일반 사용자
-    #   "admin"      - 해당 앱 관리자
-    #   "superadmin" - 플랫폼 전체 관리자
-    #   "owner"      - 매장/시설 오너
-    #   "staff"      - 직원
+    # role 값 예시: "user", "admin", "superadmin", "owner", "manager", "staff", "customer"
+    
+    # 통합 계정 소셜 인증 제공자: "local", "google", "naver"
+    auth_provider = Column(String(50), default="local")
+    
+    # 접근 가능한 앱 목록 (예: ["*"], ["store", "photos", "files"])
+    # "*"인 경우 모든 앱 접근 가능
+    allowed_apps = Column(JSON, default=lambda: ["*"])
+    
+    # 각 앱별 세부 역할 맵핑 (예: {"store": "owner", "photos": "pro", "studycafe": "staff"})
+    app_roles = Column(JSON, default=lambda: {})
     
     # 상태
     is_active = Column(Boolean, default=True)
@@ -63,6 +68,9 @@ class User(Base, TimestampMixin, AppIdMixin):
             "full_name": self.full_name,
             "phone": self.phone,
             "role": self.role,
+            "auth_provider": self.auth_provider or "local",
+            "allowed_apps": self.allowed_apps if self.allowed_apps is not None else ["*"],
+            "app_roles": self.app_roles if self.app_roles is not None else {},
             "app_id": self.app_id,
             "tenant_id": self.tenant_id,
             "plan_id": self.plan_id,

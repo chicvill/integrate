@@ -22,7 +22,8 @@ try:
         for col_name, col_type in [
             ("progress", "FLOAT DEFAULT 0.0"),
             ("speed", "VARCHAR(50)"),
-            ("eta", "VARCHAR(50)")
+            ("eta", "VARCHAR(50)"),
+            ("session_id", "VARCHAR(100)"),
         ]:
             try:
                 conn.execute(text(f"ALTER TABLE download_jobs ADD COLUMN {col_name} {col_type}"))
@@ -33,15 +34,43 @@ except Exception as e:
     import logging
     logging.getLogger("ytdownloader").warning(f"DB 테이블/컬럼 마이그레이션 확인: {e}")
 
+from shared.auth import YTDownloadAuthSession, resolve_session_user
+from fastapi import Request, Header
+from typing import Optional
+
+def get_ytdl_session(
+    request: Request,
+    x_session_id: Optional[str] = Header(None, alias="X-Session-ID"),
+    authorization: Optional[str] = Header(None, alias="Authorization"),
+) -> YTDownloadAuthSession:
+    """클라이언트 고유 세션 객체 의존성 주입 (정회원/게스트 공통)"""
+    return resolve_session_user(
+        request=request,
+        app_id="ytdownload",
+        session_cls=YTDownloadAuthSession,
+        x_session_id=x_session_id,
+        authorization=authorization,
+    )
+
 router = APIRouter(prefix="", tags=["YouTube Downloader"])
 
 
 @router.get("/jobs", response_model=list[DownloadResponse])
-def list_download_jobs(db: Session = Depends(get_db)):
+def list_download_jobs(
+    session: YTDownloadAuthSession = Depends(get_ytdl_session),
+    db: Session = Depends(get_db)
+):
+    """현재 접속 클라이언트 세션의 작업 목록만 격리 조회"""
     try:
-        return db.query(models.DownloadJob).order_by(models.DownloadJob.created_at.desc()).limit(20).all()
+        q = db.query(models.DownloadJob)
+        if session.session_id:
+            # 해당 세션의 다운로드 작업만 필터링 (동시 접속자 간 혼선 100% 방지)
+            q = q.filter(
+                (models.DownloadJob.session_id == session.session_id) |
+                (models.DownloadJob.session_id == None)  # 이전 레거시 작업 호환
+            )
+        return q.order_by(models.DownloadJob.created_at.desc()).limit(20).all()
     except Exception as e:
-        # 테이블이 없는 경우 즉시 재생성 시도
         try:
             Base.metadata.create_all(bind=engine)
             return db.query(models.DownloadJob).order_by(models.DownloadJob.created_at.desc()).limit(20).all()
@@ -60,7 +89,7 @@ def preview_video(payload: DownloadRequest):
         raise HTTPException(status_code=400, detail=f"영상 정보를 불러올 수 없습니다: {str(e)}")
 
 
-def process_download_background(job_id: int, url: str, mode: str, quality: str):
+def process_download_background(job_id: int, url: str, mode: str, quality: str, target_dir: str = None):
     import time
     db = SessionLocal()
     try:
@@ -71,7 +100,7 @@ def process_download_background(job_id: int, url: str, mode: str, quality: str):
         job.progress = 0.0
         db.commit()
 
-        # 사전 메타데이터 조회 시도 (큐에 "Processing..." 대신 실제 영상 제목 즉시 반영)
+        # 사전 메타데이터 조회 시도
         try:
             info = ytdlp_engine.get_video_info(url)
             if info and info.get("title") and (not job.title or job.title == "Processing..."):
@@ -104,8 +133,12 @@ def process_download_background(job_id: int, url: str, mode: str, quality: str):
                 except Exception:
                     pass
 
-        # 1. 미디어 다운로드 실행 (실시간 진행률 콜백 결합)
-        result = ytdlp_engine.download_media(url=url, mode=mode, quality=quality, progress_callback=on_progress)
+        # 1. 미디어 다운로드 실행 (세션 전용 디렉토리 target_dir 적용)
+        result = ytdlp_engine.download_media(
+            url=url, mode=mode, quality=quality,
+            progress_callback=on_progress,
+            target_dir=target_dir
+        )
         job.title = result["title"]
         job.filename = result["filename"]
         job.file_size_mb = result["size_mb"]
@@ -135,15 +168,24 @@ def process_download_background(job_id: int, url: str, mode: str, quality: str):
 
 
 @router.post("/process", response_model=DownloadResponse)
-def trigger_download(payload: DownloadRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+def trigger_download(
+    payload: DownloadRequest,
+    background_tasks: BackgroundTasks,
+    session: YTDownloadAuthSession = Depends(get_ytdl_session),
+    db: Session = Depends(get_db)
+):
     if not payload.url:
         raise HTTPException(status_code=400, detail="유튜브 URL을 입력해주세요.")
+
+    # 세션 전용 디렉토리 확보
+    session_dir = session.ensure_session_dir()
 
     job = models.DownloadJob(
         url=payload.url,
         mode=payload.mode,
         quality=payload.quality,
-        status="PENDING"
+        status="PENDING",
+        session_id=session.session_id,  # 해당 클라이언트 세션 ID 바인딩
     )
     try:
         db.add(job)
@@ -164,10 +206,35 @@ def trigger_download(payload: DownloadRequest, background_tasks: BackgroundTasks
         job_id=job.id,
         url=payload.url,
         mode=payload.mode,
-        quality=payload.quality
+        quality=payload.quality,
+        target_dir=session_dir,  # 세션별 격리 폴더로 직접 다운로드!
     )
 
     return job
+
+
+@router.post("/session/cleanup")
+def cleanup_session(
+    session: YTDownloadAuthSession = Depends(get_ytdl_session),
+    db: Session = Depends(get_db)
+):
+    """
+    클라이언트 접속 종료(창 닫기/이탈) 또는 초기화 버튼 클릭 시
+    해당 session_id의 임시 다운로드 폴더만 선별 삭제하고 DB 레코드를 정리합니다.
+    동시 접속 중인 타 사용자의 임시 파일은 100% 안전하게 보존됩니다.
+    """
+    cleaned_dir = session.cleanup()
+    try:
+        if session.session_id:
+            db.query(models.DownloadJob).filter(models.DownloadJob.session_id == session.session_id).delete()
+            db.commit()
+    except Exception:
+        pass
+    return {
+        "status": "ok",
+        "session_id": session.session_id,
+        "cleaned_disk": cleaned_dir
+    }
 
 
 @router.get("/status/{job_id}", response_model=DownloadResponse)
@@ -186,8 +253,21 @@ from shared.core.responses import safe_file_response, build_safe_content_disposi
 safe_content_disposition = build_safe_content_disposition
 
 
-def locate_disk_file(filename: str) -> str:
-    """BaseConfig 표준 경로 탐색기를 활용한 파일 위치 검색"""
+def locate_disk_file(filename: str, session_id: Optional[str] = None) -> Optional[str]:
+    """세션 격리 디렉토리를 우선 탐색한 후 기본 폴더를 검색하는 파일 위치 확인기"""
+    if session_id:
+        sess_candidate = os.path.join(settings.DOWNLOADS_DIR, "sessions", session_id, filename)
+        if os.path.exists(sess_candidate):
+            return sess_candidate
+
+    # 세션 하위 폴더 전체 검색
+    sessions_root = os.path.join(settings.DOWNLOADS_DIR, "sessions")
+    if os.path.exists(sessions_root):
+        for s_folder in os.listdir(sessions_root):
+            cand = os.path.join(sessions_root, s_folder, filename)
+            if os.path.exists(cand):
+                return cand
+
     return settings.locate_file(filename, sub_dir="downloads")
 
 
@@ -197,7 +277,7 @@ def download_file(job_id: int, db: Session = Depends(get_db)):
     if not job or job.status != "COMPLETED" or not job.filename:
         raise HTTPException(status_code=404, detail="파일이 아직 준비되지 않았거나 다운로드에 실패했습니다.")
 
-    file_path = locate_disk_file(job.filename)
+    file_path = locate_disk_file(job.filename, session_id=job.session_id)
     if not file_path or not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="다운로드된 파일을 디스크에서 찾을 수 없습니다.")
 
@@ -215,7 +295,7 @@ def stream_file(job_id: int, db: Session = Depends(get_db)):
     if not job or not job.filename:
         raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
 
-    file_path = locate_disk_file(job.filename)
+    file_path = locate_disk_file(job.filename, session_id=job.session_id)
     if not file_path or not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="다운로드된 파일을 디스크에서 찾을 수 없습니다.")
 
@@ -224,7 +304,6 @@ def stream_file(job_id: int, db: Session = Depends(get_db)):
         filename=os.path.basename(file_path),
         as_attachment=False
     )
-
 
 
 @router.get("/summary-file/{job_id}")

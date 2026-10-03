@@ -1,9 +1,9 @@
-﻿"""
+"""
 shared/auth/schemas.py
 인증 관련 Pydantic 스키마 (요청/응답 데이터 모델).
 """
 from pydantic import BaseModel, EmailStr, validator
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 
@@ -14,6 +14,9 @@ class UserRegisterRequest(BaseModel):
     full_name: str
     phone: Optional[str] = None
     tenant_id: Optional[str] = None  # 매장/시설 코드 (있는 경우)
+    role: Optional[str] = "user"     # 기본 역할 (user, owner, manager, staff, customer 등)
+    auth_provider: Optional[str] = "local" # local, google, naver
+    app_roles: Optional[Dict[str, str]] = None # 앱별 역할 (예: {"store": "manager"})
 
     @validator("password")
     def password_min_length(cls, v):
@@ -34,6 +37,16 @@ class UserLoginRequest(BaseModel):
     password: str
 
 
+class OAuthLoginRequest(BaseModel):
+    """소셜 로그인(Google, Naver 등) 요청 스키마"""
+    provider: str  # "google" | "naver"
+    auth_code_or_token: str  # 소셜 Access Token 또는 Auth Code
+    email: EmailStr
+    full_name: str
+    avatar_url: Optional[str] = None
+    app_id: Optional[str] = None
+
+
 class TokenResponse(BaseModel):
     """로그인 성공 응답 스키마"""
     access_token: str
@@ -49,6 +62,9 @@ class UserResponse(BaseModel):
     full_name: str
     phone: Optional[str] = None
     role: str
+    auth_provider: str = "local"
+    allowed_apps: List[str] = ["*"]
+    app_roles: Dict[str, str] = {}
     app_id: str
     tenant_id: Optional[str] = None
     plan_id: str

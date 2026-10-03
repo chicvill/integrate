@@ -108,13 +108,15 @@ class YTDLPEngine:
                 "view_count": info.get('view_count', 0)
             }
 
-    def download_media(self, url: str, mode: str = "video", quality: str = "720p", progress_callback=None) -> dict:
+    def download_media(self, url: str, mode: str = "video", quality: str = "720p", progress_callback=None, target_dir: str = None) -> dict:
         target_url = normalize_youtube_url(url)
         unique_suffix = f"_{int(time.time())}"
+        save_dir = target_dir or self.downloads_dir
+        os.makedirs(save_dir, exist_ok=True)
         
         ydl_opts = self._build_base_ydl_opts()
         ydl_opts.update({
-            'outtmpl': os.path.join(self.downloads_dir, f'%(title).100s{unique_suffix}.%(ext)s'),
+            'outtmpl': os.path.join(save_dir, f'%(title).100s{unique_suffix}.%(ext)s'),
             'retries': 3,
             'fragment_retries': 3,
         })
