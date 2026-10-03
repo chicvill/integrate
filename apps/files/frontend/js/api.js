@@ -7,6 +7,8 @@
  * - 게이트웨이 /files/ 또는 /filebrowser/ 경로: /api/files or /api/filebrowser
  * - 독립 도메인 또는 로컬: /api
  */
+import { MQnetAuth } from '/shared/ui/auth.js?v=1.0';
+
 export function getApiBase() {
   const p = window.location.pathname;
   if (p.startsWith('/filebrowser')) return '/api/filebrowser';
@@ -18,7 +20,9 @@ const BASE = () => getApiBase();
 
 async function request(path, opts = {}) {
   const url = `${BASE()}${path}`;
-  const res = await fetch(url, { cache: 'no-store', ...opts });
+  const authHeaders = MQnetAuth.getAuthHeader();
+  const headers = { ...authHeaders, ...(opts.headers || {}) };
+  const res = await fetch(url, { cache: 'no-store', ...opts, headers });
   if (!res.ok) {
     const errText = await res.text().catch(() => `HTTP ${res.status}`);
     let detail = errText;
@@ -76,6 +80,10 @@ export async function uploadFiles(folder, fileList, onProgress, scope = '', user
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `${BASE()}/upload`);
+    const authHeaders = MQnetAuth.getAuthHeader();
+    for (const [k, v] of Object.entries(authHeaders)) {
+      xhr.setRequestHeader(k, v);
+    }
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable && onProgress) {
         onProgress(Math.round((e.loaded / e.total) * 100));

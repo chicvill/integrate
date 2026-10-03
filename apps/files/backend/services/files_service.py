@@ -31,8 +31,20 @@ CATEGORY_MAP = {
 EXCLUDE_NAMES = {"$recycle.bin", "system volume information", ".git", ".vscode", "__pycache__", ".DS_Store"}
 
 
-def get_storage_root(scope: str = "") -> Path:
+def get_storage_root(scope: str = "", user_id: str = "") -> Path:
     base_media = Path(os.getenv("MEDIA_STORAGE_PATH", os.getenv("MEDIA_PATH", "/media"))).resolve()
+    
+    # 로그인 사용자 개인 격리 스토리지: /media/users/{user_id}/
+    if user_id:
+        user_root = base_media / "users" / user_id
+        if scope in ("photos", "gallery"):
+            target = user_root / "photos"
+        else:
+            target = user_root / "files"
+        target.mkdir(parents=True, exist_ok=True)
+        return target
+
+    # 비로그인 / 시스템 공통 스토리지
     if scope in ("all", "media", "root") and base_media.exists():
         return base_media
     elif scope in ("photos", "gallery"):
@@ -49,12 +61,12 @@ def get_storage_root(scope: str = "") -> Path:
     return p
 
 
-def safe_resolve_path(rel_path: str = "", scope: str = "") -> Path:
+def safe_resolve_path(rel_path: str = "", scope: str = "", user_id: str = "") -> Path:
     """
     상대 경로를 안전하게 절대 경로로 변환.
     Directory Traversal (상위 디렉터리 탈출 공격) 방지.
     """
-    root = get_storage_root(scope)
+    root = get_storage_root(scope, user_id)
     clean_rel = rel_path.strip().replace("\\", "/").lstrip("/")
     
     # NFC/NFD 정규화
@@ -118,12 +130,12 @@ def build_breadcrumbs(rel_path: str) -> List[BreadcrumbItem]:
     return crumbs
 
 
-def list_directory_sync(rel_path: str = "", scope: str = "") -> FolderListResponse:
-    target = safe_resolve_path(rel_path, scope)
+def list_directory_sync(rel_path: str = "", scope: str = "", user_id: str = "") -> FolderListResponse:
+    target = safe_resolve_path(rel_path, scope, user_id)
     if not target.exists() or not target.is_dir():
         raise HTTPException(status_code=404, detail="지정한 폴더를 찾을 수 없습니다.")
 
-    root = get_storage_root(scope)
+    root = get_storage_root(scope, user_id)
     norm_rel = str(target.relative_to(root)).replace("\\", "/")
     if norm_rel == ".":
         norm_rel = ""
@@ -201,9 +213,9 @@ def list_directory_sync(rel_path: str = "", scope: str = "") -> FolderListRespon
     )
 
 
-def search_files_sync(query: str, rel_path: str = "", scope: str = "") -> List[FileItem]:
-    target = safe_resolve_path(rel_path, scope)
-    root = get_storage_root(scope)
+def search_files_sync(query: str, rel_path: str = "", scope: str = "", user_id: str = "") -> List[FileItem]:
+    target = safe_resolve_path(rel_path, scope, user_id)
+    root = get_storage_root(scope, user_id)
     q = query.lower().strip()
     if not q:
         return []
@@ -248,8 +260,8 @@ def search_files_sync(query: str, rel_path: str = "", scope: str = "") -> List[F
     return results
 
 
-def read_text_preview_sync(rel_path: str, scope: str = "") -> Dict[str, Any]:
-    target = safe_resolve_path(rel_path, scope)
+def read_text_preview_sync(rel_path: str, scope: str = "", user_id: str = "") -> Dict[str, Any]:
+    target = safe_resolve_path(rel_path, scope, user_id)
     if not target.is_file():
         raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
 
@@ -276,8 +288,8 @@ def read_text_preview_sync(rel_path: str, scope: str = "") -> Dict[str, Any]:
     }
 
 
-def save_text_file_sync(rel_path: str, content: str, scope: str = "") -> Dict[str, Any]:
-    target = safe_resolve_path(rel_path, scope)
+def save_text_file_sync(rel_path: str, content: str, scope: str = "", user_id: str = "") -> Dict[str, Any]:
+    target = safe_resolve_path(rel_path, scope, user_id)
     if not target.is_file():
         raise HTTPException(status_code=404, detail="편집할 파일을 찾을 수 없습니다.")
 

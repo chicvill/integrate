@@ -42,8 +42,19 @@ from apps.files.backend.services.quota_service import (
     PLAN_QUOTAS
 )
 from shared.core.responses import safe_file_response
+from shared.utils.security import decode_access_token
 
 router = APIRouter(prefix="", tags=["MQnet Files Hub"])
+
+
+def _extract_user_id(request: Request) -> str:
+    auth_header = request.headers.get("authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:].strip()
+        payload = decode_access_token(token, settings.JWT_SECRET, settings.JWT_ALGORITHM)
+        if payload and payload.get("sub"):
+            return str(payload.get("sub"))
+    return ""
 
 
 def get_route_prefix(request: Optional[Request] = None) -> str:
@@ -62,56 +73,64 @@ def get_route_prefix(request: Optional[Request] = None) -> str:
 # ─── 스토리지 사용량 쿼터 및 카테고리별 분석 조회 ───
 @router.get("/quota", response_model=StorageQuotaResponse)
 async def get_storage_quota(
+    request: Request,
     scope: str = Query(""),
-    user_id: str = Query("demo_user")
+    user_id: str = Query("")
 ):
-    root = get_storage_root(scope)
+    uid = user_id or _extract_user_id(request) or "demo_user"
+    root = get_storage_root(scope, uid)
     loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(None, calculate_storage_quota, root, user_id)
+    return await loop.run_in_executor(None, calculate_storage_quota, root, uid)
 
 
 # ─── 플랜 업그레이드 / 전환 (유료 전환 테스트 연동) ───
 @router.post("/upgrade-plan", response_model=OperationResponse)
-async def upgrade_user_plan(req: UpgradePlanRequest):
-    user_id = req.user_id or "demo_user"
-    new_tier = set_user_plan(user_id, req.plan_tier)
+async def upgrade_user_plan(req: UpgradePlanRequest, request: Request):
+    uid = req.user_id or _extract_user_id(request) or "demo_user"
+    new_tier = set_user_plan(uid, req.plan_tier)
     plan_info = PLAN_QUOTAS[new_tier]
     return OperationResponse(
         success=True,
         message=f"'{plan_info['name']}'({plan_info['formatted']})으로 성공적으로 변경되었습니다.",
-        data={"user_id": user_id, "plan_tier": new_tier, "max_quota": plan_info["formatted"]}
+        data={"user_id": uid, "plan_tier": new_tier, "max_quota": plan_info["formatted"]}
     )
 
 
 # ─── 디렉토리 및 파일 목록 조회 ───
 @router.get("/list", response_model=FolderListResponse)
 async def list_files(
+    request: Request,
     folder: str = Query("", description="상대 폴더 경로"),
     scope: str = Query("", description="스토리지 범위 (files, all, photos, downloads)")
 ):
+    uid = _extract_user_id(request)
     loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(None, list_directory_sync, folder, scope)
+    return await loop.run_in_executor(None, list_directory_sync, folder, scope, uid)
 
 
 # ─── 파일 검색 ───
 @router.get("/search", response_model=SearchResponse)
 async def search_files(
+    request: Request,
     q: str = Query(..., min_length=1),
     folder: str = Query(""),
     scope: str = Query("")
 ):
+    uid = _extract_user_id(request)
     loop = asyncio.get_running_loop()
-    results = await loop.run_in_executor(None, search_files_sync, q, folder, scope)
+    results = await loop.run_in_executor(None, search_files_sync, q, folder, scope, uid)
     return SearchResponse(query=q, results=results, count=len(results))
 
 
 # ─── 파일 다운로드 (안전한 RFC 5987 한글 파일명 헤더) ───
 @router.get("/download")
 async def download_file(
+    request: Request,
     path: str = Query(..., description="파일 상대 경로"),
     scope: str = Query("")
 ):
-    target = safe_resolve_path(path, scope)
+    uid = _extract_user_id(request)
+    target = safe_resolve_path(path, scope, uid)
     if not target.is_file():
         raise HTTPException(status_code=404, detail="다운로드할 파일을 찾을 수 없습니다.")
 
@@ -121,10 +140,12 @@ async def download_file(
 # ─── 파일 인라인 스트리밍 / 미리보기 (이미지, 영상, 오디오, PDF) ───
 @router.get("/raw")
 async def preview_raw_file(
+    request: Request,
     path: str = Query(..., description="파일 상대 경로"),
     scope: str = Query("")
 ):
-    target = safe_resolve_path(path, scope)
+    uid = _extract_user_id(request)
+    target = safe_resolve_path(path, scope, uid)
     if not target.is_file():
         raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
 
@@ -134,21 +155,25 @@ async def preview_raw_file(
 # ─── 텍스트 / 코드 파일 내용 미리보기 ───
 @router.get("/text-preview")
 async def preview_text_file(
+    request: Request,
     path: str = Query(...),
     scope: str = Query("")
 ):
+    uid = _extract_user_id(request)
     loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(None, read_text_preview_sync, path, scope)
+    return await loop.run_in_executor(None, read_text_preview_sync, path, scope, uid)
 
 
 # ─── 텍스트 / 코드 파일 내용 저장 / 편집 ───
 @router.post("/save-text", response_model=OperationResponse)
 async def save_text_file(
+    request: Request,
     req: SaveTextRequest,
     scope: str = Query("")
 ):
+    uid = _extract_user_id(request)
     loop = asyncio.get_running_loop()
-    result = await loop.run_in_executor(None, save_text_file_sync, req.path, req.content, scope)
+    result = await loop.run_in_executor(None, save_text_file_sync, req.path, req.content, scope, uid)
     return OperationResponse(
         success=True,
         message=f"'{result['name']}' 파일이 성공적으로 저장되었습니다.",
@@ -159,12 +184,14 @@ async def save_text_file(
 # ─── 파일 업로드 (다중 파일 지원 & 쿼터 사전 검증) ───
 @router.post("/upload", response_model=OperationResponse)
 async def upload_files(
+    request: Request,
     folder: str = Form(""),
     scope: str = Form(""),
-    user_id: str = Form("demo_user"),
+    user_id: str = Form(""),
     files: List[UploadFile] = File(...)
 ):
-    target_dir = safe_resolve_path(folder, scope)
+    uid = user_id or _extract_user_id(request) or "demo_user"
+    target_dir = safe_resolve_path(folder, scope, uid)
     if not target_dir.is_dir():
         raise HTTPException(status_code=400, detail="업로드 대상 폴더가 유효하지 않습니다.")
 
@@ -177,8 +204,8 @@ async def upload_files(
         total_incoming_bytes += sz
         file_buffers.append((upload.filename, content))
 
-    root = get_storage_root(scope)
-    quota_check = check_upload_quota(root, total_incoming_bytes, user_id)
+    root = get_storage_root(scope, uid)
+    quota_check = check_upload_quota(root, total_incoming_bytes, uid)
     if quota_check["exceeded"]:
         # 쿼터 초과 시 403 반환하여 클라이언트에서 유료 전환 안내 모달을 띄우도록 함
         raise HTTPException(
@@ -215,11 +242,11 @@ async def upload_files(
     )
 
 
-
 # ─── 새 폴더 생성 ───
 @router.post("/mkdir", response_model=OperationResponse)
-async def create_folder(req: MkdirRequest, scope: str = Query("")):
-    base_dir = safe_resolve_path(req.path, scope)
+async def create_folder(req: MkdirRequest, request: Request, scope: str = Query("")):
+    uid = _extract_user_id(request)
+    base_dir = safe_resolve_path(req.path, scope, uid)
     folder_name = req.folder_name.strip()
     
     if not folder_name or "/" in folder_name or "\\" in folder_name:
@@ -239,8 +266,9 @@ async def create_folder(req: MkdirRequest, scope: str = Query("")):
 
 # ─── 이름 변경 (파일 또는 폴더) ───
 @router.post("/rename", response_model=OperationResponse)
-async def rename_item(req: RenameRequest, scope: str = Query("")):
-    target = safe_resolve_path(req.path, scope)
+async def rename_item(req: RenameRequest, request: Request, scope: str = Query("")):
+    uid = _extract_user_id(request)
+    target = safe_resolve_path(req.path, scope, uid)
     if not target.exists():
         raise HTTPException(status_code=404, detail="이름을 변경할 항목을 찾을 수 없습니다.")
 
@@ -262,17 +290,18 @@ async def rename_item(req: RenameRequest, scope: str = Query("")):
 
 # ─── 삭제 (단일 및 다중 삭제 지원) ───
 @router.post("/delete", response_model=OperationResponse)
-async def delete_items(req: DeleteRequest, scope: str = Query("")):
+async def delete_items(req: DeleteRequest, request: Request, scope: str = Query("")):
     if not req.paths:
         raise HTTPException(status_code=400, detail="삭제할 항목이 지정되지 않았습니다.")
 
     deleted = []
     errors = []
-    root = get_storage_root(scope)
+    uid = _extract_user_id(request)
+    root = get_storage_root(scope, uid)
 
     for rel_p in req.paths:
         try:
-            target = safe_resolve_path(rel_p, scope)
+            target = safe_resolve_path(rel_p, scope, uid)
             if target == root:
                 errors.append("루트 디렉토리는 삭제할 수 없습니다.")
                 continue

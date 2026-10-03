@@ -1,6 +1,5 @@
-// apps/files/frontend/app.js
-// MQnet Files Hub - 프론트엔드 메인 진입점
 import { state } from './js/state.js?v=1.2';
+import { MQnetAuth } from '/shared/ui/auth.js?v=1.0';
 import {
   fetchList, searchFiles, uploadFiles, deleteItems,
   getDownloadUrl, fetchSystemStatus, fetchQuota, upgradePlan
@@ -472,6 +471,21 @@ async function init() {
 
   state.scope = initScope;
   if (scopeSelect) scopeSelect.value = initScope;
+
+  // 🔑 MQnet 통합 인증 초기화 및 배지 부착
+  MQnetAuth.init({
+    appId: 'files',
+    onAuthChange: (user) => {
+      state.currentUser = user ? user.id : 'demo_user';
+      navigate('');
+    }
+  });
+  MQnetAuth.renderBadge('userAuthBadge');
+
+  const u = MQnetAuth.getUser();
+  if (u) {
+    state.currentUser = u.id;
+  }
 
   await navigate(initPath);
   await refreshQuota();
