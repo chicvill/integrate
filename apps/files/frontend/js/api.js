@@ -178,9 +178,3 @@ export function getRawUrl(path, scope = '') {
   return `${BASE()}/raw?${p.toString()}`;
 }
 
-// ── 시스템 상태 ───────────────────────────────────────────
-export async function fetchSystemStatus() {
-  const res = await request('/system-status');
-  return res.json();
-}
-

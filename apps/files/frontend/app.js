@@ -1,14 +1,14 @@
-import { state } from './js/state.js?v=1.2';
+import { state } from './js/state.js?v=1.3';
 import { MQnetAuth } from '/shared/ui/auth.js?v=1.0';
 import {
   fetchList, searchFiles, uploadFiles, deleteItems,
   getDownloadUrl, fetchSystemStatus, fetchQuota, upgradePlan
-} from './js/api.js?v=1.2';
+} from './js/api.js?v=1.3';
 import {
   renderBreadcrumbs, renderFolderGrid, renderFileGrid, renderFileList,
   showLoading, showEmpty, showToast, updateStatusBar, updateSelectionToolbar,
   renderStorageQuotaWidget, setupDragDropOverlay, escHtml
-} from './js/ui.js?v=1.2';
+} from './js/ui.js?v=1.3';
 import {
   openPreviewModal, closePreviewModal,
   openTextEditModal, submitTextEditModal,
@@ -18,7 +18,7 @@ import {
   openUploadModal, closeUploadModal,
   openUpgradeModal, closeModal,
   showContextMenu
-} from './js/modals.js?v=1.2';
+} from './js/modals.js?v=1.3';
 
 // ── DOM 요소 참조 ─────────────────────────────────────────
 const breadcrumbEl      = document.getElementById('breadcrumbsNav');
