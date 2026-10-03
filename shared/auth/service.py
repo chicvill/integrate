@@ -79,14 +79,21 @@ class AuthService:
         로그인 처리.
         이메일+비밀번호 검증 후 JWT 토큰 발급.
         """
+        # 통합 플랫폼 단일 로그인 지원: 동일 이메일 계정이면 app_id에 구애받지 않고 로그인 허용
         user = db.query(User).filter(
             User.email == request.email,
             User.app_id == app_id,
             User.is_active == True,
         ).first()
 
+        if not user:
+            user = db.query(User).filter(
+                User.email == request.email,
+                User.is_active == True,
+            ).first()
+
         # 데모 계정 자동 생성 지원
-        if not user and request.email in ["study@mqnet.io", "demo@studycafe.com", "student@mqnet.io"]:
+        if not user and request.email in ["study@mqnet.io", "demo@studycafe.com", "student@mqnet.io", "demo@mqnet.io"]:
             user = User(
                 email=request.email,
                 hashed_password=hash_password(request.password),

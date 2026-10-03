@@ -67,11 +67,9 @@ def get_current_user_dependency(
         raise HTTPException(status_code=401, detail="유효하지 않거나 만료된 토큰입니다.")
 
     user_id = payload.get("sub")
-    app_id = payload.get("app_id")
     
     user = db.query(User).filter(
         User.id == user_id,
-        User.app_id == app_id,
         User.is_active == True,
     ).first()
 

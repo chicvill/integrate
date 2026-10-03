@@ -280,6 +280,50 @@ export async function fetchItems() {
 }
 ```
 
+### 4.4. 공통 인증(Auth) UI 및 세션 연동 표준 (단 3줄 적용)
+MQnet 통합 플랫폼의 모든 앱은 플랫폼 공통 모듈 `/shared/ui/auth.js`를 통해 통일된 로그인/회원가입 UI 및 세션을 손쉽게 연동할 수 있습니다.
+
+#### 프론트엔드 연동 규격:
+1. **HTML 헤더에 사용자 배지 컨테이너 배치:**
+```html
+<header class="app-header">
+  ...
+  <!-- 사용자 로그인/프로필 배지 영역 -->
+  <div id="userAuthBadge"></div>
+</header>
+```
+
+2. **JavaScript에서 단 3줄로 초기화 및 배지 연동 (`app.js`):**
+```javascript
+import { MQnetAuth } from '/shared/ui/auth.js?v=1.0';
+
+// 1. 초기화 (앱 ID 지정 및 로그인 변경 리스너 등록)
+MQnetAuth.init({
+  appId: 'files',
+  onAuthChange: (user) => {
+    // 로그인/로그아웃 시 개인 데이터 재조회 처리
+  }
+});
+
+// 2. 배지 렌더링 (로그인 시 [👤 이름 | 🚪], 비로그인 시 [🔑 로그인] 자동 처리)
+MQnetAuth.renderBadge('userAuthBadge');
+
+// 3. 비로그인 사용자 작업 제한 시 모달 호출
+if (!MQnetAuth.isLoggedIn()) {
+  MQnetAuth.openModal({ title: '개인 저장소 접근을 위해 로그인해 주세요.' });
+}
+```
+
+3. **백엔드 API 호출 시 인증 헤더 첨부 (`api.js`):**
+```javascript
+const res = await fetch(url, {
+  headers: {
+    'Content-Type': 'application/json',
+    ...MQnetAuth.getAuthHeader() // Authorization: Bearer {token} 자동 첨부
+  }
+});
+```
+
 ---
 
 ## 5. 게이트웨이 (`gateway/main.py`) 연동 규격

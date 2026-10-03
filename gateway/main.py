@@ -308,6 +308,11 @@ ytdownloader_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."
 if os.path.exists(ytdownloader_dist):
     app.mount("/ytdownloader", StaticFiles(directory=ytdownloader_dist, html=True), name="ytdownloader_app")
 
+# ── MQnet 공통 UI 및 프론트엔드 모듈 정적 서빙 (/shared/ui) ──
+shared_ui_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "shared", "ui"))
+if os.path.exists(shared_ui_dir):
+    app.mount("/shared/ui", NoCacheStaticFiles(directory=shared_ui_dir, html=False), name="shared_ui_assets")
+
 # ── MQnet Files Hub - 프론트엔드 정적 서빙 (구 filebrowser 대체) ──
 files_frontend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "files", "frontend"))
 if os.path.exists(files_frontend_dir):
