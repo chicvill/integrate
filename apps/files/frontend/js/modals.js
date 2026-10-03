@@ -1,7 +1,7 @@
 // apps/files/frontend/js/modals.js
 // MQnet Files Hub - 모달 및 다이얼로그 제어
 import { escHtml } from './ui.js?v=1.1';
-import { getRawUrl, getDownloadUrl, fetchTextPreview, saveTextFile, createFolder, renameItem, deleteItems } from './api.js?v=1.1';
+import { getRawUrl, getDownloadUrl, fetchTextPreview, saveTextFile, createFolder, renameItem, deleteItems, upgradePlan } from './api.js?v=1.1';
 import { state } from './state.js?v=1.1';
 
 // ── 모달 열기/닫기 헬퍼 ─────────────────────────────────
@@ -14,6 +14,65 @@ export function closeModal(id) {
   const m = document.getElementById(id);
   if (m) m.classList.remove('open');
 }
+
+// ── 유료 전환 안내 모달 (★ 500KB 쿼터 초과 시 유료 전환 안내) ──
+export function openUpgradeModal(quotaInfo = null, customMessage = '') {
+  const modal = document.getElementById('upgradeModal');
+  if (!modal) return;
+
+  const quota = quotaInfo || state.quota || {
+    plan_tier: 'free',
+    plan_name: '무료 플랜',
+    max_quota_formatted: '500 KB',
+    total_used_formatted: '0 B',
+    usage_percentage: 0,
+    breakdown: []
+  };
+
+  const descEl = document.getElementById('upgradeModalDesc');
+  const barEl = document.getElementById('upgradeModalBarFill');
+  const usedTextEl = document.getElementById('upgradeModalUsedText');
+  const breakdownEl = document.getElementById('upgradeModalBreakdown');
+  const planBadgeEl = document.getElementById('upgradeModalPlanBadge');
+
+  if (descEl) {
+    descEl.textContent = customMessage || `무료 플랜의 기본 저장 공간(${quota.max_quota_formatted})을 모두 사용했습니다. 계속해서 사진, 동영상, 문서를 안전하게 저장하려면 Pro 플랜으로 업그레이드하세요.`;
+  }
+  if (planBadgeEl) {
+    planBadgeEl.textContent = quota.plan_name;
+    planBadgeEl.className = `plan-badge-pill ${quota.plan_tier}`;
+  }
+  if (usedTextEl) {
+    usedTextEl.textContent = `${quota.total_used_formatted} / ${quota.max_quota_formatted} (${quota.usage_percentage}%)`;
+  }
+  if (barEl) {
+    barEl.style.width = `${Math.min(100, quota.usage_percentage)}%`;
+    barEl.style.background = quota.usage_percentage >= 100
+      ? 'linear-gradient(90deg, #f59e0b, #ef4444)'
+      : 'linear-gradient(90deg, #6366f1, #38bdf8)';
+  }
+
+  // 카테고리별 사용량 렌더링
+  if (breakdownEl && quota.breakdown?.length) {
+    breakdownEl.innerHTML = quota.breakdown
+      .filter(b => b.bytes > 0)
+      .map(b => `
+        <div class="quota-cat-row">
+          <div class="quota-cat-name">
+            <span>${b.label}</span>
+            <span class="quota-cat-count">${b.count}개</span>
+          </div>
+          <div class="quota-cat-bar-wrap">
+            <div class="quota-cat-bar-fill" style="width:${b.percentage}%"></div>
+          </div>
+          <div class="quota-cat-size">${b.formatted} (${b.percentage}%)</div>
+        </div>
+      `).join('') || '<div style="color:var(--text-dim);font-size:0.85rem">저장된 파일이 없습니다.</div>';
+  }
+
+  openModal('upgradeModal');
+}
+
 
 // ESC로 전체 모달 닫기
 document.addEventListener('keydown', (e) => {

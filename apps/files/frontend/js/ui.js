@@ -358,6 +358,59 @@ export function updateStatusBar(data) {
   el.textContent = parts.join(' · ');
 }
 
+// ── 헤더 스토리지 쿼터 게이지 위젯 렌더링 (★ 500KB 한도 & 실시간 분석) ──
+export function renderStorageQuotaWidget(container, quota, onUpgradeClick) {
+  if (!container || !quota) return;
+
+  const pct = Math.min(100, quota.usage_percentage);
+  const isFull = pct >= 100;
+  const isWarn = pct >= 80 && !isFull;
+  
+  let barColor = 'linear-gradient(90deg, #38bdf8, #6366f1)';
+  if (isFull) barColor = 'linear-gradient(90deg, #f59e0b, #ef4444)';
+  else if (isWarn) barColor = 'linear-gradient(90deg, #38bdf8, #f59e0b)';
+
+  const planClass = quota.plan_tier === 'pro' ? 'badge-pro' : 'badge-free';
+
+  container.innerHTML = `
+    <div class="quota-widget-wrapper" title="스토리지 상세 사용량을 확인하고 업그레이드합니다">
+      <div class="quota-info-row">
+        <span class="quota-plan-tag ${planClass}">${quota.plan_name}</span>
+        <span class="quota-usage-text">${quota.total_used_formatted} / ${quota.max_quota_formatted} (${pct}%)</span>
+        <button class="quota-upgrade-btn" id="headerUpgradeBtn" title="유료 플랜 업그레이드">⚡ Pro</button>
+      </div>
+      <div class="quota-mini-progress">
+        <div class="quota-mini-fill" style="width:${pct}%;background:${barColor}"></div>
+      </div>
+
+      <!-- 마우스 오버 툴팁 / 세부 분석 -->
+      <div class="quota-breakdown-tooltip">
+        <div class="tooltip-title">📊 카테고리별 저장 용량 분석</div>
+        ${quota.breakdown && quota.breakdown.length ? quota.breakdown.filter(b => b.bytes > 0).map(b => `
+          <div class="tooltip-row">
+            <span>${b.label} (${b.count}개)</span>
+            <strong>${b.formatted} (${b.percentage}%)</strong>
+          </div>
+        `).join('') : '<div style="color:var(--text-dim);font-size:0.75rem">사용 중인 파일이 없습니다.</div>'}
+        <div class="tooltip-footer">
+          클릭하여 Pro 플랜으로 업그레이드하세요!
+        </div>
+      </div>
+    </div>
+  `;
+
+  // 업그레이드 버튼 및 위젯 클릭 이벤트
+  container.querySelector('#headerUpgradeBtn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (onUpgradeClick) onUpgradeClick();
+  });
+
+  container.querySelector('.quota-widget-wrapper')?.addEventListener('click', () => {
+    if (onUpgradeClick) onUpgradeClick();
+  });
+}
+
+
 // ── 토스트 알림 ───────────────────────────────────────────
 let _toastTimers = [];
 

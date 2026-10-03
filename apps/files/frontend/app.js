@@ -1,15 +1,15 @@
 // apps/files/frontend/app.js
 // MQnet Files Hub - 프론트엔드 메인 진입점
-import { state } from './js/state.js?v=1.1';
+import { state } from './js/state.js?v=1.2';
 import {
   fetchList, searchFiles, uploadFiles, deleteItems,
-  getDownloadUrl, fetchSystemStatus
-} from './js/api.js?v=1.1';
+  getDownloadUrl, fetchSystemStatus, fetchQuota, upgradePlan
+} from './js/api.js?v=1.2';
 import {
   renderBreadcrumbs, renderFolderGrid, renderFileGrid, renderFileList,
   showLoading, showEmpty, showToast, updateStatusBar, updateSelectionToolbar,
-  setupDragDropOverlay, escHtml
-} from './js/ui.js?v=1.1';
+  renderStorageQuotaWidget, setupDragDropOverlay, escHtml
+} from './js/ui.js?v=1.2';
 import {
   openPreviewModal, closePreviewModal,
   openTextEditModal, submitTextEditModal,
@@ -17,8 +17,9 @@ import {
   openRenameModal, submitRenameModal,
   openDeleteModal, confirmDelete,
   openUploadModal, closeUploadModal,
+  openUpgradeModal, closeModal,
   showContextMenu
-} from './js/modals.js?v=1.1';
+} from './js/modals.js?v=1.2';
 
 // ── DOM 요소 참조 ─────────────────────────────────────────
 const breadcrumbEl      = document.getElementById('breadcrumbsNav');
@@ -44,6 +45,21 @@ const selPreviewBtn     = document.getElementById('selPreviewBtn');
 const selClearBtn       = document.getElementById('selClearBtn');
 const selectAllBtn      = document.getElementById('selectAllBtn');
 
+// 유료 전환 모달 버튼들
+const confirmUpgradeBtn = document.getElementById('confirmUpgradeBtn');
+const resetFreeBtn      = document.getElementById('resetFreeBtn');
+
+// ── 스토리지 쿼터 및 실시간 사용량 갱신 ───────────────────
+async function refreshQuota() {
+  try {
+    const quota = await fetchQuota(state.scope, state.currentUser);
+    state.quota = quota;
+    renderStorageQuotaWidget(storageBadgeEl, quota, () => openUpgradeModal(quota));
+  } catch (err) {
+    console.warn('쿼터 정보 조회 실패:', err);
+  }
+}
+
 // ── 탐색 (Navigate) ───────────────────────────────────────
 async function navigate(path) {
   state.isLoading = true;
@@ -61,11 +77,8 @@ async function navigate(path) {
     renderView();
     updateStatusBar({ totalCount: state.totalCount, freeSpaceText: state.freeSpaceText });
 
-    // 스토리지 뱃지
-    if (storageBadgeEl) {
-      const freeStr = state.freeSpaceText ? state.freeSpaceText.split('/')[0]?.trim() : '';
-      storageBadgeEl.innerHTML = `💾 <strong>${escHtml(freeStr || '정상')}</strong> 여유 · <span style="opacity:0.75">${escHtml(state.storageRoot)}</span>`;
-    }
+    // 실시간 스토리지 쿼터 게이지 위젯 갱신
+    await refreshQuota();
 
     // 브레드크럼
     renderBreadcrumbs(breadcrumbEl, state.breadcrumbs, navigate);
@@ -129,7 +142,6 @@ function renderView() {
 // ── 선택 토글 핸들러 ──────────────────────────────────────
 function onToggleSelect(path) {
   state.toggleSelect(path);
-  // UI 요소의 선택 클래스 즉시 동기화
   document.querySelectorAll(`[data-path="${CSS.escape(path)}"]`).forEach(el => {
     const isSelected = state.selectedPaths.has(path);
     el.classList.toggle('selected', isSelected);
@@ -203,7 +215,6 @@ scopeSelect?.addEventListener('change', (e) => {
 });
 
 // ── 선택 툴바 액션 바인딩 ────────────────────────────────
-// 1. 이름 변경
 selRenameBtn?.addEventListener('click', () => {
   if (state.selectedPaths.size !== 1) return;
   const path = Array.from(state.selectedPaths)[0];
@@ -211,7 +222,6 @@ selRenameBtn?.addEventListener('click', () => {
   if (item) openRenameModal(item);
 });
 
-// 2. 내용 편집 (텍스트 파일)
 selEditBtn?.addEventListener('click', () => {
   if (state.selectedPaths.size !== 1) return;
   const path = Array.from(state.selectedPaths)[0];
@@ -219,7 +229,6 @@ selEditBtn?.addEventListener('click', () => {
   if (file) openTextEditModal(file);
 });
 
-// 3. 미리보기
 selPreviewBtn?.addEventListener('click', () => {
   if (state.selectedPaths.size !== 1) return;
   const path = Array.from(state.selectedPaths)[0];
@@ -227,7 +236,6 @@ selPreviewBtn?.addEventListener('click', () => {
   if (file) onFileClick(file);
 });
 
-// 4. 선택 다운로드
 selDownloadBtn?.addEventListener('click', () => {
   state.selectedPaths.forEach(path => {
     const file = state.files.find(f => f.path === path);
@@ -240,7 +248,6 @@ selDownloadBtn?.addEventListener('click', () => {
   });
 });
 
-// 5. 선택 삭제
 selDeleteBtn?.addEventListener('click', () => {
   const selected = Array.from(state.selectedPaths).map(p => {
     const item = state.folders.find(f => f.path === p) || state.files.find(f => f.path === p);
@@ -249,21 +256,51 @@ selDeleteBtn?.addEventListener('click', () => {
   if (selected.length) openDeleteModal(selected);
 });
 
-// 6. 선택 해제
 selClearBtn?.addEventListener('click', () => {
   state.clearSelection();
   renderView();
 });
 
-// 7. 전체 선택
 selectAllBtn?.addEventListener('click', () => {
   state.selectAll();
   renderView();
 });
 
-// ── 텍스트 에디터 모달 저장 버튼 바인딩 ─────────────────────
+// ── 텍스트 에디터 모달 저장 버튼 ──────────────────────────
 document.getElementById('textEditSaveBtn')?.addEventListener('click', () => {
-  submitTextEditModal(() => navigate(state.currentPath), showToast);
+  submitTextEditModal(() => {
+    navigate(state.currentPath);
+    refreshQuota();
+  }, showToast);
+});
+
+// ── 유료 전환 및 플랜 변경 이벤트 (★ 테스트 연동) ─────────
+confirmUpgradeBtn?.addEventListener('click', async () => {
+  confirmUpgradeBtn.disabled = true;
+  try {
+    const res = await upgradePlan('pro', state.currentUser);
+    closeModal('upgradeModal');
+    showToast('🎉 축하합니다! MQnet Pro 플랜(10GB)으로 업그레이드되었습니다.', 'success');
+    await refreshQuota();
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    confirmUpgradeBtn.disabled = false;
+  }
+});
+
+resetFreeBtn?.addEventListener('click', async () => {
+  resetFreeBtn.disabled = true;
+  try {
+    const res = await upgradePlan('free', state.currentUser);
+    closeModal('upgradeModal');
+    showToast('무료 플랜(500KB 한도)으로 재설정되었습니다.', 'info');
+    await refreshQuota();
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    resetFreeBtn.disabled = false;
+  }
 });
 
 // ── 필터 ─────────────────────────────────────────────────
@@ -326,18 +363,25 @@ searchInput?.addEventListener('input', () => {
   }, 350);
 });
 
-// ── 업로드 처리 ───────────────────────────────────────────
+// ── 업로드 처리 (★ 500KB 쿼터 초과 시 유료 전환 모달 자동 팝업) ──
 async function handleFileUpload(files) {
   if (!files?.length) return;
-  showToast(`${files.length}개 파일 업로드를 시작합니다...`, 'info');
+  showToast(`${files.length}개 파일 업로드를 검증 및 시작합니다...`, 'info');
 
   try {
-    await uploadFiles(state.currentPath, files, null, state.scope);
+    await uploadFiles(state.currentPath, files, null, state.scope, state.currentUser);
     closeUploadModal();
     showToast(`${files.length}개 파일 업로드가 완료되었습니다.`, 'success');
     await navigate(state.currentPath);
+    await refreshQuota();
   } catch (err) {
-    showToast(err.message, 'error');
+    // ★ 500KB 쿼터 초과(403 QUOTA_EXCEEDED) 시 즉시 유료 전환 안내 모달 팝업
+    if (err.detail?.error === 'QUOTA_EXCEEDED' || err.status === 403) {
+      const quotaInfo = err.detail?.quota_info || state.quota;
+      openUpgradeModal(quotaInfo, err.detail?.message);
+    } else {
+      showToast(err.message, 'error');
+    }
   }
 }
 
@@ -377,13 +421,22 @@ document.getElementById('mkdirInput')?.addEventListener('keydown', (e) => {
 
 // ── 이름 변경 / 삭제 모달 연결 ───────────────────────────
 document.getElementById('renameSubmitBtn')?.addEventListener('click', () => {
-  submitRenameModal(() => navigate(state.currentPath), showToast);
+  submitRenameModal(() => {
+    navigate(state.currentPath);
+    refreshQuota();
+  }, showToast);
 });
 document.getElementById('renameInput')?.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') submitRenameModal(() => navigate(state.currentPath), showToast);
+  if (e.key === 'Enter') submitRenameModal(() => {
+    navigate(state.currentPath);
+    refreshQuota();
+  }, showToast);
 });
 document.getElementById('deleteConfirmBtn')?.addEventListener('click', () => {
-  confirmDelete(() => navigate(state.currentPath), showToast);
+  confirmDelete(() => {
+    navigate(state.currentPath);
+    refreshQuota();
+  }, showToast);
 });
 
 // ── 미리보기 모달 닫기 ────────────────────────────────────
@@ -421,6 +474,7 @@ async function init() {
   if (scopeSelect) scopeSelect.value = initScope;
 
   await navigate(initPath);
+  await refreshQuota();
 }
 
 init();

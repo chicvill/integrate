@@ -63,16 +63,16 @@ export async function saveTextFile(path, content, scope = '') {
   return res.json();
 }
 
-// ── 파일 업로드 (다중 파일) ───────────────────────────────
-export async function uploadFiles(folder, fileList, onProgress, scope = '') {
+// ── 파일 업로드 (다중 파일 & 사용자 ID 지원) ─────────────
+export async function uploadFiles(folder, fileList, onProgress, scope = '', userId = 'demo_user') {
   const formData = new FormData();
   formData.append('folder', folder);
+  formData.append('user_id', userId);
   if (scope) formData.append('scope', scope);
   for (const f of fileList) {
     formData.append('files', f, f.name);
   }
 
-  // XMLHttpRequest로 업로드 진행률 지원
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `${BASE()}/upload`);
@@ -82,18 +82,46 @@ export async function uploadFiles(folder, fileList, onProgress, scope = '') {
       }
     };
     xhr.onload = () => {
+      let respData = {};
+      try { respData = JSON.parse(xhr.responseText); } catch {}
       if (xhr.status >= 200 && xhr.status < 300) {
-        resolve(JSON.parse(xhr.responseText));
+        resolve(respData);
       } else {
-        let msg = `업로드 실패 (${xhr.status})`;
-        try { msg = JSON.parse(xhr.responseText).detail || msg; } catch {}
-        reject(new Error(msg));
+        const err = new Error(respData.detail?.message || respData.detail || `업로드 실패 (${xhr.status})`);
+        err.status = xhr.status;
+        err.detail = respData.detail;
+        reject(err);
       }
     };
     xhr.onerror = () => reject(new Error('네트워크 오류로 업로드에 실패했습니다.'));
     xhr.send(formData);
   });
 }
+
+// ── 스토리지 쿼터 및 카테고리별 분석 조회 ─────────────────
+export async function fetchQuota(scope = '', userId = 'demo_user') {
+  const params = new URLSearchParams({ user_id: userId, t: Date.now() });
+  if (scope) params.append('scope', scope);
+  const res = await request(`/quota?${params.toString()}`);
+  return res.json();
+}
+
+// ── 플랜 업그레이드 / 전환 (유료 전환 테스트) ─────────────
+export async function upgradePlan(planTier = 'pro', userId = 'demo_user') {
+  const res = await request('/upgrade-plan', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ plan_tier: planTier, user_id: userId })
+  });
+  return res.json();
+}
+
+// ── 시스템 상태 ───────────────────────────────────────────
+export async function fetchSystemStatus() {
+  const res = await request('/system-status');
+  return res.json();
+}
+
 
 // ── 새 폴더 생성 ──────────────────────────────────────────
 export async function createFolder(path, folderName, scope = '') {

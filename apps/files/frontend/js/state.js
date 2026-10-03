@@ -34,6 +34,10 @@ export const state = {
   sortField: 'name',
   sortAsc: true,
 
+  // 현재 사용자 및 플랜/쿼터 정보
+  currentUser: 'demo_user',
+  quota: null,
+
   // 스토리지 정보
   freeSpaceText: '',
   totalSizeText: '',

@@ -21,7 +21,9 @@ from apps.files.backend.schemas import (
     DeleteRequest,
     SearchResponse,
     OperationResponse,
-    SaveTextRequest
+    SaveTextRequest,
+    StorageQuotaResponse,
+    UpgradePlanRequest
 )
 from apps.files.backend.services.files_service import (
     safe_resolve_path,
@@ -31,6 +33,13 @@ from apps.files.backend.services.files_service import (
     save_text_file_sync,
     get_storage_root,
     format_size
+)
+from apps.files.backend.services.quota_service import (
+    calculate_storage_quota,
+    check_upload_quota,
+    set_user_plan,
+    get_user_plan,
+    PLAN_QUOTAS
 )
 from shared.core.responses import safe_file_response
 
@@ -48,6 +57,30 @@ def get_route_prefix(request: Optional[Request] = None) -> str:
         if "/files" in p:
             return "/api/files"
     return "/api"
+
+
+# ─── 스토리지 사용량 쿼터 및 카테고리별 분석 조회 ───
+@router.get("/quota", response_model=StorageQuotaResponse)
+async def get_storage_quota(
+    scope: str = Query(""),
+    user_id: str = Query("demo_user")
+):
+    root = get_storage_root(scope)
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, calculate_storage_quota, root, user_id)
+
+
+# ─── 플랜 업그레이드 / 전환 (유료 전환 테스트 연동) ───
+@router.post("/upgrade-plan", response_model=OperationResponse)
+async def upgrade_user_plan(req: UpgradePlanRequest):
+    user_id = req.user_id or "demo_user"
+    new_tier = set_user_plan(user_id, req.plan_tier)
+    plan_info = PLAN_QUOTAS[new_tier]
+    return OperationResponse(
+        success=True,
+        message=f"'{plan_info['name']}'({plan_info['formatted']})으로 성공적으로 변경되었습니다.",
+        data={"user_id": user_id, "plan_tier": new_tier, "max_quota": plan_info["formatted"]}
+    )
 
 
 # ─── 디렉토리 및 파일 목록 조회 ───
@@ -123,24 +156,46 @@ async def save_text_file(
     )
 
 
-# ─── 파일 업로드 (다중 파일 지원) ───
+# ─── 파일 업로드 (다중 파일 지원 & 쿼터 사전 검증) ───
 @router.post("/upload", response_model=OperationResponse)
 async def upload_files(
     folder: str = Form(""),
     scope: str = Form(""),
+    user_id: str = Form("demo_user"),
     files: List[UploadFile] = File(...)
 ):
     target_dir = safe_resolve_path(folder, scope)
     if not target_dir.is_dir():
         raise HTTPException(status_code=400, detail="업로드 대상 폴더가 유효하지 않습니다.")
 
-    saved_files = []
+    # 1. 파일들의 총 크기 사전 검사 (쿼터 초과 검증)
+    total_incoming_bytes = 0
+    file_buffers = []
     for upload in files:
-        # 안전한 파일명 추출
-        fname = Path(upload.filename).name
+        content = await upload.read()
+        sz = len(content)
+        total_incoming_bytes += sz
+        file_buffers.append((upload.filename, content))
+
+    root = get_storage_root(scope)
+    quota_check = check_upload_quota(root, total_incoming_bytes, user_id)
+    if quota_check["exceeded"]:
+        # 쿼터 초과 시 403 반환하여 클라이언트에서 유료 전환 안내 모달을 띄우도록 함
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "QUOTA_EXCEEDED",
+                "message": quota_check["message"],
+                "quota_info": quota_check
+            }
+        )
+
+    # 2. 파일 저장
+    saved_files = []
+    for fname_orig, content in file_buffers:
+        fname = Path(fname_orig).name
         dest = target_dir / fname
         
-        # 파일 중복 시 접미사 추가
         counter = 1
         stem = dest.stem
         suffix = dest.suffix
@@ -149,16 +204,16 @@ async def upload_files(
             counter += 1
 
         async with aiofiles.open(dest, "wb") as out_file:
-            while chunk := await upload.read(1024 * 1024):  # 1MB 버퍼
-                await out_file.write(chunk)
+            await out_file.write(content)
                 
         saved_files.append(dest.name)
 
     return OperationResponse(
         success=True,
         message=f"{len(saved_files)}개 파일 업로드가 완료되었습니다.",
-        data={"files": saved_files}
+        data={"files": saved_files, "total_bytes": total_incoming_bytes}
     )
+
 
 
 # ─── 새 폴더 생성 ───
