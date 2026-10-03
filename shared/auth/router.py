@@ -190,6 +190,21 @@ async def get_me(
     return UserResponse(**current_user.to_dict())
 
 
+@auth_router.patch("/me", response_model=UserResponse)
+@auth_router.put("/me", response_model=UserResponse)
+async def update_me(
+    request: Request,
+    body: UserUpdateRequest,
+    current_user: User = Depends(get_current_user_dependency),
+    db: Session = Depends(get_db),
+):
+    """내 개인정보 및 비밀번호 변경"""
+    service = _get_auth_service(request)
+    updated_user = await service.update_profile(db, current_user, body)
+    return UserResponse(**updated_user.to_dict())
+
+
 @auth_router.get("/health", include_in_schema=False)
 async def auth_health():
     return {"status": "auth service running", "rbac": True, "oauth": ["google", "naver"]}
+

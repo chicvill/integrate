@@ -205,10 +205,10 @@ export const MQnetAuth = {
 
       el.innerHTML = `
         <div class="mqnet-user-badge">
-          <div class="mqnet-user-avatar" title="${escHtml(user.email)}" style="background:${roleMeta.color}">
+          <div class="mqnet-user-avatar" title="${escHtml(user.email)}" style="background:${roleMeta.color};cursor:pointer">
             ${user.full_name ? escHtml(user.full_name.charAt(0).toUpperCase()) : '👤'}
           </div>
-          <div class="mqnet-user-info">
+          <div class="mqnet-user-info" style="cursor:pointer" title="내 정보 / 개인정보 변경">
             <div style="display:flex;align-items:center;gap:0.35rem">
               <span class="mqnet-user-name">${escHtml(user.full_name || user.email.split('@')[0])}</span>
               <span class="mqnet-user-role-badge" style="background:${roleMeta.color}22;color:${roleMeta.color};border:1px solid ${roleMeta.color}55">
@@ -217,8 +217,20 @@ export const MQnetAuth = {
             </div>
             <span class="mqnet-user-plan">${escHtml(user.plan_id || 'free').toUpperCase()}</span>
           </div>
+          <button class="mqnet-btn-profile" title="개인정보 변경" aria-label="개인정보 변경">⚙️</button>
           <button class="mqnet-btn-logout" title="로그아웃" aria-label="로그아웃">🚪</button>
         </div>`;
+
+      el.querySelector('.mqnet-btn-profile')?.addEventListener('click', () => {
+        this.openProfileModal();
+      });
+      el.querySelector('.mqnet-user-info')?.addEventListener('click', () => {
+        this.openProfileModal();
+      });
+      el.querySelector('.mqnet-user-avatar')?.addEventListener('click', () => {
+        this.openProfileModal();
+      });
+
       el.querySelector('.mqnet-btn-logout')?.addEventListener('click', () => {
         if (confirm('로그아웃 하시겠습니까?')) {
           this.logout();
@@ -285,9 +297,10 @@ export const MQnetAuth = {
           </div>
 
           <!-- 공통 이메일 -->
+          <!-- 공통 아이디/이메일 -->
           <div class="mqnet-form-group">
-            <label class="mqnet-label">이메일 주소</label>
-            <input id="mqnetEmail" type="email" class="mqnet-input" placeholder="user@example.com" autocomplete="email">
+            <label class="mqnet-label">아이디 또는 이메일</label>
+            <input id="mqnetEmail" type="text" class="mqnet-input" placeholder="admin 또는 user@example.com" autocomplete="username">
           </div>
 
           <!-- 회원가입 전용: 이름 -->
@@ -299,18 +312,19 @@ export const MQnetAuth = {
           <!-- 비밀번호 -->
           <div class="mqnet-form-group">
             <label class="mqnet-label">비밀번호</label>
-            <input id="mqnetPassword" type="password" class="mqnet-input" placeholder="6자리 이상 비밀번호" autocomplete="current-password">
+            <input id="mqnetPassword" type="password" class="mqnet-input" placeholder="비밀번호 (기본: 1212)" autocomplete="current-password">
           </div>
 
           <!-- 역할별 원클릭 데모 계정 선택기 -->
           <div class="mqnet-demo-section" id="mqnetDemoSection">
-            <div class="mqnet-demo-title">⚡ 빠른 테스트용 역할별 데모 계정:</div>
+            <div class="mqnet-demo-title">⚡ 빠른 테스트용 계정 (클릭 시 자동 입력):</div>
             <div class="mqnet-demo-chips">
-              <button class="mqnet-chip" data-email="owner@store.io" data-role="owner" type="button">👑 매장 점주 (대표)</button>
-              <button class="mqnet-chip" data-email="manager@store.io" data-role="manager" type="button">💼 매장 점장 (매니저)</button>
-              <button class="mqnet-chip" data-email="clerk@store.io" data-role="staff" type="button">🤝 매장 점원 (스태프)</button>
-              <button class="mqnet-chip" data-email="customer@store.io" data-role="customer" type="button">🛍️ 고객 (단골)</button>
-              <button class="mqnet-chip" data-email="demo@mqnet.io" data-role="user" type="button">🌐 통합 회원 (홍길동)</button>
+              <button class="mqnet-chip" data-email="admin" data-pw="1212" data-role="superadmin" type="button" style="border-color:#6366f1;color:#a5b4fc;font-weight:700">👑 최고 관리자 (admin / 1212)</button>
+              <button class="mqnet-chip" data-email="owner@store.io" data-pw="demo1234!" data-role="owner" type="button">👑 매장 점주 (대표)</button>
+              <button class="mqnet-chip" data-email="manager@store.io" data-pw="demo1234!" data-role="manager" type="button">💼 매장 점장 (매니저)</button>
+              <button class="mqnet-chip" data-email="clerk@store.io" data-pw="demo1234!" data-role="staff" type="button">🤝 매장 점원 (스태프)</button>
+              <button class="mqnet-chip" data-email="customer@store.io" data-pw="demo1234!" data-role="customer" type="button">🛍️ 고객 (단골)</button>
+              <button class="mqnet-chip" data-email="demo@mqnet.io" data-pw="demo1234!" data-role="user" type="button">🌐 통합 회원 (홍길동)</button>
             </div>
           </div>
 
@@ -396,7 +410,7 @@ export const MQnetAuth = {
     demoSection.querySelectorAll('.mqnet-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         emailInput.value = chip.dataset.email;
-        passInput.value = 'demo1234!';
+        passInput.value = chip.dataset.pw || 'demo1234!';
         handleSubmit();
       });
     });
@@ -417,7 +431,7 @@ export const MQnetAuth = {
       const fullName = nameInput.value.trim();
 
       if (!email || !password) {
-        showError('이메일과 비밀번호를 입력해주세요.');
+        showError('아이디 또는 이메일과 비밀번호를 입력해주세요.');
         return;
       }
       if (mode === 'register' && !fullName) {
@@ -491,6 +505,194 @@ export const MQnetAuth = {
     });
 
     setTimeout(() => emailInput.focus(), 150);
+  },
+
+  // ── 개인정보 수정 모달 열기 ────────────────────────────────
+  openProfileModal({ onSuccess = null } = {}) {
+    const user = this.getUser();
+    if (!user) {
+      this.openModal({ title: '개인정보 수정을 위해 먼저 로그인해 주세요' });
+      return;
+    }
+
+    let backdrop = document.getElementById('mqnetProfileBackdrop');
+    if (!backdrop) {
+      backdrop = document.createElement('div');
+      backdrop.id = 'mqnetProfileBackdrop';
+      backdrop.className = 'mqnet-auth-backdrop';
+      document.body.appendChild(backdrop);
+    }
+
+    const currentRole = this.getCurrentRole();
+    const roleMeta = ROLE_LABELS[currentRole] || { name: currentRole.toUpperCase(), color: '#38bdf8' };
+
+    backdrop.innerHTML = `
+      <div class="mqnet-auth-modal fade-in" role="dialog" aria-modal="true" style="max-width:480px">
+        <div class="mqnet-auth-header">
+          <div style="display:flex;align-items:center;gap:0.6rem">
+            <span style="font-size:1.5rem">⚙️</span>
+            <div>
+              <h3 class="mqnet-auth-title">내 개인정보 및 계정 설정</h3>
+              <p class="mqnet-auth-subtitle">회원 정보 수정 및 비밀번호 변경</p>
+            </div>
+          </div>
+          <button class="mqnet-modal-close" id="mqnetProfileCloseBtn">✕</button>
+        </div>
+
+        <div class="mqnet-auth-body">
+          <div id="mqnetProfileError" class="mqnet-auth-alert hidden"></div>
+          <div id="mqnetProfileSuccess" class="mqnet-auth-alert hidden" style="background:rgba(34,197,94,0.15);border:1px solid #22c55e;color:#86efac"></div>
+
+          <!-- 기본 계정 정보 -->
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:0.75rem 1rem;display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:0.75rem;color:#94a3b8">계정 식별자 (ID)</div>
+              <div style="font-weight:700;color:#f8fafc;font-size:0.95rem">${escHtml(user.id)}</div>
+            </div>
+            <span class="mqnet-user-role-badge" style="background:${roleMeta.color}22;color:${roleMeta.color};border:1px solid ${roleMeta.color}55;font-size:0.75rem">
+              ${escHtml(roleMeta.name)} (${escHtml(user.plan_id || 'free').toUpperCase()})
+            </span>
+          </div>
+
+          <div class="mqnet-form-group">
+            <label class="mqnet-label">이름 / 닉네임</label>
+            <input id="mqnetProfName" type="text" class="mqnet-input" value="${escHtml(user.full_name || '')}" placeholder="성명 또는 상호">
+          </div>
+
+          <div class="mqnet-form-group">
+            <label class="mqnet-label">이메일 주소</label>
+            <input id="mqnetProfEmail" type="email" class="mqnet-input" value="${escHtml(user.email || '')}" placeholder="이메일 주소">
+          </div>
+
+          <div class="mqnet-form-group">
+            <label class="mqnet-label">연락처 (전화번호)</label>
+            <input id="mqnetProfPhone" type="tel" class="mqnet-input" value="${escHtml(user.phone || '')}" placeholder="010-0000-0000">
+          </div>
+
+          <div style="margin:0.5rem 0 0.2rem;padding-top:0.75rem;border-top:1px solid rgba(255,255,255,0.08);font-size:0.85rem;font-weight:700;color:#cbd5e1">
+            🔒 비밀번호 변경 (변경할 경우에만 입력)
+          </div>
+
+          <div class="mqnet-form-group">
+            <label class="mqnet-label">현재 비밀번호</label>
+            <input id="mqnetProfCurrentPw" type="password" class="mqnet-input" placeholder="현재 비밀번호">
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+            <div class="mqnet-form-group">
+              <label class="mqnet-label">새 비밀번호</label>
+              <input id="mqnetProfNewPw" type="password" class="mqnet-input" placeholder="4자 이상">
+            </div>
+            <div class="mqnet-form-group">
+              <label class="mqnet-label">새 비밀번호 확인</label>
+              <input id="mqnetProfConfirmPw" type="password" class="mqnet-input" placeholder="비밀번호 재입력">
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0.75rem;margin-top:0.5rem">
+            <button class="mqnet-auth-submit-btn" id="mqnetProfileCancel" style="background:rgba(255,255,255,0.08);color:#94a3b8;flex:1" type="button">취소</button>
+            <button class="mqnet-auth-submit-btn" id="mqnetProfileSave" style="flex:2" type="button">수정 내용 저장</button>
+          </div>
+        </div>
+      </div>`;
+
+    backdrop.classList.add('open');
+
+    const closeBtn = document.getElementById('mqnetProfileCloseBtn');
+    const cancelBtn = document.getElementById('mqnetProfileCancel');
+    const saveBtn = document.getElementById('mqnetProfileSave');
+    const nameInput = document.getElementById('mqnetProfName');
+    const emailInput = document.getElementById('mqnetProfEmail');
+    const phoneInput = document.getElementById('mqnetProfPhone');
+    const curPwInput = document.getElementById('mqnetProfCurrentPw');
+    const newPwInput = document.getElementById('mqnetProfNewPw');
+    const confirmPwInput = document.getElementById('mqnetProfConfirmPw');
+    const errBox = document.getElementById('mqnetProfileError');
+    const succBox = document.getElementById('mqnetProfileSuccess');
+
+    const closeProf = () => {
+      backdrop.classList.remove('open');
+    };
+
+    closeBtn.addEventListener('click', closeProf);
+    cancelBtn.addEventListener('click', closeProf);
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) closeProf();
+    });
+
+    saveBtn.addEventListener('click', async () => {
+      const fullName = nameInput.value.trim();
+      const email = emailInput.value.trim();
+      const phone = phoneInput.value.trim();
+      const currentPw = curPwInput.value.trim();
+      const newPw = newPwInput.value.trim();
+      const confirmPw = confirmPwInput.value.trim();
+
+      errBox.classList.add('hidden');
+      succBox.classList.add('hidden');
+
+      if (!fullName) {
+        errBox.textContent = '이름을 입력해 주세요.';
+        errBox.classList.remove('hidden');
+        return;
+      }
+
+      if (newPw) {
+        if (newPw.length < 4) {
+          errBox.textContent = '새 비밀번호는 4자리 이상이어야 합니다.';
+          errBox.classList.remove('hidden');
+          return;
+        }
+        if (newPw !== confirmPw) {
+          errBox.textContent = '새 비밀번호와 확인 입력이 일치하지 않습니다.';
+          errBox.classList.remove('hidden');
+          return;
+        }
+      }
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = '저장 중...';
+
+      try {
+        const updatePayload = {
+          full_name: fullName,
+          email: email || undefined,
+          phone: phone || undefined,
+          current_password: currentPw || undefined,
+          new_password: newPw || undefined,
+        };
+
+        const res = await fetch('/auth/me', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-App-ID': this.appId,
+            ...this.getAuthHeader()
+          },
+          body: JSON.stringify(updatePayload)
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || '개인정보 변경에 실패했습니다.');
+
+        localStorage.setItem(USER_KEY, JSON.stringify(data));
+        this._notify(data);
+        if (typeof onSuccess === 'function') onSuccess(data);
+
+        succBox.textContent = '✅ 개인정보가 성공적으로 변경되었습니다!';
+        succBox.classList.remove('hidden');
+
+        setTimeout(() => {
+          closeProf();
+        }, 1200);
+      } catch (err) {
+        errBox.textContent = err.message;
+        errBox.classList.remove('hidden');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = '수정 내용 저장';
+      }
+    });
   },
 
   // ── CSS 스타일 자동 주입 (별도 CSS 로드 없이도 동작 보장) ────
@@ -617,6 +819,11 @@ export const MQnetAuth = {
         font-size: 0.62rem; font-weight: 700; padding: 0.1rem 0.35rem; border-radius: 4px; line-height: 1;
       }
       .mqnet-user-plan { font-size: 0.62rem; color: #94a3b8; font-weight: 600; }
+      .mqnet-btn-profile {
+        background: transparent; border: none; cursor: pointer;
+        padding: 0.2rem; font-size: 0.85rem; opacity: 0.7; transition: opacity 0.2s, transform 0.2s;
+      }
+      .mqnet-btn-profile:hover { opacity: 1; transform: scale(1.15); }
       .mqnet-btn-logout {
         background: transparent; border: none; cursor: pointer;
         padding: 0.2rem; font-size: 0.85rem; opacity: 0.7; transition: opacity 0.2s;

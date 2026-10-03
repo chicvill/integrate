@@ -21,6 +21,24 @@ logger = logging.getLogger("mqnet.auth")
 
 # 사전 정의된 통합 데모 계정 맵 (역할 및 권한 사전 설정)
 DEMO_ACCOUNTS_MAP = {
+    "admin": {
+        "full_name": "관리자 (Admin)",
+        "role": "superadmin",
+        "allowed_apps": ["*"],
+        "app_roles": {"store": "owner", "photos": "pro", "files": "pro", "ytdownload": "pro"},
+        "plan_id": "pro",
+        "tenant_id": "master",
+        "default_pw": "1212",
+    },
+    "admin@mqnet.io": {
+        "full_name": "관리자 (Admin)",
+        "role": "superadmin",
+        "allowed_apps": ["*"],
+        "app_roles": {"store": "owner", "photos": "pro", "files": "pro", "ytdownload": "pro"},
+        "plan_id": "pro",
+        "tenant_id": "master",
+        "default_pw": "1212",
+    },
     "demo@mqnet.io": {
         "full_name": "홍길동 (MQnet 통합회원)",
         "role": "user",
@@ -70,6 +88,35 @@ DEMO_ACCOUNTS_MAP = {
         "tenant_id": "studycafe-main",
     }
 }
+
+
+def ensure_default_admin(db: Session) -> User:
+    """기본 관리자 계정 (id: admin, pw: 1212) 보장 및 DB 초기 설정"""
+    user = db.query(User).filter(
+        (User.id == "admin") | (User.email == "admin") | (User.email == "admin@mqnet.io")
+    ).first()
+    if not user:
+        user = User(
+            id="admin",
+            email="admin@mqnet.io",
+            hashed_password=hash_password("1212"),
+            full_name="최고 관리자 (Admin)",
+            role="superadmin",
+            auth_provider="local",
+            allowed_apps=["*"],
+            app_roles={"store": "owner", "photos": "pro", "files": "pro", "ytdownload": "pro"},
+            app_id="platform",
+            tenant_id="master",
+            plan_id="pro",
+            billing_status="active",
+            is_active=True,
+            is_verified=True,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        logger.info("기본 관리자 계정(id: admin, pw: 1212)이 DB에 성공적으로 등록되었습니다.")
+    return user
 
 
 class AuthService:
@@ -139,14 +186,25 @@ class AuthService:
         2. 해당 사용자의 앱 접근 권한 (allowed_apps) 검증
         3. 앱별 역할 (app_roles[app_id])을 반영한 JWT 발급
         """
-        user = db.query(User).filter(User.email == request.email).first()
+        # admin 또는 admin@mqnet.io 로그인 시 DB 기본 관리자 생성 보장
+        if request.email in ("admin", "admin@mqnet.io"):
+            ensure_default_admin(db)
+
+        # ID 또는 이메일로 사용자 조회
+        user = db.query(User).filter(
+            (User.email == request.email) | (User.id == request.email)
+        ).first()
 
         # 데모 계정 자동 생성 지원 (사전 정의된 맵 활용)
         if not user and request.email in DEMO_ACCOUNTS_MAP:
             demo_meta = DEMO_ACCOUNTS_MAP[request.email]
+            pw = request.password if request.password else demo_meta.get("default_pw", "demo1234!")
+            user_id = request.email if request.email == "admin" else str(uuid.uuid4())
+            user_email = request.email if "@" in request.email else f"{request.email}@mqnet.io"
             user = User(
-                email=request.email,
-                hashed_password=hash_password(request.password if request.password else "demo1234!"),
+                id=user_id,
+                email=user_email,
+                hashed_password=hash_password(pw),
                 full_name=demo_meta["full_name"],
                 role=demo_meta["role"],
                 auth_provider="local",
@@ -285,3 +343,38 @@ class AuthService:
             User.id == user_id,
             User.is_active == True,
         ).first()
+
+    async def update_profile(
+        self,
+        db: Session,
+        user: User,
+        req: UserUpdateRequest,
+    ) -> User:
+        """
+        로그인 후 개인정보 및 비밀번호 변경.
+        - 이름(full_name), 연락처(phone), 이메일(email) 수정
+        - 비밀번호 변경 (새 비밀번호 설정 시 현재 비밀번호 확인)
+        """
+        if req.full_name is not None and req.full_name.strip():
+            user.full_name = req.full_name.strip()
+        if req.phone is not None:
+            user.phone = req.phone.strip()
+        if req.email and req.email.strip() and req.email.strip() != user.email:
+            existing = db.query(User).filter(User.email == req.email.strip(), User.id != user.id).first()
+            if existing:
+                raise HTTPException(status_code=409, detail="이미 다른 사용자가 사용 중인 이메일입니다.")
+            user.email = req.email.strip()
+
+        if req.new_password:
+            if len(req.new_password) < 4:
+                raise HTTPException(status_code=400, detail="새 비밀번호는 최소 4자 이상이어야 합니다.")
+            if req.current_password and not verify_password(req.current_password, user.hashed_password):
+                raise HTTPException(status_code=400, detail="현재 비밀번호가 일치하지 않습니다.")
+            user.hashed_password = hash_password(req.new_password)
+
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        logger.info(f"사용자 개인정보 변경 완료: id={user.id}, email={user.email}")
+        return user
+

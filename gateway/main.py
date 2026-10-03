@@ -62,10 +62,17 @@ from apps.YTDownloader.backend.db import models as yt_models
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("mqnet.gateway")
 
-# 게이트웨이 기동 시 모든 등록된 모델 테이블 생성 보장
+# 게이트웨이 기동 시 모든 등록된 모델 테이블 생성 보장 및 기본 관리자(admin/1212) 계정 초기화
 try:
     db_service = get_database_service()
     Base.metadata.create_all(bind=db_service.engine)
+    if db_service.SessionLocal:
+        db_init = db_service.SessionLocal()
+        try:
+            from shared.auth.service import ensure_default_admin
+            ensure_default_admin(db_init)
+        finally:
+            db_init.close()
 except Exception as e:
     logger.warning(f"Gateway DB 초기화 알림: {e}")
 

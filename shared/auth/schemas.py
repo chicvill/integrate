@@ -20,8 +20,8 @@ class UserRegisterRequest(BaseModel):
 
     @validator("password")
     def password_min_length(cls, v):
-        if len(v) < 6:
-            raise ValueError("비밀번호는 최소 6자 이상이어야 합니다.")
+        if len(v) < 4:
+            raise ValueError("비밀번호는 최소 4자 이상이어야 합니다.")
         return v
 
     @validator("full_name")
@@ -32,8 +32,8 @@ class UserRegisterRequest(BaseModel):
 
 
 class UserLoginRequest(BaseModel):
-    """로그인 요청 스키마"""
-    email: EmailStr
+    """로그인 요청 스키마 (ID 또는 이메일)"""
+    email: str
     password: str
 
 
@@ -80,6 +80,7 @@ class UserResponse(BaseModel):
 class UserUpdateRequest(BaseModel):
     """사용자 정보 수정 요청 스키마"""
     full_name: Optional[str] = None
+    email: Optional[str] = None
     phone: Optional[str] = None
     current_password: Optional[str] = None
     new_password: Optional[str] = None

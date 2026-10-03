@@ -295,26 +295,30 @@ MQnet 통합 플랫폼의 모든 앱은 플랫폼 공통 모듈 `/shared/ui/auth
 
 2. **JavaScript에서 단 3줄로 초기화 및 배지 연동 (`app.js`):**
 ```javascript
-import { MQnetAuth } from '/shared/ui/auth.js?v=1.0';
+import { MQnetAuth } from '/shared/ui/auth.js?v=2.0';
 
-// 1. 초기화 (앱 ID 지정 및 로그인 변경 리스너 등록)
+// 1. 초기화 (autoPrompt: true 설정 시 비로그인 상태일 때 자동으로 로그인 창 팝업)
 MQnetAuth.init({
   appId: 'files',
+  autoPrompt: true,
   onAuthChange: (user) => {
     // 로그인/로그아웃 시 개인 데이터 재조회 처리
   }
 });
 
-// 2. 배지 렌더링 (로그인 시 [👤 이름 | 🚪], 비로그인 시 [🔑 로그인] 자동 처리)
+// 2. 배지 렌더링 (로그인 시 [👤 이름 | ⚙️ | 🚪], 비로그인 시 [🔑 로그인] 자동 처리)
+// ⚙️ 버튼 또는 이름 클릭 시 '개인정보 및 비밀번호 변경 모달' 자동 오픈
 MQnetAuth.renderBadge('userAuthBadge');
 
-// 3. 비로그인 사용자 작업 제한 시 모달 호출
-if (!MQnetAuth.isLoggedIn()) {
-  MQnetAuth.openModal({ title: '개인 저장소 접근을 위해 로그인해 주세요.' });
-}
+// 3. 프로필/비밀번호 변경 모달 수동 호출 (필요 시)
+// MQnetAuth.openProfileModal();
 ```
 
-3. **백엔드 API 호출 시 인증 헤더 첨부 (`api.js`):**
+3. **기본 관리자 계정 및 개인정보 변경 규격:**
+- **기본 관리자 계정:** `ID: admin`, `PW: 1212` (최고 관리자 권한 `superadmin`, Pro 플랜 자동 부여)
+- **개인정보/비밀번호 변경:** 로그인 후 배지의 `⚙️` 버튼 클릭 시 `MQnetAuth.openProfileModal()`이 열리며, `PATCH /auth/me`를 통해 성명, 이메일, 전화번호 및 비밀번호 변경을 안전하게 처리합니다.
+
+4. **백엔드 API 호출 시 인증 헤더 첨부 (`api.js`):**
 ```javascript
 const res = await fetch(url, {
   headers: {
