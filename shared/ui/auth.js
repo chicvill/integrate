@@ -853,8 +853,10 @@ export const MQnetAuth = {
         if (!res.ok) throw new Error('스토리지 정보 로드 실패');
         const info = await res.json();
 
-        const pct = Math.min(100, Math.max(0, info.used_pct || 0));
-        if (storageText) storageText.textContent = `${info.used_human} / ${info.max_human} (${pct.toFixed(1)}%)`;
+        const pct = Math.min(100, Math.max(0, info.used_percentage ?? info.used_pct ?? 0));
+        const usedStr = info.total_used_formatted || info.used_human || '0 B';
+        const maxStr = info.max_quota_formatted || info.max_human || '10 GB';
+        if (storageText) storageText.textContent = `${usedStr} / ${maxStr} (${pct.toFixed(1)}%)`;
         if (storageBar) {
           storageBar.style.width = `${pct}%`;
           if (pct >= 90) {
@@ -865,9 +867,12 @@ export const MQnetAuth = {
             storageBar.style.background = 'linear-gradient(90deg, #38bdf8, #6366f1)';
           }
         }
-        if (storageSub) storageSub.textContent = `남은 용량: ${info.remaining_human} ${info.can_upload ? '' : '(용량 초과)'}`;
+        const planTier = (info.plan_tier || info.plan_id || 'free').toUpperCase();
+        const isExceeded = info.is_exceeded || (info.can_upload === false);
+        if (storageSub) storageSub.textContent = `플랜: ${planTier} ${isExceeded ? '⚠️ (용량 초과)' : '• 파일 업로드 가능'}`;
 
-        if (!info.can_upgrade && upgradeBtn) {
+        const canUpgrade = info.upgrade_available ?? info.can_upgrade ?? (info.plan_tier !== 'pro');
+        if (!canUpgrade && upgradeBtn) {
           upgradeBtn.textContent = '👑 Pro 플랜 이용 중';
           upgradeBtn.style.color = '#38bdf8';
           upgradeBtn.disabled = true;
