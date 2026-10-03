@@ -115,6 +115,12 @@
         </div>
 
         <div class="topbar-actions">
+          <!-- 🔑 사용자 로그인 & 프로필 배지 영역 -->
+          <div id="userAuthBadge"></div>
+
+          <!-- 💾 500KB 쿼터 게이지 위젯 -->
+          <div class="storage-badge" id="storageInfoBadge"></div>
+
           <input type="file" id="fileInput" multiple style="display:none">
           <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none">
           <button class="mkdir-btn" id="selectModeBtn" title="다중 선택 모드">
@@ -494,6 +500,74 @@
     </button>
   </div>
 
-  <script type="module" src="./app.js?v=7.0"></script>
+  <!-- ★ 유료 전환 안내 모달 (500KB 쿼터 초과 시 표시) -->
+  <div class="modal-backdrop" id="upgradeModal" role="dialog" aria-modal="true" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:99999;align-items:center;justify-content:center">
+    <div class="modal-box large">
+
+      <div class="modal-header" style="padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.08)">
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <span style="font-size:1.5rem">💎</span>
+          <div>
+            <h2 class="modal-title" style="margin:0;font-size:1.15rem;font-weight:800;color:#fff">MQnet Pro Storage 전환 안내</h2>
+            <span id="upgradeModalPlanBadge" class="plan-badge-pill free">무료 플랜 (Free)</span>
+          </div>
+        </div>
+        <button class="modal-close-icon-btn" id="upgradeModalCloseBtn" style="background:none;border:none;color:#94a3b8;font-size:1.2rem;cursor:pointer">✕</button>
+      </div>
+
+      <div class="modal-body" style="padding:1.25rem 1.5rem">
+        <p id="upgradeModalDesc" style="color:rgba(255,255,255,0.7);font-size:0.92rem;line-height:1.6;margin-bottom:1.25rem"></p>
+
+        <!-- 현재 사용량 게이지 -->
+        <div class="upgrade-status-box">
+          <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:600;margin-bottom:0.4rem;color:#fff">
+            <span>현재 스토리지 사용량</span>
+            <span id="upgradeModalUsedText" style="color:#38bdf8">0 B / 500 KB (0%)</span>
+          </div>
+          <div class="upgrade-progress-track">
+            <div id="upgradeModalBarFill" class="upgrade-progress-fill" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- 카테고리별 사용량 통계 -->
+        <div style="margin-top:1.25rem">
+          <h4 style="font-size:0.85rem;font-weight:700;color:rgba(255,255,255,0.5);text-transform:uppercase;margin-bottom:0.6rem">📁 저장 용량 상세 분석</h4>
+          <div id="upgradeModalBreakdown" class="upgrade-breakdown-list"></div>
+        </div>
+
+        <!-- Pro 플랜 추천 카드 -->
+        <div class="pro-plan-card">
+          <div class="pro-plan-header">
+            <div>
+              <div class="pro-badge">추천 플랜</div>
+              <h3 style="font-size:1.15rem;font-weight:800;color:#fff;margin-top:0.25rem">MQnet Pro 플랜</h3>
+            </div>
+            <div class="pro-price">
+              <span class="price-val">₩2,900</span>
+              <span class="price-unit">/월</span>
+            </div>
+          </div>
+          <ul class="pro-feature-list">
+            <li>✨ <strong>10 GB 대용량 스토리지</strong> (무료 대비 20,000배 확장)</li>
+            <li>📸 사진 및 4K 동영상 원본 무제한 업로드</li>
+            <li>⚡ 실시간 텍스트/코드 인라인 편집 & 자동 백업</li>
+            <li>🔒 전용 암호화 개인 스토리지 보장</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding:1rem 1.5rem;display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(255,255,255,0.08);background:rgba(0,0,0,0.2)">
+        <button class="mkdir-btn-action cancel" id="resetFreeBtn" title="테스트용: 무료 플랜(500KB)으로 초기화" style="background:transparent;border:1px solid rgba(255,255,255,0.2);color:#94a3b8;padding:0.45rem 0.8rem;border-radius:6px;cursor:pointer">🔄 무료(500KB)로 재설정</button>
+        <div style="display:flex;gap:0.5rem">
+          <button class="mkdir-btn-action cancel" id="upgradeModalCancelBtn" style="background:rgba(255,255,255,0.08);border:none;color:#fff;padding:0.45rem 1rem;border-radius:6px;cursor:pointer">닫기</button>
+          <button class="mkdir-btn-action confirm" id="confirmUpgradeBtn" style="background:linear-gradient(135deg,#6366f1,#38bdf8);border:none;color:#fff;font-weight:700;padding:0.45rem 1.2rem;border-radius:6px;cursor:pointer">
+            ⚡ Pro 플랜 업그레이드 (테스트 적용)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./app.js?v=7.1"></script>
 </body>
 </html>

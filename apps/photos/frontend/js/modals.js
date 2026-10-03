@@ -944,3 +944,120 @@ export async function handleDeleteSelectedDuplicates(onNavigate, handlers) {
     }
   }
 }
+
+// ── 유료 전환 안내 모달 & 500KB 쿼터 위젯 ─────────────────────
+export function openUpgradeModal(quotaInfo = null, customMessage = '') {
+  const modal = $('upgradeModal');
+  if (!modal) return;
+
+  const quota = quotaInfo || state.quota || {
+    plan_tier: 'free',
+    plan_name: '무료 플랜 (Free)',
+    max_quota_formatted: '500 KB',
+    total_used_formatted: '0 B',
+    used_percentage: 0,
+    categories: []
+  };
+
+  const descEl = $('upgradeModalDesc');
+  const barEl = $('upgradeModalBarFill');
+  const usedTextEl = $('upgradeModalUsedText');
+  const breakdownEl = $('upgradeModalBreakdown');
+  const planBadgeEl = $('upgradeModalPlanBadge');
+
+  if (descEl) {
+    descEl.textContent = customMessage || `무료 플랜의 기본 저장 공간(${quota.max_quota_formatted})을 모두 사용했습니다. 계속해서 사진, 동영상, 문서를 안전하게 저장하려면 Pro 플랜으로 업그레이드하세요.`;
+  }
+  if (planBadgeEl) {
+    planBadgeEl.textContent = quota.plan_name;
+    planBadgeEl.className = `plan-badge-pill ${quota.plan_tier}`;
+  }
+  const pct = quota.used_percentage != null ? quota.used_percentage : (quota.usage_percentage || 0);
+  if (usedTextEl) {
+    usedTextEl.textContent = `${quota.total_used_formatted} / ${quota.max_quota_formatted} (${pct}%)`;
+  }
+  if (barEl) {
+    barEl.style.width = `${Math.min(100, pct)}%`;
+    barEl.style.background = pct >= 100
+      ? 'linear-gradient(90deg, #f59e0b, #ef4444)'
+      : 'linear-gradient(90deg, #6366f1, #38bdf8)';
+  }
+
+  const cats = quota.categories || quota.breakdown || [];
+  if (breakdownEl && cats.length) {
+    breakdownEl.innerHTML = cats
+      .filter(b => b.bytes > 0)
+      .map(b => `
+        <div class="quota-cat-row">
+          <span class="quota-cat-name">${b.label} <span class="quota-cat-count">(${b.count}개)</span></span>
+          <div class="quota-cat-bar-wrap">
+            <div class="quota-cat-bar-fill" style="width:${Math.min(100, Math.round(b.bytes / (quota.max_quota_bytes || 512000) * 100))}%;background:${b.color || '#38bdf8'}"></div>
+          </div>
+          <span class="quota-cat-size">${b.formatted}</span>
+        </div>
+      `).join('');
+  } else if (breakdownEl) {
+    breakdownEl.innerHTML = '<div style="color:rgba(255,255,255,0.4);font-size:0.8rem">저장된 파일이 없습니다.</div>';
+  }
+
+  modal.style.display = 'flex';
+  modal.classList.add('open');
+}
+
+export function closeUpgradeModal() {
+  const modal = $('upgradeModal');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.classList.remove('open');
+  }
+}
+
+export function renderStorageQuotaWidget(container, quota, onUpgradeClick) {
+  if (!container || !quota) return;
+
+  const pct = Math.min(100, quota.used_percentage != null ? quota.used_percentage : (quota.usage_percentage || 0));
+  const isFull = pct >= 100;
+  const isWarn = pct >= 80 && !isFull;
+
+  let barColor = 'linear-gradient(90deg, #38bdf8, #6366f1)';
+  if (isFull) barColor = 'linear-gradient(90deg, #f59e0b, #ef4444)';
+  else if (isWarn) barColor = 'linear-gradient(90deg, #38bdf8, #f59e0b)';
+
+  const planClass = quota.plan_tier === 'pro' ? 'badge-pro' : 'badge-free';
+  const cats = quota.categories || quota.breakdown || [];
+
+  container.innerHTML = `
+    <div class="quota-widget-wrapper" title="스토리지 상세 사용량을 확인하고 업그레이드합니다">
+      <div class="quota-info-row">
+        <span class="quota-plan-tag ${planClass}">${quota.plan_name}</span>
+        <span class="quota-usage-text">${quota.total_used_formatted} / ${quota.max_quota_formatted} (${pct}%)</span>
+        <button class="quota-upgrade-btn" id="photosHeaderUpgradeBtn" title="유료 플랜 업그레이드">⚡ Pro</button>
+      </div>
+      <div class="quota-mini-progress">
+        <div class="quota-mini-fill" style="width:${pct}%;background:${barColor}"></div>
+      </div>
+
+      <div class="quota-breakdown-tooltip">
+        <div class="tooltip-title">📊 카테고리별 저장 용량 분석</div>
+        ${cats.length && cats.some(b => b.bytes > 0) ? cats.filter(b => b.bytes > 0).map(b => `
+          <div class="tooltip-row">
+            <span>${b.label} (${b.count}개)</span>
+            <strong>${b.formatted}</strong>
+          </div>
+        `).join('') : '<div style="color:rgba(255,255,255,0.4);font-size:0.75rem">사용 중인 파일이 없습니다.</div>'}
+        <div class="tooltip-footer">
+          클릭하여 Pro 플랜으로 업그레이드하세요!
+        </div>
+      </div>
+    </div>
+  `;
+
+  container.querySelector('#photosHeaderUpgradeBtn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (onUpgradeClick) onUpgradeClick();
+  });
+
+  container.querySelector('.quota-widget-wrapper')?.addEventListener('click', () => {
+    if (onUpgradeClick) onUpgradeClick();
+  });
+}

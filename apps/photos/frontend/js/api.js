@@ -1,4 +1,5 @@
 import { state } from './state.js?v=6.0';
+import { MQnetAuth } from '/shared/ui/auth.js?v=1.0';
 
 /**
  * Determine API base path adaptively:
@@ -13,6 +14,32 @@ export function getApiBase() {
   return '/api';
 }
 
+export async function fetchQuota(userId = '') {
+  const base = getApiBase();
+  const p = new URLSearchParams({ t: Date.now() });
+  if (userId) p.append('user_id', userId);
+  const res = await fetch(`${base}/quota?${p.toString()}`, {
+    headers: MQnetAuth.getAuthHeader(),
+    cache: 'no-store'
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return await res.json();
+}
+
+export async function upgradePlan(planTier = 'pro', userId = '') {
+  const base = getApiBase();
+  const res = await fetch(`${base}/upgrade-plan`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...MQnetAuth.getAuthHeader()
+    },
+    body: JSON.stringify({ plan_tier: planTier, user_id: userId })
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return await res.json();
+}
+
 export async function fetchFolderData(folderPath) {
   const base = getApiBase();
   const url = `${base}/list?folder=${encodeURIComponent(folderPath)}&t=${Date.now()}`;
@@ -20,14 +47,20 @@ export async function fetchFolderData(folderPath) {
 
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      const res = await fetch(url, { cache: 'no-store' });
+      const res = await fetch(url, {
+        headers: MQnetAuth.getAuthHeader(),
+        cache: 'no-store'
+      });
       if (res.ok) {
         return await res.json();
       }
       // If /api/photos/list returned 404, fallback to /api/list
       if (base !== '/api') {
         const fbUrl = `/api/list?folder=${encodeURIComponent(folderPath)}&t=${Date.now()}`;
-        const fbRes = await fetch(fbUrl, { cache: 'no-store' });
+        const fbRes = await fetch(fbUrl, {
+          headers: MQnetAuth.getAuthHeader(),
+          cache: 'no-store'
+        });
         if (fbRes.ok) return await fbRes.json();
       }
       lastErr = new Error(`HTTP ${res.status}: 폴더 데이터를 불러올 수 없습니다.`);
@@ -73,6 +106,11 @@ export function uploadSingleFile(fileItem, mode, onProgress, targetFolder) {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `${base}/upload`);
 
+    const authHeaders = MQnetAuth.getAuthHeader();
+    for (const [k, v] of Object.entries(authHeaders)) {
+      xhr.setRequestHeader(k, v);
+    }
+
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable && onProgress) {
         const percent = Math.round((e.loaded / e.total) * 100);
@@ -85,19 +123,25 @@ export function uploadSingleFile(fileItem, mode, onProgress, targetFolder) {
         resolve(xhr.responseText);
       } else {
         let msg = `HTTP ${xhr.status}`;
+        let respData = {};
         try {
-          const res = JSON.parse(xhr.responseText);
-          if (typeof res.detail === 'string') {
-            msg = res.detail;
-          } else if (Array.isArray(res.detail)) {
-            msg = res.detail.map(d => d.msg || JSON.stringify(d)).join(', ');
-          } else if (res.detail) {
-            msg = JSON.stringify(res.detail);
-          } else if (res.message) {
-            msg = res.message;
+          respData = JSON.parse(xhr.responseText);
+          if (typeof respData.detail === 'string') {
+            msg = respData.detail;
+          } else if (respData.detail?.message) {
+            msg = respData.detail.message;
+          } else if (Array.isArray(respData.detail)) {
+            msg = respData.detail.map(d => d.msg || JSON.stringify(d)).join(', ');
+          } else if (respData.detail) {
+            msg = JSON.stringify(respData.detail);
+          } else if (respData.message) {
+            msg = respData.message;
           }
         } catch (e) {}
-        reject(new Error(msg));
+        const err = new Error(msg);
+        err.status = xhr.status;
+        err.detail = respData.detail;
+        reject(err);
       }
     };
 

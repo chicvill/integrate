@@ -23,6 +23,14 @@ import aiofiles.os
 
 from apps.photos.backend.config import settings
 from shared.core.responses import safe_file_response, build_safe_content_disposition
+from shared.utils.security import decode_access_token
+from apps.files.backend.services.quota_service import (
+    calculate_storage_quota,
+    check_upload_quota,
+    set_user_plan,
+    get_user_plan,
+    PLAN_QUOTAS,
+)
 
 try:
     from PIL import Image, ExifTags
@@ -45,7 +53,29 @@ THUMB_SIZE = (settings.THUMB_WIDTH, settings.THUMB_HEIGHT)
 THUMB_QUALITY = settings.THUMB_QUALITY
 
 
-def get_media_root() -> Path:
+def _extract_user_id(request: Optional[Request]) -> str:
+    if not request:
+        return ""
+    auth_header = request.headers.get("authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:].strip()
+        payload = decode_access_token(token, getattr(settings, "SECRET_KEY", "mqnet_photos_unified_secret_key_2026"), "HS256")
+        if payload and payload.get("sub"):
+            return str(payload.get("sub"))
+    param_uid = request.query_params.get("user_id", "")
+    if param_uid:
+        return param_uid
+    return ""
+
+
+def get_media_root(user_id: str = "") -> Path:
+    # 로그인 사용자 개인 격리 스토리지: /media/users/{user_id}/photos
+    if user_id and user_id not in ("public", "all"):
+        base_media = Path(os.getenv("MEDIA_STORAGE_PATH", os.getenv("MEDIA_PATH", "/media"))).resolve()
+        user_root = base_media / "users" / user_id / "photos"
+        user_root.mkdir(parents=True, exist_ok=True)
+        return user_root
+
     p = Path(settings.PHOTOS_DIR).resolve()
     p.mkdir(parents=True, exist_ok=True)
     return p
@@ -57,7 +87,7 @@ def get_cache_dir() -> Path:
     return p
 
 
-def resolve_nfc_nfd(abs_path: Path) -> Path:
+def resolve_nfc_nfd(abs_path: Path, media_root: Optional[Path] = None) -> Path:
     """Normalize and match Unicode filenames across macOS (NFD) and Windows/Linux (NFC)."""
     if abs_path.exists() or os.path.lexists(abs_path):
         return abs_path
@@ -72,10 +102,10 @@ def resolve_nfc_nfd(abs_path: Path) -> Path:
     if nfd_path.exists() or os.path.lexists(nfd_path):
         return nfd_path
 
-    media_root = get_media_root()
+    root = media_root or get_media_root()
     try:
-        rel = abs_path.relative_to(media_root)
-        curr = media_root
+        rel = abs_path.relative_to(root)
+        curr = root
         for part in rel.parts:
             part_nfc = unicodedata.normalize('NFC', part)
             matched = False
@@ -94,9 +124,9 @@ def resolve_nfc_nfd(abs_path: Path) -> Path:
     return abs_path
 
 
-def safe_path(relative: str) -> Optional[Path]:
+def safe_path(relative: str, user_id: str = "") -> Optional[Path]:
     """Safely resolve user path under the isolated media directory, preventing directory traversal."""
-    media_root = get_media_root()
+    media_root = get_media_root(user_id)
     raw = urllib.parse.unquote(relative or "")
     cleaned = raw.lstrip("/").lstrip("\\")
 
@@ -110,9 +140,23 @@ def safe_path(relative: str) -> Optional[Path]:
     abs_path = (media_root / cleaned).resolve()
     try:
         abs_path.relative_to(media_root)
-        return resolve_nfc_nfd(abs_path)
+        resolved = resolve_nfc_nfd(abs_path, media_root)
+        if resolved.exists():
+            return resolved
     except ValueError:
-        return None
+        pass
+
+    # Fallback to public root if user-specific file is not found (allows shared preview)
+    if user_id:
+        pub_root = get_media_root("")
+        pub_path = (pub_root / cleaned).resolve()
+        try:
+            pub_path.relative_to(pub_root)
+            return resolve_nfc_nfd(pub_path, pub_root)
+        except ValueError:
+            pass
+
+    return abs_path
 
 
 def is_valid_entry(name: str) -> bool:
@@ -185,9 +229,10 @@ def get_route_prefix(request: Optional[Request] = None) -> str:
 # ─── API: Album & File listing ────────────────────────────────────────────────
 @router.get("/albums")
 @router.get("/list")
-async def list_albums(folder: str = "", request: Request = None):
-    media_root = get_media_root()
-    abs_folder = safe_path(folder)
+async def list_albums(folder: str = "", request: Request = None, user_id: str = Query("")):
+    uid = _extract_user_id(request) or user_id
+    media_root = get_media_root(uid)
+    abs_folder = safe_path(folder, uid)
     if not abs_folder or not abs_folder.exists() or not abs_folder.is_dir():
         if not folder:
             media_root.mkdir(parents=True, exist_ok=True)
@@ -202,6 +247,7 @@ async def list_albums(folder: str = "", request: Request = None):
 
     prefix = get_route_prefix(request)
     folders, files = [], []
+    q_suffix = f"?user_id={uid}" if uid else ""
 
     for entry in entries:
         if not is_valid_entry(entry):
@@ -227,7 +273,7 @@ async def list_albums(folder: str = "", request: Request = None):
                 for se in sub_entries:
                     if Path(se).suffix.lower() in IMAGE_EXTENSIONS:
                         cover_rel = urllib.parse.quote(f"{rel}/{se}")
-                        cover_url = f"{prefix}/thumb/{cover_rel}"
+                        cover_url = f"{prefix}/thumb/{cover_rel}{q_suffix}"
                         break
             except Exception:
                 pass
@@ -245,8 +291,8 @@ async def list_albums(folder: str = "", request: Request = None):
                 "type": "image",
                 "name": entry,
                 "path": rel,
-                "url": f"{prefix}/raw/{quoted}",
-                "thumb_url": f"{prefix}/thumb/{quoted}",
+                "url": f"{prefix}/raw/{quoted}{q_suffix}",
+                "thumb_url": f"{prefix}/thumb/{quoted}{q_suffix}",
                 "mtime": mtime,
                 "size": size,
             })
@@ -255,8 +301,8 @@ async def list_albums(folder: str = "", request: Request = None):
                 "type": "video",
                 "name": entry,
                 "path": rel,
-                "url": f"{prefix}/raw/{quoted}",
-                "thumb_url": f"{prefix}/thumb/{quoted}",
+                "url": f"{prefix}/raw/{quoted}{q_suffix}",
+                "thumb_url": f"{prefix}/thumb/{quoted}{q_suffix}",
                 "mtime": mtime,
                 "size": size,
             })
@@ -266,8 +312,8 @@ async def list_albums(folder: str = "", request: Request = None):
                 "doc_category": get_doc_category(ext),
                 "name": entry,
                 "path": rel,
-                "url": f"{prefix}/raw/{quoted}",
-                "thumb_url": f"{prefix}/raw/{quoted}",
+                "url": f"{prefix}/raw/{quoted}{q_suffix}",
+                "thumb_url": f"{prefix}/raw/{quoted}{q_suffix}",
                 "mtime": mtime,
                 "size": size,
             })
@@ -285,8 +331,9 @@ async def list_albums(folder: str = "", request: Request = None):
 
 # ─── API: Thumbnail ──────────────────────────────────────────────────────────
 @router.get("/thumb/{file_path:path}")
-async def get_thumbnail(file_path: str):
-    abs_path = safe_path(urllib.parse.unquote(file_path))
+async def get_thumbnail(file_path: str, request: Request = None, user_id: str = Query("")):
+    uid = _extract_user_id(request) or user_id
+    abs_path = safe_path(urllib.parse.unquote(file_path), uid)
     if not abs_path or not abs_path.exists():
         raise HTTPException(status_code=404, detail="Thumbnail source file not found")
 
@@ -321,8 +368,9 @@ async def get_thumbnail(file_path: str):
 
 # ─── API: Raw File Streaming & Range Playback ────────────────────────────────
 @router.get("/raw/{file_path:path}")
-async def get_raw(file_path: str, request: Request):
-    abs_path = safe_path(urllib.parse.unquote(file_path))
+async def get_raw(file_path: str, request: Request, user_id: str = Query("")):
+    uid = _extract_user_id(request) or user_id
+    abs_path = safe_path(urllib.parse.unquote(file_path), uid)
     if not abs_path or not abs_path.exists() or not abs_path.is_file():
         raise HTTPException(status_code=404, detail="Media file not found")
 
@@ -386,13 +434,16 @@ async def get_raw(file_path: str, request: Request):
 # ─── API: Upload ─────────────────────────────────────────────────────────────
 @router.post("/upload")
 async def upload_files(request: Request):
+    user_id = _extract_user_id(request)
     form_data = await request.form()
     folder = str(form_data.get("folder") or "")
     mode = str(form_data.get("mode") or "copy")
     relative_path = str(form_data.get("relative_path") or "")
+    if not user_id and form_data.get("user_id"):
+        user_id = str(form_data.get("user_id"))
 
-    media_root = get_media_root()
-    abs_folder = safe_path(folder)
+    media_root = get_media_root(user_id)
+    abs_folder = safe_path(folder, user_id)
     if not abs_folder or not abs_folder.exists() or not abs_folder.is_dir():
         if not folder:
             media_root.mkdir(parents=True, exist_ok=True)
@@ -400,7 +451,7 @@ async def upload_files(request: Request):
         else:
             raise HTTPException(status_code=404, detail="Target folder not found")
 
-    # Extract all uploaded files flexibly from form_data (prioritize 'files', then fallback to others)
+    # Extract all uploaded files flexibly from form_data
     upload_list: List[UploadFile] = []
     for key in ("files", "file", "upload"):
         items = [item for item in form_data.getlist(key) if hasattr(item, "filename") and item.filename]
@@ -416,12 +467,32 @@ async def upload_files(request: Request):
                 upload_list.append(item)
 
     if not upload_list:
-        # Check if relative_path was just requesting to create a subfolder
         if relative_path and not any(relative_path.lower().endswith(ext) for ext in IMAGE_EXTENSIONS | VIDEO_EXTENSIONS | DOCUMENT_EXTENSIONS):
             target_dir = abs_folder / Path(relative_path)
             target_dir.mkdir(parents=True, exist_ok=True)
             return JSONResponse({"success": True, "folder": str(target_dir.relative_to(media_root)), "uploaded": [], "errors": []})
         raise HTTPException(status_code=400, detail="업로드할 파일 데이터가 없습니다.")
+
+    # ★ 500KB 스토리지 쿼터 사전 검증
+    file_bytes_map = {}
+    total_upload_size = 0
+    for file in upload_list:
+        content = await file.read()
+        file_bytes_map[file] = content
+        total_upload_size += len(content)
+
+    quota_check = check_upload_quota(abs_folder, total_upload_size, user_id or "demo_user")
+    if quota_check["exceeded"]:
+        return JSONResponse(
+            status_code=403,
+            content={
+                "detail": {
+                    "error": "QUOTA_EXCEEDED",
+                    "quota_info": quota_check,
+                    "message": quota_check["message"]
+                }
+            }
+        )
 
     saved_files = []
     errors = []
@@ -429,7 +500,6 @@ async def upload_files(request: Request):
     for file in upload_list:
         raw_name = file.filename or Path(relative_path).name or "upload.bin"
         raw_rel = relative_path.strip() if relative_path else raw_name
-        # Normalize Korean Unicode (NFC)
         raw_rel = unicodedata.normalize("NFC", raw_rel)
         rel_p = Path(raw_rel)
 
@@ -455,9 +525,9 @@ async def upload_files(request: Request):
             continue
 
         try:
+            content = file_bytes_map.get(file, b"")
             async with aiofiles.open(target_file_path, "wb") as out_file:
-                while chunk := await file.read(1024 * 1024):
-                    await out_file.write(chunk)
+                await out_file.write(content)
             saved_files.append(target_file_path.name)
         except Exception as e:
             errors.append(f"{file.filename}: {str(e)}")
@@ -475,9 +545,10 @@ async def upload_files(request: Request):
 
 # ─── API: Download Folder as ZIP ──────────────────────────────────────────────
 @router.get("/download_folder")
-async def download_folder_zip(folder: str = Query("")):
+async def download_folder_zip(folder: str = Query(""), request: Request = None, user_id: str = Query("")):
     import zipfile
-    abs_folder = safe_path(folder)
+    uid = _extract_user_id(request) or user_id
+    abs_folder = safe_path(folder, uid)
     if not abs_folder or not abs_folder.exists() or not abs_folder.is_dir():
         raise HTTPException(status_code=404, detail="Folder not found")
 
@@ -501,11 +572,32 @@ async def download_folder_zip(folder: str = Query("")):
     )
 
 
+# ─── API: Storage Quota & Plan Management (★ 500KB 무료 플랜 및 유료 전환) ──────
+@router.get("/quota")
+async def get_photos_quota(request: Request, user_id: str = Query("")):
+    uid = _extract_user_id(request) or user_id or "demo_user"
+    media_root = get_media_root(uid)
+    quota_info = calculate_storage_quota(media_root, uid)
+    return JSONResponse(quota_info)
+
+
+@router.post("/upgrade-plan")
+async def upgrade_photos_plan(request: Request):
+    data = await request.json()
+    plan_tier = data.get("plan_tier", "pro")
+    uid = _extract_user_id(request) or data.get("user_id") or "demo_user"
+    set_user_plan(uid, plan_tier)
+    media_root = get_media_root(uid)
+    quota_info = calculate_storage_quota(media_root, uid)
+    return JSONResponse({"success": True, "quota": quota_info})
+
+
 # ─── API: Storage Usage ──────────────────────────────────────────────────────
 @router.get("/storage")
-async def get_storage_info():
+async def get_storage_info(request: Request = None, user_id: str = Query("")):
     try:
-        media_root = get_media_root()
+        uid = _extract_user_id(request) or user_id
+        media_root = get_media_root(uid)
         total, used, free = shutil.disk_usage(media_root)
         percent = round((used / total) * 100, 1) if total > 0 else 0.0
         return JSONResponse({
@@ -549,8 +641,9 @@ def _is_subpath(child: Path, parent: Path) -> bool:
 
 
 @router.get("/folders")
-async def list_all_folders():
-    media_root = get_media_root()
+async def list_all_folders(request: Request = None, user_id: str = Query("")):
+    uid = _extract_user_id(request) or user_id
+    media_root = get_media_root(uid)
     folder_list = [{"name": "L:\\ (최상위 루트)", "path": "", "depth": 0}]
 
     def scan_folders(current_dir: Path, rel_base: str, depth: int):
@@ -575,21 +668,20 @@ async def list_all_folders():
 
 
 @router.post("/move")
-async def move_item(src: str = Form(...), dest_folder: str = Form("")):
-    abs_src = safe_path(src)
-    abs_dest = safe_path(dest_folder)
+async def move_item(src: str = Form(...), dest_folder: str = Form(""), request: Request = None):
+    uid = _extract_user_id(request)
+    abs_src = safe_path(src, uid)
+    abs_dest = safe_path(dest_folder, uid)
     if not abs_src or not abs_src.exists():
         raise HTTPException(status_code=404, detail="이동할 원본 파일을 찾을 수 없습니다.")
     if not abs_dest or not abs_dest.exists() or not abs_dest.is_dir():
         raise HTTPException(status_code=404, detail="대상 폴더를 찾을 수 없습니다.")
 
-    # Guard: Cannot move folder into itself or subfolder
     if abs_src == abs_dest:
         return JSONResponse({"success": True, "note": "이미 대상 폴더에 위치해 있습니다."})
     if abs_src.is_dir() and _is_subpath(abs_dest, abs_src):
         raise HTTPException(status_code=400, detail="폴더를 자기 자신 또는 하위 폴더로 이동할 수 없습니다.")
 
-    # Guard: If already in destination folder
     if abs_src.parent.resolve() == abs_dest.resolve():
         return JSONResponse({"success": True, "note": "이미 대상 폴더에 위치해 있습니다."})
 
@@ -607,14 +699,15 @@ async def move_item(src: str = Form(...), dest_folder: str = Form("")):
 
 
 @router.post("/batch_move")
-async def batch_move_items(paths: List[str] = Form(...), dest_folder: str = Form("")):
-    abs_dest = safe_path(dest_folder)
+async def batch_move_items(paths: List[str] = Form(...), dest_folder: str = Form(""), request: Request = None):
+    uid = _extract_user_id(request)
+    abs_dest = safe_path(dest_folder, uid)
     if not abs_dest or not abs_dest.exists() or not abs_dest.is_dir():
         raise HTTPException(status_code=404, detail="대상 폴더를 찾을 수 없습니다.")
 
     moved, errors = [], []
     for path in paths:
-        abs_src = safe_path(path)
+        abs_src = safe_path(path, uid)
         if not abs_src or not abs_src.exists():
             errors.append(f"{path}: 원본 항목을 찾을 수 없음")
             continue
@@ -646,9 +739,10 @@ async def batch_move_items(paths: List[str] = Form(...), dest_folder: str = Form
 
 
 @router.post("/copy")
-async def copy_item(src: str = Form(...), dest_folder: str = Form("")):
-    abs_src = safe_path(src)
-    abs_dest = safe_path(dest_folder)
+async def copy_item(src: str = Form(...), dest_folder: str = Form(""), request: Request = None):
+    uid = _extract_user_id(request)
+    abs_src = safe_path(src, uid)
+    abs_dest = safe_path(dest_folder, uid)
     if not abs_src or not abs_src.exists():
         raise HTTPException(status_code=404, detail="Source item not found")
     if not abs_dest or not abs_dest.exists() or not abs_dest.is_dir():
@@ -663,8 +757,9 @@ async def copy_item(src: str = Form(...), dest_folder: str = Form("")):
 
 
 @router.post("/delete")
-async def delete_item(path: str = Form(...)):
-    abs_path = safe_path(path)
+async def delete_item(path: str = Form(...), request: Request = None):
+    uid = _extract_user_id(request)
+    abs_path = safe_path(path, uid)
     if not abs_path or not abs_path.exists():
         return JSONResponse({"success": True, "note": "Already removed"})
 
@@ -681,10 +776,11 @@ async def delete_item(path: str = Form(...)):
 
 
 @router.post("/batch_delete")
-async def batch_delete_items(paths: List[str] = Form(...)):
+async def batch_delete_items(paths: List[str] = Form(...), request: Request = None):
+    uid = _extract_user_id(request)
     deleted, errors = [], []
     for path in paths:
-        abs_path = safe_path(path)
+        abs_path = safe_path(path, uid)
         if not abs_path or not abs_path.exists():
             deleted.append(path)
             continue
@@ -703,9 +799,10 @@ async def batch_delete_items(paths: List[str] = Form(...)):
 
 
 @router.post("/mkdir")
-async def create_directory(folder: str = Form(""), name: str = Form(...)):
-    media_root = get_media_root()
-    abs_folder = safe_path(folder)
+async def create_directory(folder: str = Form(""), name: str = Form(...), request: Request = None):
+    uid = _extract_user_id(request)
+    media_root = get_media_root(uid)
+    abs_folder = safe_path(folder, uid)
     if not abs_folder or not abs_folder.exists() or not abs_folder.is_dir():
         if not folder:
             media_root.mkdir(parents=True, exist_ok=True)
@@ -815,11 +912,13 @@ async def find_duplicates(
     include_videos: bool = Query(True, description="Include video duplicates"),
     limit: int = Query(150, description="Max duplicate groups"),
     request: Request = None,
+    user_id: str = Query(""),
 ):
+    uid = _extract_user_id(request) or user_id
     prefix = get_route_prefix(request)
-    media_root = get_media_root()
+    media_root = get_media_root(uid)
     if folder:
-        scan_dir = safe_path(folder)
+        scan_dir = safe_path(folder, uid)
         if not scan_dir or not scan_dir.exists() or not scan_dir.is_dir():
             raise HTTPException(status_code=404, detail="지정한 폴더를 찾을 수 없습니다.")
     else:

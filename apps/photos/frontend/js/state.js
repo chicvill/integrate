@@ -35,7 +35,9 @@ export const state = {
   lastSelectedIndex: -1,
   displayItems: [],
   isDraggingItems: false,
-  draggedPaths: []
+  draggedPaths: [],
+  currentUser: '',
+  quota: null
 };
 
 export function saveFavorites() {

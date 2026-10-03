@@ -1,6 +1,6 @@
-import { $, state, formatBytes, saveFavorites } from './js/state.js?v=7.0';
-import { fetchFolderData, uploadSingleFile, deleteItemApi, fetchStorageInfo, createFolderApi, batchMoveApi } from './js/api.js?v=7.0';
-import { renderBreadcrumb, renderSidebarStats, renderGallery, copyLinkToClipboard, shareItem, cleanupDragState } from './js/ui.js?v=7.0';
+import { $, state, formatBytes, saveFavorites } from './js/state.js?v=7.1';
+import { fetchFolderData, uploadSingleFile, deleteItemApi, fetchStorageInfo, createFolderApi, batchMoveApi, fetchQuota, upgradePlan } from './js/api.js?v=7.1';
+import { renderBreadcrumb, renderSidebarStats, renderGallery, copyLinkToClipboard, shareItem, cleanupDragState } from './js/ui.js?v=7.1';
 import {
   openLightbox, closeLightbox, renderLightboxItem, rotateLightboxImage, toggleSlideshow,
   openMkdirModal, closeMkdirModal, handleCreateFolder,
@@ -8,8 +8,22 @@ import {
   enableSelectMode, toggleSelectMode, toggleItemSelection, updateSelectionUI, handleBatchShare, handleBatchDelete,
   openMoveModal, closeMoveModal, handleConfirmMove, handleMoveModalNewFolder, showToast,
   openDuplicatesModal, closeDuplicatesModal, handleScanDuplicates, handleDeleteSelectedDuplicates, autoSelectDuplicateCopies, deselectAllDuplicates,
-  closeDuplicatesComparison
-} from './js/modals.js?v=7.0';
+  closeDuplicatesComparison, openUpgradeModal, closeUpgradeModal, renderStorageQuotaWidget
+} from './js/modals.js?v=7.1';
+import { MQnetAuth } from '/shared/ui/auth.js?v=1.0';
+
+// ── 500KB 스토리지 쿼터 위젯 갱신 ─────────────────────────────
+async function refreshQuota() {
+  const badgeEl = $('storageInfoBadge');
+  if (!badgeEl) return;
+  try {
+    const quota = await fetchQuota(state.currentUser || '');
+    state.quota = quota;
+    renderStorageQuotaWidget(badgeEl, quota, () => openUpgradeModal(quota));
+  } catch (err) {
+    console.warn('Photos quota fetch error:', err);
+  }
+}
 
 // Handlers object passed to card rendering
 const cardHandlers = {
@@ -288,6 +302,13 @@ async function uploadFiles(fileList, targetFolder) {
           break;
         } catch (err) {
           console.warn(`Upload attempt ${attempt} failed for ${fileName}:`, err);
+          if (err.detail?.error === 'QUOTA_EXCEEDED' || err.status === 403) {
+            if (uploadModal) uploadModal.classList.add('hidden');
+            const quotaInfo = err.detail?.quota_info || state.quota;
+            openUpgradeModal(quotaInfo, err.detail?.message);
+            failCount++;
+            return;
+          }
           if (attempt < 3) {
             if (uploadStatusDetail) uploadStatusDetail.textContent = `네트워크 재연동 시도 중… (${attempt}/3회)`;
             await new Promise(r => setTimeout(r, 1000));
@@ -319,8 +340,9 @@ async function uploadFiles(fileList, targetFolder) {
   if (uploadProgressFill) uploadProgressFill.style.width = '100%';
 
   const delayTime = (state.currentUploadMode === 'overwrite') ? 2500 : 1500;
-  setTimeout(() => {
+  setTimeout(async () => {
     if (uploadModal) uploadModal.classList.add('hidden');
+    await refreshQuota();
     navigateTo(state.currentFolder);
   }, delayTime);
 }
@@ -951,5 +973,56 @@ function initEvents() {
 }
 
 // ── App Start ─────────────────────────────────────────────────
+// 🔑 MQnet 통합 인증 초기화 및 배지 부착
+MQnetAuth.init({
+  appId: 'photos',
+  onAuthChange: (user) => {
+    state.currentUser = user ? user.id : 'demo_user';
+    navigateTo('');
+    refreshQuota();
+  }
+});
+MQnetAuth.renderBadge('userAuthBadge');
+
+const u = MQnetAuth.getUser();
+if (u) {
+  state.currentUser = u.id;
+}
+
+// 💎 업그레이드 모달 이벤트 연결
+$('confirmUpgradeBtn')?.addEventListener('click', async () => {
+  const btn = $('confirmUpgradeBtn');
+  if (btn) btn.disabled = true;
+  try {
+    await upgradePlan('pro', state.currentUser || '');
+    closeUpgradeModal();
+    showToast('🎉 축하합니다! MQnet Pro 플랜(10GB)으로 업그레이드되었습니다.', '💎', 4000);
+    await refreshQuota();
+  } catch (err) {
+    alert(`업그레이드 실패: ${err.message}`);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+});
+
+$('resetFreeBtn')?.addEventListener('click', async () => {
+  const btn = $('resetFreeBtn');
+  if (btn) btn.disabled = true;
+  try {
+    await upgradePlan('free', state.currentUser || '');
+    closeUpgradeModal();
+    showToast('무료 플랜(500KB 한도)으로 재설정되었습니다.', '🔄', 3500);
+    await refreshQuota();
+  } catch (err) {
+    alert(`재설정 실패: ${err.message}`);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+});
+
+$('upgradeModalCloseBtn')?.addEventListener('click', closeUpgradeModal);
+$('upgradeModalCancelBtn')?.addEventListener('click', closeUpgradeModal);
+
 initEvents();
 navigateTo('');
+refreshQuota();
