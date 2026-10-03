@@ -13,7 +13,7 @@ from fastapi import HTTPException
 from shared.auth.models import User
 from shared.auth.schemas import (
     UserRegisterRequest, UserLoginRequest, OAuthLoginRequest,
-    TokenResponse, UserResponse
+    TokenResponse, UserResponse, UserUpdateRequest,
 )
 from shared.utils.security import hash_password, verify_password, create_access_token
 
