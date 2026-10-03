@@ -31,18 +31,30 @@ CATEGORY_MAP = {
 EXCLUDE_NAMES = {"$recycle.bin", "system volume information", ".git", ".vscode", "__pycache__", ".DS_Store"}
 
 
-def get_storage_root() -> Path:
+def get_storage_root(scope: str = "") -> Path:
+    base_media = Path(os.getenv("MEDIA_STORAGE_PATH", os.getenv("MEDIA_PATH", "/media"))).resolve()
+    if scope in ("all", "media", "root") and base_media.exists():
+        return base_media
+    elif scope in ("photos", "gallery"):
+        p = base_media / "photos"
+        p.mkdir(parents=True, exist_ok=True)
+        return p
+    elif scope in ("downloads", "download"):
+        p = base_media / "downloads"
+        p.mkdir(parents=True, exist_ok=True)
+        return p
+
     p = Path(settings.STORAGE_ROOT).resolve()
     p.mkdir(parents=True, exist_ok=True)
     return p
 
 
-def safe_resolve_path(rel_path: str = "") -> Path:
+def safe_resolve_path(rel_path: str = "", scope: str = "") -> Path:
     """
     상대 경로를 안전하게 절대 경로로 변환.
     Directory Traversal (상위 디렉터리 탈출 공격) 방지.
     """
-    root = get_storage_root()
+    root = get_storage_root(scope)
     clean_rel = rel_path.strip().replace("\\", "/").lstrip("/")
     
     # NFC/NFD 정규화
@@ -106,12 +118,12 @@ def build_breadcrumbs(rel_path: str) -> List[BreadcrumbItem]:
     return crumbs
 
 
-def list_directory_sync(rel_path: str = "") -> FolderListResponse:
-    target = safe_resolve_path(rel_path)
+def list_directory_sync(rel_path: str = "", scope: str = "") -> FolderListResponse:
+    target = safe_resolve_path(rel_path, scope)
     if not target.exists() or not target.is_dir():
         raise HTTPException(status_code=404, detail="지정한 폴더를 찾을 수 없습니다.")
 
-    root = get_storage_root()
+    root = get_storage_root(scope)
     norm_rel = str(target.relative_to(root)).replace("\\", "/")
     if norm_rel == ".":
         norm_rel = ""
@@ -189,9 +201,9 @@ def list_directory_sync(rel_path: str = "") -> FolderListResponse:
     )
 
 
-def search_files_sync(query: str, rel_path: str = "") -> List[FileItem]:
-    target = safe_resolve_path(rel_path)
-    root = get_storage_root()
+def search_files_sync(query: str, rel_path: str = "", scope: str = "") -> List[FileItem]:
+    target = safe_resolve_path(rel_path, scope)
+    root = get_storage_root(scope)
     q = query.lower().strip()
     if not q:
         return []
@@ -236,8 +248,8 @@ def search_files_sync(query: str, rel_path: str = "") -> List[FileItem]:
     return results
 
 
-def read_text_preview_sync(rel_path: str) -> Dict[str, Any]:
-    target = safe_resolve_path(rel_path)
+def read_text_preview_sync(rel_path: str, scope: str = "") -> Dict[str, Any]:
+    target = safe_resolve_path(rel_path, scope)
     if not target.is_file():
         raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
 
@@ -262,3 +274,23 @@ def read_text_preview_sync(rel_path: str) -> Dict[str, Any]:
         "content": content,
         "extension": target.suffix.lower()
     }
+
+
+def save_text_file_sync(rel_path: str, content: str, scope: str = "") -> Dict[str, Any]:
+    target = safe_resolve_path(rel_path, scope)
+    if not target.is_file():
+        raise HTTPException(status_code=404, detail="편집할 파일을 찾을 수 없습니다.")
+
+    try:
+        target.write_text(content, encoding="utf-8")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"파일 저장 실패: {str(e)}")
+
+    stat = target.stat()
+    return {
+        "name": target.name,
+        "path": rel_path,
+        "size_formatted": format_size(stat.st_size),
+        "modified_formatted": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M")
+    }
+

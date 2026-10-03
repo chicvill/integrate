@@ -5,15 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="google" content="notranslate">
   <title>MQnet Files Hub — 통합 파일 스토리지 관리자</title>
-  <meta name="description" content="MQnet 통합 파일 스토리지 허브 — 폴더 탐색, 이미지/동영상/문서 미리보기, 파일 업로드/다운로드/삭제">
+  <meta name="description" content="MQnet 통합 파일 스토리지 허브 — 폴더 탐색, 텍스트/코드 직접 편집, 작은 아이콘 뷰, 다중 파일 삭제 및 관리">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Pretendard:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Pretendard:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
 
   <!-- CSS 모듈 직접 로드 + 버전 태그 (가이드 준수: @import 중첩 금지) -->
-  <link rel="stylesheet" href="./css/variables.css?v=1.0">
-  <link rel="stylesheet" href="./css/layout.css?v=1.0">
-  <link rel="stylesheet" href="./css/components.css?v=1.0">
-  <link rel="stylesheet" href="./style.css?v=1.0">
+  <link rel="stylesheet" href="./css/variables.css?v=1.1">
+  <link rel="stylesheet" href="./css/layout.css?v=1.1">
+  <link rel="stylesheet" href="./css/components.css?v=1.1">
+  <link rel="stylesheet" href="./style.css?v=1.1">
 </head>
 <body>
 <div id="app">
@@ -28,13 +28,25 @@
       </div>
     </a>
 
+    <!-- 스토리지 루트 위치 선택 드롭다운 -->
+    <div class="scope-selector-wrap" title="탐색할 스토리지 루트 위치를 선택합니다">
+      <span style="font-size:0.8rem;color:var(--text-muted);font-weight:600">위치:</span>
+      <select id="scopeSelect" class="scope-select">
+        <option value="files" selected>📁 files 허브 (/media/files)</option>
+        <option value="all">🗄️ /media 전체 볼륨</option>
+        <option value="photos">🖼️ photos 갤러리 (/media/photos)</option>
+        <option value="downloads">📥 downloads (/media/downloads)</option>
+      </select>
+    </div>
+
+    <!-- 전역 검색창 -->
     <div class="search-wrapper">
       <span class="search-icon">🔍</span>
       <input
         id="globalSearchInput"
         type="text"
         class="search-input"
-        placeholder="파일 이름으로 검색..."
+        placeholder="현재 위치에서 파일 검색..."
         autocomplete="off"
         spellcheck="false"
       >
@@ -52,18 +64,29 @@
   <!-- ── Toolbar / Breadcrumbs ────────────────────────────── -->
   <div class="app-toolbar">
     <nav class="breadcrumbs" id="breadcrumbsNav" aria-label="경로 탐색">
-      <span class="breadcrumb-item active">🏠 홈</span>
+      <span class="breadcrumb-item active">📁 /media/files (루트)</span>
     </nav>
 
+    <!-- ★ 선택 작업 툴바 (파일/폴더 선택 시 노출) -->
+    <div class="selection-toolbar hidden" id="selectionToolbar">
+      <span class="selection-badge" id="selectionBadge">0개 선택됨</span>
+      <button class="btn btn-secondary btn-sm" id="selRenameBtn" title="선택한 항목 이름 변경">✏️ 이름 변경</button>
+      <button class="btn btn-primary btn-sm" id="selEditBtn" title="선택한 텍스트/코드 파일 내용 직접 편집">📝 내용 편집</button>
+      <button class="btn btn-secondary btn-sm" id="selPreviewBtn" title="미리보기">👁 미리보기</button>
+      <button class="btn btn-secondary btn-sm" id="selDownloadBtn" title="선택한 파일 다운로드">⬇ 다운로드</button>
+      <button class="btn btn-danger btn-sm" id="selDeleteBtn" title="선택한 항목 삭제">🗑 삭제</button>
+      <button class="btn btn-ghost btn-sm" id="selClearBtn" title="선택 해제">✕ 취소</button>
+    </div>
+
+    <!-- 일반 도구 모음 -->
     <div class="toolbar-actions">
-      <span class="hidden" id="selectionBadge" style="font-size:0.82rem;color:var(--accent-secondary);font-weight:700;padding:0.25rem 0.6rem;background:rgba(56,189,248,0.1);border-radius:var(--radius-full);border:1px solid rgba(56,189,248,0.2)"></span>
-      <button class="btn btn-danger hidden" id="deleteSelectedBtn" title="선택 항목 삭제">🗑 삭제</button>
+      <button class="btn btn-secondary" id="selectAllBtn" title="전체 선택 / 해제">✓ 전체 선택</button>
       <button class="btn btn-secondary" id="mkdirBtn" title="새 폴더 만들기">📁 새 폴더</button>
       <button class="btn btn-secondary" id="toolbarUploadBtn" title="파일 업로드">⬆ 파일 업로드</button>
       <button class="btn btn-secondary" id="toolbarUploadFolderBtn" title="폴더 업로드">📂 폴더 업로드</button>
       <div style="width:1px;height:24px;background:var(--border-subtle)"></div>
-      <button class="btn-icon active" id="viewGridBtn" title="그리드 보기">⊞</button>
-      <button class="btn-icon" id="viewListBtn" title="목록 보기">☰</button>
+      <button class="btn-icon active" id="viewGridBtn" title="작은 아이콘 보기">⊞</button>
+      <button class="btn-icon" id="viewListBtn" title="상세 목록 보기">☰</button>
     </div>
   </div>
 
@@ -89,7 +112,7 @@
       <div class="folder-grid" id="folderGridContainer"></div>
     </section>
 
-    <!-- 파일 섹션 -->
+    <!-- 파일 섹션 (★ 작은 아이콘 그리드 렌더링) -->
     <section id="fileSection">
       <div class="section-header">
         <div class="section-title">📄 파일</div>
@@ -102,14 +125,14 @@
   <!-- ── Status Bar ────────────────────────────────────────── -->
   <footer class="app-statusbar">
     <span id="statusBarText" style="color:var(--text-dim)">로딩 중...</span>
-    <span style="color:var(--text-dim)">MQnet Files Hub v1.0</span>
+    <span style="color:var(--text-dim)">MQnet Files Hub v1.1</span>
   </footer>
 
   <!-- ── Drag & Drop Overlay ──────────────────────────────── -->
   <div class="dropzone-overlay" id="dropzoneOverlay">
     <div class="dropzone-icon">📂</div>
     <p style="font-size:1.4rem;font-weight:700;color:#fff">여기에 파일을 놓으세요</p>
-    <p style="color:var(--text-muted);margin-top:0.5rem">자동으로 현재 폴더에 업로드됩니다</p>
+    <p style="color:var(--text-muted);margin-top:0.5rem">현재 선택된 폴더에 즉시 업로드됩니다</p>
   </div>
 
   <!-- ── 숨겨진 파일 입력 ──────────────────────────────────── -->
@@ -119,6 +142,35 @@
   <!-- ════════════════════════════════════════════════════════ -->
   <!-- Modals                                                    -->
   <!-- ════════════════════════════════════════════════════════ -->
+
+  <!-- ★ 텍스트 / 코드 파일 직접 편집 모달 -->
+  <div class="modal-backdrop" id="textEditModal" role="dialog" aria-modal="true">
+    <div class="modal-box large" style="max-width:920px;height:82vh;display:flex;flex-direction:column">
+      <div class="modal-header">
+        <div style="min-width:0">
+          <h2 class="modal-title" id="textEditTitle">📝 파일 내용 편집</h2>
+          <div id="textEditPath" style="font-size:0.75rem;color:var(--text-dim);font-family:monospace;margin-top:0.2rem" class="truncate"></div>
+        </div>
+        <button class="modal-close-btn" data-close-modal="textEditModal" title="닫기 (ESC)">✕</button>
+      </div>
+      <div class="modal-body" style="flex:1;display:flex;flex-direction:column;padding:0.75rem 1.25rem">
+        <textarea
+          id="textEditArea"
+          class="text-editor-textarea"
+          placeholder="파일 내용..."
+          spellcheck="false"
+          autocomplete="off"
+        ></textarea>
+      </div>
+      <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:0.78rem;color:var(--text-muted)">UTF-8 인코딩 지원</span>
+        <div style="display:flex;gap:0.5rem">
+          <button class="btn btn-secondary" data-close-modal="textEditModal">취소</button>
+          <button class="btn btn-primary" id="textEditSaveBtn">💾 저장하기</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- 파일 미리보기 모달 -->
   <div class="modal-backdrop" id="previewModal" role="dialog" aria-modal="true">
@@ -144,7 +196,7 @@
       <div class="modal-body">
         <div class="form-group">
           <label class="form-label" for="mkdirInput">폴더 이름</label>
-          <input id="mkdirInput" class="form-input" type="text" placeholder="새 폴더" autocomplete="off">
+          <input id="mkdirInput" class="form-input" type="text" placeholder="새 폴더 이름 입력" autocomplete="off">
         </div>
       </div>
       <div class="modal-footer">
@@ -197,6 +249,6 @@
 </div>
 
 <!-- 메인 스크립트 (모듈, 버전 태그 필수) -->
-<script type="module" src="./app.js?v=1.0"></script>
+<script type="module" src="./app.js?v=1.1"></script>
 </body>
 </html>

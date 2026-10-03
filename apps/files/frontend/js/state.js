@@ -16,7 +16,10 @@ export const state = {
   // 선택 항목 (다중 선택)
   selectedPaths: new Set(),
 
-  // 뷰 모드: 'grid' | 'list'
+  // 현재 스토리지 범위: 'files' (기본 /media/files), 'all' (전체 /media), 'photos' (/media/photos), 'downloads' (/media/downloads)
+  scope: 'files',
+
+  // 뷰 모드: 'grid' (작은 아이콘 그리드) | 'list' (테이블)
   viewMode: 'grid',
 
   // 파일 타입 필터: 'all' | 'image' | 'video' | 'audio' | 'document' | 'code' | 'archive'

@@ -20,13 +20,15 @@ from apps.files.backend.schemas import (
     RenameRequest,
     DeleteRequest,
     SearchResponse,
-    OperationResponse
+    OperationResponse,
+    SaveTextRequest
 )
 from apps.files.backend.services.files_service import (
     safe_resolve_path,
     list_directory_sync,
     search_files_sync,
     read_text_preview_sync,
+    save_text_file_sync,
     get_storage_root,
     format_size
 )
@@ -50,23 +52,33 @@ def get_route_prefix(request: Optional[Request] = None) -> str:
 
 # ─── 디렉토리 및 파일 목록 조회 ───
 @router.get("/list", response_model=FolderListResponse)
-async def list_files(folder: str = Query("", description="상대 폴더 경로")):
+async def list_files(
+    folder: str = Query("", description="상대 폴더 경로"),
+    scope: str = Query("", description="스토리지 범위 (files, all, photos, downloads)")
+):
     loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(None, list_directory_sync, folder)
+    return await loop.run_in_executor(None, list_directory_sync, folder, scope)
 
 
 # ─── 파일 검색 ───
 @router.get("/search", response_model=SearchResponse)
-async def search_files(q: str = Query(..., min_length=1), folder: str = Query("")):
+async def search_files(
+    q: str = Query(..., min_length=1),
+    folder: str = Query(""),
+    scope: str = Query("")
+):
     loop = asyncio.get_running_loop()
-    results = await loop.run_in_executor(None, search_files_sync, q, folder)
+    results = await loop.run_in_executor(None, search_files_sync, q, folder, scope)
     return SearchResponse(query=q, results=results, count=len(results))
 
 
 # ─── 파일 다운로드 (안전한 RFC 5987 한글 파일명 헤더) ───
 @router.get("/download")
-async def download_file(path: str = Query(..., description="파일 상대 경로")):
-    target = safe_resolve_path(path)
+async def download_file(
+    path: str = Query(..., description="파일 상대 경로"),
+    scope: str = Query("")
+):
+    target = safe_resolve_path(path, scope)
     if not target.is_file():
         raise HTTPException(status_code=404, detail="다운로드할 파일을 찾을 수 없습니다.")
 
@@ -75,8 +87,11 @@ async def download_file(path: str = Query(..., description="파일 상대 경로
 
 # ─── 파일 인라인 스트리밍 / 미리보기 (이미지, 영상, 오디오, PDF) ───
 @router.get("/raw")
-async def preview_raw_file(path: str = Query(..., description="파일 상대 경로")):
-    target = safe_resolve_path(path)
+async def preview_raw_file(
+    path: str = Query(..., description="파일 상대 경로"),
+    scope: str = Query("")
+):
+    target = safe_resolve_path(path, scope)
     if not target.is_file():
         raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
 
@@ -85,18 +100,37 @@ async def preview_raw_file(path: str = Query(..., description="파일 상대 경
 
 # ─── 텍스트 / 코드 파일 내용 미리보기 ───
 @router.get("/text-preview")
-async def preview_text_file(path: str = Query(...)):
+async def preview_text_file(
+    path: str = Query(...),
+    scope: str = Query("")
+):
     loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(None, read_text_preview_sync, path)
+    return await loop.run_in_executor(None, read_text_preview_sync, path, scope)
+
+
+# ─── 텍스트 / 코드 파일 내용 저장 / 편집 ───
+@router.post("/save-text", response_model=OperationResponse)
+async def save_text_file(
+    req: SaveTextRequest,
+    scope: str = Query("")
+):
+    loop = asyncio.get_running_loop()
+    result = await loop.run_in_executor(None, save_text_file_sync, req.path, req.content, scope)
+    return OperationResponse(
+        success=True,
+        message=f"'{result['name']}' 파일이 성공적으로 저장되었습니다.",
+        data=result
+    )
 
 
 # ─── 파일 업로드 (다중 파일 지원) ───
 @router.post("/upload", response_model=OperationResponse)
 async def upload_files(
     folder: str = Form(""),
+    scope: str = Form(""),
     files: List[UploadFile] = File(...)
 ):
-    target_dir = safe_resolve_path(folder)
+    target_dir = safe_resolve_path(folder, scope)
     if not target_dir.is_dir():
         raise HTTPException(status_code=400, detail="업로드 대상 폴더가 유효하지 않습니다.")
 
@@ -129,8 +163,8 @@ async def upload_files(
 
 # ─── 새 폴더 생성 ───
 @router.post("/mkdir", response_model=OperationResponse)
-async def create_folder(req: MkdirRequest):
-    base_dir = safe_resolve_path(req.path)
+async def create_folder(req: MkdirRequest, scope: str = Query("")):
+    base_dir = safe_resolve_path(req.path, scope)
     folder_name = req.folder_name.strip()
     
     if not folder_name or "/" in folder_name or "\\" in folder_name:
@@ -150,8 +184,8 @@ async def create_folder(req: MkdirRequest):
 
 # ─── 이름 변경 (파일 또는 폴더) ───
 @router.post("/rename", response_model=OperationResponse)
-async def rename_item(req: RenameRequest):
-    target = safe_resolve_path(req.path)
+async def rename_item(req: RenameRequest, scope: str = Query("")):
+    target = safe_resolve_path(req.path, scope)
     if not target.exists():
         raise HTTPException(status_code=404, detail="이름을 변경할 항목을 찾을 수 없습니다.")
 
@@ -173,17 +207,18 @@ async def rename_item(req: RenameRequest):
 
 # ─── 삭제 (단일 및 다중 삭제 지원) ───
 @router.post("/delete", response_model=OperationResponse)
-async def delete_items(req: DeleteRequest):
+async def delete_items(req: DeleteRequest, scope: str = Query("")):
     if not req.paths:
         raise HTTPException(status_code=400, detail="삭제할 항목이 지정되지 않았습니다.")
 
     deleted = []
     errors = []
+    root = get_storage_root(scope)
 
     for rel_p in req.paths:
         try:
-            target = safe_resolve_path(rel_p)
-            if target == get_storage_root():
+            target = safe_resolve_path(rel_p, scope)
+            if target == root:
                 errors.append("루트 디렉토리는 삭제할 수 없습니다.")
                 continue
 

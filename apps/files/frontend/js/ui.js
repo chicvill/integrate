@@ -1,66 +1,84 @@
 // apps/files/frontend/js/ui.js
-// MQnet Files Hub - DOM 렌더링 및 UI 유틸리티
+// MQnet Files Hub - UI 렌더링 및 인터랙션 모듈
+import { state } from './state.js?v=1.1';
+import { getRawUrl, getDownloadUrl } from './api.js?v=1.1';
 
-import { state } from './state.js?v=1.0';
-import { getRawUrl } from './api.js?v=1.0';
-
-// 파일 카테고리별 아이콘 매핑
-const CATEGORY_ICONS = {
-  folder:   '📁',
-  image:    '🖼️',
-  video:    '🎬',
-  audio:    '🎵',
+// 카테고리별 아이콘 매핑
+export const CATEGORY_ICONS = {
+  folder: '📁',
+  image: '🖼️',
+  video: '🎬',
+  audio: '🎵',
   document: '📄',
-  code:     '💻',
-  archive:  '🗜️',
-  general:  '📎',
+  code: '💻',
+  archive: '🗜️',
+  general: '📄'
 };
 
-const CATEGORY_LABELS = {
-  folder:   '폴더',
-  image:    '이미지',
-  video:    '영상',
-  audio:    '음악',
+export const CATEGORY_LABELS = {
+  all: '전체',
+  folder: '폴더',
+  image: '이미지',
+  video: '동영상',
+  audio: '오디오',
   document: '문서',
-  code:     '코드',
-  archive:  '압축',
-  general:  '파일',
+  code: '코드',
+  archive: '압축',
+  general: '파일'
 };
 
-export function getCategoryIcon(category) {
-  return CATEGORY_ICONS[category] || '📎';
+export function getCategoryIcon(cat) {
+  return CATEGORY_ICONS[cat] || '📄';
 }
 
-// ── 로딩 상태 표시 ─────────────────────────────────────────
-export function showLoading(container, message = '불러오는 중...') {
+// ── 로딩 스피너 ──────────────────────────────────────────
+export function showLoading(container, text = '로딩 중...') {
   container.innerHTML = `
     <div class="empty-state">
-      <div class="empty-icon" style="animation: spin 1s linear infinite; display:inline-block;">⚙️</div>
-      <p class="empty-text">${message}</p>
+      <div class="loading-spinner"></div>
+      ${text ? `<p style="margin-top:0.75rem;color:var(--text-muted);font-size:0.875rem">${escHtml(text)}</p>` : ''}
     </div>`;
 }
 
-// ── 빈 상태 / 에러 표시 ────────────────────────────────────
-export function showEmpty(container, icon, title, sub = '') {
+// ── 빈 상태 ──────────────────────────────────────────────
+export function showEmpty(container, icon = '📂', title = '항목이 없습니다.', subtitle = '') {
   container.innerHTML = `
     <div class="empty-state fade-in">
       <div class="empty-icon">${icon}</div>
-      <p class="empty-text">${title}</p>
-      ${sub ? `<p class="empty-sub">${sub}</p>` : ''}
+      <div class="empty-title">${escHtml(title)}</div>
+      ${subtitle ? `<div class="empty-sub">${escHtml(subtitle)}</div>` : ''}
     </div>`;
 }
 
-// ── 브레드크럼 렌더링 ─────────────────────────────────────
+// ── 브레드크럼 네비게이션 렌더링 ─────────────────────────
 export function renderBreadcrumbs(container, breadcrumbs, onNavigate) {
-  container.innerHTML = breadcrumbs.map((crumb, i) => {
-    const isLast = i === breadcrumbs.length - 1;
+  const scopeLabels = {
+    files: '📁 /media/files (루트)',
+    all: '🗄️ /media (통합 볼륨)',
+    photos: '🖼️ /media/photos (갤러리)',
+    downloads: '📥 /media/downloads (다운로드)'
+  };
+  const rootLabel = scopeLabels[state.scope] || '📁 /media/files';
+
+  if (!breadcrumbs || !breadcrumbs.length) {
+    container.innerHTML = `<span class="breadcrumb-item active">${rootLabel}</span>`;
+    return;
+  }
+
+  const items = breadcrumbs.map((crumb, idx) => {
+    const isLast = idx === breadcrumbs.length - 1;
+    const isFirst = idx === 0;
+    const label = isFirst ? rootLabel : escHtml(crumb.name);
+
     if (isLast) {
-      return `<span class="breadcrumb-item active">📂 ${escHtml(crumb.name)}</span>`;
+      return `<span class="breadcrumb-item active" title="${escHtml(crumb.path)}">${label}</span>`;
     }
     return `
-      <span class="breadcrumb-item" data-path="${escHtml(crumb.path)}">🏠</span>
+      <span class="breadcrumb-item" data-path="${escHtml(crumb.path)}" title="${escHtml(crumb.path)}">${label}</span>
       <span class="breadcrumb-sep">›</span>`;
   }).join('');
+
+  container.innerHTML = items;
 
   // 클릭 이벤트
   container.querySelectorAll('.breadcrumb-item:not(.active)').forEach(el => {
@@ -69,76 +87,124 @@ export function renderBreadcrumbs(container, breadcrumbs, onNavigate) {
 }
 
 // ── 폴더 그리드 렌더링 ────────────────────────────────────
-export function renderFolderGrid(container, folders, onNavigate, onContextMenu) {
+export function renderFolderGrid(container, folders, onNavigate, onToggleSelect, onContextMenu) {
   if (!folders.length) {
     container.innerHTML = '';
     return;
   }
-  container.innerHTML = folders.map(f => `
-    <div class="folder-card fade-in" data-path="${escHtml(f.path)}" role="button" tabindex="0">
-      <span class="folder-icon">📁</span>
-      <div class="folder-info">
-        <div class="folder-name truncate" title="${escHtml(f.name)}">${escHtml(f.name)}</div>
-        <div class="folder-sub">${escHtml(f.modified_formatted)}</div>
-      </div>
-    </div>`).join('');
+
+  container.innerHTML = folders.map(f => {
+    const isSelected = state.selectedPaths.has(f.path);
+    return `
+      <div class="folder-card fade-in ${isSelected ? 'selected' : ''}" data-path="${escHtml(f.path)}" role="button" tabindex="0">
+        <button class="item-checkbox ${isSelected ? 'checked' : ''}" data-path="${escHtml(f.path)}" title="선택">
+          ${isSelected ? '✓' : ''}
+        </button>
+        <span class="folder-icon">📁</span>
+        <div class="folder-info">
+          <div class="folder-name truncate" title="${escHtml(f.name)}">${escHtml(f.name)}</div>
+          <div class="folder-sub">${escHtml(f.modified_formatted)}</div>
+        </div>
+      </div>`;
+  }).join('');
 
   container.querySelectorAll('.folder-card').forEach(el => {
-    el.addEventListener('click', () => onNavigate(el.dataset.path));
-    el.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') onNavigate(el.dataset.path);
+    const path = el.dataset.path;
+    const chk = el.querySelector('.item-checkbox');
+
+    // 체크박스 클릭
+    chk.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (onToggleSelect) onToggleSelect(path);
     });
+
+    // 더블클릭/엔터: 폴더 진입
+    el.addEventListener('dblclick', () => onNavigate(path));
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') onNavigate(path);
+    });
+
+    // 한 번 클릭: Ctrl/Shift 누르면 선택, 아니면 진입
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('.item-checkbox')) return;
+      if (e.ctrlKey || e.metaKey || e.shiftKey) {
+        if (onToggleSelect) onToggleSelect(path);
+      } else {
+        onNavigate(path);
+      }
+    });
+
     if (onContextMenu) {
       el.addEventListener('contextmenu', (e) => {
         e.preventDefault();
-        onContextMenu(e, { path: el.dataset.path, is_dir: true });
+        onContextMenu(e, { path, name: el.querySelector('.folder-name')?.textContent, is_dir: true });
       });
     }
   });
 }
 
-// ── 파일 그리드 렌더링 ────────────────────────────────────
-export function renderFileGrid(container, files, onFileClick, onContextMenu) {
+// ── 작은 아이콘 그리드 렌더링 (★ 사진을 작은 아이콘 형태로) ──
+export function renderFileGrid(container, files, onFileClick, onToggleSelect, onContextMenu) {
   if (!files.length) {
     container.innerHTML = '';
     return;
   }
-  container.innerHTML = files.map(f => {
-    const isSelected = state.selectedPaths.has(f.path);
-    const icon = getCategoryIcon(f.category);
-    const isImage = f.category === 'image';
-    const thumbUrl = isImage ? getRawUrl(f.path) : null;
 
-    return `
-      <div class="file-card fade-in ${isSelected ? 'selected' : ''}" data-path="${escHtml(f.path)}" data-category="${f.category}">
-        <div class="file-thumbnail-wrap">
-          ${isImage
-            ? `<img class="file-thumbnail-img" src="${thumbUrl}" alt="${escHtml(f.name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-            : ''}
-          <div class="file-icon-placeholder" ${isImage ? 'style="display:none"' : ''}>${icon}</div>
-        </div>
-        <div class="file-card-body">
-          <div class="file-card-title truncate" title="${escHtml(f.name)}">${escHtml(f.name)}</div>
-          <div class="file-card-meta">
-            <span class="file-badge-cat">${CATEGORY_LABELS[f.category] || '파일'}</span>
-            <span>${escHtml(f.size_formatted)}</span>
-          </div>
-        </div>
-      </div>`;
-  }).join('');
+  container.innerHTML = `
+    <div class="file-icon-grid fade-in">
+      ${files.map(f => {
+        const isSelected = state.selectedPaths.has(f.path);
+        const isImage = f.category === 'image';
+        const icon = getCategoryIcon(f.category);
+        const thumbUrl = isImage ? getRawUrl(f.path, state.scope) : null;
 
-  container.querySelectorAll('.file-card').forEach(el => {
+        return `
+          <div class="file-icon-card ${isSelected ? 'selected' : ''}" data-path="${escHtml(f.path)}" data-category="${f.category}" tabindex="0">
+            <button class="item-checkbox ${isSelected ? 'checked' : ''}" data-path="${escHtml(f.path)}" title="선택">
+              ${isSelected ? '✓' : ''}
+            </button>
+            <div class="file-icon-box">
+              ${isImage
+                ? `<img class="file-icon-thumb" src="${thumbUrl}" alt="${escHtml(f.name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+                : ''}
+              <div class="file-icon-fallback" ${isImage ? 'style="display:none"' : ''}>${icon}</div>
+            </div>
+            <div class="file-icon-name" title="${escHtml(f.name)}">${escHtml(f.name)}</div>
+            <div class="file-icon-size">${escHtml(f.size_formatted)}</div>
+          </div>`;
+      }).join('')}
+    </div>`;
+
+  container.querySelectorAll('.file-icon-card').forEach(el => {
     const path = el.dataset.path;
     const file = files.find(f => f.path === path);
+    const chk = el.querySelector('.item-checkbox');
+
+    // 체크박스 클릭
+    chk.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (onToggleSelect) onToggleSelect(path);
+    });
+
+    // 한 번 클릭: 선택 토글
     el.addEventListener('click', (e) => {
-      if (e.ctrlKey || e.metaKey || e.shiftKey) {
-        state.toggleSelect(path);
-        el.classList.toggle('selected', state.selectedPaths.has(path));
-        updateSelectionBadge();
-      } else {
-        onFileClick(file);
+      if (e.target.closest('.item-checkbox')) return;
+      if (onToggleSelect) onToggleSelect(path);
+    });
+
+    // 더블 클릭: 미리보기 또는 열기
+    el.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      if (onFileClick) onFileClick(file);
+    });
+
+    // 엔터 키: 열기
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        if (onFileClick) onFileClick(file);
       }
     });
+
     if (onContextMenu) {
       el.addEventListener('contextmenu', (e) => {
         e.preventDefault();
@@ -149,21 +215,25 @@ export function renderFileGrid(container, files, onFileClick, onContextMenu) {
 }
 
 // ── 파일 리스트 뷰 렌더링 ─────────────────────────────────
-export function renderFileList(container, files, onFileClick, onContextMenu) {
+export function renderFileList(container, files, onFileClick, onToggleSelect, onContextMenu) {
   if (!files.length) {
     container.innerHTML = '';
     return;
   }
+
   container.innerHTML = `
     <div class="file-table-container fade-in">
       <table class="file-table">
         <thead>
           <tr>
+            <th style="width:40px;text-align:center">
+              <button class="item-checkbox" id="selectAllTableBtn" title="전체 선택"></button>
+            </th>
             <th>이름</th>
             <th>유형</th>
             <th>크기</th>
             <th>수정일</th>
-            <th></th>
+            <th style="width:100px;text-align:right">작업</th>
           </tr>
         </thead>
         <tbody>
@@ -172,6 +242,11 @@ export function renderFileList(container, files, onFileClick, onContextMenu) {
             const icon = getCategoryIcon(f.category);
             return `
               <tr class="file-table-row ${isSelected ? 'selected' : ''}" data-path="${escHtml(f.path)}">
+                <td style="text-align:center">
+                  <button class="item-checkbox ${isSelected ? 'checked' : ''}" data-path="${escHtml(f.path)}">
+                    ${isSelected ? '✓' : ''}
+                  </button>
+                </td>
                 <td>
                   <div class="file-name-cell">
                     <span class="file-table-icon">${icon}</span>
@@ -182,9 +257,9 @@ export function renderFileList(container, files, onFileClick, onContextMenu) {
                 <td style="color:var(--text-muted)">${escHtml(f.size_formatted)}</td>
                 <td style="color:var(--text-dim);font-size:0.82rem">${escHtml(f.modified_formatted)}</td>
                 <td>
-                  <div class="card-actions">
-                    <button class="action-btn-mini btn-preview" title="미리보기" data-path="${escHtml(f.path)}">👁</button>
-                    <a class="action-btn-mini" href="${getRawUrl(f.path).replace('/raw?', '/download?')}" download title="다운로드">⬇</a>
+                  <div class="card-actions" style="justify-content:flex-end">
+                    <button class="action-btn-mini btn-preview" title="열기/미리보기" data-path="${escHtml(f.path)}">👁</button>
+                    <a class="action-btn-mini" href="${getDownloadUrl(f.path, state.scope)}" download title="다운로드">⬇</a>
                   </div>
                 </td>
               </tr>`;
@@ -196,16 +271,23 @@ export function renderFileList(container, files, onFileClick, onContextMenu) {
   container.querySelectorAll('.file-table-row').forEach(el => {
     const path = el.dataset.path;
     const file = files.find(f => f.path === path);
-    el.addEventListener('click', (e) => {
-      if (e.target.closest('.card-actions')) return;
-      if (e.ctrlKey || e.metaKey) {
-        state.toggleSelect(path);
-        el.classList.toggle('selected', state.selectedPaths.has(path));
-        updateSelectionBadge();
-      } else {
-        onFileClick(file);
-      }
+    const chk = el.querySelector('.item-checkbox');
+
+    chk.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (onToggleSelect) onToggleSelect(path);
     });
+
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('.card-actions') || e.target.closest('.item-checkbox')) return;
+      if (onToggleSelect) onToggleSelect(path);
+    });
+
+    el.addEventListener('dblclick', (e) => {
+      if (e.target.closest('.card-actions')) return;
+      if (onFileClick) onFileClick(file);
+    });
+
     if (onContextMenu) {
       el.addEventListener('contextmenu', (e) => {
         e.preventDefault();
@@ -219,35 +301,60 @@ export function renderFileList(container, files, onFileClick, onContextMenu) {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const file = files.find(f => f.path === btn.dataset.path);
-      if (file) onFileClick(file);
+      if (file && onFileClick) onFileClick(file);
     });
   });
 }
 
-// ── 상태바 / 선택 뱃지 ────────────────────────────────────
-export function updateSelectionBadge() {
+// ── 선택 툴바 UI 업데이트 (★ 편집, 삭제 버튼 포함) ─────────
+export function updateSelectionToolbar(handlers = {}) {
   const count = state.selectedPaths.size;
-  const el = document.getElementById('selectionBadge');
-  if (!el) return;
-  if (count > 0) {
-    el.textContent = `${count}개 선택됨`;
-    el.classList.remove('hidden');
-  } else {
-    el.classList.add('hidden');
-  }
+  const toolbar = document.getElementById('selectionToolbar');
+  const badge = document.getElementById('selectionBadge');
+  const editBtn = document.getElementById('selEditBtn');
+  const renameBtn = document.getElementById('selRenameBtn');
+  const deleteBtn = document.getElementById('selDeleteBtn');
+  const downloadBtn = document.getElementById('selDownloadBtn');
+  const previewBtn = document.getElementById('selPreviewBtn');
 
-  const delBtn = document.getElementById('deleteSelectedBtn');
-  if (delBtn) {
-    delBtn.classList.toggle('hidden', count === 0);
+  if (!toolbar) return;
+
+  if (count > 0) {
+    toolbar.classList.remove('hidden');
+    if (badge) badge.textContent = `${count}개 선택됨`;
+
+    // 1개 선택 시에만 이름 변경 및 미리보기 활성화
+    if (renameBtn) renameBtn.disabled = count !== 1;
+    if (previewBtn) previewBtn.disabled = count !== 1;
+
+    // 텍스트/코드 파일 1개 선택 시 내용 편집 활성화
+    if (editBtn) {
+      if (count === 1) {
+        const selPath = Array.from(state.selectedPaths)[0];
+        const file = state.files.find(f => f.path === selPath);
+        const canEdit = file && (file.category === 'code' || file.category === 'document' || file.extension in { '.txt': 1, '.md': 1, '.json': 1, '.js': 1, '.html': 1, '.css': 1, '.py': 1, '.yml': 1, '.yaml': 1 });
+        editBtn.style.display = canEdit ? 'inline-flex' : 'none';
+      } else {
+        editBtn.style.display = 'none';
+      }
+    }
+
+    if (deleteBtn) {
+      deleteBtn.textContent = `🗑 삭제 (${count})`;
+    }
+  } else {
+    toolbar.classList.add('hidden');
   }
 }
 
+// ── 상태바 업데이트 ───────────────────────────────────────
 export function updateStatusBar(data) {
   const el = document.getElementById('statusBarText');
   if (!el) return;
   const parts = [];
   if (data.totalCount != null) parts.push(`총 ${data.totalCount}개 항목`);
   if (data.freeSpaceText) parts.push(data.freeSpaceText);
+  if (state.storageRoot) parts.push(`루트: ${state.storageRoot}`);
   el.textContent = parts.join(' · ');
 }
 
@@ -269,27 +376,6 @@ export function showToast(message, type = 'info', duration = 3500) {
     setTimeout(() => toast.remove(), 250);
   }, duration);
   _toastTimers.push(t);
-}
-
-// ── 업로드 진행률 UI ──────────────────────────────────────
-export function showUploadProgress(container, percent) {
-  const existing = container.querySelector('.upload-progress-bar-wrap');
-  if (existing) {
-    existing.querySelector('.upload-bar-fill').style.width = `${percent}%`;
-    existing.querySelector('.upload-bar-label').textContent = `${percent}%`;
-    return;
-  }
-  const div = document.createElement('div');
-  div.className = 'upload-progress-bar-wrap';
-  div.style.cssText = 'width:100%;background:rgba(255,255,255,0.06);border-radius:8px;overflow:hidden;margin:0.75rem 0';
-  div.innerHTML = `
-    <div class="upload-bar-fill" style="height:8px;background:linear-gradient(135deg,#6366f1,#38bdf8);width:${percent}%;transition:width 0.2s;border-radius:8px"></div>
-    <div class="upload-bar-label" style="text-align:center;font-size:0.8rem;color:#94a3b8;margin-top:0.25rem">${percent}%</div>`;
-  container.appendChild(div);
-}
-
-export function hideUploadProgress(container) {
-  container.querySelector('.upload-progress-bar-wrap')?.remove();
 }
 
 // ── 유틸리티 ──────────────────────────────────────────────
