@@ -23,14 +23,15 @@ import aiofiles.os
 
 from apps.photos.backend.config import settings
 from shared.core.responses import safe_file_response, build_safe_content_disposition
-from shared.utils.security import decode_access_token
-from apps.files.backend.services.quota_service import (
+from shared.storage.quota import (
     calculate_storage_quota,
     check_upload_quota,
     set_user_plan,
     get_user_plan,
     PLAN_QUOTAS,
 )
+from shared.auth import PhotosAuthSession, resolve_session_user
+from fastapi import Header
 
 try:
     from PIL import Image, ExifTags
@@ -53,19 +54,30 @@ THUMB_SIZE = (settings.THUMB_WIDTH, settings.THUMB_HEIGHT)
 THUMB_QUALITY = settings.THUMB_QUALITY
 
 
+def get_photos_session(
+    request: Request,
+    x_session_id: Optional[str] = Header(None, alias="X-Session-ID"),
+    authorization: Optional[str] = Header(None, alias="Authorization"),
+) -> PhotosAuthSession:
+    """Photos 전용 확장 세션 객체 의존성 주입"""
+    return resolve_session_user(
+        request=request,
+        app_id="photos",
+        session_cls=PhotosAuthSession,
+        x_session_id=x_session_id,
+        authorization=authorization,
+    )
+
+
 def _extract_user_id(request: Optional[Request]) -> str:
+    """세션 객체 기반 사용자 식별자 추출 (하위 호환)"""
     if not request:
         return ""
-    auth_header = request.headers.get("authorization", "")
-    if auth_header.startswith("Bearer "):
-        token = auth_header[7:].strip()
-        payload = decode_access_token(token, getattr(settings, "SECRET_KEY", "mqnet_photos_unified_secret_key_2026"), "HS256")
-        if payload and payload.get("sub"):
-            return str(payload.get("sub"))
     param_uid = request.query_params.get("user_id", "")
     if param_uid:
         return param_uid
-    return ""
+    session = resolve_session_user(request, app_id="photos", session_cls=PhotosAuthSession)
+    return session.user_id or ""
 
 
 def get_media_root(user_id: str = "") -> Path:

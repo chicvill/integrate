@@ -10,7 +10,7 @@ import {
   openDuplicatesModal, closeDuplicatesModal, handleScanDuplicates, handleDeleteSelectedDuplicates, autoSelectDuplicateCopies, deselectAllDuplicates,
   closeDuplicatesComparison, openUpgradeModal, closeUpgradeModal, renderStorageQuotaWidget
 } from './js/modals.js?v=7.1';
-import { MQnetAuth } from '/shared/ui/auth.js?v=1.0';
+import { MQnetAuth } from '/shared/ui/auth.js?v=2.0';
 
 // ── 500KB 스토리지 쿼터 위젯 갱신 ─────────────────────────────
 async function refreshQuota() {

@@ -34,7 +34,7 @@ from apps.files.backend.services.files_service import (
     get_storage_root,
     format_size
 )
-from apps.files.backend.services.quota_service import (
+from shared.storage.quota import (
     calculate_storage_quota,
     check_upload_quota,
     set_user_plan,
@@ -42,19 +42,15 @@ from apps.files.backend.services.quota_service import (
     PLAN_QUOTAS
 )
 from shared.core.responses import safe_file_response
-from shared.utils.security import decode_access_token
+from shared.auth import BaseAuthSession, resolve_session_user
 
 router = APIRouter(prefix="", tags=["MQnet Files Hub"])
 
 
 def _extract_user_id(request: Request) -> str:
-    auth_header = request.headers.get("authorization", "")
-    if auth_header.startswith("Bearer "):
-        token = auth_header[7:].strip()
-        payload = decode_access_token(token, settings.JWT_SECRET, settings.JWT_ALGORITHM)
-        if payload and payload.get("sub"):
-            return str(payload.get("sub"))
-    return ""
+    """세션 객체 기반 사용자 ID 추출 (하위 호환)"""
+    session = resolve_session_user(request, app_id="files", session_cls=BaseAuthSession)
+    return session.user_id or ""
 
 
 def get_route_prefix(request: Optional[Request] = None) -> str:

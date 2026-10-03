@@ -1,5 +1,5 @@
 import { state } from './js/state.js?v=1.3';
-import { MQnetAuth } from '/shared/ui/auth.js?v=1.0';
+import { MQnetAuth } from '/shared/ui/auth.js?v=2.0';
 import {
   fetchList, searchFiles, uploadFiles, deleteItems,
   getDownloadUrl, fetchSystemStatus, fetchQuota, upgradePlan
