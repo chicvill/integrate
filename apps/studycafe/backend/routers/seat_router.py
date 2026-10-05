@@ -5,7 +5,7 @@ apps/studycafe/backend/routers/seat_router.py
 - 구역: FOCUS (포커스존), NORMAL (일반존), LAPTOP (노트북존)
 - 회원: GENERAL (일반회원), MANAGED (관리형회원)
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response, Query
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional, List
@@ -782,6 +782,64 @@ async def get_admin_dashboard(
     occupied_count = sum(1 for s in seats if s.is_occupied or s.status in ("OCCUPIED", "STEP_OUT"))
     step_out_count = sum(1 for s in seats if s.status == "STEP_OUT")
 
+    # 💰 점주 매출 통계 집계 (Ticket 기반 실시간 집계)
+    all_tickets = db.query(Ticket).filter(
+        (Ticket.tenant_id == tenant_id) | (Ticket.tenant_id == None)
+    ).order_by(Ticket.created_at.desc()).all()
+
+    now_utc = datetime.datetime.now(datetime.timezone.utc)
+    today_start = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
+    month_start = now_utc.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    sales_today = 0
+    sales_month = 0
+    sales_total = 0
+    tickets_today_count = 0
+    managed_sales_total = 0
+    general_sales_total = 0
+    recent_payments = []
+
+    for t in all_tickets:
+        p = getattr(t, "price", 0) or 0
+        created = t.created_at
+        sales_total += p
+
+        is_managed = "관리형" in (t.ticket_type or "") or "managed" in (t.ticket_type or "").lower()
+        if is_managed:
+            managed_sales_total += p
+        else:
+            general_sales_total += p
+
+        if created:
+            c_utc = created.replace(tzinfo=datetime.timezone.utc) if created.tzinfo is None else created
+            if c_utc >= today_start:
+                sales_today += p
+                tickets_today_count += 1
+            if c_utc >= month_start:
+                sales_month += p
+
+        if len(recent_payments) < 15:
+            recent_payments.append({
+                "id": t.id,
+                "ticket_type": t.ticket_type,
+                "price": p,
+                "user_id": t.user_id,
+                "created_at": created.isoformat() if created else None,
+                "is_active": t.is_active,
+                "is_managed": is_managed,
+            })
+
+    sales_stats = {
+        "sales_today": sales_today,
+        "sales_month": sales_month,
+        "sales_total": sales_total,
+        "tickets_today_count": tickets_today_count,
+        "tickets_total_count": len(all_tickets),
+        "managed_sales_total": managed_sales_total,
+        "general_sales_total": general_sales_total,
+        "recent_payments": recent_payments,
+    }
+
     return {
         "tenant_id": tenant_id,
         "total_seats": total_seats,
@@ -790,6 +848,7 @@ async def get_admin_dashboard(
         "step_out_count": step_out_count,
         "occupancy_rate": round((occupied_count / total_seats * 100), 1) if total_seats > 0 else 0,
         "sessions_today_count": len(sessions_today),
+        "sales_stats": sales_stats,
         "seats": [
             {
                 "id": s.id,
@@ -805,6 +864,297 @@ async def get_admin_dashboard(
             for s in seats
         ]
     }
+
+
+@router.get("/admin/sales", summary="스터디카페 점주 매출 통계 상세 API")
+async def get_admin_sales_details(
+    tenant_id: str = "studycafe-main",
+    db: Session = Depends(get_db)
+):
+    """
+    점주를 위한 일일 매출, 월간 누적 매출, 이용권별 결제 내역 및 최근 승인 로그를 제공합니다.
+    """
+    all_tickets = db.query(Ticket).filter(
+        (Ticket.tenant_id == tenant_id) | (Ticket.tenant_id == None)
+    ).order_by(Ticket.created_at.desc()).all()
+
+    now_utc = datetime.datetime.now(datetime.timezone.utc)
+    today_start = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
+    month_start = now_utc.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    sales_today = 0
+    sales_month = 0
+    sales_total = 0
+    tickets_today_count = 0
+    managed_sales = 0
+    general_sales = 0
+    recent_payments = []
+
+    for t in all_tickets:
+        p = getattr(t, "price", 0) or 0
+        created = t.created_at
+        sales_total += p
+
+        is_managed = "관리형" in (t.ticket_type or "") or "managed" in (t.ticket_type or "").lower()
+        if is_managed:
+            managed_sales += p
+        else:
+            general_sales += p
+
+        if created:
+            c_utc = created.replace(tzinfo=datetime.timezone.utc) if created.tzinfo is None else created
+            if c_utc >= today_start:
+                sales_today += p
+                tickets_today_count += 1
+            if c_utc >= month_start:
+                sales_month += p
+
+        recent_payments.append({
+            "id": t.id,
+            "ticket_type": t.ticket_type,
+            "price": p,
+            "user_id": t.user_id,
+            "created_at": created.isoformat() if created else None,
+            "is_active": t.is_active,
+            "is_managed": is_managed,
+        })
+
+    return {
+        "success": True,
+        "tenant_id": tenant_id,
+        "sales_today": sales_today,
+        "sales_month": sales_month,
+        "sales_total": sales_total,
+        "tickets_today_count": tickets_today_count,
+        "tickets_total_count": len(all_tickets),
+        "managed_sales_total": managed_sales,
+        "general_sales_total": general_sales,
+        "payments": recent_payments[:50]
+    }
+
+
+def _to_utc_dt(dt: Optional[datetime.datetime]) -> Optional[datetime.datetime]:
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=datetime.timezone.utc)
+    return dt
+
+
+@router.get("/admin/sales/monthly", summary="소득신고 및 세무 정산용 월별 매출 집계")
+async def get_monthly_sales_stats(
+    year: Optional[int] = None,
+    tenant_id: str = "studycafe-main",
+    db: Session = Depends(get_db)
+):
+    """
+    국세청 부가가치세 및 종합소득세 신고를 위한 월별 매출(총액, 공급가액, 부가세 10%) 통계를 제공합니다.
+    """
+    now = datetime.datetime.now(datetime.timezone.utc)
+    target_year = year or now.year
+
+    all_tickets = db.query(Ticket).filter(
+        (Ticket.tenant_id == tenant_id) | (Ticket.tenant_id == None)
+    ).order_by(Ticket.created_at.desc()).all()
+
+    monthly_data = {f"{target_year}-{m:02d}": {
+        "year_month": f"{target_year}-{m:02d}",
+        "month": m,
+        "count": 0,
+        "total_amount": 0,
+        "supply_value": 0,
+        "vat": 0,
+        "managed_amount": 0,
+        "general_amount": 0,
+    } for m in range(1, 13)}
+
+    for t in all_tickets:
+        if not t.created_at:
+            continue
+        c_utc = _to_utc_dt(t.created_at)
+        if c_utc and c_utc.year == target_year:
+            ym = f"{c_utc.year}-{c_utc.month:02d}"
+            if ym in monthly_data:
+                p = getattr(t, "price", 0) or 0
+                is_managed = "관리형" in (t.ticket_type or "") or "managed" in (t.ticket_type or "").lower()
+                monthly_data[ym]["count"] += 1
+                monthly_data[ym]["total_amount"] += p
+                if is_managed:
+                    monthly_data[ym]["managed_amount"] += p
+                else:
+                    monthly_data[ym]["general_amount"] += p
+
+    months_list = []
+    yearly_total = 0
+    yearly_count = 0
+    yearly_managed = 0
+    yearly_general = 0
+
+    for ym in sorted(monthly_data.keys()):
+        item = monthly_data[ym]
+        tot = item["total_amount"]
+        sup = round(tot / 1.1)
+        v = tot - sup
+        item["supply_value"] = sup
+        item["vat"] = v
+        months_list.append(item)
+
+        yearly_total += tot
+        yearly_count += item["count"]
+        yearly_managed += item["managed_amount"]
+        yearly_general += item["general_amount"]
+
+    yearly_supply = round(yearly_total / 1.1)
+    yearly_vat = yearly_total - yearly_supply
+
+    return {
+        "success": True,
+        "year": target_year,
+        "yearly_summary": {
+            "total_amount": yearly_total,
+            "supply_value": yearly_supply,
+            "vat": yearly_vat,
+            "count": yearly_count,
+            "managed_amount": yearly_managed,
+            "general_amount": yearly_general,
+        },
+        "months": months_list
+    }
+
+
+@router.get("/admin/sales/range", summary="소득신고 및 세무용 기간 지정 매출 정산")
+async def get_sales_by_range(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    tenant_id: str = "studycafe-main",
+    db: Session = Depends(get_db)
+):
+    """
+    지정한 기간(시작일~종료일) 동안의 총 매출, 공급가액, 부가세, 일별 추이 및 개별 결제 트랜잭션을 반환합니다.
+    """
+    now = datetime.datetime.now(datetime.timezone.utc)
+    if not end_date:
+        end_date = now.strftime("%Y-%m-%d")
+    if not start_date:
+        start_date = now.strftime("%Y-%m-01")
+
+    try:
+        s_dt = datetime.datetime.strptime(start_date, "%Y-%m-%d").replace(tzinfo=datetime.timezone.utc)
+        e_dt = datetime.datetime.strptime(end_date, "%Y-%m-%d").replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=datetime.timezone.utc)
+    except Exception:
+        raise HTTPException(status_code=400, detail="날짜 형식이 올바르지 않습니다 (YYYY-MM-DD 필요).")
+
+    all_tickets = db.query(Ticket).filter(
+        (Ticket.tenant_id == tenant_id) | (Ticket.tenant_id == None)
+    ).order_by(Ticket.created_at.desc()).all()
+
+    filtered = []
+    daily_map = {}
+
+    for t in all_tickets:
+        if not t.created_at:
+            continue
+        c_utc = _to_utc_dt(t.created_at)
+        if c_utc and s_dt <= c_utc <= e_dt:
+            p = getattr(t, "price", 0) or 0
+            is_managed = "관리형" in (t.ticket_type or "") or "managed" in (t.ticket_type or "").lower()
+            sup = round(p / 1.1)
+            vat = p - sup
+            day_str = c_utc.strftime("%Y-%m-%d")
+
+            filtered.append({
+                "id": t.id,
+                "created_at": c_utc.isoformat(),
+                "created_date": day_str,
+                "ticket_type": t.ticket_type,
+                "amount": p,
+                "supply_value": sup,
+                "vat": vat,
+                "user_id": t.user_id,
+                "is_managed": is_managed,
+                "is_active": t.is_active,
+            })
+
+            if day_str not in daily_map:
+                daily_map[day_str] = {"date": day_str, "count": 0, "total_amount": 0, "supply_value": 0, "vat": 0}
+            daily_map[day_str]["count"] += 1
+            daily_map[day_str]["total_amount"] += p
+            daily_map[day_str]["supply_value"] += sup
+            daily_map[day_str]["vat"] += vat
+
+    total_amount = sum(x["amount"] for x in filtered)
+    supply_value = round(total_amount / 1.1)
+    vat = total_amount - supply_value
+    managed_amount = sum(x["amount"] for x in filtered if x["is_managed"])
+    general_amount = total_amount - managed_amount
+
+    daily_list = [daily_map[k] for k in sorted(daily_map.keys(), reverse=True)]
+
+    return {
+        "success": True,
+        "start_date": start_date,
+        "end_date": end_date,
+        "summary": {
+            "total_amount": total_amount,
+            "supply_value": supply_value,
+            "vat": vat,
+            "count": len(filtered),
+            "managed_amount": managed_amount,
+            "general_amount": general_amount,
+        },
+        "daily_breakdown": daily_list,
+        "payments": filtered
+    }
+
+
+@router.get("/admin/sales/export-csv", summary="세무 신고용 매출 데이터 CSV 다운로드")
+async def export_sales_csv(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    tenant_id: str = "studycafe-main",
+    db: Session = Depends(get_db)
+):
+    """
+    국세청 세무신고 및 회계사용 Excel 호환 CSV 파일(BOM 포함)을 다운로드합니다.
+    """
+    now = datetime.datetime.now(datetime.timezone.utc)
+    if not end_date:
+        end_date = now.strftime("%Y-%m-%d")
+    if not start_date:
+        start_date = now.strftime("%Y-%m-01")
+
+    try:
+        s_dt = datetime.datetime.strptime(start_date, "%Y-%m-%d").replace(tzinfo=datetime.timezone.utc)
+        e_dt = datetime.datetime.strptime(end_date, "%Y-%m-%d").replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=datetime.timezone.utc)
+    except Exception:
+        raise HTTPException(status_code=400, detail="날짜 형식이 올바르지 않습니다 (YYYY-MM-DD 필요).")
+
+    all_tickets = db.query(Ticket).filter(
+        (Ticket.tenant_id == tenant_id) | (Ticket.tenant_id == None)
+    ).order_by(Ticket.created_at.desc()).all()
+
+    csv_lines = ["\ufeff거래일시,영수증(ID),이용권상품명,회원식별,결제금액(원),공급가액(원),부가가치세(원),과세구분,상품유형"]
+    for t in all_tickets:
+        if not t.created_at:
+            continue
+        c_utc = _to_utc_dt(t.created_at)
+        if c_utc and s_dt <= c_utc <= e_dt:
+            p = getattr(t, "price", 0) or 0
+            sup = round(p / 1.1)
+            vat = p - sup
+            is_m = "관리형" in (t.ticket_type or "") or "managed" in (t.ticket_type or "").lower()
+            type_str = "관리형 고정석 패스" if is_m else "일반 자유석 이용권"
+            dt_str = c_utc.strftime("%Y-%m-%d %H:%M:%S")
+            csv_lines.append(f'"{dt_str}","{t.id}","{t.ticket_type}","{t.user_id}","{p}","{sup}","{vat}","과세(10%)","{type_str}"')
+
+    csv_content = "\r\n".join(csv_lines)
+    filename = f"studycafe_tax_sales_{start_date}_{end_date}.csv"
+    return Response(
+        content=csv_content.encode("utf-8-sig"),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
 
 
 @router.get("/parent/status", summary="학부모 안심 웹 포털 (Zero-Message) API")

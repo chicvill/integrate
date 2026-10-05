@@ -411,3 +411,42 @@ export async function cleanupOldPatrolLogs(days = 90) {
   if (!res.ok) throw new Error(data.detail || '순찰 기록 파기 실패');
   return data;
 }
+
+// 26. 점주 매출 통계 상세 조회
+export async function fetchAdminSalesStats() {
+  const base = getApiBase();
+  const res = await fetch(`${base}/seats/admin/sales?t=${Date.now()}`, {
+    headers: getHeaders(),
+    cache: 'no-store'
+  });
+  if (!res.ok) throw new Error('매출 통계 조회 실패');
+  return await res.json();
+}
+
+// 27. 세무·소득신고용 월별 매출 조회
+export async function fetchMonthlySales(year = null) {
+  const base = getApiBase();
+  const url = year ? `${base}/seats/admin/sales/monthly?year=${year}&t=${Date.now()}` : `${base}/seats/admin/sales/monthly?t=${Date.now()}`;
+  const res = await fetch(url, { headers: getHeaders(), cache: 'no-store' });
+  if (!res.ok) throw new Error('월별 매출 조회 실패');
+  return await res.json();
+}
+
+// 28. 세무·소득신고용 기간 지정 매출 조회
+export async function fetchRangeSales(startDate, endDate) {
+  const base = getApiBase();
+  const res = await fetch(`${base}/seats/admin/sales/range?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}&t=${Date.now()}`, {
+    headers: getHeaders(),
+    cache: 'no-store'
+  });
+  if (!res.ok) throw new Error('기간별 매출 조회 실패');
+  return await res.json();
+}
+
+// 29. 세무 신고용 CSV 다운로드 URL 생성
+export function getSalesCsvExportUrl(startDate, endDate) {
+  const base = getApiBase();
+  return `${base}/seats/admin/sales/export-csv?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`;
+}
+
+

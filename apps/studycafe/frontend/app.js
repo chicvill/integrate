@@ -8,21 +8,21 @@ import {
   isActiveNonSameDayTicket,
   isFixedSeatManagedTicket,
   isLmsAllowed
-} from './js/state.js?v=2.2';
+} from './js/state.js?v=2.3';
 import {
   fetchSeats, fetchMySeat, assignSeat, leaveSeat,
   fetchTicketPlans, purchaseTicket, fetchMyActiveTicket, triggerDoor, fetchAiCongestion,
   stepOutSeat, stepInSeat, submitDailyCheckoutResult, cleanupExpiredSeats, fetchDoorStatus,
   autoAssignFixedSeat
-} from './js/api.js?v=2.2';
+} from './js/api.js?v=2.3';
 import {
   renderStatsBar, renderSeatGrid, renderTicketPlans,
   renderDoorPass, renderSelfstudyTab
-} from './js/ui.js?v=2.0';
+} from './js/ui.js?v=2.3';
 import {
   showToast, openAssignModal, openLeaveModal, openPurchaseModal, openParentShareModal,
   openLmsRestrictedModal, closeModal
-} from './js/modals.js?v=2.2';
+} from './js/modals.js?v=2.3';
 
 // ── DOM 캐싱 ─────────────────────────────────────────────
 const statsBarEl        = document.getElementById('statsBarContainer');

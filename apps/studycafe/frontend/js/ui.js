@@ -116,29 +116,62 @@ export function renderTicketPlans(container, plans, onPurchaseClick) {
   container.innerHTML = '';
 
   plans.forEach(plan => {
-    const isPopular = plan.plan_id === 'time_4h' || plan.plan_id === 'time_100h';
+    const isPopular = plan.plan_id === 'time_4h' || plan.plan_id === 'time_100h' || plan.plan_id === 'managed_4w';
+    const isManaged = plan.type === 'managed' || (plan.name && plan.name.includes('관리형')) || (plan.plan_id && plan.plan_id.includes('managed'));
+    const isTerm = plan.type === 'term';
+    const isPeriod = plan.type === 'period';
+
+    let pillText = '당일 1회 자유석';
+    let pillStyle = 'background:rgba(245,158,11,0.18);color:#fbbf24;border:1px solid rgba(245,158,11,0.35);font-weight:600;display:inline-block;padding:0.22rem 0.6rem;border-radius:6px;width:fit-content;';
+    if (isManaged) {
+      pillText = plan.plan_id === 'managed_12w' ? '★ 올인원 고정석 패스' : '★ 관리형 전용 고정석';
+      pillStyle = 'background:rgba(99,102,241,0.25);color:#a5b4fc;border:1px solid rgba(99,102,241,0.5);font-weight:700;display:inline-block;padding:0.22rem 0.6rem;border-radius:6px;width:fit-content;';
+    } else if (isTerm) {
+      pillText = '28일 무제한 자유석';
+      pillStyle = 'background:rgba(56,189,248,0.18);color:#38bdf8;border:1px solid rgba(56,189,248,0.35);font-weight:600;display:inline-block;padding:0.22rem 0.6rem;border-radius:6px;width:fit-content;';
+    } else if (isPeriod) {
+      pillText = '시간 충전식 자유석';
+      pillStyle = 'background:rgba(16,185,129,0.18);color:#34d399;border:1px solid rgba(16,185,129,0.35);font-weight:600;display:inline-block;padding:0.22rem 0.6rem;border-radius:6px;width:fit-content;';
+    }
+
     const card = document.createElement('div');
-    card.className = `sc-ticket-card ${isPopular ? 'popular' : ''}`;
+    card.className = `sc-ticket-card ${isPopular ? 'popular' : ''} ${isManaged ? 'managed-card' : ''}`;
     
     card.innerHTML = `
-      ${isPopular ? '<div class="popular-ribbon">BEST ⭐</div>' : ''}
+      ${isPopular ? `<div class="popular-ribbon">${isManaged ? 'PREMIUM ⭐' : 'BEST ⭐'}</div>` : ''}
       <div class="ticket-header">
         <h4 class="ticket-name">${escHtml(plan.name)}</h4>
-        <div class="ticket-type-pill">${plan.type === 'hourly' ? '당일 시간권' : plan.type === 'term' ? '기간 자유권' : '정기 시간권'}</div>
+        <div class="ticket-type-pill" style="${pillStyle}">${pillText}</div>
       </div>
       <div class="ticket-price">
         <span class="currency">₩</span>
         <span class="amount">${plan.price.toLocaleString()}</span>
       </div>
-      <ul class="ticket-features">
-        <li>✓ ${Math.round(plan.duration_minutes / 60)}시간 자유 이용</li>
-        <li>✓ IoT 스마트 도어락 QR 패스 자동 발급</li>
-        <li>✓ 고속 Wi-Fi 및 개인 콘센트 제공</li>
-        ${(plan.type === 'managed' || (plan.name && plan.name.includes('관리형'))) 
-          ? '<li style="color:#6ee7b7;font-weight:700;">★ 전용 고정 좌석 + SelfStudy LMS 연동 포함</li>' 
-          : '<li style="color:var(--text-dim);">✕ 자기주도학습 LMS 연동 미포함 (관리형 전용)</li>'}
+      <ul class="ticket-features" style="line-height:1.65;font-size:0.82rem;">
+        <li>⏱️ ${isTerm ? '28일간 24시간 무제한 자유 이용' : isManaged ? (plan.plan_id === 'managed_12w' ? '84일간 24h 이용 (시험 완독 보장)' : '28일간 24h 이용 (실장 밀착 케어)') : `${Math.round(plan.duration_minutes / 60)}시간 자유 이용`}</li>
+        
+        <!-- 🪑 좌석 규칙 (고정석 vs 자유석) -->
+        ${isManaged 
+          ? '<li style="color:#6ee7b7;font-weight:700;">🔒 FOCUS 전용 고정석 (자리 배정 스킵 & 즉시 자동 입실)</li>' 
+          : (isPeriod || isTerm) 
+            ? '<li style="color:#93c5fd;font-weight:600;">🪑 일반 자유석 (로그인 시 구매 스킵 ➔ 빈 좌석 직접 선택)</li>'
+            : '<li style="color:#cbd5e1;">🪑 일반 자유석 (매 입실 시 빈 좌석 직접 선택)</li>'}
+
+        <!-- 📖 자주학습 LMS 활용 여부 -->
+        ${isManaged 
+          ? (plan.plan_id === 'managed_12w' 
+              ? '<li style="color:#38bdf8;font-weight:700;">★ 자주학습 LMS 풀연동 + Gemini AI 1:1 심층 코칭</li>' 
+              : '<li style="color:#38bdf8;font-weight:700;">★ 자주학습 LMS 풀연동 (5과목 진도오더 · PPH 연산)</li>')
+          : '<li style="color:#f87171;font-weight:600;">⛔ 자주학습 LMS 연동 제한 (자율 독서 전용)</li>'}
+
+        <!-- 🛡️ 편의 및 순찰 관리 -->
+        ${isManaged 
+          ? '<li style="color:#fcd34d;">✓ 실장 라운딩 순찰(졸음/딴짓 케어) & 학부모 안심포털 무료</li>' 
+          : '<li>✓ IoT 스마트 도어락 출입 패스 & 초고속 Wi-Fi</li>'}
       </ul>
-      <button class="btn-ticket-purchase" type="button">이용권 구매하기</button>
+      <button class="btn-ticket-purchase" type="button" style="${isManaged ? 'background:linear-gradient(135deg, #6366f1, #38bdf8);font-weight:700;' : ''}">
+        ${isManaged ? '⭐ 관리형 고정석 신청하기' : '이용권 구매하기'}
+      </button>
     `;
 
     card.querySelector('.btn-ticket-purchase').addEventListener('click', (e) => {

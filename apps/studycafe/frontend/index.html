@@ -104,6 +104,28 @@
       <div style="margin-bottom:1.5rem">
         <h2 style="font-size:1.4rem;font-weight:800;color:#fff;margin-bottom:0.35rem">🎟️ 스터디카페 이용권 선택</h2>
         <p style="font-size:0.85rem;color:var(--text-muted)">시간권, 정기권, 관리형 몰입 패스를 선택하시면 결제 승인 후 좌석 배정 창으로 자동 이동합니다.</p>
+        
+        <!-- 💡 이용권별 고정석 & 자주학습(LMS) 안내 바 -->
+        <div style="margin-top:0.85rem;display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:0.75rem;">
+          <div style="background:linear-gradient(135deg, rgba(99,102,241,0.12), rgba(56,189,248,0.08));border:1px solid rgba(99,102,241,0.35);border-radius:12px;padding:0.85rem 1.1rem;font-size:0.82rem;line-height:1.5;">
+            <div style="font-weight:800;color:#a5b4fc;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.4rem;">
+              <span>🔒</span> 4주 관리형 · 12주 올인원 패스 (프리미엄)
+            </div>
+            <div style="color:#e2e8f0;">
+              • <strong>전용 고정 좌석</strong>: FOCUS 집중존 고정석 영구 배정 (로그인 시 자리 배정 생략 & 출입문 즉시 개방)<br/>
+              • <strong>자주학습 LMS 풀연동</strong>: 5과목 일일 진도오더, 0.1초 PPH 연산, Gemini AI 코칭, 학부모 실시간 순찰 리포트 제공
+            </div>
+          </div>
+          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:0.85rem 1.1rem;font-size:0.82rem;line-height:1.5;">
+            <div style="font-weight:800;color:#fcd34d;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.4rem;">
+              <span>🪑</span> 당일권 (2h/4h) · 정기권 (50h/100h) · 4주 일반 자유석
+            </div>
+            <div style="color:#cbd5e1;">
+              • <strong>일반 자유석</strong>: 매 입실 시 빈 좌석을 직접 선택 이용 (정기권은 로그인 시 이용권 구매 단계 생략)<br/>
+              • <strong>자주학습 LMS 연동 제한</strong>: 순수 자율 독서 목적으로 SelfStudy LMS 탭 연동이 차단됩니다.
+            </div>
+          </div>
+        </div>
       </div>
       <div id="ticketPlansContainer" class="sc-tickets-grid"></div>
     </section>
@@ -253,7 +275,7 @@
     </div>
   </div>
 
-  <!-- 메인 모듈 진입점 (캐시 버스팅 v=2.5) -->
-  <script type="module" src="./app.js?v=2.5"></script>
+  <!-- 메인 모듈 진입점 (캐시 버스팅 v=2.6) -->
+  <script type="module" src="./app.js?v=2.6"></script>
 </body>
 </html>

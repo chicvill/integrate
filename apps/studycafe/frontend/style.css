@@ -366,6 +366,17 @@ body {
   box-shadow: 0 0 25px rgba(99, 102, 241, 0.2);
 }
 
+.sc-ticket-card.managed-card {
+  border-color: rgba(99, 102, 241, 0.45);
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.08) 0%, var(--bg-card) 40%);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
+}
+
+.sc-ticket-card.managed-card:hover {
+  border-color: rgba(99, 102, 241, 0.75);
+  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+}
+
 .popular-ribbon {
   position: absolute;
   top: -10px;

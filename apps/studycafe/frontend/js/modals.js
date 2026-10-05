@@ -289,9 +289,25 @@ export function openPurchaseModal(plan, currentUser, onConfirm) {
   const planDesc = document.getElementById('purchPlanDesc');
   const confirmBtn = document.getElementById('purchConfirmBtn');
 
+  const isManaged = plan.type === 'managed' || (plan.name && plan.name.includes('관리형')) || (plan.plan_id && plan.plan_id.includes('managed'));
+
   if (planName) planName.textContent = plan.name;
   if (planPrice) planPrice.textContent = `${plan.price.toLocaleString()}원`;
-  if (planDesc) planDesc.textContent = plan.desc || `유효 시간: ${plan.duration_minutes / 60}시간 | 즉시 이용 가능`;
+  if (planDesc) {
+    planDesc.innerHTML = `
+      <div style="font-size:0.83rem;color:#cbd5e1;line-height:1.45;margin-bottom:0.5rem;">
+        ${plan.desc || `유효 시간: ${Math.round(plan.duration_minutes / 60)}시간 | 즉시 이용 가능`}
+      </div>
+      <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+        <span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.25rem 0.55rem;border-radius:6px;font-size:0.75rem;font-weight:700;background:${isManaged ? 'rgba(16,185,129,0.18)' : 'rgba(56,189,248,0.15)'};color:${isManaged ? '#34d399' : '#38bdf8'};border:1px solid ${isManaged ? 'rgba(16,185,129,0.35)' : 'rgba(56,189,248,0.3)'};">
+          ${isManaged ? '🔒 FOCUS 전용 고정석 (자동 입실)' : '🪑 일반 자유석 (직접 선택)'}
+        </span>
+        <span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.25rem 0.55rem;border-radius:6px;font-size:0.75rem;font-weight:700;background:${isManaged ? 'rgba(99,102,241,0.2)' : 'rgba(239,68,68,0.15)'};color:${isManaged ? '#a5b4fc' : '#f87171'};border:1px solid ${isManaged ? 'rgba(99,102,241,0.4)' : 'rgba(239,68,68,0.3)'};">
+          ${isManaged ? '🟢 자주학습 LMS 풀패키지' : '⛔ 자주학습 LMS 연동 제한 (자율 독서)'}
+        </span>
+      </div>
+    `;
+  }
 
   confirmBtn.disabled = false;
   confirmBtn.textContent = '💳 결제하기 (테스트 즉시 승인)';
