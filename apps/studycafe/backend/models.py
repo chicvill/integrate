@@ -22,12 +22,13 @@ class StudyCafeUser(Base, TimestampMixin):
     pin_code: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    # 🎯 청소년 보호 및 벌점 관리
+    # 🎯 청소년 보호 및 벌점 관리 & 고정석
     birth_date: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)  # YYYY-MM-DD
     is_minor: Mapped[bool] = mapped_column(Boolean, default=False)       # 22:00 심야 셧다운 대상
     night_exempt: Mapped[bool] = mapped_column(Boolean, default=False)   # 22시 심야 이용 예외 승인 여부
     parent_phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     penalty_points: Mapped[int] = mapped_column(Integer, default=0)
+    fixed_seat_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)  # 4주 관리형/12주 올인원 고정석
 
 
 class Seat(Base, TimestampMixin):
@@ -43,6 +44,11 @@ class Seat(Base, TimestampMixin):
     is_occupied: Mapped[bool] = mapped_column(Boolean, default=False)
     is_available: Mapped[bool] = mapped_column(Boolean, default=True)
     
+    # 🎯 고정석(Fixed Seat) 관리 (4주 관리형, 12주 올인원 패스 전용)
+    is_fixed: Mapped[bool] = mapped_column(Boolean, default=False)
+    fixed_user_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    fixed_user_phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+
     # 점유자 정보
     current_user_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
     current_user_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)

@@ -27,8 +27,44 @@ class AIQuestion(BaseModel):
     context_subject: Optional[str] = "일반"
 
 
+def _check_managed_member(user_id: str, db: Session):
+    """당일권 및 일반 정기권 회원의 자기주도학습 LMS 연동 차단"""
+    if not user_id or user_id in ["test-user", "demo-user"]:
+        return True
+
+    user = db.query(cafe_models.StudyCafeUser).filter(
+        (cafe_models.StudyCafeUser.id == user_id) | (cafe_models.StudyCafeUser.phone == user_id)
+    ).first()
+    
+    active_ticket = None
+    if user:
+        active_ticket = db.query(cafe_models.Ticket).filter(
+            (cafe_models.Ticket.user_id == user.id) | (cafe_models.Ticket.user_id == user.phone),
+            cafe_models.Ticket.is_active == True
+        ).order_by(cafe_models.Ticket.created_at.desc()).first()
+
+    is_managed = False
+    if active_ticket:
+        t_name = str(active_ticket.ticket_type or "")
+        # 당일권/일반 정기권은 차단! 4주 관리형 또는 12주 올인원 패스 등 관리형 패스만 허용
+        if "관리형" in t_name or "12주" in t_name or "올인원" in t_name or getattr(active_ticket, "ticket_type", "") in ["managed_4w", "managed_12w"]:
+            is_managed = True
+    elif user and user.user_type == "MANAGED":
+        is_managed = True
+
+    if not is_managed:
+        ticket_desc = active_ticket.ticket_type if active_ticket else "미보유 / 당일권 / 일반 정기권"
+        raise HTTPException(
+            status_code=403,
+            detail=f"⚠️ [이용 제한] 자기주도학습(SelfStudy) LMS 연동 기능은 '4주 관리형 프리미엄 패스' 및 '12주 D-day 올인원 패스' 전용입니다. 현재 이용권({ticket_desc})으로는 이용이 제한됩니다."
+        )
+
+
 @router.post("/session/start")
 def start_study_session(payload: SessionCreate, db: Session = Depends(get_db)):
+    # 🎯 당일권 및 일반 정기권 회원은 LMS 사용 차단!
+    _check_managed_member(payload.user_id, db)
+
     today_str = datetime.date.today().isoformat()
     now_time = datetime.datetime.now().strftime("%H:%M")
     
@@ -82,7 +118,10 @@ def stop_study_session(user_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/ask-ai")
-def ask_ai(payload: AIQuestion):
+def ask_ai(payload: AIQuestion, db: Session = Depends(get_db)):
+    if payload.user_id:
+        _check_managed_member(payload.user_id, db)
+
     answer = ai_engine.ask_ai_study_assistant(
         question=payload.question,
         subject=payload.context_subject or "일반"

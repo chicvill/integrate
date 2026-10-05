@@ -2,18 +2,26 @@
 // 스터디카페 프론트엔드 메인 오케스트레이터 (SaaS 템플릿 표준 준수)
 
 import { MQnetAuth } from '/shared/ui/auth.js?v=2.0';
-import { state } from './js/state.js?v=2.0';
+import {
+  state,
+  isSameDayTicket,
+  isActiveNonSameDayTicket,
+  isFixedSeatManagedTicket,
+  isLmsAllowed
+} from './js/state.js?v=2.2';
 import {
   fetchSeats, fetchMySeat, assignSeat, leaveSeat,
   fetchTicketPlans, purchaseTicket, fetchMyActiveTicket, triggerDoor, fetchAiCongestion,
-  stepOutSeat, stepInSeat, submitDailyCheckoutResult, cleanupExpiredSeats, fetchDoorStatus
+  stepOutSeat, stepInSeat, submitDailyCheckoutResult, cleanupExpiredSeats, fetchDoorStatus,
+  autoAssignFixedSeat
 } from './js/api.js?v=2.2';
 import {
   renderStatsBar, renderSeatGrid, renderTicketPlans,
   renderDoorPass, renderSelfstudyTab
 } from './js/ui.js?v=2.0';
 import {
-  showToast, openAssignModal, openLeaveModal, openPurchaseModal, openParentShareModal, closeModal
+  showToast, openAssignModal, openLeaveModal, openPurchaseModal, openParentShareModal,
+  openLmsRestrictedModal, closeModal
 } from './js/modals.js?v=2.2';
 
 // ── DOM 캐싱 ─────────────────────────────────────────────
@@ -124,14 +132,15 @@ function updateMyTicketBadge() {
   }
 
   if (state.activeTicket) {
+    const isManaged = isFixedSeatManagedTicket(state.activeTicket);
     const remDesc = state.activeTicket.remaining_minutes 
       ? `${Math.round(state.activeTicket.remaining_minutes / 60)}h` 
       : '기간권';
     myTicketBadgeEl.className = 'my-seat-pill';
-    myTicketBadgeEl.style.background = 'rgba(16,185,129,0.15)';
-    myTicketBadgeEl.style.borderColor = 'rgba(16,185,129,0.4)';
-    myTicketBadgeEl.style.color = '#34d399';
-    myTicketBadgeText.textContent = `${state.activeTicket.ticket_type} (${remDesc})`;
+    myTicketBadgeEl.style.background = isManaged ? 'rgba(99,102,241,0.2)' : 'rgba(16,185,129,0.15)';
+    myTicketBadgeEl.style.borderColor = isManaged ? 'rgba(99,102,241,0.5)' : 'rgba(16,185,129,0.4)';
+    myTicketBadgeEl.style.color = isManaged ? '#a5b4fc' : '#34d399';
+    myTicketBadgeText.textContent = `${isManaged ? '★고정석 ' : ''}${state.activeTicket.ticket_type} (${remDesc})`;
     myTicketBadgeEl.onclick = () => switchTab('tickets');
   } else {
     myTicketBadgeEl.className = 'my-seat-pill';
@@ -142,6 +151,7 @@ function updateMyTicketBadge() {
     myTicketBadgeEl.onclick = () => switchTab('tickets');
   }
   updateSeatFlowNotice();
+  updateNavTabsAccess();
 }
 
 function updateMySeatBadge() {
@@ -216,16 +226,38 @@ function updateSeatFlowNotice() {
     return;
   }
 
-  // ✨ 유효 이용권 보유: 좌석 선택 안내
+  // ✨ 유효 이용권 보유: 좌석 안내
+  const isManagedFixed = isFixedSeatManagedTicket(state.activeTicket);
   noticeEl.style.display = 'flex';
-  noticeEl.style.background = 'rgba(16,185,129,0.12)';
-  noticeEl.style.border = '1px solid rgba(16,185,129,0.35)';
-  const remDesc = state.activeTicket.remaining_minutes ? `${Math.round(state.activeTicket.remaining_minutes / 60)}시간` : '기간 내 무제한';
-  contentEl.innerHTML = `<span style="font-size:1.3rem">✨</span><span style="color:#34d399;font-weight:600;"><strong>[${state.activeTicket.ticket_type}]</strong> 잔여: ${remDesc} | 원하시는 빈 좌석을 터치하시면 즉시 배정됩니다.</span>`;
-  actionBtn.textContent = '요금제 보기';
-  actionBtn.style.background = 'rgba(255,255,255,0.1)';
-  actionBtn.style.color = '#fff';
-  actionBtn.onclick = () => switchTab('tickets');
+  if (isManagedFixed) {
+    noticeEl.style.background = 'rgba(99,102,241,0.14)';
+    noticeEl.style.border = '1px solid rgba(99,102,241,0.4)';
+    contentEl.innerHTML = `<span style="font-size:1.3rem">⭐</span><span style="color:#a5b4fc;font-weight:600;"><strong>[${state.activeTicket.ticket_type}]</strong> 회원님은 전용 고정석이 배정됩니다. 아래 버튼으로 즉시 입실하세요.</span>`;
+    actionBtn.textContent = '🚀 고정석 즉시 입실';
+    actionBtn.style.background = 'linear-gradient(135deg, #6366f1, #38bdf8)';
+    actionBtn.style.color = '#fff';
+    actionBtn.onclick = async () => {
+      try {
+        const u = state.currentUser;
+        const res = await autoAssignFixedSeat(u.id, u.phone, u.full_name || u.name);
+        showToast(res.message || '고정석 입실이 완료되었습니다 (출입문 5초 개방 🔓)', 'success', 5000);
+        await triggerDoor(1);
+        await checkMySeat();
+        await refreshSeats();
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    };
+  } else {
+    noticeEl.style.background = 'rgba(16,185,129,0.12)';
+    noticeEl.style.border = '1px solid rgba(16,185,129,0.35)';
+    const remDesc = state.activeTicket.remaining_minutes ? `${Math.round(state.activeTicket.remaining_minutes / 60)}시간` : '기간 내 무제한';
+    contentEl.innerHTML = `<span style="font-size:1.3rem">✨</span><span style="color:#34d399;font-weight:600;"><strong>[${state.activeTicket.ticket_type}]</strong> 잔여: ${remDesc} | 원하시는 빈 좌석을 터치하시면 즉시 배정됩니다.</span>`;
+    actionBtn.textContent = '요금제 보기';
+    actionBtn.style.background = 'rgba(255,255,255,0.1)';
+    actionBtn.style.color = '#fff';
+    actionBtn.onclick = () => switchTab('tickets');
+  }
 
   // 학부모 안심 포털 링크 동적 동기화
   const userPhone = (state.currentUser && state.currentUser.phone) || '010-5555-4444';
@@ -389,10 +421,25 @@ function handlePurchaseClick(plan) {
       console.warn('Backend ticket purchase sync:', err);
     });
 
-    // 4) 결제 완료 피드백 및 좌석 선택 창으로 자동 즉시 이동!
-    showToast(`🎉 [${targetPlan.name}] 이용권 결제 완료! 이제 이용하실 빈 좌석을 선택해 주세요.`, 'success', 5000);
-    switchTab('seats');
-    await refreshSeats();
+    // 4) 결제 완료 피드백 및 자동 분기 (고정석 회원은 자리 배정도 건너뜀!)
+    const isFixed = targetPlan.type === 'managed' || (targetPlan.name && targetPlan.name.includes('관리형')) || targetPlan.plan_id === 'managed_4w' || targetPlan.plan_id === 'managed_12w';
+    if (isFixed) {
+      showToast(`🎉 [${targetPlan.name}] 결제 완료! 전용 고정석으로 자동 배정 및 입실 처리 중...`, 'success', 4000);
+      try {
+        const autoRes = await autoAssignFixedSeat(userId, userPhone, state.currentUser.full_name || state.currentUser.name);
+        showToast(autoRes.message || `🎉 전용 고정 좌석 [${autoRes.seat_number}] 자동 배정 완료! (출입문 5초 개방 🔓)`, 'success', 6000);
+        await triggerDoor(1);
+        await checkMySeat();
+        await refreshSeats();
+      } catch (e) {
+        console.warn('Auto assign error on purchase:', e);
+      }
+      switchTab('seats');
+    } else {
+      showToast(`🎉 [${targetPlan.name}] 이용권 결제 완료! 이제 이용하실 빈 좌석을 선택해 주세요.`, 'success', 5000);
+      switchTab('seats');
+      await refreshSeats();
+    }
   });
 }
 
@@ -431,22 +478,49 @@ async function handleDoorUnlock() {
 
 // ── 5. 자기주도학습 탭 갱신 ───────────────────────────────
 function renderSelfstudy() {
-  renderSelfstudyTab(selfstudyEl, state.mySeat, state.currentUser, (action) => {
-    if (!state.mySeat) return;
-    if (action === 'step-out') {
-      stepOutSeat(state.mySeat.seat_number).then(() => {
-        showToast('☕ [외출 완료] 외출 상태로 전환되었습니다.', 'info');
-        refreshSeats().then(renderSelfstudy);
-      });
-    } else if (action === 'leave') {
-      handleSeatClick(state.mySeat);
-    }
-  });
+  renderSelfstudyTab(
+    selfstudyEl,
+    state.mySeat,
+    state.currentUser,
+    (action) => {
+      if (!state.mySeat) return;
+      if (action === 'step-out') {
+        stepOutSeat(state.mySeat.seat_number).then(() => {
+          showToast('☕ [외출 완료] 외출 상태로 전환되었습니다.', 'info');
+          refreshSeats().then(renderSelfstudy);
+        });
+      } else if (action === 'leave') {
+        handleSeatClick(state.mySeat);
+      }
+    },
+    state.activeTicket,
+    () => switchTab('tickets')
+  );
+}
+
+// ── 5-1. 자기주도학습 탭 락 배지 동적 갱신 ────────────────
+function updateNavTabsAccess() {
+  const selfstudyBtn = document.getElementById('navTabSelfstudy');
+  const selfstudyText = document.getElementById('navTabSelfstudyText');
+  if (!selfstudyBtn || !selfstudyText) return;
+
+  const allowed = isLmsAllowed(state.currentUser, state.activeTicket);
+  if (allowed) {
+    selfstudyText.innerHTML = `자기주도 학습실 <span style="background:rgba(16,185,129,0.25);color:#34d399;font-size:0.68rem;padding:2px 6px;border-radius:4px;margin-left:4px;border:1px solid rgba(16,185,129,0.4)">★ 관리형</span>`;
+  } else {
+    selfstudyText.innerHTML = `자기주도 학습실 <span style="background:rgba(239,68,68,0.2);color:#f87171;font-size:0.68rem;padding:2px 6px;border-radius:4px;margin-left:4px;border:1px solid rgba(239,68,68,0.35)">🔒 관리형 전용</span>`;
+  }
 }
 
 // ── 6. 탭 전환 제어 ───────────────────────────────────────
 function switchTab(tabId) {
   state.activeTab = tabId;
+
+  // 🎯 당일권/정기권 회원이 LMS 탭 클릭 시 친절한 차단 모달 노출
+  if (tabId === 'selfstudy' && !isLmsAllowed(state.currentUser, state.activeTicket)) {
+    const tName = (state.activeTicket && state.activeTicket.ticket_type) ? state.activeTicket.ticket_type : '당일권 / 일반 정기권';
+    openLmsRestrictedModal(tName, () => switchTab('tickets'));
+  }
 
   document.querySelectorAll('.nav-tab-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === tabId);
@@ -498,6 +572,77 @@ function checkDeskQrDeepLink() {
   }
 }
 
+// ── 8-1. 로그인 / 상태 변경 시 맞춤 자동 분기 처리 ────────
+async function handleUserLoginOrStateChange(user) {
+  if (!user) {
+    state.activeTicket = null;
+    state.mySeat = null;
+    updateMyTicketBadge();
+    updateMySeatBadge();
+    updateNavTabsAccess();
+    await refreshSeats();
+    switchTab('tickets');
+    return;
+  }
+
+  await checkMyTicket();
+  await checkMySeat();
+  await refreshSeats();
+  updateNavTabsAccess();
+
+  // 1️⃣ 당일권이 아닌 회원으로 유효 사용기간 중인 경우 판정
+  const isNonSameDay = isActiveNonSameDayTicket(state.activeTicket);
+  const isFixedManaged = isFixedSeatManagedTicket(state.activeTicket);
+
+  if (isNonSameDay) {
+    // 🎯 [요구사항 1] 당일권이 아닌 회원은 login 시 이용권 구매를 건너뜀!
+    // 🎯 [요구사항 2] 4주 관리형 프리미엄 패스, 12주 D-day 올인원 패스는 자리 배정도 건너뜀!
+    if (isFixedManaged) {
+      if (!state.mySeat) {
+        try {
+          const autoRes = await autoAssignFixedSeat(user.id, user.phone, user.full_name || user.name);
+          if (autoRes && autoRes.success) {
+            showToast(autoRes.message || `🎉 [${state.activeTicket.ticket_type}] 전용 고정석 [${autoRes.seat_number}] 자동 배정 완료! (출입문 5초 개방 🔓)`, 'success', 6000);
+            await triggerDoor(1);
+            await checkMySeat();
+            await refreshSeats();
+          }
+        } catch (e) {
+          console.warn('Auto fixed seat error:', e);
+          showToast(e.message, 'warning');
+        }
+      } else {
+        showToast(`👋 [${state.activeTicket.ticket_type}] 전용 고정석 [${state.mySeat.seat_number}] 이용 중입니다.`, 'info', 3000);
+      }
+      // 좌석 화면으로 즉시 직행 (이용권 구매 및 자리 배정 모두 건너뜀!)
+      switchTab('seats');
+    } else {
+      // 일반 정기권 / 충전권 / 기간권 (50시간권, 100시간권, 4주 일반 자유석):
+      // 이용권 구매는 건너뛰고 바로 빈 좌석 선택 화면으로 이동!
+      if (!state.mySeat) {
+        showToast(`🎫 [${state.activeTicket.ticket_type}] 이용 중! 이용권 구매를 건너뛰고 원하시는 빈 좌석을 선택해 주세요.`, 'info', 4500);
+      }
+      switchTab('seats');
+    }
+  } else {
+    // 당일권(2h, 4h)이거나 이용권 미보유자:
+    if (!state.mySeat) {
+      if (!state.activeTicket) {
+        showToast(`👋 환영합니다, ${user.full_name || '회원'}님! 이용권을 먼저 선택해 주세요.`, 'info', 4000);
+        switchTab('tickets');
+      } else {
+        // 이미 유효한 당일권 시간 남아있는 경우
+        switchTab('seats');
+      }
+    } else {
+      switchTab('seats');
+    }
+  }
+
+  if (state.activeTab === 'door') renderDoor();
+  if (state.activeTab === 'selfstudy') renderSelfstudy();
+}
+
 // ── 9. 초기화 ─────────────────────────────────────────────
 async function init() {
   // 🔑 MQnet 통합 인증 초기화 및 배지 부착
@@ -506,24 +651,17 @@ async function init() {
     autoPrompt: true,
     onAuthChange: async (user) => {
       state.currentUser = user;
-      await checkMyTicket();
-      await checkMySeat();
-      await refreshSeats();
-      if (state.activeTab === 'door') renderDoor();
-      if (state.activeTab === 'selfstudy') renderSelfstudy();
-
-      // 첫 방문자/이용권 미보유자 로그인 시 친절한 안내
-      if (user && !state.activeTicket && !state.mySeat && state.activeTab === 'seats') {
-        showToast(`👋 환영합니다, ${user.full_name || '회원'}님! 스터디카페 이용을 위해 먼저 이용권을 결제해 주세요.`, 'info', 4000);
-      }
+      await handleUserLoginOrStateChange(user);
     }
   });
   MQnetAuth.renderBadge('userAuthBadge');
 
   state.currentUser = MQnetAuth.getUser();
   if (state.currentUser) {
-    await checkMyTicket();
-    await checkMySeat();
+    await handleUserLoginOrStateChange(state.currentUser);
+  } else {
+    updateNavTabsAccess();
+    switchTab('tickets');
   }
 
   // 탭 클릭 이벤트 바인딩
@@ -534,13 +672,6 @@ async function init() {
   });
 
   setupZoneFilters();
-
-  // 초기 화면 오픈: 이미 배정된 좌석이 있다면 좌석 탭, 처음 방문이거나 미배정 시 이용권 선택 창으로 직행!
-  if (state.mySeat) {
-    switchTab('seats');
-  } else {
-    switchTab('tickets');
-  }
 
   // 데스크 QR 파라미터 확인
   checkDeskQrDeepLink();

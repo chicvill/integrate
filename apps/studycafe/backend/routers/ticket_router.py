@@ -58,7 +58,7 @@ async def purchase_ticket(
                 id=uid,
                 name="회원",
                 phone=body.phone,
-                user_type="MANAGED" if (plan.get("type") == "managed" or "관리형" in plan["name"]) else "GENERAL",
+                user_type="MANAGED" if (plan.get("type") == "managed" or "관리형" in str(plan.get("name", ""))) else "GENERAL",
                 tenant_id=body.tenant_id or "studycafe-main",
             )
             db.add(target_user)
@@ -86,7 +86,7 @@ async def purchase_ticket(
 
     # 🎯 결제한 이용권 요금제에 맞춰 회원의 user_type 자동 동기화
     if target_user:
-        if plan.get("type") == "managed" or "관리형" in plan["name"]:
+        if plan.get("type") == "managed" or "관리형" in str(plan.get("name", "")):
             target_user.user_type = "MANAGED"
         else:
             target_user.user_type = "GENERAL"
@@ -127,8 +127,8 @@ async def get_my_tickets(
         if phone not in user_ids:
             user_ids.append(phone)
         u = db.query(StudyCafeUser).filter(StudyCafeUser.phone == phone).first()
-        if u and u.id not in user_ids:
-            user_ids.append(u.id)
+        if u and str(u.id) not in user_ids:
+            user_ids.append(str(u.id))
 
     if not user_ids:
         return {"has_active_ticket": False, "active_ticket": None, "total": 0, "tickets": []}
@@ -193,15 +193,18 @@ async def hold_ticket(body: HoldRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="이용권을 찾을 수 없습니다.")
     if ticket.is_held:
         raise HTTPException(status_code=400, detail="이미 일시정지(Hold) 상태인 이용권입니다.")
-    if (ticket.hold_count or 0) >= 2:
+    curr_hold_count: int = getattr(ticket, "hold_count", 0) or 0
+    if curr_hold_count >= 2:
         raise HTTPException(status_code=400, detail="이용권 일시정지는 최대 2회까지만 가능합니다.")
-    if (ticket.hold_total_days or 0) + body.days > 14:
-        raise HTTPException(status_code=400, detail=f"일시정지 총합 일수(최대 14일)를 초과합니다. (잔여 가능 일수: {14 - (ticket.hold_total_days or 0)}일)")
+    days_to_hold = body.days if body.days is not None else 7
+    curr_hold_days: int = getattr(ticket, "hold_total_days", 0) or 0
+    if curr_hold_days + days_to_hold > 14:
+        raise HTTPException(status_code=400, detail=f"일시정지 총합 일수(최대 14일)를 초과합니다. (잔여 가능 일수: {14 - curr_hold_days}일)")
 
     now = datetime.datetime.now(datetime.timezone.utc)
     ticket.is_held = True
     ticket.hold_started_at = now
-    ticket.hold_count = (ticket.hold_count or 0) + 1
+    ticket.hold_count = curr_hold_count + 1
     db.commit()
     db.refresh(ticket)
     return {

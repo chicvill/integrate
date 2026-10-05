@@ -1,5 +1,6 @@
 // apps/studycafe/frontend/js/ui.js
 // 스터디카페 DOM 렌더링 및 UI 유틸리티
+import { isLmsAllowed } from './state.js';
 
 export function escHtml(str) {
   return String(str ?? '')
@@ -80,6 +81,7 @@ export function renderSeatGrid(container, seats, selectedZone, mySeat, onSeatCli
       <div class="seat-header">
         <span class="seat-num">${escHtml(seat.seat_number)}</span>
         <span class="seat-zone-pill zone-${seat.zone_type.toLowerCase()}">${escHtml(seat.zone_type)}</span>
+        ${seat.is_fixed ? '<span style="background:rgba(99,102,241,0.2);color:#a5b4fc;font-size:0.68rem;padding:2px 6px;border-radius:4px;border:1px solid rgba(99,102,241,0.4)">🔒 고정석</span>' : ''}
       </div>
       <div class="seat-body">
         <div class="seat-icon">${isStepOut ? '🚶‍♂️' : isOccupied ? '👤' : '🪑'}</div>
@@ -132,7 +134,9 @@ export function renderTicketPlans(container, plans, onPurchaseClick) {
         <li>✓ ${Math.round(plan.duration_minutes / 60)}시간 자유 이용</li>
         <li>✓ IoT 스마트 도어락 QR 패스 자동 발급</li>
         <li>✓ 고속 Wi-Fi 및 개인 콘센트 제공</li>
-        <li>✓ 자기주도학습 LMS 연동 기능 포함</li>
+        ${(plan.type === 'managed' || (plan.name && plan.name.includes('관리형'))) 
+          ? '<li style="color:#6ee7b7;font-weight:700;">★ 전용 고정 좌석 + SelfStudy LMS 연동 포함</li>' 
+          : '<li style="color:var(--text-dim);">✕ 자기주도학습 LMS 연동 미포함 (관리형 전용)</li>'}
       </ul>
       <button class="btn-ticket-purchase" type="button">이용권 구매하기</button>
     `;
@@ -215,8 +219,53 @@ export function renderDoorPass(container, currentUser, mySeat, doorStatus, onUnl
 }
 
 // 5. 스터디카페 내부 자기주도학습 연동 탭 렌더링 (SelfStudy PPH OS)
-export function renderSelfstudyTab(container, mySeat, currentUser, onActionClick) {
+export function renderSelfstudyTab(container, mySeat, currentUser, onActionClick, activeTicket, onUpgradeClick) {
   if (!container) return;
+
+  // 🎯 당일권 및 정기권 회원은 자기주도학습 LMS 연동 기능 사용 차단!
+  const allowed = isLmsAllowed(currentUser, activeTicket);
+  if (!allowed) {
+    const currentTicketName = (activeTicket && activeTicket.ticket_type) ? activeTicket.ticket_type : '당일권 / 일반 정기권';
+    container.innerHTML = `
+      <div class="sc-selfstudy-wrapper">
+        <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.3);border-radius:18px;padding:2.5rem 1.5rem;text-align:center;max-width:680px;margin:2rem auto;box-shadow:0 10px 30px rgba(0,0,0,0.3);">
+          <div style="font-size:3.2rem;margin-bottom:0.8rem">🔒</div>
+          <div style="display:inline-block;background:rgba(239,68,68,0.18);color:#f87171;font-size:0.8rem;font-weight:700;padding:0.3rem 0.9rem;border-radius:20px;margin-bottom:1rem;border:1px solid rgba(239,68,68,0.35)">
+            관리형 회원 (SelfStudy OS) 전용 혜택
+          </div>
+          <h2 style="font-size:1.45rem;font-weight:800;color:#fff;margin-bottom:0.75rem;">
+            자기주도학습 LMS 연동 기능 이용 제한
+          </h2>
+          <p style="font-size:0.92rem;color:var(--text-muted);line-height:1.65;margin-bottom:1.6rem;">
+            현재 회원님은 <strong>${escHtml(currentTicketName)}</strong> 이용 중입니다.<br/>
+            <span style="color:#f87171;font-weight:700;">당일권 및 일반 정기권 회원은 자기주도학습 LMS 연동 기능 사용이 차단되어 있습니다.</span><br/>
+            매일 5과목 맞춤 진도 오더 배분, 0.1초 실시간 PPH 리밸런싱, 학부모 안심 웹 포털은<br/>
+            <strong>'4주 관리형 프리미엄 패스'</strong> 및 <strong>'12주 D-day 올인원 패스'</strong> 전용 혜택입니다.
+          </p>
+
+          <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border-color);border-radius:14px;padding:1.2rem 1.4rem;text-align:left;margin-bottom:1.8rem;">
+            <div style="font-weight:700;color:#cbd5e1;font-size:0.9rem;margin-bottom:0.6rem">⭐ 관리형 프리미엄 패스 회원 전용 특권:</div>
+            <ul style="margin:0;padding-left:1.2rem;font-size:0.85rem;color:var(--text-muted);line-height:1.75;">
+              <li><strong style="color:#6ee7b7">전용 고정 좌석 배정</strong>: 매일 자리 고를 필요 없이 고정석으로 즉시 자동 입실</li>
+              <li><strong style="color:#93c5fd">SelfStudy AI 1:1 진도 코칭</strong>: 과목별 난이도 가중치 반영 맞춤 진도 오더</li>
+              <li><strong style="color:#fcd34d">실장 밀착 케어</strong>: 졸음/딴짓/무단이탈 라운딩 지도 메모</li>
+              <li><strong style="color:#c084fc">학부모 실시간 안심 포털</strong>: 실시간 입퇴실 및 학습 현황 웹 링크 공유</li>
+            </ul>
+          </div>
+
+          <button id="btnUpgradeToManagedTab" class="sc-modal-submit-btn" style="background:linear-gradient(135deg, #6366f1, #38bdf8);font-size:1rem;font-weight:800;padding:0.95rem 2rem;border:none;border-radius:12px;cursor:pointer;color:#fff;box-shadow:0 4px 15px rgba(99,102,241,0.4);" type="button">
+            🚀 4주 관리형 / 12주 올인원 패스 요금제 보기
+          </button>
+        </div>
+      </div>
+    `;
+
+    const upgradeBtn = document.getElementById('btnUpgradeToManagedTab');
+    if (upgradeBtn && onUpgradeClick) {
+      upgradeBtn.onclick = onUpgradeClick;
+    }
+    return;
+  }
 
   const hasSeat = !!mySeat;
   const isStepOut = hasSeat && (mySeat.status === 'STEP_OUT' || mySeat.is_step_out);

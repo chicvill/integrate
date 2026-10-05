@@ -365,3 +365,58 @@ export function closeModal(modalId) {
   const m = document.getElementById(modalId);
   if (m) m.classList.remove('open');
 }
+
+// 🎯 당일권 / 일반 정기권 회원의 자기주도학습 LMS 연동 차단 안내 모달
+export function openLmsRestrictedModal(ticketType = '당일권 / 일반 정기권', onUpgrade = null) {
+  let existing = document.getElementById('lmsRestrictedModal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'lmsRestrictedModal';
+  modal.className = 'sc-modal-backdrop open';
+  modal.style.zIndex = '99999';
+  modal.innerHTML = `
+    <div class="sc-modal" style="max-width:480px;text-align:center;">
+      <div class="sc-modal-header" style="justify-content:center;position:relative;">
+        <span style="font-size:2.6rem;">🔒</span>
+        <button class="sc-modal-close" style="position:absolute;right:1rem;top:1rem;" onclick="document.getElementById('lmsRestrictedModal').remove()">✕</button>
+      </div>
+      <div style="display:inline-block;background:rgba(239,68,68,0.15);color:#f87171;font-size:0.8rem;font-weight:700;padding:0.25rem 0.75rem;border-radius:20px;margin-bottom:0.75rem;border:1px solid rgba(239,68,68,0.3)">
+        관리형 회원 (SelfStudy OS) 전용 혜택
+      </div>
+      <h3 style="font-size:1.25rem;font-weight:800;color:#fff;margin-bottom:0.6rem;">자기주도학습 LMS 연동 차단</h3>
+      <p style="font-size:0.88rem;color:var(--text-muted);line-height:1.55;margin-bottom:1.2rem;">
+        현재 회원님은 <strong>${ticketType}</strong> 이용 중입니다.<br/>
+        <span style="color:#f87171;font-weight:600;">당일권 및 일반 정기권 회원은 LMS 연동 기능 사용이 제한됩니다.</span><br/>
+        AI 맞춤 진도 오더 배분 및 실시간 PPH 리밸런싱은 <strong>'4주 관리형 프리미엄 패스'</strong> 또는 <strong>'12주 D-day 올인원 패스'</strong>에서만 제공됩니다.
+      </p>
+
+      <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border-color);border-radius:12px;padding:1rem;text-align:left;margin-bottom:1.3rem;">
+        <div style="font-weight:700;color:#cbd5e1;font-size:0.85rem;margin-bottom:0.4rem">✨ 관리형 회원 전용 포함 혜택:</div>
+        <ul style="margin:0;padding-left:1.2rem;font-size:0.8rem;color:var(--text-muted);line-height:1.65;">
+          <li>전용 고정 좌석 배정 (자리 배정 없이 즉시 입실)</li>
+          <li>SelfStudy AI 1:1 맞춤형 진도 오더 & PPH 리밸런싱</li>
+          <li>학부모 실시간 안심 알림 웹 포털 연동</li>
+        </ul>
+      </div>
+
+      <div style="display:flex;gap:0.75rem;">
+        <button id="btnUpgradeModalAction" class="sc-modal-submit-btn" style="flex:1;background:linear-gradient(135deg, #6366f1, #38bdf8);font-weight:700;" type="button">
+          ⭐ 관리형 패스로 업그레이드
+        </button>
+        <button class="btn-seat-action" style="padding:0.75rem 1rem;border-radius:10px;" type="button" onclick="document.getElementById('lmsRestrictedModal').remove()">
+          닫기
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const upgradeBtn = document.getElementById('btnUpgradeModalAction');
+  if (upgradeBtn) {
+    upgradeBtn.onclick = () => {
+      modal.remove();
+      if (onUpgrade) onUpgrade();
+    };
+  }
+}

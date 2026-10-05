@@ -46,7 +46,26 @@ export async function fetchMySeat(userId, phone, name) {
     headers: getHeaders(),
     cache: 'no-store'
   });
-  if (!res.ok) return { has_seat: false, seat: None };
+  if (!res.ok) return { has_seat: false, seat: null };
+  return await res.json();
+}
+
+// 2-1. 고정석 회원(4주 관리형, 12주 올인원) 자동 입실 및 좌석 배정 건너뛰기
+export async function autoAssignFixedSeat(userId, phone, name) {
+  const base = getApiBase();
+  const res = await fetch(`${base}/seats/auto-assign-fixed`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({
+      user_id: userId,
+      phone: phone,
+      name: name
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `고정석 자동 배정 실패 (HTTP ${res.status})`);
+  }
   return await res.json();
 }
 

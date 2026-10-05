@@ -13,6 +13,7 @@ import uuid
 import datetime
 
 from shared.core.base_database import get_db
+from sqlalchemy import text
 from apps.studycafe.backend.models import Seat, StudyCafeUser, StudyCafeSession, Ticket, PatrolLog
 from apps.studycafe.backend.config import get_settings
 from apps.studycafe.backend.db.studycafe_ai_service import StudyCafeAIService
@@ -29,8 +30,30 @@ class SeatAssignRequest(BaseModel):
     is_minor: Optional[bool] = None
 
 
+def _ensure_sqlite_columns(db: Session):
+    """SQLite 동적 컬럼 마이그레이션 (고정석 컬럼 등)"""
+    try:
+        bind = db.get_bind()
+        if bind.dialect.name == "sqlite":
+            with bind.connect() as conn:
+                u_cols = [r[1] for r in conn.execute(text("PRAGMA table_info(studycafe_users)")).fetchall()]
+                if "fixed_seat_number" not in u_cols:
+                    conn.execute(text("ALTER TABLE studycafe_users ADD COLUMN fixed_seat_number TEXT"))
+                s_cols = [r[1] for r in conn.execute(text("PRAGMA table_info(studycafe_seats)")).fetchall()]
+                if "is_fixed" not in s_cols:
+                    conn.execute(text("ALTER TABLE studycafe_seats ADD COLUMN is_fixed INTEGER DEFAULT 0"))
+                if "fixed_user_name" not in s_cols:
+                    conn.execute(text("ALTER TABLE studycafe_seats ADD COLUMN fixed_user_name TEXT"))
+                if "fixed_user_phone" not in s_cols:
+                    conn.execute(text("ALTER TABLE studycafe_seats ADD COLUMN fixed_user_phone TEXT"))
+                conn.commit()
+    except Exception:
+        pass
+
+
 def _ensure_original_20_seats(db: Session, tenant_id: str = "studycafe-main"):
-    """오리지널 studycafe 20개 구역별 좌석(A-01 ~ A-20) 시딩"""
+    """오리지널 studycafe 20개 구역별 좌석(A-01 ~ A-20) 시딩 및 스키마 검증"""
+    _ensure_sqlite_columns(db)
     seats = db.query(Seat).filter(Seat.tenant_id == tenant_id).all()
     
     # 만약 좌석이 없거나 구버전(1~16번)이면 20개 좌석(A-01~A-20)으로 갱신
@@ -100,6 +123,9 @@ async def get_all_seats(
                 "phone": s.current_user_phone,
                 "is_minor": user_map[s.current_user_phone].is_minor if (s.current_user_phone and s.current_user_phone in user_map) else False,
                 "night_exempt": user_map[s.current_user_phone].night_exempt if (s.current_user_phone and s.current_user_phone in user_map) else False,
+                "is_fixed": getattr(s, "is_fixed", False),
+                "fixed_user_name": getattr(s, "fixed_user_name", None),
+                "fixed_user_phone": getattr(s, "fixed_user_phone", None),
             }
             for s in seats
         ],
@@ -180,6 +206,11 @@ async def assign_seat(
         raise HTTPException(status_code=404, detail="좌석을 찾을 수 없습니다.")
     if seat.is_occupied or seat.status == "OCCUPIED":
         raise HTTPException(status_code=409, detail=f"이미 다른 사용자가 이용 중인 좌석입니다 ({seat.seat_number}).")
+
+    # 🎯 고정석 보호: 타인의 관리형 고정석으로 지정된 좌석이면 일반 배정 차단
+    if getattr(seat, "is_fixed", False) and getattr(seat, "fixed_user_phone", None):
+        if seat.fixed_user_phone != body.phone:
+            raise HTTPException(status_code=403, detail=f"[{seat.seat_number}] 좌석은 관리형 회원 전용 고정석으로 지정되어 일반 배정이 불가합니다.")
 
     # 2. 사용자 확인 또는 생성
     user = db.query(StudyCafeUser).filter(StudyCafeUser.phone == body.phone).first()
@@ -288,6 +319,171 @@ async def assign_seat(
     }
 
 
+class AutoAssignFixedRequest(BaseModel):
+    user_id: Optional[str] = None
+    phone: Optional[str] = None
+    name: Optional[str] = None
+    tenant_id: str = "studycafe-main"
+
+
+@router.post("/auto-assign-fixed", summary="고정석 회원(4주 관리형, 12주 올인원) 자동 입실 및 좌석 배정 건너뛰기")
+async def auto_assign_fixed_seat(
+    body: AutoAssignFixedRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    4주 관리형 프리미엄 패스 및 12주 D-day 올인원 패스 회원은 고정 자리를 배정받으므로,
+    로그인 시 좌석 선택/배정 과정을 건너뛰고 자동으로 고정석에 입실 처리 및 출입문을 개방합니다.
+    """
+    _ensure_original_20_seats(db, body.tenant_id)
+    now = datetime.datetime.now(datetime.timezone.utc)
+
+    # 1. 사용자 확인 또는 생성
+    user = None
+    if body.phone:
+        user = db.query(StudyCafeUser).filter(StudyCafeUser.phone == body.phone).first()
+    if not user and body.user_id:
+        user = db.query(StudyCafeUser).filter(
+            (StudyCafeUser.id == body.user_id) | (StudyCafeUser.phone == body.user_id)
+        ).first()
+
+    if not user:
+        user = StudyCafeUser(
+            id=body.user_id or str(uuid.uuid4()),
+            name=body.name or "관리형 회원",
+            phone=body.phone or "010-5555-4444",
+            user_type="MANAGED",
+            tenant_id=body.tenant_id,
+        )
+        db.add(user)
+        db.flush()
+
+    # 2. 유효 이용권 확인 (4주 관리형 프리미엄, 12주 올인원 패스 여부)
+    active_ticket = db.query(Ticket).filter(
+        (Ticket.user_id == user.id) | (Ticket.user_id == user.phone),
+        Ticket.is_active == True,
+    ).order_by(Ticket.created_at.desc()).first()
+
+    # 데모/테스트 지원
+    if not active_ticket:
+        fallback = db.query(Ticket).filter(
+            Ticket.user_id.in_(["demo-user", "test-user", "test"]),
+            Ticket.is_active == True,
+        ).order_by(Ticket.created_at.desc()).first()
+        if fallback:
+            fallback.user_id = user.id
+            db.flush()
+            active_ticket = fallback
+
+    is_managed_fixed = False
+    if active_ticket:
+        t_name = str(active_ticket.ticket_type or "")
+        if "관리형" in t_name or "12주" in t_name or "올인원" in t_name or getattr(active_ticket, "ticket_type", "") in ["managed_4w", "managed_12w"]:
+            is_managed_fixed = True
+    elif user.user_type == "MANAGED":
+        is_managed_fixed = True
+
+    if not is_managed_fixed:
+        return {
+            "success": False,
+            "is_managed_fixed": False,
+            "message": "고정석 자동 배정 대상(4주 관리형 프리미엄, 12주 올인원 패스)이 아닙니다."
+        }
+
+    # 3. 회원을 MANAGED로 확정
+    user.user_type = "MANAGED"
+
+    # 4. 이미 현재 좌석을 이용(입실 or 외출) 중인지 확인
+    existing_seat = db.query(Seat).filter(
+        Seat.tenant_id == body.tenant_id,
+        (Seat.current_user_id == user.id) | (Seat.current_user_phone == user.phone),
+        (Seat.is_occupied == True) | (Seat.status.in_(["OCCUPIED", "STEP_OUT"]))
+    ).first()
+
+    if existing_seat:
+        return {
+            "success": True,
+            "is_managed_fixed": True,
+            "already_seated": True,
+            "seat_number": existing_seat.seat_number,
+            "zone_type": existing_seat.zone_type,
+            "user_name": user.name,
+            "message": f"이미 고정석 [{existing_seat.seat_number}]에 입실되어 있습니다."
+        }
+
+    # 5. 사용자 고정석 결정 (기존 지정석이 있거나, 없으면 FOCUS 구역 첫 빈자리 배정)
+    target_seat = None
+    fixed_num = getattr(user, "fixed_seat_number", None)
+    if fixed_num:
+        target_seat = db.query(Seat).filter(
+            Seat.tenant_id == body.tenant_id,
+            Seat.seat_number == fixed_num
+        ).first()
+
+    if not target_seat or target_seat.is_occupied:
+        # FOCUS zone(A-01 ~ A-08)의 빈 좌석 우선 탐색
+        target_seat = db.query(Seat).filter(
+            Seat.tenant_id == body.tenant_id,
+            Seat.zone_type == "FOCUS",
+            Seat.is_occupied == False,
+            Seat.status == "EMPTY"
+        ).order_by(Seat.seat_number).first()
+
+    if not target_seat:
+        # 빈 좌석 아무거나
+        target_seat = db.query(Seat).filter(
+            Seat.tenant_id == body.tenant_id,
+            Seat.is_occupied == False,
+            Seat.status == "EMPTY"
+        ).order_by(Seat.seat_number).first()
+
+    if not target_seat:
+        raise HTTPException(status_code=409, detail="현재 만석으로 고정석을 자동 배정할 수 없습니다. 관리자에게 문의하세요.")
+
+    # 6. 고정석 영구 바인딩 및 입실 점유 처리
+    user.fixed_seat_number = target_seat.seat_number
+    target_seat.is_fixed = True
+    target_seat.fixed_user_phone = user.phone
+    target_seat.fixed_user_name = user.name
+
+    target_seat.is_occupied = True
+    target_seat.status = "OCCUPIED"
+    target_seat.current_user_id = user.id
+    target_seat.current_user_name = user.name
+    target_seat.current_user_phone = user.phone
+    target_seat.current_user_type = "MANAGED"
+    target_seat.step_out_at = None
+
+    # 7. 세션 생성
+    session = StudyCafeSession(
+        id=str(uuid.uuid4()),
+        user_id=user.id,
+        user_name=user.name,
+        user_phone=user.phone,
+        user_type="MANAGED",
+        seat_id=target_seat.id,
+        seat_number=target_seat.seat_number,
+        ticket_id=active_ticket.id if active_ticket else None,
+        tenant_id=target_seat.tenant_id,
+        check_in_at=now,
+    )
+    db.add(session)
+    db.commit()
+
+    ticket_name = active_ticket.ticket_type if active_ticket else "관리형 프리미엄 패스"
+    return {
+        "success": True,
+        "is_managed_fixed": True,
+        "already_seated": False,
+        "seat_number": target_seat.seat_number,
+        "zone_type": target_seat.zone_type,
+        "user_name": user.name,
+        "user_type": "MANAGED",
+        "ticket_type": ticket_name,
+        "message": f"🎉 [{ticket_name}] 전용 고정 좌석 [{target_seat.seat_number}]으로 자동 배정 및 입실 완료되었습니다. (출입문 5초 개방 🔓)"
+    }
+
+
 @router.post("/leave/{seat_number}", summary="좌석 퇴실 및 이용권 시간 실차감")
 async def leave_seat(
     seat_number: str,
@@ -327,7 +523,9 @@ async def leave_seat(
         if last_session.ticket_id:
             ticket = db.query(Ticket).filter(Ticket.id == last_session.ticket_id).first()
             if ticket and ticket.remaining_minutes is not None:
-                ticket.remaining_minutes = max(0, int(ticket.remaining_minutes) - int(last_session.used_minutes))
+                rem_min: int = getattr(ticket, "remaining_minutes", 0) or 0
+                used_m: int = getattr(last_session, "used_minutes", 0) or 0
+                ticket.remaining_minutes = max(0, rem_min - used_m)
                 remaining_ticket_min = ticket.remaining_minutes
                 if ticket.remaining_minutes <= 0:
                     ticket.is_active = False
@@ -538,7 +736,8 @@ async def create_patrol_log(
     db.add(log)
 
     if user and body.penalty:
-        user.penalty_points = int(user.penalty_points or 0) + body.penalty
+        curr_pts: int = getattr(user, "penalty_points", 0) or 0
+        user.penalty_points = curr_pts + body.penalty
 
     db.commit()
     db.refresh(log)
@@ -636,7 +835,7 @@ async def get_parent_student_status(
         PatrolLog.created_at >= today_start
     ).order_by(PatrolLog.created_at.desc()).all()
 
-    today_total_minutes = sum(int(s.used_minutes or 0) for s in sessions)
+    today_total_minutes = sum(int(getattr(s, "used_minutes", 0) or 0) for s in sessions)
     current_status = "퇴실"
     if seat:
         current_status = "외출 중 (식사/휴식)" if seat.status == "STEP_OUT" else "집중 학습 중 🟢"
@@ -648,7 +847,7 @@ async def get_parent_student_status(
         "current_seat": f"{seat.seat_number} ({seat.zone_type}존)" if seat else "미배정",
         "today_study_minutes": today_total_minutes,
         "today_study_hours": round(float(today_total_minutes) / 60.0, 1),
-        "penalty_points": int(user.penalty_points or 0),
+        "penalty_points": int(getattr(user, "penalty_points", 0) or 0),
         "patrol_reports": [
             {
                 "time": p.created_at.strftime("%H:%M") if p.created_at else "",

@@ -6,13 +6,13 @@ import datetime
 import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Any
 
 logger = logging.getLogger("studycafe.door")
 router = APIRouter()
 
 # 전역 비상/화재 모드 상태 (메모리 및 릴레이 연동 플래그)
-_emergency_state = {
+_emergency_state: dict[str, Any] = {
     "is_emergency": False,
     "reason": "정상 운영 중",
     "triggered_at": None,
