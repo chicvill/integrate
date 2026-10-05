@@ -15,6 +15,7 @@ export default function Login({ onLogin, onOpenParentView }: LoginProps) {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [privacyConsent, setPrivacyConsent] = useState(true);
 
   // 010-XXXX-XXXX 또는 P-010-XXXX-XXXX 형식 지원
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -68,6 +69,10 @@ export default function Login({ onLogin, onOpenParentView }: LoginProps) {
     }
     if (!isLoginMode && !userName) {
       setErrorMessage('회원가입 시 성함을 입력해 주세요.');
+      return;
+    }
+    if (!isLoginMode && !privacyConsent) {
+      setErrorMessage('개인정보 수집 및 이용 동의가 필요합니다.');
       return;
     }
 
@@ -333,6 +338,32 @@ export default function Login({ onLogin, onOpenParentView }: LoginProps) {
               }}
             />
           </div>
+
+          {!isLoginMode && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '10px',
+              background: 'rgba(255, 255, 255, 0.04)',
+              padding: '12px 14px',
+              borderRadius: '10px',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              fontSize: '12px',
+              color: '#94a3b8'
+            }}>
+              <input
+                type="checkbox"
+                id="selfstudyPrivacyConsent"
+                checked={privacyConsent}
+                onChange={e => setPrivacyConsent(e.target.checked)}
+                style={{ marginTop: '2px', accentColor: '#3b82f6', cursor: 'pointer', width: '16px', height: '16px' }}
+              />
+              <label htmlFor="selfstudyPrivacyConsent" style={{ cursor: 'pointer', lineHeight: '1.45' }}>
+                <strong style={{ color: '#ffffff' }}>[필수] 개인정보 수집 및 이용 동의</strong><br/>
+                <span style={{ fontSize: '11px', color: '#64748b' }}>학습 진도 관리, PPH 분석 및 학부모 리포트 제공 목적 (90일 보존 후 안전 파기)</span>
+              </label>
+            </div>
+          )}
 
           <button
             type="submit"

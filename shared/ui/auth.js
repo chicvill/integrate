@@ -366,6 +366,17 @@ export const MQnetAuth = {
             </div>
           </div>
 
+          <!-- 회원가입 전용: 개인정보 수집 및 이용 동의 -->
+          <div class="mqnet-form-group hidden" id="mqnetConsentGroup" style="margin-top:0.25rem;">
+            <label style="display:flex;align-items:flex-start;gap:0.55rem;font-size:0.8rem;color:#94a3b8;cursor:pointer;background:rgba(255,255,255,0.03);padding:0.65rem 0.8rem;border-radius:8px;border:1px solid rgba(255,255,255,0.08);">
+              <input type="checkbox" id="mqnetPrivacyConsent" checked style="margin-top:0.18rem;accent-color:#6366f1;cursor:pointer;width:1rem;height:1rem;">
+              <span style="line-height:1.45;">
+                <strong style="color:#e2e8f0;">[필수] 개인정보 수집 및 이용 동의</strong><br/>
+                <span style="font-size:0.74rem;color:#64748b;">회원 식별, 서비스 제공 및 안전 관리 목적 (탈퇴 시 또는 법정 보존 기간 후 안전 파기)</span>
+              </span>
+            </label>
+          </div>
+
           <button class="mqnet-auth-submit-btn" id="mqnetAuthSubmit">로그인</button>
         </div>
       </div>`;
@@ -379,11 +390,13 @@ export const MQnetAuth = {
     const emailGroup = document.getElementById('mqnetEmailGroup');
     const pwGroup = document.getElementById('mqnetPwGroup');
     const nameGroup = document.getElementById('mqnetNameGroup');
+    const consentGroup = document.getElementById('mqnetConsentGroup');
     const loginOptions = document.getElementById('mqnetLoginOptions');
     const submitBtn = document.getElementById('mqnetAuthSubmit');
     const emailInput = document.getElementById('mqnetEmail');
     const passInput = document.getElementById('mqnetPassword');
     const nameInput = document.getElementById('mqnetName');
+    const consentInput = document.getElementById('mqnetPrivacyConsent');
     const errorBox = document.getElementById('mqnetAuthError');
     const btnGoogle = document.getElementById('mqnetBtnGoogle');
     const btnNaver = document.getElementById('mqnetBtnNaver');
@@ -405,6 +418,7 @@ export const MQnetAuth = {
         emailGroup.classList.remove('hidden');
         pwGroup.classList.remove('hidden');
         nameGroup.classList.add('hidden');
+        consentGroup?.classList.add('hidden');
         loginOptions.classList.remove('hidden');
         demoSection.classList.remove('hidden');
         submitBtn.textContent = '로그인';
@@ -414,6 +428,7 @@ export const MQnetAuth = {
         emailGroup.classList.remove('hidden');
         pwGroup.classList.remove('hidden');
         nameGroup.classList.remove('hidden');
+        consentGroup?.classList.remove('hidden');
         loginOptions.classList.add('hidden');
         demoSection.classList.add('hidden');
         submitBtn.textContent = '회원가입 완료';
@@ -502,6 +517,10 @@ export const MQnetAuth = {
       }
       if (mode === 'register' && !fullName) {
         showError('이름 또는 상호를 입력해주세요.');
+        return;
+      }
+      if (mode === 'register' && consentInput && !consentInput.checked) {
+        showError('개인정보 수집 및 이용에 동의해 주세요.');
         return;
       }
 

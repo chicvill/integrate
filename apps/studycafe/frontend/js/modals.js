@@ -314,6 +314,12 @@ export function openPurchaseModal(plan, currentUser, onConfirm) {
   modal.classList.add('open');
 
   const handlePurch = async () => {
+    const consentCheck = document.getElementById('purchPrivacyConsent');
+    if (consentCheck && !consentCheck.checked) {
+      showToast('개인정보 수집 및 이용 동의가 필요합니다.', 'warning');
+      return;
+    }
+
     // 🎯 테스트 편의를 위해 모달을 즉시 닫고 결제 완료로 간주하여 다음 단계로 직행!
     closeModal('purchaseModal');
     confirmBtn.disabled = false;
