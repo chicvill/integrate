@@ -61,6 +61,18 @@
   <!-- 메인 컨텐츠 영역 -->
   <main class="sc-main">
 
+    <!-- 🚨 화재 비상 대피 모드 발령 배너 -->
+    <div id="kioskEmergencyBanner" style="display:none; background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; padding: 0.9rem 1.4rem; border-radius: 12px; margin-bottom: 1.25rem; font-weight: 800; align-items: center; justify-content: space-between; box-shadow: 0 4px 20px rgba(239,68,68,0.4);">
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <span style="font-size:1.8rem;">🚨</span>
+        <div>
+          <div style="font-size:1.05rem;">[화재 비상 대피 모드 발령] 출입문 상시 전면 개방 중</div>
+          <div id="kioskEmergencyReason" style="font-size:0.8rem;color:#fecaca;font-weight:400;margin-top:0.15rem;">소방법 규정에 따라 안전한 대피를 위해 모든 출입문 전자기식 락(EM-Lock)이 자동 해제되었습니다.</div>
+        </div>
+      </div>
+      <span style="font-size:0.85rem;background:rgba(0,0,0,0.25);padding:0.4rem 0.8rem;border-radius:8px;">비상구로 대피하세요</span>
+    </div>
+
     <!-- 🚀 현장/역할별 빠른 페이지 이동 버튼 바 -->
     <div class="sc-quick-portal-bar" style="margin-bottom: 1.25rem; background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 0.8rem 1.1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.8rem;">
       <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -150,8 +162,17 @@
         </div>
 
         <div class="sc-form-group">
-          <label class="sc-form-label">휴대폰 번호 (출입키 및 알림톡)</label>
+          <label class="sc-form-label">휴대폰 번호 (출입키 및 알림)</label>
           <input id="assignModalPhone" type="tel" class="sc-form-input" placeholder="010-0000-0000">
+        </div>
+
+        <!-- 🎯 개인정보보호법 준수 수집 및 이용 동의 (필수 체크박스) -->
+        <div style="display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.82rem; color: var(--text-muted); background: rgba(255,255,255,0.03); padding: 0.75rem 0.9rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);">
+          <input type="checkbox" id="assignModalPrivacyConsent" checked style="margin-top: 0.15rem; width: 1.15rem; height: 1.15rem; cursor: pointer; accent-color: #3b82f6;">
+          <label for="assignModalPrivacyConsent" style="cursor: pointer; line-height: 1.45;">
+            <strong style="color: #fff;">[필수] 개인정보 수집 및 이용 동의</strong><br/>
+            <span style="font-size: 0.76rem; color: var(--text-dim);">스마트 출입문 제어, 22시 청소년 심야 귀가 안전 관리, 학부모 순찰 리포트 제공 목적 (90일 후 안전 파기)</span>
+          </label>
         </div>
 
         <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:10px;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.6rem;margin-top:0.4rem;">
@@ -162,6 +183,47 @@
         </div>
 
         <button id="assignModalSubmit" class="sc-modal-submit-btn" type="button">입실 및 좌석 배정 완료</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 학부모 안심 웹 포털 1-클릭 공유 모달 (Zero-Message Onboarding) ── -->
+  <div id="parentShareModal" class="sc-modal-backdrop">
+    <div class="sc-modal" style="max-width: 440px;">
+      <div class="sc-modal-header">
+        <h3 class="sc-modal-title">👨‍👩‍👧 학부모 안심 웹 포털 (비용 0원)</h3>
+        <button class="sc-modal-close" onclick="document.getElementById('parentShareModal').classList.remove('open')">✕</button>
+      </div>
+      <div class="sc-modal-body" style="display:flex;flex-direction:column;gap:1.1rem;text-align:center;">
+        <div style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:12px;padding:1rem;">
+          <div style="font-size:1.4rem;margin-bottom:0.25rem;">🎉 좌석 배정 완료!</div>
+          <div style="font-weight:700;color:#34d399;font-size:0.95rem;"><span id="shareStudentName">회원</span> 님 입실이 완료되었습니다.</div>
+          <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.3rem;">학부모님께서 실시간 입/퇴실, 순공 시간, 현장 순찰 일지를 확인하실 수 있습니다.</div>
+        </div>
+
+        <div style="background:#fff;padding:0.85rem;border-radius:12px;display:inline-block;margin:0 auto;box-shadow:0 4px 15px rgba(0,0,0,0.2);">
+          <img id="shareQrImage" src="" alt="학부모 포털 QR코드" style="width:150px;height:150px;display:block;">
+          <div style="color:#0f172a;font-size:0.75rem;font-weight:700;margin-top:0.35rem;">스마트폰 카메라로 스캔</div>
+        </div>
+
+        <div class="sc-form-group" style="text-align:left;">
+          <label class="sc-form-label">학부모 안심 포털 고유 주소 (URL)</label>
+          <div style="display:flex;gap:0.4rem;">
+            <input id="shareUrlInput" type="text" readonly class="sc-form-input" style="background:#1e293b;color:#94a3b8;font-size:0.8rem;">
+            <button id="btnCopyShareUrl" class="btn-action" style="background:#3b82f6;color:#fff;padding:0 0.9rem;border-radius:8px;font-weight:700;white-space:nowrap;" type="button">
+              📋 복사
+            </button>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:0.6rem;">
+          <button id="btnOpenParentDirect" class="sc-modal-submit-btn" style="margin:0;background:#10b981;flex:1;" type="button">
+            📱 안심 포털 바로 열기
+          </button>
+          <button class="btn-action" style="background:rgba(255,255,255,0.08);color:#fff;padding:0.75rem 1.2rem;border-radius:10px;" onclick="document.getElementById('parentShareModal').classList.remove('open')">
+            닫기
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -187,7 +249,7 @@
     </div>
   </div>
 
-  <!-- 메인 모듈 진입점 (캐시 버스팅 v=2.2) -->
-  <script type="module" src="./app.js?v=2.2"></script>
+  <!-- 메인 모듈 진입점 (캐시 버스팅 v=2.3) -->
+  <script type="module" src="./app.js?v=2.3"></script>
 </body>
 </html>

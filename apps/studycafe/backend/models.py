@@ -25,6 +25,7 @@ class StudyCafeUser(Base, TimestampMixin):
     # 🎯 청소년 보호 및 벌점 관리
     birth_date: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)  # YYYY-MM-DD
     is_minor: Mapped[bool] = mapped_column(Boolean, default=False)       # 22:00 심야 셧다운 대상
+    night_exempt: Mapped[bool] = mapped_column(Boolean, default=False)   # 22시 심야 이용 예외 승인 여부
     parent_phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     penalty_points: Mapped[int] = mapped_column(Integer, default=0)
 

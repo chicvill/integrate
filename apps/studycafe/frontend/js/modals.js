@@ -74,6 +74,12 @@ export function openAssignModal(seat, currentUser, activeTicket, onConfirm) {
   const handleConfirm = async () => {
     const name = nameInput.value.trim();
     const phone = phoneInput.value.trim();
+    const privacyCheck = document.getElementById('assignModalPrivacyConsent');
+
+    if (privacyCheck && !privacyCheck.checked) {
+      showToast('개인정보 수집 및 이용(출입문/야간안전)에 동의해 주세요.', 'warning');
+      return;
+    }
 
     if (!name || !phone) {
       showToast('이름과 연락처를 모두 입력해 주세요.', 'warning');
@@ -308,6 +314,50 @@ export function openPurchaseModal(plan, currentUser, onConfirm) {
   };
 
   confirmBtn.onclick = handlePurch;
+}
+
+// 5. 학부모 안심 웹 포털 1-클릭 공유 모달 (Zero-Message Onboarding)
+export function openParentShareModal(studentName, phone) {
+  const modal = document.getElementById('parentShareModal');
+  if (!modal) return;
+
+  const studentNameEl = document.getElementById('shareStudentName');
+  const qrImageEl = document.getElementById('shareQrImage');
+  const urlInput = document.getElementById('shareUrlInput');
+  const copyBtn = document.getElementById('btnCopyShareUrl');
+  const directBtn = document.getElementById('btnOpenParentDirect');
+
+  const origin = window.location.origin;
+  const parentUrl = `${origin}/studycafe/parent.html?phone=${encodeURIComponent(phone || '')}`;
+
+  if (studentNameEl) studentNameEl.textContent = studentName || '회원';
+  if (urlInput) urlInput.value = parentUrl;
+  if (qrImageEl) {
+    qrImageEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(parentUrl)}`;
+  }
+
+  if (copyBtn) {
+    copyBtn.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(parentUrl);
+        showToast('📋 학부모 안심 포털 링크가 복사되었습니다! 카카오톡/문자로 공유하세요.', 'success');
+        copyBtn.textContent = '✅ 복사됨!';
+        setTimeout(() => { copyBtn.textContent = '📋 복사'; }, 2500);
+      } catch (err) {
+        urlInput.select();
+        document.execCommand('copy');
+        showToast('📋 링크가 복사되었습니다.', 'success');
+      }
+    };
+  }
+
+  if (directBtn) {
+    directBtn.onclick = () => {
+      window.open(parentUrl, '_blank');
+    };
+  }
+
+  modal.classList.add('open');
 }
 
 // 모달 닫기

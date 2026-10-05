@@ -97,19 +97,39 @@
       </div>
     </div>
 
+    <!-- 🚨 화재 비상 대피 모드 발령 배너 -->
+    <div id="adminEmergencyBanner" style="display:none; background: linear-gradient(135deg, #ef4444, #b91c1c); border: 2px solid #f87171; border-radius: 14px; padding: 1rem 1.4rem; color: #fff; align-items: center; justify-content: space-between; gap: 1rem; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);">
+      <div style="display: flex; align-items: center; gap: 0.8rem;">
+        <span style="font-size: 2rem;">🚨</span>
+        <div>
+          <div style="font-size: 1.05rem; font-weight: 800;">[화재/비상 대피 모드 발령 중] 스마트 도어 상시 전면 개방</div>
+          <div id="adminEmergencyReason" style="font-size: 0.82rem; color: #fecaca; margin-top: 0.2rem;">소방법 규정에 따라 Fail-Safe 전자기식 락(EM-Lock) 전원이 차단되어 출입문이 영구 개방 중입니다.</div>
+        </div>
+      </div>
+      <button id="btnResetEmergencyBanner" class="btn-action" style="background: #fff; color: #dc2626; padding: 0.6rem 1.1rem; font-size: 0.88rem; font-weight: 800; border-radius: 8px; border: none; cursor: pointer; white-space: nowrap;">
+        ✅ 비상 해제 (정상 복구)
+      </button>
+    </div>
+
     <header class="admin-header">
       <div>
         <h1 style="font-size:1.4rem;font-weight:800;color:#fff;margin:0 0 0.3rem;">📊 점주 실시간 관제 대시보드</h1>
-        <div style="font-size:0.82rem;color:var(--text-muted);">스터디카페 20석 실시간 재실 모니터링 & 스마트 출입문 제어</div>
+        <div style="font-size:0.82rem;color:var(--text-muted);">스터디카페 20석 실시간 재실 모니터링 & 스마트 출입문 제어 (Fail-Safe 연동)</div>
       </div>
-      <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
-        <button id="btnManualDoor" class="sc-modal-submit-btn" style="margin:0;background:#10b981;padding:0.65rem 1.1rem;" type="button">
-          🔓 출입문 5초 강제 개방
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <button id="btnManualDoor" class="sc-modal-submit-btn" style="margin:0;background:#10b981;padding:0.6rem 0.95rem;font-size:0.82rem;" type="button">
+          🔓 출입문 5초 개방
         </button>
-        <button id="btnCleanupExpired" class="sc-modal-submit-btn" style="margin:0;background:#f59e0b;padding:0.65rem 1.1rem;" type="button">
-          🧹 60분 초과 외출자 자동 퇴실
+        <button id="btnEmergencyOpen" class="sc-modal-submit-btn" style="margin:0;background:#ef4444;padding:0.6rem 0.95rem;font-size:0.82rem;" type="button">
+          🚨 비상 전면 개방
         </button>
-        <button id="btnRefresh" class="btn-action" style="background:rgba(255,255,255,0.1);color:#fff;padding:0.65rem 1rem;" type="button">
+        <button id="btnCleanupExpired" class="sc-modal-submit-btn" style="margin:0;background:#f59e0b;padding:0.6rem 0.95rem;font-size:0.82rem;" type="button">
+          🚶 60분 초과 외출 정리
+        </button>
+        <button id="btnCleanupLogs" class="sc-modal-submit-btn" style="margin:0;background:#6366f1;padding:0.6rem 0.95rem;font-size:0.82rem;" type="button">
+          🧹 90일 순찰기록 파기
+        </button>
+        <button id="btnRefresh" class="btn-action" style="background:rgba(255,255,255,0.1);color:#fff;padding:0.6rem 0.85rem;" type="button">
           🔄 새로고침
         </button>
       </div>
@@ -134,8 +154,8 @@
         <div id="statAvailable" style="font-size:1.8rem;font-weight:800;color:#10b981;margin-top:0.3rem;">-</div>
       </div>
       <div class="admin-card">
-        <div style="font-size:0.8rem;color:var(--text-muted);">실시간 점유율</div>
-        <div id="statRate" style="font-size:1.8rem;font-weight:800;color:#38bdf8;margin-top:0.3rem;">0%</div>
+        <div style="font-size:0.8rem;color:var(--text-muted);">도어락 상태</div>
+        <div id="statDoorState" style="font-size:1.3rem;font-weight:800;color:#10b981;margin-top:0.5rem;">정상 가동</div>
       </div>
     </div>
 
@@ -152,6 +172,7 @@
               <th>이용자 성명</th>
               <th>회원 유형</th>
               <th>연락처</th>
+              <th>22시 심야이용</th>
               <th>관리 조치</th>
             </tr>
           </thead>
@@ -164,16 +185,49 @@
   </div>
 
   <script type="module">
-    import { fetchAdminDashboard, cleanupExpiredSeats, triggerDoor, leaveSeat, submitPatrolLog } from './js/api.js?v=2.1';
+    import { 
+      fetchAdminDashboard, 
+      cleanupExpiredSeats, 
+      triggerDoor, 
+      leaveSeat, 
+      submitPatrolLog, 
+      fetchDoorStatus, 
+      emergencyOpenDoor, 
+      emergencyResetDoor, 
+      toggleNightExempt, 
+      cleanupOldPatrolLogs 
+    } from './js/api.js?v=2.2';
+
+    async function checkDoorEmergencyStatus() {
+      try {
+        const door = await fetchDoorStatus();
+        const banner = document.getElementById('adminEmergencyBanner');
+        const reasonEl = document.getElementById('adminEmergencyReason');
+        const statDoor = document.getElementById('statDoorState');
+
+        if (door.is_emergency) {
+          banner.style.display = 'flex';
+          reasonEl.textContent = `사유: ${door.reason} (${door.fail_safe_guideline})`;
+          statDoor.textContent = '🚨 비상 개방';
+          statDoor.style.color = '#ef4444';
+        } else {
+          banner.style.display = 'none';
+          statDoor.textContent = '정상 가동 🔒';
+          statDoor.style.color = '#10b981';
+        }
+      } catch (err) {
+        console.warn('도어 상태 조회 에러:', err);
+      }
+    }
 
     async function loadDashboard() {
       try {
+        await checkDoorEmergencyStatus();
         const data = await fetchAdminDashboard();
         document.getElementById('statTotal').textContent = `${data.total_seats}석`;
         document.getElementById('statOccupied').textContent = `${data.occupied_count}석`;
         document.getElementById('statStepOut').textContent = `${data.step_out_count}석`;
         document.getElementById('statAvailable').textContent = `${data.available_count}석`;
-        document.getElementById('statRate').textContent = `${data.occupancy_rate}%`;
 
         const tbody = document.getElementById('seatTableBody');
         tbody.innerHTML = data.seats.map(s => {
@@ -184,6 +238,28 @@
           if (isStepOut) statusBadge = '<span style="color:#f59e0b;font-weight:700;">외출 중 🚶‍♂️</span>';
           else if (isOccupied) statusBadge = '<span style="color:var(--accent);font-weight:700;">이용 중 🟢</span>';
 
+          // 22시 심야 청소년 규제 상태 및 토글 버튼
+          let nightBadge = '<span style="color:var(--text-muted);">-</span>';
+          if (isOccupied) {
+            if (s.is_minor) {
+              if (s.night_exempt) {
+                nightBadge = `
+                  <button class="btn-action" style="background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.5);" onclick="window.adminToggleNightExempt('${s.phone}', '${s.user_name}')" title="클릭 시 22시 제한으로 복원">
+                    🌙 예외 허용 (클릭시 차단)
+                  </button>
+                `;
+              } else {
+                nightBadge = `
+                  <button class="btn-action" style="background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.5);" onclick="window.adminToggleNightExempt('${s.phone}', '${s.user_name}')" title="클릭 시 동의서 제출 회원 심야 예외 승인">
+                    ⛔ 22시 퇴실 (클릭시 승인)
+                  </button>
+                `;
+              }
+            } else {
+              nightBadge = '<span style="color:#94a3b8;font-size:0.8rem;">성인 (상시)</span>';
+            }
+          }
+
           return `
             <tr>
               <td style="font-weight:700;color:#fff;">${s.seat_number}</td>
@@ -192,6 +268,7 @@
               <td>${s.user_name || '-'}</td>
               <td><span class="sc-badge ${s.user_type === 'MANAGED' ? 'zone-focus' : 'zone-normal'}">${s.user_type === 'MANAGED' ? '관리형' : '일반'}</span></td>
               <td style="color:var(--text-muted);">${s.phone || '-'}</td>
+              <td>${nightBadge}</td>
               <td>
                 ${isOccupied ? `
                   <div style="display:flex;gap:0.4rem;">
@@ -272,6 +349,17 @@
       };
     };
 
+    window.adminToggleNightExempt = async function(phone, userName) {
+      if (!phone || phone === '-') return alert('회원 연락처 정보가 없습니다.');
+      try {
+        const res = await toggleNightExempt(phone);
+        alert(res.message);
+        loadDashboard();
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+
     window.adminForceLeave = async function(seatNum) {
       if (!confirm(`[점주 권한] 좌석 ${seatNum}을 강제 퇴실 처리하시겠습니까?`)) return;
       try {
@@ -292,11 +380,43 @@
       }
     });
 
+    document.getElementById('btnEmergencyOpen').addEventListener('click', async () => {
+      if (!confirm('🚨 [긴급] 화재 비상 전면 개방을 발령하시겠습니까?\n\n소방법 규정에 따라 모든 출입문이 영구 상시 개방 모드로 전환됩니다.')) return;
+      try {
+        const res = await emergencyOpenDoor('점주 수동 비상 발령');
+        alert(res.message);
+        loadDashboard();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    document.getElementById('btnResetEmergencyBanner').addEventListener('click', async () => {
+      if (!confirm('✅ 비상 개방을 해제하고 정상 출입 제어(자동 잠금) 모드로 복구하시겠습니까?')) return;
+      try {
+        const res = await emergencyResetDoor();
+        alert(res.message);
+        loadDashboard();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
     document.getElementById('btnCleanupExpired').addEventListener('click', async () => {
       try {
         const res = await cleanupExpiredSeats();
         alert(`외출 60분 초과 ${res.cleaned_seats_count}개 좌석이 자동 퇴실 정리되었습니다.`);
         loadDashboard();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    document.getElementById('btnCleanupLogs').addEventListener('click', async () => {
+      if (!confirm('🧹 [개인정보보호법 준수] 90일이 지난 과거 순찰 일지 및 벌점 기록을 영구 파기하시겠습니까?')) return;
+      try {
+        const res = await cleanupOldPatrolLogs(90);
+        alert(res.message);
       } catch (err) {
         alert(err.message);
       }

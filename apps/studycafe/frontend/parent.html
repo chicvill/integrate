@@ -188,18 +188,47 @@
       </div>
     </div>
 
-    <!-- 홈 바로가기 추가 안내 -->
-    <div style="text-align:center;font-size:0.75rem;color:var(--text-dim);line-height:1.5;">
-      💡 브라우저 메뉴에서 <strong>[홈 화면에 추가]</strong>를 누르시면 전용 앱처럼 매일 터치 한 번으로 확인하실 수 있습니다.
+    <!-- 📱 PWA 홈 바로가기 추가 안내 카드 -->
+    <div class="status-card" style="background: linear-gradient(135deg, rgba(56,189,248,0.06), rgba(99,102,241,0.06)); border: 1px solid rgba(56,189,248,0.25);">
+      <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.6rem;">
+        <span style="font-size:1.4rem;">📱</span>
+        <h4 style="font-size:0.95rem;font-weight:800;color:#fff;margin:0;">매일 1-터치로 확인하는 꿀팁 (앱 설치 불필요)</h4>
+      </div>
+      <p style="font-size:0.8rem;color:var(--text-muted);line-height:1.5;margin:0 0 0.8rem;">
+        별도 앱을 설치하지 않아도 스마트폰 홈 화면에 바로가기를 추가해 두시면, 매일 알림처럼 1-터치로 자녀의 실시간 출결 및 순공 시간을 확인할 수 있습니다.
+      </p>
+      
+      <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:0.75rem 0.9rem;font-size:0.78rem;color:#cbd5e1;line-height:1.6;display:flex;flex-direction:column;gap:0.35rem;">
+        <div>🍏 <strong>아이폰 (Safari):</strong> 하단 <strong>공유(네모+화살표)</strong> 버튼 ➔ <strong>[홈 화면에 추가]</strong></div>
+        <div>🤖 <strong>갤럭시/안드로이드 (Chrome):</strong> 우측 상단 <strong>더보기(점 3개)</strong> ➔ <strong>[홈 화면에 추가]</strong></div>
+      </div>
+
+      <div style="margin-top:0.8rem;display:flex;gap:0.5rem;">
+        <button id="btnCopyParentUrl" class="sc-modal-submit-btn" style="margin:0;padding:0.65rem 1rem;font-size:0.82rem;background:#3b82f6;flex:1;" type="button">
+          🔗 이 안심 웹 링크 복사하기
+        </button>
+      </div>
     </div>
   </div>
 
   <script type="module">
-    import { fetchParentStatus } from './js/api.js?v=2.1';
+    import { fetchParentStatus } from './js/api.js?v=2.2';
 
     const inputPhone = document.getElementById('inputPhone');
     const btnSearch = document.getElementById('btnSearch');
     const resultBox = document.getElementById('resultContainer');
+    const btnCopyUrl = document.getElementById('btnCopyParentUrl');
+
+    if (btnCopyUrl) {
+      btnCopyUrl.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(window.location.href);
+          alert('🔗 학부모 안심 웹 포털 링크가 복사되었습니다!');
+        } catch (e) {
+          prompt('아래 링크를 복사하세요:', window.location.href);
+        }
+      });
+    }
 
     async function doSearch(phone) {
       if (!phone) return;

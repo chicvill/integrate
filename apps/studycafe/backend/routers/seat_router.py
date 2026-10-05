@@ -72,6 +72,13 @@ async def get_all_seats(
     _ensure_original_20_seats(db, tenant_id)
     seats = db.query(Seat).filter(Seat.tenant_id == tenant_id).order_by(Seat.seat_number).all()
 
+    # 사용자 정보 매핑 (청소년 및 심야 예외 여부 조회)
+    user_map = {}
+    phones = [s.current_user_phone for s in seats if s.current_user_phone]
+    if phones:
+        users = db.query(StudyCafeUser).filter(StudyCafeUser.phone.in_(phones)).all()
+        user_map = {u.phone: u for u in users}
+
     return {
         "tenant_id": tenant_id,
         "total": len(seats),
@@ -91,6 +98,8 @@ async def get_all_seats(
                 "user_name": s.current_user_name,
                 "user_type": s.current_user_type or "GENERAL",
                 "phone": s.current_user_phone,
+                "is_minor": user_map[s.current_user_phone].is_minor if (s.current_user_phone and s.current_user_phone in user_map) else False,
+                "night_exempt": user_map[s.current_user_phone].night_exempt if (s.current_user_phone and s.current_user_phone in user_map) else False,
             }
             for s in seats
         ],
@@ -190,13 +199,13 @@ async def assign_seat(
     if body.is_minor is not None:
         user.is_minor = body.is_minor
 
-    # 🎯 청소년 22:00 ~ 09:00 심야 셧다운 제한 검사 (청소년보호법 및 학원법 준수)
-    if user.is_minor:
+    # 🎯 청소년 22:00 ~ 09:00 심야 셧다운 제한 검사 (청소년보호법 및 학원법 준수, 점주 심야 예외 승인 지원)
+    if user.is_minor and not user.night_exempt:
         kst_now = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=9)
         if kst_now.hour >= 22 or kst_now.hour < 9:
             raise HTTPException(
                 status_code=403,
-                detail="청소년 보호법 및 운영 규정에 따라 청소년(미성년자)은 심야 시간대(22:00 ~ 09:00) 입실이 제한됩니다."
+                detail="청소년 보호법 및 운영 규정에 따라 청소년(미성년자)은 심야 시간대(22:00 ~ 09:00) 입실이 제한됩니다. (점주 심야 예외 승인 필요)"
             )
 
     # 3. 유효 이용권(Ticket) 조회 (정기권, 기간권, 잔여시간권 확인)
@@ -426,7 +435,7 @@ async def cleanup_expired_seats(
         for s in occupied_seats:
             if s.current_user_phone:
                 u = db.query(StudyCafeUser).filter(StudyCafeUser.phone == s.current_user_phone).first()
-                if u and u.is_minor:
+                if u and u.is_minor and not u.night_exempt:
                     s_num = str(s.seat_number)
                     s.is_occupied = False
                     s.status = "EMPTY"
@@ -442,6 +451,53 @@ async def cleanup_expired_seats(
         "cleaned_seats_count": len(cleaned),
         "cleaned_seats": cleaned,
         "checked_at": now.isoformat()
+    }
+
+
+@router.post("/user/{user_id_or_phone}/toggle-night-exempt", summary="22시 청소년 심야 이용 점주 예외 승인 토글")
+async def toggle_night_exempt(
+    user_id_or_phone: str,
+    db: Session = Depends(get_db)
+):
+    """
+    고3 수험생(만 18세 이상) 또는 부모 동의서 제출 학생에 대해 점주가 22시 심야 이용 제한을 해제(예외 승인)합니다.
+    """
+    user = db.query(StudyCafeUser).filter(
+        (StudyCafeUser.id == user_id_or_phone) | (StudyCafeUser.phone == user_id_or_phone)
+    ).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="해당 회원을 찾을 수 없습니다.")
+
+    user.night_exempt = not user.night_exempt
+    db.commit()
+    db.refresh(user)
+
+    status_str = "승인 (22시 이후 이용 가능)" if user.night_exempt else "차단 (22시 퇴실 적용)"
+    return {
+        "success": True,
+        "message": f"[{user.name}] 회원의 심야 이용이 '{status_str}' 상태로 변경되었습니다.",
+        "user_id": user.id,
+        "phone": user.phone,
+        "night_exempt": user.night_exempt
+    }
+
+
+@router.post("/cleanup-old-logs", summary="오래된 순찰 기록 자동 파기/정리 (개인정보보호법 준수)")
+async def cleanup_old_patrol_logs(
+    days: int = 90,
+    db: Session = Depends(get_db)
+):
+    """
+    개인정보보호법 준수를 위해 지정된 일수(기본 90일)가 지난 순찰 기록(벌점, 졸음 등)을 안전하게 파기합니다.
+    """
+    cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days)
+    deleted_count = db.query(PatrolLog).filter(PatrolLog.created_at < cutoff).delete()
+    db.commit()
+    return {
+        "success": True,
+        "message": f"{days}일이 경과된 과거 순찰 기록 {deleted_count}건이 안전하게 파기되었습니다.",
+        "deleted_count": deleted_count,
+        "cutoff_date": cutoff.isoformat()
     }
 
 

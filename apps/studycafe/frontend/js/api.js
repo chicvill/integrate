@@ -332,3 +332,63 @@ export async function submitPatrolLog(seatNumber, category, penalty = 0, note = 
   if (!res.ok) throw new Error(data.detail || '순찰 일지 등록에 실패했습니다.');
   return data;
 }
+
+// 21. 출입문 및 화재 비상 상태 조회 (Fail-Safe)
+export async function fetchDoorStatus() {
+  const base = getApiBase();
+  const res = await fetch(`${base}/door/status?t=${Date.now()}`, {
+    headers: getHeaders(),
+    cache: 'no-store'
+  });
+  if (!res.ok) throw new Error('출입문 상태 조회 실패');
+  return await res.json();
+}
+
+// 22. 화재/비상 전면 개방 발령
+export async function emergencyOpenDoor(reason = '점주 수동 비상 개방 발령') {
+  const base = getApiBase();
+  const res = await fetch(`${base}/door/emergency-open`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ reason })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || '비상 개방 발령 실패');
+  return data;
+}
+
+// 23. 비상 개방 해제 및 정상 모드 복구
+export async function emergencyResetDoor() {
+  const base = getApiBase();
+  const res = await fetch(`${base}/door/emergency-reset`, {
+    method: 'POST',
+    headers: getHeaders()
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || '비상 해제 실패');
+  return data;
+}
+
+// 24. 22시 청소년 심야 이용 점주 예외 승인 토글
+export async function toggleNightExempt(userIdOrPhone) {
+  const base = getApiBase();
+  const res = await fetch(`${base}/seats/user/${encodeURIComponent(userIdOrPhone)}/toggle-night-exempt`, {
+    method: 'POST',
+    headers: getHeaders()
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || '심야 예외 토글 실패');
+  return data;
+}
+
+// 25. 개인정보보호법 준수 오래된 순찰 기록 파기 (기본 90일)
+export async function cleanupOldPatrolLogs(days = 90) {
+  const base = getApiBase();
+  const res = await fetch(`${base}/seats/cleanup-old-logs?days=${days}`, {
+    method: 'POST',
+    headers: getHeaders()
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || '순찰 기록 파기 실패');
+  return data;
+}

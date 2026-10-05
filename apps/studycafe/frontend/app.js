@@ -6,15 +6,15 @@ import { state } from './js/state.js?v=2.0';
 import {
   fetchSeats, fetchMySeat, assignSeat, leaveSeat,
   fetchTicketPlans, purchaseTicket, fetchMyActiveTicket, triggerDoor, fetchAiCongestion,
-  stepOutSeat, stepInSeat, submitDailyCheckoutResult, cleanupExpiredSeats
-} from './js/api.js?v=2.0';
+  stepOutSeat, stepInSeat, submitDailyCheckoutResult, cleanupExpiredSeats, fetchDoorStatus
+} from './js/api.js?v=2.2';
 import {
   renderStatsBar, renderSeatGrid, renderTicketPlans,
   renderDoorPass, renderSelfstudyTab
 } from './js/ui.js?v=2.0';
 import {
-  showToast, openAssignModal, openLeaveModal, openPurchaseModal, closeModal
-} from './js/modals.js?v=2.0';
+  showToast, openAssignModal, openLeaveModal, openPurchaseModal, openParentShareModal, closeModal
+} from './js/modals.js?v=2.2';
 
 // ── DOM 캐싱 ─────────────────────────────────────────────
 const statsBarEl        = document.getElementById('statsBarContainer');
@@ -321,6 +321,7 @@ function handleSeatClick(seat) {
         showToast(res.message || `좌석 [${seatNumber}] 배정이 완료되었습니다! (출입문 5초 개방 🔓)`, 'success', 4500);
         await refreshSeats();
         await triggerDoor(1); // 출입문 자동 개방
+        openParentShareModal(name, phone); // 학부모 안심 웹 링크 QR & 복사 모달 제공
       } catch (err) {
         showToast(err.message, 'error');
       }
@@ -545,6 +546,10 @@ async function init() {
     cleanupExpiredSeats().catch(() => {});
   }, 300000);
 
+  // 화재 비상 상태 확인 및 10초 주기 폴링
+  await checkKioskEmergencyStatus();
+  setInterval(checkKioskEmergencyStatus, 10000);
+
   // 🎯 키오스크 45초 유휴 복귀 감시 & 청소년 22시 보호 감시 가동
   setupKioskWatchdog();
   setupMinorShutdownMonitor();
@@ -649,7 +654,8 @@ function setupKioskWatchdog() {
 // ── 11. 청소년 22시 심야 셧다운 실시간 알림 ────────────────
 function setupMinorShutdownMonitor() {
   setInterval(() => {
-    if (!state.currentUser || !state.currentUser.is_minor) return;
+    // 🎯 점주 예외 승인(night_exempt) 회원은 22시 셧다운에서 면제
+    if (!state.currentUser || !state.currentUser.is_minor || state.currentUser.night_exempt) return;
 
     const now = new Date();
     const hours = now.getHours();
@@ -668,6 +674,27 @@ function setupMinorShutdownMonitor() {
       }).catch(() => {});
     }
   }, 30000);
+}
+
+// ── 12. 화재 비상 대피 모드 감시 (Fail-Safe) ─────────────────
+async function checkKioskEmergencyStatus() {
+  try {
+    const door = await fetchDoorStatus();
+    const banner = document.getElementById('kioskEmergencyBanner');
+    const reasonEl = document.getElementById('kioskEmergencyReason');
+    if (!banner) return;
+
+    if (door && door.is_emergency) {
+      banner.style.display = 'flex';
+      if (reasonEl) {
+        reasonEl.textContent = `사유: ${door.reason} (${door.fail_safe_guideline})`;
+      }
+    } else {
+      banner.style.display = 'none';
+    }
+  } catch (err) {
+    // 무시
+  }
 }
 
 init();
