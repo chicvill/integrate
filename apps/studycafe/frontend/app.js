@@ -389,8 +389,8 @@ function handlePurchaseClick(plan) {
       console.warn('Backend ticket purchase sync:', err);
     });
 
-    // 4) 결제 완료 피드백 및 좌석 현황 탭으로 즉시 이동하여 좌석 선택 유도
-    showToast(`🎉 [${targetPlan.name}] 테스트 결제가 승인되었습니다! 원하시는 빈 좌석을 터치하여 배정받으세요.`, 'success', 5000);
+    // 4) 결제 완료 피드백 및 좌석 선택 창으로 자동 즉시 이동!
+    showToast(`🎉 [${targetPlan.name}] 이용권 결제 완료! 이제 이용하실 빈 좌석을 선택해 주세요.`, 'success', 5000);
     switchTab('seats');
     await refreshSeats();
   });
@@ -535,8 +535,12 @@ async function init() {
 
   setupZoneFilters();
 
-  // 초기 탭 로드
-  await refreshSeats();
+  // 초기 화면 오픈: 이미 배정된 좌석이 있다면 좌석 탭, 처음 방문이거나 미배정 시 이용권 선택 창으로 직행!
+  if (state.mySeat) {
+    switchTab('seats');
+  } else {
+    switchTab('tickets');
+  }
 
   // 데스크 QR 파라미터 확인
   checkDeskQrDeepLink();
@@ -631,9 +635,9 @@ function setupKioskWatchdog() {
     if (state.currentUser) {
       MQnetAuth.logout();
     }
-    // 탭 초기화
-    switchTab('seats');
-    showToast('🔒 안전을 위해 키오스크가 초기 대기 화면으로 복귀했습니다.', 'info', 3000);
+    // 탭 초기화: 다음 고객을 위해 초기 이용권 선택 창으로 복귀!
+    switchTab('tickets');
+    showToast('🔒 안전을 위해 키오스크가 초기 대기 화면(이용권 선택)으로 복귀했습니다.', 'info', 3000);
   }
 
   // 1초마다 유휴 시간 검사

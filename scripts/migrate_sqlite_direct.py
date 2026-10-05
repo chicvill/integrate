@@ -14,12 +14,26 @@ for p in db_files:
     tables = [row[0] for row in cur.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]
     print(f'Checking {p}: tables = {tables}')
     
+    if 'studycafe_seats' in tables:
+        cols = [row[1] for row in cur.execute("PRAGMA table_info(studycafe_seats)").fetchall()]
+        print(f'{p} studycafe_seats existing cols: {cols}')
+        for col_name, col_type in [
+            ('step_out_at', 'DATETIME'),
+        ]:
+            if col_name not in cols:
+                print(f'Adding {col_name} to studycafe_seats in {p}')
+                try:
+                    cur.execute(f"ALTER TABLE studycafe_seats ADD COLUMN {col_name} {col_type}")
+                except Exception as e:
+                    print('Error adding col to studycafe_seats:', e)
+
     if 'studycafe_users' in tables:
         cols = [row[1] for row in cur.execute("PRAGMA table_info(studycafe_users)").fetchall()]
         print(f'{p} studycafe_users existing cols: {cols}')
         for col_name, col_type in [
             ('birth_date', 'TEXT'),
             ('is_minor', 'INTEGER DEFAULT 0'),
+            ('night_exempt', 'INTEGER DEFAULT 0'),
             ('parent_phone', 'TEXT'),
             ('penalty_points', 'INTEGER DEFAULT 0'),
         ]:

@@ -25,11 +25,11 @@
 
     <!-- 네비게이션 탭 -->
     <nav class="sc-nav-tabs">
-      <button class="nav-tab-btn active" data-tab="seats" type="button">
-        <span>🪑</span> 좌석 현황
+      <button class="nav-tab-btn active" data-tab="tickets" type="button">
+        <span>🎟️</span> 이용권 선택
       </button>
-      <button class="nav-tab-btn" data-tab="tickets" type="button">
-        <span>🎟️</span> 이용권 구매
+      <button class="nav-tab-btn" data-tab="seats" type="button">
+        <span>🪑</span> 좌석 배정
       </button>
       <button class="nav-tab-btn" data-tab="door" type="button">
         <span>🚪</span> 스마트 출입문
@@ -99,8 +99,17 @@
       </div>
     </div>
 
-    <!-- 1. 좌석 현황 탭 -->
-    <section id="tabSeats" class="sc-tab-content">
+    <!-- 1. 이용권 선택 탭 (기본 오픈) -->
+    <section id="tabTickets" class="sc-tab-content">
+      <div style="margin-bottom:1.5rem">
+        <h2 style="font-size:1.4rem;font-weight:800;color:#fff;margin-bottom:0.35rem">🎟️ 스터디카페 이용권 선택</h2>
+        <p style="font-size:0.85rem;color:var(--text-muted)">시간권, 정기권, 관리형 몰입 패스를 선택하시면 결제 승인 후 좌석 배정 창으로 자동 이동합니다.</p>
+      </div>
+      <div id="ticketPlansContainer" class="sc-tickets-grid"></div>
+    </section>
+
+    <!-- 2. 좌석 현황 탭 -->
+    <section id="tabSeats" class="sc-tab-content" style="display:none;">
       <!-- 이용권/좌석 결제 우선 동적 안내 배너 -->
       <div id="seatFlowNotice" style="display:none;margin-bottom:1.2rem;border-radius:12px;padding:0.85rem 1.2rem;align-items:center;justify-content:space-between;gap:1rem;">
         <div id="seatFlowNoticeContent" style="display:flex;align-items:center;gap:0.75rem;font-size:0.88rem;"></div>
@@ -120,15 +129,6 @@
 
       <!-- 20개 좌석 카드 그리드 -->
       <div id="seatGridContainer" class="sc-seat-grid"></div>
-    </section>
-
-    <!-- 2. 이용권 구매 탭 -->
-    <section id="tabTickets" class="sc-tab-content" style="display:none;">
-      <div style="margin-bottom:1.5rem">
-        <h2 style="font-size:1.4rem;font-weight:800;color:#fff;margin-bottom:0.35rem">🎟️ 스터디카페 이용권 및 요금제</h2>
-        <p style="font-size:0.85rem;color:var(--text-muted)">시간권, 정기권, 기간권을 선택하여 즉시 충전하고 출입문 QR 패스를 발급받으세요.</p>
-      </div>
-      <div id="ticketPlansContainer" class="sc-tickets-grid"></div>
     </section>
 
     <!-- 3. 스마트 출입문 탭 -->
@@ -253,7 +253,7 @@
     </div>
   </div>
 
-  <!-- 메인 모듈 진입점 (캐시 버스팅 v=2.3) -->
-  <script type="module" src="./app.js?v=2.3"></script>
+  <!-- 메인 모듈 진입점 (캐시 버스팅 v=2.5) -->
+  <script type="module" src="./app.js?v=2.5"></script>
 </body>
 </html>
