@@ -11,11 +11,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- MQnet SaaS Standard CSS (Direct Link + Cache Busting) -->
-  <link rel="stylesheet" href="./css/variables.css?v=1.0">
-  <link rel="stylesheet" href="./css/layout.css?v=1.0">
-  <link rel="stylesheet" href="./css/components.css?v=1.0">
-  <link rel="stylesheet" href="./style.css?v=1.0">
-  <link rel="stylesheet" href="/shared/ui/auth.css?v=2.0">
+  <link rel="stylesheet" href="./css/variables.css?v=2.0">
+  <link rel="stylesheet" href="./css/layout.css?v=2.0">
+  <link rel="stylesheet" href="./css/components.css?v=2.0">
+  <link rel="stylesheet" href="./style.css?v=2.0">
+  <link rel="stylesheet" href="/shared/ui/theme.css?v=2.0">
 </head>
 <body>
   <!-- Header / Navigation Bar -->
@@ -33,10 +33,8 @@
         <span class="status-dot online"></span>
         <span class="status-text" id="systemStatusText">연결 중...</span>
       </div>
-      <div id="authContainer">
-        <!-- Auth button rendered dynamically by auth.js -->
-        <button id="authBtn" class="btn btn-secondary btn-sm">로그인</button>
-      </div>
+      <!-- MQnet 공통 인증 사용자 배지 컨테이너 -->
+      <div id="userAuthBadge"></div>
     </div>
   </header>
 
@@ -58,88 +56,96 @@
       </div>
     </section>
 
-    <!-- Toolbar: Search, Filters, Actions -->
+    <!-- Toolbar / Search / Action Controls -->
     <section class="toolbar-section">
-      <div class="search-box">
-        <input type="text" id="searchInput" placeholder="검색어 입력..." autocomplete="off">
-        <button id="searchBtn" class="btn btn-secondary">검색</button>
-      </div>
-      <div class="filter-actions">
-        <select id="statusFilter" class="select-dropdown">
-          <option value="">전체 상태</option>
-          <option value="active">Active (활성)</option>
-          <option value="pending">Pending (대기)</option>
-          <option value="completed">Completed (완료)</option>
+      <div class="search-filter-box">
+        <input type="text" id="searchInput" class="form-input" placeholder="검색어 입력..." autocomplete="off">
+        <button id="searchBtn" class="btn btn-secondary btn-sm">검색</button>
+        <select id="statusFilter" class="form-select">
+          <option value="">모든 상태</option>
+          <option value="active">활성 (Active)</option>
+          <option value="pending">대기 (Pending)</option>
+          <option value="completed">완료 (Completed)</option>
         </select>
-        <button id="openCreateModalBtn" class="btn btn-primary">+ 신규 등록</button>
-        <button id="openAiModalBtn" class="btn btn-ai">✨ AI 분석</button>
+      </div>
+      <div class="action-buttons">
+        <button id="openAiModalBtn" class="btn btn-ai btn-sm">
+          <span>✨</span> AI 분석 / 어시스턴트
+        </button>
+        <button id="openCreateModalBtn" class="btn btn-primary btn-sm">
+          <span>+</span> 신규 등록
+        </button>
       </div>
     </section>
 
-    <!-- Items Grid / List Container (Flex-shrink defense applied) -->
-    <section class="items-view-section">
+    <!-- Dynamic Items Grid -->
+    <section class="content-section">
       <div id="itemsGrid" class="items-grid">
-        <!-- Rendered by ui.js -->
+        <!-- Rendered dynamically by js/ui.js -->
       </div>
       <div id="emptyState" class="empty-state" style="display: none;">
-        <span class="empty-icon">{{APP_ICON}}</span>
-        <h3>등록된 항목이 없습니다.</h3>
-        <p>신규 등록 버튼을 눌러 첫 번째 항목을 추가해보세요.</p>
+        <span class="empty-icon">📭</span>
+        <p class="empty-text">등록된 항목이 없습니다. 새로운 항목을 추가해보세요.</p>
+        <button id="emptyCreateBtn" class="btn btn-primary btn-sm">항목 등록하기</button>
       </div>
     </section>
   </main>
 
   <!-- Modal: Item Create / Edit -->
-  <div id="itemModal" class="modal-overlay" style="display: none;">
-    <div class="modal-content glass-card">
+  <div id="itemModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card">
       <div class="modal-header">
-        <h3 id="modalTitle">신규 항목 등록</h3>
-        <button class="modal-close" id="closeItemModalBtn">&times;</button>
+        <h3 id="modalTitle" class="modal-title">신규 항목 등록</h3>
+        <button id="closeItemModalBtn" class="modal-close">&times;</button>
       </div>
-      <form id="itemForm" class="modal-form">
-        <input type="hidden" id="editItemId" value="">
+      <form id="itemForm" class="modal-body">
+        <input type="hidden" id="editItemId">
         <div class="form-group">
-          <label for="itemTitle">명칭 (Title) *</label>
-          <input type="text" id="itemTitle" required placeholder="항목 이름을 입력하세요">
+          <label for="itemTitle" class="form-label">명칭 / 제목</label>
+          <input type="text" id="itemTitle" class="form-input" required placeholder="항목 명칭을 입력하세요">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="itemCategory" class="form-label">카테고리</label>
+            <input type="text" id="itemCategory" class="form-input" placeholder="기본: 일반">
+          </div>
+          <div class="form-group">
+            <label for="itemStatus" class="form-label">상태</label>
+            <select id="itemStatus" class="form-select">
+              <option value="active">활성 (Active)</option>
+              <option value="pending">대기 (Pending)</option>
+              <option value="completed">완료 (Completed)</option>
+            </select>
+          </div>
         </div>
         <div class="form-group">
-          <label for="itemCategory">카테고리</label>
-          <input type="text" id="itemCategory" placeholder="예: 일반, 중요, 긴급">
+          <label for="itemDetail" class="form-label">상세 내용</label>
+          <textarea id="itemDetail" class="form-textarea" rows="3" placeholder="추가 설명 및 세부 내용"></textarea>
         </div>
-        <div class="form-group">
-          <label for="itemStatus">상태</label>
-          <select id="itemStatus">
-            <option value="active">Active (활성)</option>
-            <option value="pending">Pending (대기)</option>
-            <option value="completed">Completed (완료)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="itemDetail">상세 설명</label>
-          <textarea id="itemDetail" rows="3" placeholder="세부 내용 또는 비고를 입력하세요"></textarea>
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn btn-secondary" id="cancelItemModalBtn">취소</button>
-          <button type="submit" class="btn btn-primary" id="saveItemBtn">저장하기</button>
+        <div class="modal-footer">
+          <button type="button" id="cancelItemModalBtn" class="btn btn-secondary">취소</button>
+          <button type="submit" class="btn btn-primary">저장하기</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal: AI Copilot Assistant -->
-  <div id="aiModal" class="modal-overlay" style="display: none;">
-    <div class="modal-content glass-card ai-modal">
+  <!-- Modal: AI Assistant / Analysis -->
+  <div id="aiModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card">
       <div class="modal-header">
-        <h3>✨ {{APP_NAME}} AI 코파일럿</h3>
-        <button class="modal-close" id="closeAiModalBtn">&times;</button>
+        <h3 class="modal-title">✨ Gemini AI 어시스턴트</h3>
+        <button id="closeAiModalBtn" class="modal-close">&times;</button>
       </div>
-      <div class="ai-body">
-        <p class="ai-desc">운영 데이터 분석, 이상 징후 감지 및 추천 액션을 질문해보세요.</p>
+      <div class="modal-body">
         <div class="form-group">
-          <textarea id="aiPrompt" rows="3" placeholder="예: 현재 등록된 항목들의 진행 효율을 높이는 방안을 제안해줘."></textarea>
+          <label for="aiPrompt" class="form-label">AI 요청 사항 / 프롬프트</label>
+          <textarea id="aiPrompt" class="form-textarea" rows="3" placeholder="예: 현재 등록된 항목들의 진행 상황을 요약하고 개선 조치 사항을 제안해줘."></textarea>
         </div>
-        <button id="submitAiBtn" class="btn btn-ai btn-block">분석 실행</button>
-        <div id="aiResultBox" class="ai-result-box" style="display: none;">
+        <button id="submitAiBtn" class="btn btn-ai" style="width: 100%;">
+          <span>⚡</span> AI 심층 분석 실행
+        </button>
+        <div id="aiResultBox" class="ai-result-box" style="display: none; margin-top: 1rem;">
           <div class="ai-result-header">분석 결과:</div>
           <div id="aiResultContent" class="ai-result-content"></div>
         </div>
@@ -147,12 +153,10 @@
     </div>
   </div>
 
-  <!-- Notification Toast Container -->
+  <!-- Toast Notification Container -->
   <div id="toastContainer" class="toast-container"></div>
 
-  <!-- MQnet Shared Auth Module -->
-  <script type="module" src="/shared/ui/auth.js?v=2.0"></script>
-  <!-- Main Frontend Entrypoint -->
-  <script type="module" src="./app.js?v=1.0"></script>
+  <!-- Main ES Module Entry Point -->
+  <script type="module" src="./app.js?v=2.0"></script>
 </body>
 </html>

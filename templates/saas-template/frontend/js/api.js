@@ -1,30 +1,46 @@
 /**
  * templates/saas-template/frontend/js/api.js
- * MQnet SaaS Standard dynamic API Base URL resolver and HTTP client.
+ * MQnet SaaS Standard dynamic API Base URL resolver and authenticated HTTP client.
  */
+import { MQnetAuth } from '/shared/ui/auth.js?v=2.0';
 
+/**
+ * 접속 경로에 따른 API Base URL 동적 결정
+ * - 게이트웨이 서브패스 (예: /{{APP_ID}}/) -> /api/{{APP_ID}}
+ * - 서브도메인 또는 로컬 단독 포트 실행 -> /api
+ */
 export function getApiBase(appName = '{{APP_ID}}') {
   const p = window.location.pathname.toLowerCase();
-  // 1. Gateway subpath: /{{APP_ID}}/... -> /api/{{APP_ID}}
-  if (p.startsWith(`/${appName}`)) {
+  if (p.startsWith(`/${appName.toLowerCase()}`)) {
     return `/api/${appName}`;
   }
-  // 2. Subdomain or Standalone (:PORT) -> /api
   return '/api';
 }
 
+/**
+ * MQnet 공통 인증 헤더 자동 생성
+ * - X-App-ID 헤더 필수 주입
+ * - mqnet_auth_token (localStorage / sessionStorage) Bearer 토큰 연동
+ */
 export function getAuthHeaders() {
   const headers = {
     'Content-Type': 'application/json',
     'X-App-ID': '{{APP_ID}}'
   };
-  const token = localStorage.getItem('mqnet_token');
+
+  const token = (typeof MQnetAuth !== 'undefined' && MQnetAuth.getToken)
+    ? MQnetAuth.getToken()
+    : (localStorage.getItem('mqnet_auth_token') || sessionStorage.getItem('mqnet_auth_token'));
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
   return headers;
 }
 
+/**
+ * 캐시 방어(_t) 및 인증 헤더가 포함된 표준 fetch 래퍼
+ */
 export async function fetchWithAuth(url, options = {}) {
   const headers = {
     ...getAuthHeaders(),

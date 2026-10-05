@@ -9,6 +9,7 @@ class AppState {
     this.statusFilter = '';
     this.searchKeyword = '';
     this.systemStatus = null;
+    this.currentUser = null;
     this.listeners = [];
   }
 
@@ -42,6 +43,11 @@ class AppState {
 
   setSystemStatus(status) {
     this.systemStatus = status;
+    this.notify();
+  }
+
+  setCurrentUser(user) {
+    this.currentUser = user;
     this.notify();
   }
 

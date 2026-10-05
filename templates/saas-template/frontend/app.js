@@ -3,10 +3,11 @@
  * Main Frontend Controller & Lifecycle Manager.
  */
 
-import { getApiBase, fetchWithAuth } from './js/api.js?v=1.0';
-import { state } from './js/state.js?v=1.0';
-import { renderItems, updateKpis, showToast } from './js/ui.js?v=1.0';
-import { openItemModal, closeItemModal, openAiModal, closeAiModal } from './js/modals.js?v=1.0';
+import { MQnetAuth } from '/shared/ui/auth.js?v=2.0';
+import { getApiBase, fetchWithAuth } from './js/api.js?v=2.0';
+import { state } from './js/state.js?v=2.0';
+import { renderItems, updateKpis, showToast } from './js/ui.js?v=2.0';
+import { openItemModal, closeItemModal, openAiModal, closeAiModal } from './js/modals.js?v=2.0';
 
 // API Base URL
 const API_BASE = getApiBase('{{APP_ID}}');
@@ -16,7 +17,7 @@ async function loadData() {
     const data = await fetchWithAuth(`${API_BASE}/items`);
     state.setItems(data.items || []);
   } catch (err) {
-    showToast('데이터 로드 실패: ' + err.message);
+    showToast('데이터 로드 실패: ' + err.message, 'error');
   }
 }
 
@@ -43,7 +44,7 @@ async function handleSaveItem(e) {
   const detail = document.getElementById('itemDetail').value.trim();
 
   if (!title) {
-    showToast('명칭을 입력해주세요.');
+    showToast('명칭을 입력해주세요.', 'warning');
     return;
   }
 
@@ -56,32 +57,33 @@ async function handleSaveItem(e) {
         method: 'PUT',
         body: JSON.stringify(payload)
       });
-      showToast('항목이 성공적으로 수정되었습니다.');
+      showToast('항목이 성공적으로 수정되었습니다.', 'success');
     } else {
       // Create
       await fetchWithAuth(`${API_BASE}/items`, {
         method: 'POST',
         body: JSON.stringify(payload)
       });
-      showToast('새 항목이 등록되었습니다.');
+      showToast('새 항목이 등록되었습니다.', 'success');
     }
     closeItemModal();
-    loadData();
+    await loadData();
   } catch (err) {
-    showToast('저장 중 오류: ' + err.message);
+    showToast('저장 실패: ' + err.message, 'error');
   }
 }
 
 async function handleDeleteItem(itemId) {
-  if (!confirm('이 항목을 정말 삭제하시겠습니까?')) return;
+  if (!confirm('정말로 이 항목을 삭제하시겠습니까?')) return;
+
   try {
     await fetchWithAuth(`${API_BASE}/items/${itemId}`, {
       method: 'DELETE'
     });
-    showToast('항목이 삭제되었습니다.');
-    loadData();
+    showToast('항목이 삭제되었습니다.', 'info');
+    await loadData();
   } catch (err) {
-    showToast('삭제 실패: ' + err.message);
+    showToast('삭제 실패: ' + err.message, 'error');
   }
 }
 
@@ -92,28 +94,30 @@ async function handleRunAiAnalysis() {
   const prompt = promptInput.value.trim();
 
   if (!prompt) {
-    showToast('질문 프롬프트를 입력해주세요.');
+    showToast('AI 프롬프트를 입력해주세요.', 'warning');
     return;
   }
 
+  showToast('Gemini AI 분석 진행 중...', 'info', 2000);
   resultBox.style.display = 'block';
-  resultContent.innerHTML = '<em>분석 중입니다... 잠시만 기다려주세요.</em>';
+  resultContent.textContent = 'AI 응답 생성 중... 잠시만 기다려주세요.';
 
   try {
     const res = await fetchWithAuth(`${API_BASE}/ai/analyze`, {
       method: 'POST',
-      body: JSON.stringify({ prompt })
+      body: JSON.stringify({ prompt, context_data: { items_count: state.items.length } })
     });
-    const insights = res.data?.insights || '분석 결과가 없습니다.';
-    resultContent.textContent = insights;
+    resultContent.textContent = res.analysis || '분석 결과를 받지 못했습니다.';
+    showToast('AI 분석이 완료되었습니다.', 'success');
   } catch (err) {
-    resultContent.textContent = '분석 실패: ' + err.message;
+    resultContent.textContent = 'AI 분석 오류: ' + err.message;
+    showToast('AI 분석 실패: ' + err.message, 'error');
   }
 }
 
-// Setup Event Listeners
 function setupEventListeners() {
-  document.getElementById('openCreateModalBtn')?.addEventListener('click', () => openItemModal());
+  document.getElementById('openCreateModalBtn')?.addEventListener('click', () => openItemModal(null));
+  document.getElementById('emptyCreateBtn')?.addEventListener('click', () => openItemModal(null));
   document.getElementById('closeItemModalBtn')?.addEventListener('click', closeItemModal);
   document.getElementById('cancelItemModalBtn')?.addEventListener('click', closeItemModal);
   document.getElementById('itemForm')?.addEventListener('submit', handleSaveItem);
@@ -140,6 +144,16 @@ function setupEventListeners() {
 // App Initialization
 document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
+
+  // ── MQnet 통합 인증 초기화 및 사용자 배지 바인딩 ──
+  MQnetAuth.init({
+    appId: '{{APP_ID}}',
+    onAuthChange: (user) => {
+      state.setCurrentUser(user);
+      MQnetAuth.renderBadge('userAuthBadge');
+    }
+  });
+  MQnetAuth.renderBadge('userAuthBadge');
 
   // State Subscription: update UI on change
   state.subscribe((s) => {

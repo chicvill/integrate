@@ -61,19 +61,38 @@ export function updateKpis(items) {
   if (activeElem) activeElem.textContent = active;
 }
 
-export function showToast(message, duration = 3000) {
-  const container = document.getElementById('toastContainer');
-  if (!container) return;
+/**
+ * 상태별 토스트 팝업 (success, error, warning, info 지원)
+ */
+export function showToast(message, type = 'info', duration = 3200) {
+  let container = document.getElementById('toastContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toastContainer';
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+  }
+
+  const icons = {
+    success: '✅',
+    error: '❌',
+    warning: '⚠️',
+    info: 'ℹ️'
+  };
 
   const toast = document.createElement('div');
-  toast.className = 'toast';
-  toast.textContent = message;
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `
+    <span class="toast-icon">${icons[type] || 'ℹ️'}</span>
+    <span class="toast-text">${escapeHtml(message)}</span>
+  `;
   container.appendChild(toast);
 
   setTimeout(() => {
     toast.style.opacity = '0';
-    toast.style.transition = 'opacity 0.3s ease';
-    setTimeout(() => toast.remove(), 300);
+    toast.style.transform = 'translateY(-8px)';
+    toast.style.transition = 'all 0.25s ease';
+    setTimeout(() => toast.remove(), 250);
   }, duration);
 }
 
