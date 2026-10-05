@@ -1,0 +1,29 @@
+/**
+ * templates/saas-template/frontend/style.css
+ * Global styles & micro-interactions.
+ * (Note: Modular CSS files are imported via <link> in index.html to avoid @import browser caching bugs)
+ */
+
+::selection {
+  background: rgba(6, 182, 212, 0.3);
+  color: #fff;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}

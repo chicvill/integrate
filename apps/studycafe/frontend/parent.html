@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MQnet StudyCafe | 학부모 안심 모바일 웹 포털 (비용 0원)</title>
+  <link rel="stylesheet" href="./style.css?v=2.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: #0b0f19;
+      color: #f1f5f9;
+      font-family: 'Pretendard', sans-serif;
+      margin: 0;
+      padding: 1rem;
+      display: flex;
+      justify-content: center;
+    }
+    .parent-container {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .parent-header {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(56, 189, 248, 0.08));
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 16px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+    .parent-badge {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.15);
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+    }
+    .parent-title {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 0.4rem;
+    }
+    .parent-desc {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin: 0;
+      line-height: 1.4;
+    }
+    .status-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .status-highlight {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .status-pill {
+      font-weight: 800;
+      font-size: 0.95rem;
+      padding: 0.35rem 0.8rem;
+      border-radius: 8px;
+    }
+    .status-pill.active {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+    .status-pill.step-out {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+    .status-pill.inactive {
+      background: rgba(148, 163, 184, 0.2);
+      color: #94a3b8;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+    }
+    .session-log-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.65rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 0.85rem;
+    }
+    .session-log-item:last-child { border-bottom: none; }
+  </style>
+</head>
+<body>
+
+  <div class="parent-container">
+    <!-- 🚀 현장/역할별 빠른 페이지 이동 버튼 바 -->
+    <div class="sc-quick-portal-bar" style="background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 0.8rem 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.6rem;">
+      <div style="display: flex; align-items: center; gap: 0.4rem;">
+        <span style="font-size: 1.1rem;">🚀</span>
+        <span style="font-weight: 800; font-size: 0.85rem; color: #fff;">바로가기:</span>
+      </div>
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <a href="/studycafe/" class="quick-nav-btn" style="display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.45rem 0.8rem; border-radius: 9px; font-size: 0.78rem; font-weight: 700; text-decoration: none; background: rgba(56,189,248,0.18); border: 1px solid rgba(56,189,248,0.45); color: #38bdf8; transition: all 0.2s;">
+          <span>📱</span> 키오스크/메인
+        </a>
+        <a href="./admin.html" class="quick-nav-btn" style="display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.45rem 0.8rem; border-radius: 9px; font-size: 0.78rem; font-weight: 700; text-decoration: none; background: rgba(139,92,246,0.18); border: 1px solid rgba(139,92,246,0.45); color: #c084fc; transition: all 0.2s;">
+          <span>📊</span> 점주 관제
+        </a>
+        <a href="./parent.html?phone=010-5555-4444" class="quick-nav-btn active" style="display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.45rem 0.8rem; border-radius: 9px; font-size: 0.78rem; font-weight: 700; text-decoration: none; background: rgba(16,185,129,0.3); border: 1px solid rgba(16,185,129,0.6); color: #34d399; transition: all 0.2s;">
+          <span>👨‍👩‍👧</span> 학부모 안심
+        </a>
+      </div>
+    </div>
+
+    <header class="parent-header">
+      <div class="parent-badge">Zero-Message 안심 실시간 웹 링크</div>
+      <h1 class="parent-title">👨‍👩‍👧 학부모 안심 웹 포털</h1>
+      <p class="parent-desc">문자/카카오톡 발송비 없이 스마트폰으로 자녀의 실시간 입실, 외출, 순공 시간을 24시간 실시간 확인하실 수 있습니다.</p>
+    </header>
+
+    <!-- 검색창 (전화번호) -->
+    <div style="display:flex;gap:0.5rem;">
+      <input id="inputPhone" type="tel" class="sc-form-input" placeholder="학생 전화번호 입력 (예: 010-0000-0000)" style="flex:1;">
+      <button id="btnSearch" class="sc-modal-submit-btn" style="margin:0;padding:0.75rem 1.25rem;" type="button">조회</button>
+    </div>
+
+    <!-- 로딩 & 상태 카드 -->
+    <div id="resultContainer" class="status-card" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <span id="studentName" style="font-size:1.3rem;font-weight:800;color:#fff;">-</span>
+          <span id="studentType" class="sc-badge zone-focus" style="margin-left:0.5rem;">관리형</span>
+        </div>
+        <span style="font-size:0.75rem;color:var(--text-dim);" id="updatedTime">방금 갱신됨</span>
+      </div>
+
+      <!-- 실시간 재실 상태 -->
+      <div class="status-highlight">
+        <div>
+          <div style="font-size:0.78rem;color:var(--text-muted);">현재 실시간 상태</div>
+          <div id="currentSeat" style="font-size:1.1rem;font-weight:800;color:var(--accent);margin-top:0.2rem;">-</div>
+        </div>
+        <div id="statusBadge" class="status-pill active">집중 학습 중 🟢</div>
+      </div>
+
+      <!-- 오늘 순공 시간 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+        <div style="background:rgba(255,255,255,0.02);padding:0.85rem;border-radius:10px;border:1px solid rgba(255,255,255,0.05);text-align:center;">
+          <div style="font-size:0.75rem;color:var(--text-muted)">오늘 총 누적 순공</div>
+          <div id="todayHours" style="font-size:1.4rem;font-weight:800;color:#38bdf8;margin-top:0.2rem;">0.0 시간</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.02);padding:0.85rem;border-radius:10px;border:1px solid rgba(255,255,255,0.05);text-align:center;">
+          <div style="font-size:0.75rem;color:var(--text-muted)">목표 달성률 (5h 기준)</div>
+          <div id="todayProgress" style="font-size:1.4rem;font-weight:800;color:#10b981;margin-top:0.2rem;">0%</div>
+        </div>
+      </div>
+
+      <!-- 최근 출결 이력 -->
+      <div>
+        <h4 style="font-size:0.9rem;font-weight:700;color:#fff;margin:0 0 0.6rem;">📅 오늘 입/퇴실 기록</h4>
+        <div id="sessionLogs" style="background:rgba(0,0,0,0.2);padding:0.6rem 0.85rem;border-radius:10px;">
+          <!-- 동적 렌더링 -->
+        </div>
+      </div>
+
+      <!-- 현장 순찰 및 생활 태도 리포트 -->
+      <div style="margin-top:0.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">
+          <h4 style="font-size:0.9rem;font-weight:700;color:#c084fc;margin:0;">📋 실시간 현장 순찰 리포트</h4>
+          <span id="penaltyBadge" style="font-size:0.75rem;padding:0.2rem 0.5rem;border-radius:6px;background:rgba(239,68,68,0.15);color:#f87171;font-weight:700;">누적 벌점: 0점</span>
+        </div>
+        <div id="patrolLogs" style="background:rgba(0,0,0,0.2);padding:0.6rem 0.85rem;border-radius:10px;font-size:0.82rem;">
+          <!-- 동적 렌더링 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 홈 바로가기 추가 안내 -->
+    <div style="text-align:center;font-size:0.75rem;color:var(--text-dim);line-height:1.5;">
+      💡 브라우저 메뉴에서 <strong>[홈 화면에 추가]</strong>를 누르시면 전용 앱처럼 매일 터치 한 번으로 확인하실 수 있습니다.
+    </div>
+  </div>
+
+  <script type="module">
+    import { fetchParentStatus } from './js/api.js?v=2.1';
+
+    const inputPhone = document.getElementById('inputPhone');
+    const btnSearch = document.getElementById('btnSearch');
+    const resultBox = document.getElementById('resultContainer');
+
+    async function doSearch(phone) {
+      if (!phone) return;
+      btnSearch.textContent = '조회 중...';
+      btnSearch.disabled = true;
+
+      try {
+        const data = await fetchParentStatus(phone);
+        resultBox.style.display = 'flex';
+        document.getElementById('studentName').textContent = `${data.student_name} 학생`;
+        document.getElementById('studentType').textContent = data.student_type === 'MANAGED' ? '관리형 프리미엄' : '일반 자율형';
+        document.getElementById('currentSeat').textContent = data.current_seat;
+
+        const badge = document.getElementById('statusBadge');
+        badge.textContent = data.current_status;
+        if (data.current_status.includes('집중')) {
+          badge.className = 'status-pill active';
+        } else if (data.current_status.includes('외출')) {
+          badge.className = 'status-pill step-out';
+        } else {
+          badge.className = 'status-pill inactive';
+        }
+
+        document.getElementById('todayHours').textContent = `${data.today_study_hours} 시간`;
+        const pct = Math.min(100, Math.round((data.today_study_minutes / 300) * 100));
+        document.getElementById('todayProgress').textContent = `${pct}%`;
+
+        // 출결 로그
+        const logsEl = document.getElementById('sessionLogs');
+        if (data.recent_sessions && data.recent_sessions.length > 0) {
+          logsEl.innerHTML = data.recent_sessions.map(s => `
+            <div class="session-log-item">
+              <span style="color:#fff;">좌석 ${s.seat_number}</span>
+              <span style="color:var(--text-muted);">${s.check_in ? s.check_in.split('T')[1].slice(0,5) : '-'} 입실 (${s.used_minutes}분 이용)</span>
+            </div>
+          `).join('');
+        } else {
+          logsEl.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:0.4rem;">오늘의 이용 기록이 아직 없습니다.</div>';
+        }
+
+        // 벌점 및 순찰 리포트
+        const penaltyEl = document.getElementById('penaltyBadge');
+        if (penaltyEl) penaltyEl.textContent = `누적 벌점: ${data.penalty_points || 0}점`;
+
+        const patrolEl = document.getElementById('patrolLogs');
+        if (data.patrol_reports && data.patrol_reports.length > 0) {
+          patrolEl.innerHTML = data.patrol_reports.map(p => {
+            const catMap = {
+              'SLEEP': { label: '😴 졸음 주의', color: '#f59e0b' },
+              'DISTRACTION': { label: '📱 딴짓 경고', color: '#ef4444' },
+              'AWAY': { label: '🚶 무단 이탈', color: '#dc2626' },
+              'FOCUS': { label: '👍 몰입 우수', color: '#10b981' }
+            };
+            const cat = catMap[p.category] || { label: p.category, color: '#93c5fd' };
+            return `
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                <div>
+                  <span style="color:${cat.color};font-weight:700;">${cat.label}</span>
+                  <span style="color:var(--text-muted);font-size:0.75rem;margin-left:0.4rem;">${p.note || ''}</span>
+                </div>
+                <div style="font-size:0.75rem;color:var(--text-dim);">
+                  ${p.time} (${p.manager || '실장'})
+                </div>
+              </div>
+            `;
+          }).join('');
+        } else {
+          patrolEl.innerHTML = '<div style="color:#10b981;text-align:center;padding:0.4rem;">오늘 지적 사항 없이 성실하게 집중 학습 중입니다. ✨</div>';
+        }
+
+        document.getElementById('updatedTime').textContent = new Date().toLocaleTimeString('ko-KR');
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btnSearch.textContent = '조회';
+        btnSearch.disabled = false;
+      }
+    }
+
+    btnSearch.addEventListener('click', () => {
+      doSearch(inputPhone.value.trim());
+    });
+
+    // URL 파라미터 (?phone=010-XXXX-XXXX) 자동 조회
+    const params = new URLSearchParams(window.location.search);
+    const p = params.get('phone') || '010-0000-0000';
+    if (p) {
+      inputPhone.value = p;
+      doSearch(p);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MQnet Modern Smart Clock</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=Pretendard:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07090e;
+      --card-bg: rgba(15, 23, 42, 0.75);
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.35);
+      --second-hand: #f43f5e;
+    }
+
+    body[data-theme="cyberpunk"] {
+      --bg: #030014;
+      --card-bg: rgba(19, 13, 37, 0.85);
+      --accent: #ec4899;
+      --accent-glow: rgba(236, 72, 153, 0.4);
+      --second-hand: #a855f7;
+    }
+
+    body[data-theme="emerald"] {
+      --bg: #021a12;
+      --card-bg: rgba(6, 44, 34, 0.85);
+      --accent: #10b981;
+      --accent-glow: rgba(16, 185, 129, 0.4);
+      --second-hand: #34d399;
+    }
+
+    body[data-theme="gold"] {
+      --bg: #140d04;
+      --card-bg: rgba(38, 26, 8, 0.85);
+      --accent: #f59e0b;
+      --accent-glow: rgba(245, 158, 11, 0.4);
+      --second-hand: #fbbf24;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Pretendard', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-image: radial-gradient(circle at 50% 20%, var(--accent-glow) 0%, transparent 60%);
+      transition: background 0.4s ease;
+      overflow-x: hidden;
+    }
+
+    /* Navbar */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.2rem 2.5rem;
+      background: rgba(7, 9, 14, 0.7);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 1.3rem;
+      color: white;
+      text-decoration: none;
+    }
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), #818cf8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
+    .controls {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+    .btn {
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      color: white;
+      background: rgba(255,255,255,0.06);
+      transition: all 0.2s;
+    }
+    .btn:hover { background: rgba(255,255,255,0.12); border-color: var(--accent); }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      background: rgba(255,255,255,0.04);
+      padding: 0.4rem;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 0.65rem 1.2rem;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: var(--accent);
+      color: #000;
+      box-shadow: 0 4px 15px var(--accent-glow);
+    }
+
+    /* Clock Stage */
+    .clock-stage {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 3.5rem;
+      padding: 2.5rem 1.5rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+
+    /* Analog Clock Face */
+    .analog-clock {
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #1e293b 0%, #0f172a 100%);
+      border: 8px solid rgba(255,255,255,0.08);
+      box-shadow: 0 0 40px var(--accent-glow), inset 0 0 30px rgba(0,0,0,0.8);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .dial-mark {
+      position: absolute;
+      width: 4px;
+      height: 12px;
+      background: var(--text-muted);
+      left: calc(50% - 2px);
+      transform-origin: 2px 152px;
+    }
+    .dial-mark.major {
+      width: 6px;
+      height: 18px;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+    }
+    .dial-num {
+      position: absolute;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: white;
+      text-align: center;
+    }
+
+    .hand {
+      position: absolute;
+      bottom: 50%;
+      left: 50%;
+      transform-origin: bottom center;
+      border-radius: 6px;
+      transition: transform 0.05s cubic-bezier(0.4, 2.08, 0.55, 0.44);
+    }
+    .hour-hand {
+      width: 8px;
+      height: 80px;
+      background: #e2e8f0;
+      margin-left: -4px;
+    }
+    .min-hand {
+      width: 5px;
+      height: 115px;
+      background: var(--accent);
+      margin-left: -2.5px;
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+    .sec-hand {
+      width: 2.5px;
+      height: 135px;
+      background: var(--second-hand);
+      margin-left: -1.25px;
+      box-shadow: 0 0 10px var(--second-hand);
+    }
+    .sec-hand::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: -2px;
+      width: 6px;
+      height: 30px;
+      background: var(--second-hand);
+      border-radius: 4px;
+    }
+    .center-nut {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--second-hand);
+      position: absolute;
+      z-index: 10;
+      box-shadow: 0 0 10px var(--second-hand);
+    }
+
+    /* Digital Display */
+    .digital-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .time-digits {
+      font-family: 'JetBrains Mono', 'Outfit', monospace;
+      font-size: 4.8rem;
+      font-weight: 800;
+      letter-spacing: -2px;
+      color: white;
+      text-shadow: 0 0 25px var(--accent-glow);
+    }
+    .time-digits span.sec {
+      font-size: 2.8rem;
+      color: var(--accent);
+      margin-left: 0.2rem;
+    }
+    .time-digits span.ampm {
+      font-size: 1.4rem;
+      color: var(--text-muted);
+      margin-left: 0.5rem;
+    }
+    .date-display {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+    .badge-kst {
+      margin-top: 0.8rem;
+      padding: 0.35rem 0.9rem;
+      border-radius: 20px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid var(--accent-glow);
+      color: var(--accent);
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    /* World Clocks Grid */
+    .world-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+    }
+    .world-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 1.25rem;
+      backdrop-filter: blur(12px);
+      transition: all 0.2s;
+    }
+    .world-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+    }
+    .world-city {
+      font-size: 1.1rem;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    .world-time {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .world-date {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.3rem;
+    }
+
+    /* Stopwatch & Timer Views */
+    .sub-view {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 3rem 1.5rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+    }
+    .sub-view.active { display: flex; }
+    .tool-digits {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 5rem;
+      font-weight: 800;
+      color: var(--accent);
+      text-shadow: 0 0 30px var(--accent-glow);
+    }
+    .btn-group {
+      display: flex;
+      gap: 1rem;
+    }
+    .btn-action {
+      padding: 0.85rem 2rem;
+      border-radius: 14px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      background: var(--accent);
+      color: #000;
+      transition: all 0.2s;
+    }
+    .btn-action:hover { opacity: 0.9; transform: scale(1.03); }
+    .btn-secondary {
+      padding: 0.85rem 1.8rem;
+      border-radius: 14px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.06);
+      color: white;
+      cursor: pointer;
+    }
+    .lap-list {
+      max-height: 200px;
+      overflow-y: auto;
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .lap-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 1rem;
+      background: rgba(255,255,255,0.04);
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    @media (max-width: 768px) {
+      .time-digits { font-size: 3.5rem; }
+      .clock-stage { gap: 2rem; }
+      .analog-clock { width: 260px; height: 260px; }
+      .dial-mark { transform-origin: 2px 122px; }
+      .hour-hand { height: 60px; }
+      .min-hand { height: 90px; }
+      .sec-hand { height: 110px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="brand">
+      <div class="brand-logo">⏰</div>
+      MQnet Modern Clock
+    </a>
+    <div class="controls">
+      <select id="themeSelect" class="btn" onchange="changeTheme(this.value)">
+        <option value="default">🔵 Neon Cyan</option>
+        <option value="cyberpunk">🟣 Cyberpunk Purple</option>
+        <option value="emerald">🟢 Emerald Forest</option>
+        <option value="gold">🟡 Gold Amber</option>
+      </select>
+      <button class="btn" onclick="toggleFullscreen()">⛶ 전체화면</button>
+      <a href="/" class="btn">🏠 플랫폼 홈</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('clock')">🕒 시계 & 세계시</button>
+      <button class="tab-btn" onclick="showTab('stopwatch')">⏱️ 스톱워치</button>
+      <button class="tab-btn" onclick="showTab('pomodoro')">🍅 뽀모도로 타이머</button>
+    </div>
+
+    <!-- 1. Clock View -->
+    <div id="view-clock">
+      <div class="clock-stage">
+        <!-- Analog Clock Face -->
+        <div class="analog-clock" id="analogClock">
+          <div class="center-nut"></div>
+          <div class="hand hour-hand" id="hourHand"></div>
+          <div class="hand min-hand" id="minHand"></div>
+          <div class="hand sec-hand" id="secHand"></div>
+        </div>
+
+        <!-- Digital Panel -->
+        <div class="digital-panel">
+          <div class="time-digits">
+            <span id="digiHours">12</span>:<span id="digiMins">00</span><span class="sec" id="digiSecs">:00</span><span class="ampm" id="digiAmPm">AM</span>
+          </div>
+          <div class="date-display" id="digiDate">2026년 8월 27일 목요일</div>
+          <div class="badge-kst">대한민국 표준시 (KST, UTC+9)</div>
+        </div>
+      </div>
+
+      <!-- World Clocks Matrix -->
+      <h3 style="margin: 2rem 0 1rem; font-size: 1.2rem; color: var(--text-muted);">🌍 글로벌 타임존</h3>
+      <div class="world-grid">
+        <div class="world-card">
+          <div class="world-city"><span>🇰🇷 서울 (Seoul)</span><span style="font-size:0.8rem; color:var(--accent);">기준시</span></div>
+          <div class="world-time" id="world-seoul">--:--:--</div>
+          <div class="world-date" id="world-seoul-date">KST (UTC+9)</div>
+        </div>
+        <div class="world-card">
+          <div class="world-city"><span>🇺🇸 뉴욕 (New York)</span><span style="font-size:0.8rem; color:var(--text-muted);">-13시간</span></div>
+          <div class="world-time" id="world-ny">--:--:--</div>
+          <div class="world-date" id="world-ny-date">EDT (UTC-4)</div>
+        </div>
+        <div class="world-card">
+          <div class="world-city"><span>🇬🇧 런던 (London)</span><span style="font-size:0.8rem; color:var(--text-muted);">-8시간</span></div>
+          <div class="world-time" id="world-london">--:--:--</div>
+          <div class="world-date" id="world-london-date">BST (UTC+1)</div>
+        </div>
+        <div class="world-card">
+          <div class="world-city"><span>🇫🇷 파리 (Paris)</span><span style="font-size:0.8rem; color:var(--text-muted);">-7시간</span></div>
+          <div class="world-time" id="world-paris">--:--:--</div>
+          <div class="world-date" id="world-paris-date">CEST (UTC+2)</div>
+        </div>
+        <div class="world-card">
+          <div class="world-city"><span>🇦🇺 시드니 (Sydney)</span><span style="font-size:0.8rem; color:var(--text-muted);">+1시간</span></div>
+          <div class="world-time" id="world-sydney">--:--:--</div>
+          <div class="world-date" id="world-sydney-date">AEST (UTC+10)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Stopwatch View -->
+    <div id="view-stopwatch" class="sub-view">
+      <h2 style="font-size: 1.4rem;">⏱️ 정밀 스톱워치</h2>
+      <div class="tool-digits" id="swDigits">00:00.00</div>
+      <div class="btn-group">
+        <button class="btn-action" id="swStartBtn" onclick="toggleStopwatch()">시작</button>
+        <button class="btn-secondary" onclick="lapStopwatch()">랩 기록</button>
+        <button class="btn-secondary" onclick="resetStopwatch()">초기화</button>
+      </div>
+      <div class="lap-list" id="swLapList"></div>
+    </div>
+
+    <!-- 3. Pomodoro View -->
+    <div id="view-pomodoro" class="sub-view">
+      <h2 style="font-size: 1.4rem;" id="pomoTitle">🍅 뽀모도로 집중 모드 (25분)</h2>
+      <div class="tool-digits" id="pomoDigits">25:00</div>
+      <div class="btn-group">
+        <button class="btn-action" id="pomoStartBtn" onclick="togglePomodoro()">집중 시작</button>
+        <button class="btn-secondary" onclick="resetPomodoro()">초기화</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 1. Analog Clock Dial Setup
+    const analog = document.getElementById('analogClock');
+    for (let i = 1; i <= 12; i++) {
+      const mark = document.createElement('div');
+      mark.className = 'dial-mark' + (i % 3 === 0 ? ' major' : '');
+      mark.style.transform = `rotate(${i * 30}deg)`;
+      analog.appendChild(mark);
+    }
+
+    // 2. Realtime Clock Loop
+    function updateClock() {
+      const now = new Date();
+
+      // Hours, Mins, Secs, Ms
+      const hrs = now.getHours();
+      const mins = now.getMinutes();
+      const secs = now.getSeconds();
+      const ms = now.getMilliseconds();
+
+      // Analog Hands Angles
+      const secAngle = (secs + ms / 1000) * 6;
+      const minAngle = (mins + secs / 60) * 6;
+      const hrAngle = ((hrs % 12) + mins / 60) * 30;
+
+      document.getElementById('secHand').style.transform = `rotate(${secAngle}deg)`;
+      document.getElementById('minHand').style.transform = `rotate(${minAngle}deg)`;
+      document.getElementById('hourHand').style.transform = `rotate(${hrAngle}deg)`;
+
+      // Digital Digits
+      const displayHr = hrs % 12 || 12;
+      const ampm = hrs >= 12 ? 'PM' : 'AM';
+      document.getElementById('digiHours').innerText = String(displayHr).padStart(2, '0');
+      document.getElementById('digiMins').innerText = String(mins).padStart(2, '0');
+      document.getElementById('digiSecs').innerText = ':' + String(secs).padStart(2, '0');
+      document.getElementById('digiAmPm').innerText = ampm;
+
+      // Korean Date
+      const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+      const dateStr = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 ${days[now.getDay()]}`;
+      document.getElementById('digiDate').innerText = dateStr;
+
+      // World Clocks
+      updateWorldClock('world-seoul', 'Asia/Seoul');
+      updateWorldClock('world-ny', 'America/New_York');
+      updateWorldClock('world-london', 'Europe/London');
+      updateWorldClock('world-paris', 'Europe/Paris');
+      updateWorldClock('world-sydney', 'Australia/Sydney');
+
+      requestAnimationFrame(updateClock);
+    }
+
+    function updateWorldClock(id, timeZone) {
+      try {
+        const timeStr = new Intl.DateTimeFormat('ko-KR', {
+          timeZone,
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        }).format(new Date());
+        document.getElementById(id).innerText = timeStr;
+      } catch(e) {}
+    }
+
+    requestAnimationFrame(updateClock);
+
+    // 3. Tab Switching
+    function showTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+
+      document.getElementById('view-clock').style.display = (tab === 'clock') ? 'block' : 'none';
+      document.getElementById('view-stopwatch').classList.toggle('active', tab === 'stopwatch');
+      document.getElementById('view-pomodoro').classList.toggle('active', tab === 'pomodoro');
+    }
+
+    // 4. Themes
+    function changeTheme(theme) {
+      if (theme === 'default') document.body.removeAttribute('data-theme');
+      else document.body.setAttribute('data-theme', theme);
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    // 5. Stopwatch Logic
+    let swRunning = false;
+    let swStartTime = 0;
+    let swElapsed = 0;
+    let swInterval = null;
+    let swLaps = [];
+
+    function toggleStopwatch() {
+      if (!swRunning) {
+        swRunning = true;
+        swStartTime = Date.now() - swElapsed;
+        swInterval = setInterval(updateStopwatch, 10);
+        document.getElementById('swStartBtn').innerText = '일시정지';
+        document.getElementById('swStartBtn').style.background = '#f43f5e';
+      } else {
+        swRunning = false;
+        clearInterval(swInterval);
+        document.getElementById('swStartBtn').innerText = '계속';
+        document.getElementById('swStartBtn').style.background = 'var(--accent)';
+      }
+    }
+
+    function updateStopwatch() {
+      swElapsed = Date.now() - swStartTime;
+      const m = Math.floor(swElapsed / 60000);
+      const s = Math.floor((swElapsed % 60000) / 1000);
+      const cs = Math.floor((swElapsed % 1000) / 10);
+      document.getElementById('swDigits').innerText = 
+        `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
+    }
+
+    function lapStopwatch() {
+      if (!swRunning) return;
+      const lapTime = document.getElementById('swDigits').innerText;
+      swLaps.unshift(lapTime);
+      renderLaps();
+    }
+
+    function resetStopwatch() {
+      swRunning = false;
+      clearInterval(swInterval);
+      swElapsed = 0;
+      swLaps = [];
+      document.getElementById('swDigits').innerText = '00:00.00';
+      document.getElementById('swStartBtn').innerText = '시작';
+      document.getElementById('swStartBtn').style.background = 'var(--accent)';
+      renderLaps();
+    }
+
+    function renderLaps() {
+      const list = document.getElementById('swLapList');
+      list.innerHTML = swLaps.map((t, idx) => `
+        <div class="lap-item">
+          <span>Lap ${swLaps.length - idx}</span>
+          <span style="color:var(--accent);">${t}</span>
+        </div>
+      `).join('');
+    }
+
+    // 6. Pomodoro Logic
+    let pomoRunning = false;
+    let pomoTime = 25 * 60;
+    let pomoInterval = null;
+
+    function togglePomodoro() {
+      if (!pomoRunning) {
+        pomoRunning = true;
+        pomoInterval = setInterval(() => {
+          pomoTime--;
+          if (pomoTime <= 0) {
+            clearInterval(pomoInterval);
+            pomoRunning = false;
+            alert('🎉 뽀모도로 집중 시간이 끝났습니다! 5분 휴식을 취하세요.');
+            pomoTime = 5 * 60;
+            document.getElementById('pomoTitle').innerText = '☕ 휴식 모드 (5분)';
+          }
+          const m = Math.floor(pomoTime / 60);
+          const s = pomoTime % 60;
+          document.getElementById('pomoDigits').innerText = 
+            `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }, 1000);
+        document.getElementById('pomoStartBtn').innerText = '일시정지';
+      } else {
+        pomoRunning = false;
+        clearInterval(pomoInterval);
+        document.getElementById('pomoStartBtn').innerText = '계속';
+      }
+    }
+
+    function resetPomodoro() {
+      pomoRunning = false;
+      clearInterval(pomoInterval);
+      pomoTime = 25 * 60;
+      document.getElementById('pomoDigits').innerText = '25:00';
+      document.getElementById('pomoStartBtn').innerText = '집중 시작';
+      document.getElementById('pomoTitle').innerText = '🍅 뽀모도로 집중 모드 (25분)';
+    }
+  </script>
+</body>
+</html>

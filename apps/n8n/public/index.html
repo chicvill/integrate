@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NH농협 계좌 입금 실시간 알림 시스템 (130027-52-081538)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="navbar">
+      <div class="brand">
+        <div class="logo-badge">NH</div>
+        <div class="brand-text">
+          <h1>농협 계좌 입금 실시간 수신 모니터</h1>
+          <p class="sub-text">계좌번호: <span class="highlight-account">130027-52-081538</span> | 수신 메일: <span class="highlight-email">himin50@gmail.com</span></p>
+        </div>
+      </div>
+      <div class="status-box">
+        <span class="status-dot pulse" id="statusDot"></span>
+        <span id="statusText">실시간 연결 중...</span>
+      </div>
+    </header>
+
+    <!-- Stat Dashboard Cards -->
+    <section class="stats-grid">
+      <div class="stat-card gold">
+        <div class="stat-icon">💰</div>
+        <div class="stat-info">
+          <span class="stat-label">총 누적 입금액</span>
+          <h2 id="totalAmount">0 원</h2>
+        </div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon">📥</div>
+        <div class="stat-info">
+          <span class="stat-label">수신된 입금 건수</span>
+          <h2 id="totalCount">0 건</h2>
+        </div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-icon">⏰</div>
+        <div class="stat-info">
+          <span class="stat-label">최근 입금 일시 (언제)</span>
+          <h3 id="lastDepositTime">대기 중...</h3>
+        </div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-icon">👤</div>
+        <div class="stat-info">
+          <span class="stat-label">최근 입금자 (누가)</span>
+          <h3 id="lastDepositor">대기 중...</h3>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Content Layout -->
+    <main class="content-grid">
+      <!-- Left Column: Live Deposit History & Popup Showcase -->
+      <section class="panel history-panel">
+        <div class="panel-header">
+          <h2>🔔 실시간 입금 통지 내역</h2>
+          <div class="panel-header-actions">
+            <span class="badge live-badge">LIVE</span>
+            <button type="button" id="downloadExcelBtn" class="btn btn-excel">📊 엑셀 다운로드</button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="deposit-table">
+            <thead>
+              <tr>
+                <th>언제 (입금 일시)</th>
+                <th>누가 (보낸이/적요)</th>
+                <th>입금 금액</th>
+                <th>거래 후 잔액</th>
+                <th>상태</th>
+              </tr>
+            </thead>
+            <tbody id="depositTableBody">
+              <!-- Dynamic Rows inserted via JS -->
+            </tbody>
+          </table>
+          <div id="emptyState" class="empty-state">
+            <div class="empty-icon">💸</div>
+            <p>수신된 입금 내역이 없습니다.<br>우측 시뮬레이터에서 테스트 이메일을 전송해보세요.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Nonghyup Email Test Simulator & n8n Guide -->
+      <section class="panel simulator-panel">
+        <div class="panel-header">
+          <h2>✉️ 이메일 수신 테스트 시뮬레이터</h2>
+        </div>
+        <p class="sim-desc">
+          <code>himin50@gmail.com</code>으로 농협 입금 알림 메일이 도착했을 때, 
+          시스템이 메일을 정밀 파싱하여 화면에 알림을 띄우는 과정을 즉시 테스트할 수 있습니다.
+        </p>
+
+        <div class="preset-buttons">
+          <span class="preset-label">테스트 샘플 선택:</span>
+          <button type="button" class="btn btn-outline" id="btnSample1">샘플 1 (홍길동 15만원)</button>
+          <button type="button" class="btn btn-outline" id="btnSample2">샘플 2 ((주)한국기업 320만원)</button>
+          <button type="button" class="btn btn-outline" id="btnSample3">샘플 3 (이농협 5만원)</button>
+        </div>
+
+        <form id="emailSimForm">
+          <div class="form-group">
+            <label for="rawEmailInput">농협 이메일 알림 본문 (텍스트)</label>
+            <textarea id="rawEmailInput" rows="7" placeholder="농협 이메일 텍스트 입력..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">
+            ⚡ 이메일 수신 & 화면 알림 발송 테스트
+          </button>
+        </form>
+
+        <div class="n8n-banner">
+          <div class="n8n-info">
+            <h3>🔗 n8n 자동화 워크플로우 예제</h3>
+            <p>농협 이메일 감지 및 파싱 n8n JSON 설정이 포함되어 있습니다.</p>
+          </div>
+          <a href="/nonghyup_deposit_workflow.json" download class="btn btn-secondary">n8n JSON 다운로드</a>
+        </div>
+      </section>
+    </main>
+
+    <!-- High Impact On-Screen Deposit Modal Overlay -->
+    <div id="alertModal" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="bell-ring">🔔</div>
+          <h2>새로운 입금 알림!</h2>
+          <button id="closeModalBtn" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="target-account-badge">
+            NH농협 계좌: <strong>130027-52-081538</strong> (himin50@gmail.com)
+          </div>
+
+          <div class="alert-highlight-box">
+            <div class="key-val-group">
+              <span class="key-title">⏰ 언제 (입금일시)</span>
+              <span class="val-content date" id="modalDate">2026-08-12 10:15:30</span>
+            </div>
+            <div class="key-val-group">
+              <span class="key-title">👤 누가 (입금자)</span>
+              <span class="val-content depositor" id="modalDepositor">홍길동</span>
+            </div>
+          </div>
+
+          <div class="modal-amount-box">
+            <span class="amount-label">입금 금액</span>
+            <div class="amount-value" id="modalAmount">+150,000 원</div>
+            <div class="balance-sub" id="modalBalance">잔액: 1,550,000 원</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="confirmAlertBtn" class="btn btn-primary btn-large">확인 및 알림 닫기</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

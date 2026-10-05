@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MQnet StudyCafe | 스마트 스터디카페 & 관리형 학습 시스템</title>
+  
+  <!-- CSS 스타일 직접 로드 (캐시 버스팅 v=2.0) -->
+  <link rel="stylesheet" href="./style.css?v=2.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Pretendard:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- 상단 공통 헤더 -->
+  <header class="sc-header">
+    <div class="brand-section">
+      <div class="brand-logo-icon">☕</div>
+      <div>
+        <h1 class="brand-title">MQnet StudyCafe</h1>
+        <div class="brand-subtitle">스마트 스터디카페 & 자기주도 학습 시스템</div>
+      </div>
+    </div>
+
+    <!-- 네비게이션 탭 -->
+    <nav class="sc-nav-tabs">
+      <button class="nav-tab-btn active" data-tab="seats" type="button">
+        <span>🪑</span> 좌석 현황
+      </button>
+      <button class="nav-tab-btn" data-tab="tickets" type="button">
+        <span>🎟️</span> 이용권 구매
+      </button>
+      <button class="nav-tab-btn" data-tab="door" type="button">
+        <span>🚪</span> 스마트 출입문
+      </button>
+      <button class="nav-tab-btn" data-tab="selfstudy" type="button">
+        <span>📖</span> 자기주도 학습실
+      </button>
+      <a id="navParentLink" href="./parent.html?phone=010-5555-4444" class="nav-tab-btn" target="_blank" style="text-decoration:none;display:inline-flex;align-items:center;">
+        <span>👨‍👩‍👧</span> 학부모 안심
+      </a>
+      <a href="./admin.html" class="nav-tab-btn" target="_blank" style="text-decoration:none;display:inline-flex;align-items:center;">
+        <span>📊</span> 점주 관제
+      </a>
+    </nav>
+
+    <!-- 우측 내 좌석 상태 & 내 이용권 상태 & 통합 인증 배지 -->
+    <div class="header-right">
+      <div id="myTicketBadge" class="my-seat-pill none" style="background:rgba(56,189,248,0.12);border-color:rgba(56,189,248,0.3);color:#38bdf8;cursor:pointer;">
+        <span>🎟️</span> <span id="myTicketBadgeText">이용권 확인 중...</span>
+      </div>
+      <div id="mySeatBadge" class="my-seat-pill none">
+        <span>🪑</span> <span id="mySeatBadgeText">좌석 미배정</span>
+      </div>
+      <!-- MQnet 공통 인증 배지 렌더링 컨테이너 -->
+      <div id="userAuthBadge"></div>
+    </div>
+  </header>
+
+  <!-- 메인 컨텐츠 영역 -->
+  <main class="sc-main">
+
+    <!-- 🚀 현장/역할별 빠른 페이지 이동 버튼 바 -->
+    <div class="sc-quick-portal-bar" style="margin-bottom: 1.25rem; background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 0.8rem 1.1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.8rem;">
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span style="font-size: 1.15rem;">🚀</span>
+        <span style="font-weight: 800; font-size: 0.88rem; color: #fff;">바로가기:</span>
+      </div>
+      <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+        <!-- 1. 스터디카페 키오스크/모바일 -->
+        <a href="/studycafe/" class="quick-nav-btn active" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.95rem; border-radius: 10px; font-size: 0.82rem; font-weight: 700; text-decoration: none; background: rgba(56,189,248,0.18); border: 1px solid rgba(56,189,248,0.45); color: #38bdf8; transition: all 0.2s;">
+          <span>📱</span> 스터디카페 키오스크/모바일
+        </a>
+        <!-- 2. 점주 실시간 관제 및 순찰 모달 -->
+        <a href="./admin.html" target="_blank" class="quick-nav-btn" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.95rem; border-radius: 10px; font-size: 0.82rem; font-weight: 700; text-decoration: none; background: rgba(139,92,246,0.18); border: 1px solid rgba(139,92,246,0.45); color: #c084fc; transition: all 0.2s;">
+          <span>📊</span> 점주 실시간 관제 및 순찰 모달
+        </a>
+        <!-- 3. 학부모 실시간 순찰 리포트 확인 -->
+        <a id="quickParentLink" href="./parent.html?phone=010-5555-4444" target="_blank" class="quick-nav-btn" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.95rem; border-radius: 10px; font-size: 0.82rem; font-weight: 700; text-decoration: none; background: rgba(16,185,129,0.18); border: 1px solid rgba(16,185,129,0.45); color: #34d399; transition: all 0.2s;">
+          <span>👨‍👩‍👧</span> 학부모 실시간 순찰 리포트 확인
+        </a>
+      </div>
+    </div>
+
+    <!-- 1. 좌석 현황 탭 -->
+    <section id="tabSeats" class="sc-tab-content">
+      <!-- 이용권/좌석 결제 우선 동적 안내 배너 -->
+      <div id="seatFlowNotice" style="display:none;margin-bottom:1.2rem;border-radius:12px;padding:0.85rem 1.2rem;align-items:center;justify-content:space-between;gap:1rem;">
+        <div id="seatFlowNoticeContent" style="display:flex;align-items:center;gap:0.75rem;font-size:0.88rem;"></div>
+        <button id="seatFlowNoticeActionBtn" type="button" style="padding:0.45rem 0.9rem;border-radius:8px;font-size:0.82rem;font-weight:700;border:none;cursor:pointer;white-space:nowrap;"></button>
+      </div>
+
+      <!-- 실시간 통계 바 -->
+      <div id="statsBarContainer" class="sc-stats-bar"></div>
+
+      <!-- 구역 필터 -->
+      <div class="sc-zone-filter" style="margin: 1.25rem 0;">
+        <button class="zone-filter-btn active" data-zone="ALL" type="button">전체 구역 (20석)</button>
+        <button class="zone-filter-btn" data-zone="FOCUS" type="button">🎯 포커스 집중존 (A-01~A-08)</button>
+        <button class="zone-filter-btn" data-zone="NORMAL" type="button">☕ 일반 개방존 (A-09~A-16)</button>
+        <button class="zone-filter-btn" data-zone="LAPTOP" type="button">💻 노트북 타이핑존 (A-17~A-20)</button>
+      </div>
+
+      <!-- 20개 좌석 카드 그리드 -->
+      <div id="seatGridContainer" class="sc-seat-grid"></div>
+    </section>
+
+    <!-- 2. 이용권 구매 탭 -->
+    <section id="tabTickets" class="sc-tab-content" style="display:none;">
+      <div style="margin-bottom:1.5rem">
+        <h2 style="font-size:1.4rem;font-weight:800;color:#fff;margin-bottom:0.35rem">🎟️ 스터디카페 이용권 및 요금제</h2>
+        <p style="font-size:0.85rem;color:var(--text-muted)">시간권, 정기권, 기간권을 선택하여 즉시 충전하고 출입문 QR 패스를 발급받으세요.</p>
+      </div>
+      <div id="ticketPlansContainer" class="sc-tickets-grid"></div>
+    </section>
+
+    <!-- 3. 스마트 출입문 탭 -->
+    <section id="tabDoor" class="sc-tab-content" style="display:none;">
+      <div style="margin-bottom:1.5rem">
+        <h2 style="font-size:1.4rem;font-weight:800;color:#fff;margin-bottom:0.35rem">🚪 IoT 스마트 출입문 & 모바일 출입증</h2>
+        <p style="font-size:0.85rem;color:var(--text-muted)">스마트폰에서 터치 한 번으로 출입문을 열거나 단말기에 모바일 패스를 인식시키세요.</p>
+      </div>
+      <div id="doorPassContainer"></div>
+    </section>
+
+    <!-- 4. 자기주도 학습실 탭 -->
+    <section id="tabSelfstudy" class="sc-tab-content" style="display:none;">
+      <div id="selfstudyContainer"></div>
+    </section>
+
+  </main>
+
+  <!-- ── 좌석 배정(입실) 모달 ────────────────────────────── -->
+  <div id="assignModal" class="sc-modal-backdrop">
+    <div class="sc-modal">
+      <div class="sc-modal-header">
+        <h3 id="assignModalSeatTitle" class="sc-modal-title">좌석 배정</h3>
+        <button class="sc-modal-close" onclick="document.getElementById('assignModal').classList.remove('open')">✕</button>
+      </div>
+      <div class="sc-modal-body">
+        <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.04);padding:0.75rem 1rem;border-radius:10px;border:1px solid var(--border-color)">
+          <span style="font-size:0.85rem;color:var(--text-muted)">선택 구역:</span>
+          <span id="assignModalZoneBadge" class="sc-badge">FOCUS</span>
+        </div>
+
+        <div class="sc-form-group">
+          <label class="sc-form-label">이용자 성명 / 닉네임</label>
+          <input id="assignModalName" type="text" class="sc-form-input" placeholder="성함 입력">
+        </div>
+
+        <div class="sc-form-group">
+          <label class="sc-form-label">휴대폰 번호 (출입키 및 알림톡)</label>
+          <input id="assignModalPhone" type="tel" class="sc-form-input" placeholder="010-0000-0000">
+        </div>
+
+        <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:10px;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.6rem;margin-top:0.4rem;">
+          <span style="font-size:1.2rem;">🎟️</span>
+          <div style="font-size:0.8rem;color:#93c5fd;line-height:1.4;">
+            <strong>회원 유형 자동 판정:</strong> 구매(결제)하신 이용권(일반 시간·정기권 / 관리형 패스)에 맞춰 회원 유형이 자동으로 결정됩니다.
+          </div>
+        </div>
+
+        <button id="assignModalSubmit" class="sc-modal-submit-btn" type="button">입실 및 좌석 배정 완료</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 이용권 구매 모달 ────────────────────────────────── -->
+  <div id="purchaseModal" class="sc-modal-backdrop">
+    <div class="sc-modal">
+      <div class="sc-modal-header">
+        <h3 class="sc-modal-title">이용권 구매 확인</h3>
+        <button class="sc-modal-close" onclick="document.getElementById('purchaseModal').classList.remove('open')">✕</button>
+      </div>
+      <div class="sc-modal-body">
+        <div style="background:rgba(255,255,255,0.04);padding:1rem;border-radius:12px;border:1px solid var(--border-color);display:flex;flex-direction:column;gap:0.4rem">
+          <div id="purchPlanName" style="font-size:1.15rem;font-weight:800;color:#fff"></div>
+          <div id="purchPlanPrice" style="font-size:1.5rem;font-weight:800;color:var(--accent)"></div>
+          <div id="purchPlanDesc" style="font-size:0.8rem;color:var(--text-muted)"></div>
+        </div>
+        <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.4">
+          * <strong>테스트 모의 결제</strong>: 결제 버튼을 클릭하면 즉시 결제 완료로 처리되어 대기 시간 없이 곧바로 좌석 배정 및 출입문 이용이 가능합니다.
+        </p>
+        <button id="purchConfirmBtn" class="sc-modal-submit-btn" style="background:linear-gradient(135deg, #3b82f6, #06b6d4);font-weight:800;font-size:0.95rem;" type="button">💳 결제하기 (테스트 즉시 승인)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 메인 모듈 진입점 (캐시 버스팅 v=2.2) -->
+  <script type="module" src="./app.js?v=2.2"></script>
+</body>
+</html>

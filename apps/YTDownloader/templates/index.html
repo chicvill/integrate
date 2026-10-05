@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="High-performance YouTube media downloader with premium UI. Extract audio and video with ease.">
+    <title>YTDownloader v2.0 | Premium Media Extraction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Pretendard:wght@300;500;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="glow-bg"></div>
+    <div class="glow-bg second"></div>
+    
+    <main class="glass-card main-container">
+        <header>
+            <div class="logo-container">
+                <span class="logo-icon">🚀</span>
+                <div class="version-badge">v2.0</div>
+            </div>
+            <h1>YTDownloader</h1>
+            <p class="subtitle">High-Performance Media Extraction</p>
+        </header>
+
+        <section class="input-section">
+            <div class="input-wrapper">
+                <input type="text" id="urlInput" placeholder="유튜브 주소를 입력하세요..." autocomplete="off" spellcheck="false">
+                <div class="input-glow"></div>
+            </div>
+
+            <div class="mode-selector">
+                <button type="button" id="audioBtn" class="toggle-btn active" onclick="setMode('audio')">
+                    <span class="icon">🎵</span> AUDIO
+                </button>
+                <button type="button" id="videoBtn" class="toggle-btn" onclick="setMode('video')">
+                    <span class="icon">📺</span> VIDEO
+                </button>
+            </div>
+
+            <button id="actionBtn" class="primary-btn" onclick="handleAction()">
+                <span class="btn-content">
+                    <span class="btn-text">매체 분석 및 저장</span>
+                    <span class="btn-icon">→</span>
+                </span>
+            </button>
+        </section>
+
+        <section id="statusPanel" class="status-panel hidden">
+            <div class="loading-container">
+                <div class="spinner"></div>
+                <div class="pulse-ring"></div>
+            </div>
+            <p id="statusTxt">서버에서 매체 정보를 분석하는 중입니다...</p>
+        </section>
+
+        <section id="resultPanel" class="result-panel hidden">
+            <div class="success-header">
+                <div class="success-badge">READY TO DOWNLOAD</div>
+            </div>
+            <div class="media-info">
+                <h2 id="mediaTitle">Video Title</h2>
+            </div>
+            <a id="downloadLink" href="#" class="save-btn">
+                <span class="save-icon">📥</span> 파일 디바이스에 저장
+            </a>
+        </section>
+
+        <footer>
+            <p>MQnet Intelligence &copy; 2026</p>
+            <div class="footer-links">
+                <span>Privacy</span>
+                <span class="separator">•</span>
+                <span>Terms</span>
+            </div>
+        </footer>
+    </main>
+
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
+
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
+    <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <meta charset="utf-8" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/handsfree@8.4.2/build/lib/assets/handsfree.css"
+    />
+    <script src="https://unpkg.com/handsfree@8.4.2/build/lib/handsfree.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-sheetrock/1.1.4/dist/sheetrock.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  </head>
+  <body>
+    <!-- MQnet 통합 플랫폼 홈 바로가기 -->
+    <a href="/" style="position: fixed; top: 12px; right: 16px; z-index: 9999; background: rgba(15, 23, 42, 0.85); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); padding: 8px 14px; border-radius: 20px; font-family: sans-serif; font-size: 13px; font-weight: bold; text-decoration: none; backdrop-filter: blur(8px); box-shadow: 0 4px 12px rgba(0,0,0,0.4); transition: all 0.2s;" onmouseover="this.style.background='#38bdf8';this.style.color='#0f172a'" onmouseout="this.style.background='rgba(15, 23, 42, 0.85)';this.style.color='#38bdf8'">
+      🏠 MQnet 홈
+    </a>
+
+    <div id="status-bar">
+      <div id="score">Score: 0</div>
+      <div id="timer">Time: 20</div>
+    </div>
+    <div id="canvas-container"></div>
+
+    <div id="content-area">
+      <div id="ranking"></div>
+      <div id="image-container">
+        <div id="image-Text">현재 1등</div>
+        <img id="game-capture" src="" alt="image" />
+      </div>
+    </div>
+
+    <script src="sketch.js"></script>
+  </body>
+</html>

@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  selfstudy:
+    build: .
+    container_name: mqnet-selfstudy
+    restart: always
+    ports:
+      - "8005:8005"
+    env_file:
+      - .env
+    environment:
+      - PORT=8005
+      - DEPLOYMENT_MODE=LOCAL_STANDALONE
+      - DATABASE_URL=sqlite:////app/backend/selfstudy.db
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ./backend/data:/app/backend/data
+
+  studycafe:
+    build: ../studycafe
+    container_name: mqnet-studycafe
+    restart: always
+    ports:
+      - "8001:8001"
+    env_file:
+      - ../studycafe/.env
+    environment:
+      - DEPLOYMENT_MODE=LOCAL_STANDALONE
+      - ENABLE_SELFSTUDY=true
+      - DATABASE_URL=sqlite:////app/backend/studycafe.db
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ../studycafe/backend/data:/app/backend/data
+    depends_on:
+      - selfstudy
+
+

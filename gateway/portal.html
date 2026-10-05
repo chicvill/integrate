@@ -1,0 +1,1705 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MQnet 통합 SaaS 플랫폼 포털</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0e17; --card-bg: rgba(17, 24, 39, 0.75); --border: rgba(255, 255, 255, 0.08);
+      --text: #f8fafc; --text-muted: #94a3b8; --primary: #6366f1;
+      --grad: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Pretendard', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh;
+      background-image: radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+                        radial-gradient(circle at 85% 25%, rgba(168, 85, 247, 0.12) 0%, transparent 40%);
+    }
+    .navbar {
+      display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 2.5rem;
+      background: rgba(10, 14, 23, 0.75); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border);
+    }
+    .brand { display: flex; align-items: center; gap: 0.75rem; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.35rem; color: white; text-decoration: none; }
+    .brand-logo { width: 38px; height: 38px; border-radius: 10px; background: var(--grad); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+    .status-pill { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.85rem; border-radius: 20px; font-size: 0.8rem; background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.25); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; }
+    .btn { padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.85rem; font-weight: 600; text-decoration: none; cursor: pointer; border: 1px solid var(--border); color: white; background: rgba(255,255,255,0.06); }
+    .btn:hover { background: rgba(255,255,255,0.12); }
+    .container { max-width: 1200px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+    .hero { text-align: center; padding: 2.5rem 0 3.5rem; }
+    .hero h1 { font-family: 'Outfit', 'Pretendard', sans-serif; font-size: 3rem; font-weight: 800; margin-bottom: 1rem; }
+    .hero h1 span { background: var(--grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p { font-size: 1.1rem; color: var(--text-muted); max-width: 680px; margin: 0 auto; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 3.5rem; }
+    .stat-item { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem; }
+    .stat-val { font-family: 'Outfit', sans-serif; font-size: 1.6rem; font-weight: 800; margin-top: 0.3rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem; }
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 1.75rem;
+      backdrop-filter: blur(12px); display: flex; flex-direction: column; justify-content: space-between;
+      transition: all 0.2s; position: relative; overflow: hidden;
+    }
+    .card:hover { transform: translateY(-4px); border-color: rgba(99,102,241,0.4); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+    .icon { font-size: 2rem; }
+    .badge { font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 20px; background: rgba(255,255,255,0.06); color: var(--text-muted); }
+    .card h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .card p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1.25rem; min-height: 42px; }
+    .tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.5rem; }
+    .tag { font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 6px; background: rgba(255,255,255,0.04); color: var(--text-muted); }
+    .actions { display: flex; gap: 0.5rem; border-top: 1px solid var(--border); padding-top: 1.25rem; }
+    .btn-main { flex: 1; padding: 0.65rem 1rem; border-radius: 12px; background: var(--grad); color: white; font-weight: 600; text-align: center; border: none; cursor: pointer; }
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 100; padding: 1.5rem; }
+    .modal.active { display: flex; }
+    .modal-box { background: #131b2e; border: 1px solid rgba(255,255,255,0.12); border-radius: 24px; max-width: 650px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 2rem; }
+    .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+    .close-btn { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
+    .input { width: 100%; padding: 0.75rem 1rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 10px; color: white; margin-bottom: 1rem; }
+    .res-box { margin-top: 1rem; padding: 1.25rem; border-radius: 12px; background: rgba(0,0,0,0.4); border: 1px solid var(--border); display: none; }
+    .seat-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 0.4rem; margin: 1rem 0; }
+    .seat-btn { padding: 0.5rem 0.2rem; border-radius: 6px; border: 1px solid var(--border); background: rgba(255,255,255,0.05); color: white; cursor: pointer; font-size: 0.75rem; text-align: center; }
+    .seat-btn.selected { background: var(--primary); }
+    @media(max-width: 800px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+    @media(max-width: 960px) { .ref-grid { grid-template-columns: 1fr !important; } }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="brand"><div class="brand-logo">MQ</div>MQnet Platform</a>
+    <div style="display: flex; gap: 0.75rem; align-items: center;">
+      <div class="status-pill"><div class="status-dot"></div>15 Apps Active</div>
+      <a href="/docs" target="_blank" class="btn">📖 API Docs</a>
+      <a href="/health" target="_blank" class="btn">⚡ Health</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="hero">
+      <h1>하나의 서버로 완성하는<br><span>15대 올인원 SaaS & 자동화 플랫폼</span></h1>
+      <p>단일 포트 8000/9000/10000 게이트웨이에서 공통 인증, 통합 DB, Gemini 2.5 AI 및 n8n 자동화를 공유하여 모든 서비스를 즉시 실행합니다.</p>
+    </div>
+
+    <div class="stats">
+      <div class="stat-item"><div style="font-size: 0.8rem; color: var(--text-muted);">통합 서비스</div><div class="stat-val">15개 앱</div></div>
+      <div class="stat-item"><div style="font-size: 0.8rem; color: var(--text-muted);">공유 DB</div><div class="stat-val">SQLite/Postgres</div></div>
+      <div class="stat-item"><div style="font-size: 0.8rem; color: var(--text-muted);">인공지능</div><div class="stat-val">Gemini 2.5</div></div>
+      <div class="stat-item"><div style="font-size: 0.8rem; color: var(--text-muted);">게이트웨이 포트</div><div class="stat-val">:8000 (:9000)</div></div>
+    </div>
+
+    <div class="grid">
+      <!-- 1. MQhome (Brand Homepage) -->
+      <div class="card" style="cursor:pointer;" onclick="if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('/mqhome/','_blank')">
+        <div>
+          <div class="card-top"><span class="icon">🌐</span><span class="badge" style="background:rgba(59,130,246,0.15); color:#60a5fa;">34.31.10.12:9000/mqhome</span></div>
+          <h3>MQnet 브랜드 홈페이지</h3>
+          <p>MQnet 혁신 IT 솔루션 브랜드 소개, 인터랙티브 파티클 디자인, 제품 라인업 및 기술 블로그입니다.</p>
+          <div class="tags"><span class="tag">브랜드 스토리</span><span class="tag">제품 라인업</span><span class="tag">파티클 디자인</span><span class="tag">쇼케이스</span></div>
+        </div>
+        <div class="actions" style="display:flex; gap:0.5rem;">
+          <a href="/mqhome/" target="_blank" class="btn-main" style="flex:1.4; text-align:center; text-decoration:none; background: linear-gradient(135deg, #3b82f6, #6366f1); color:white; font-weight:800; font-size:0.9rem; padding:0.75rem 0.5rem; border-radius:12px;">🌐 공식 홈페이지 방문 ↗</a>
+          <button class="btn" style="flex:0.8; background: rgba(255,255,255,0.06); color:var(--text-muted); font-size:0.8rem; border-radius:12px;" onclick="window.open('/mqhome/','_blank')">✨ 홈 열기</button>
+        </div>
+      </div>
+
+      <!-- 2. StudyCafe -->
+      <div class="card" style="cursor:pointer;" onclick="if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('/studycafe/','_blank')">
+        <div>
+          <div class="card-top"><span class="icon">☕</span><span class="badge" style="background:rgba(6,182,212,0.15); color:#22d3ee;">34.31.10.12:9000/studycafe</span></div>
+          <h3>스터디카페 관리</h3>
+          <p>실시간 좌석 배치도 현황, 이용권 관리, NFC 도어락 및 QR 체크인 풀 시스템입니다.</p>
+          <div class="tags"><span class="tag">실시간 좌석</span><span class="tag">이용권 관리</span><span class="tag">NFC 도어락</span><span class="tag">Vite+React</span></div>
+        </div>
+        <div class="actions" style="display:flex; gap:0.5rem;">
+          <a href="/studycafe/" target="_blank" class="btn-main" style="flex:1.4; text-align:center; text-decoration:none; background: linear-gradient(135deg, #06b6d4, #3b82f6); color:white; font-weight:800; font-size:0.9rem; padding:0.75rem 0.5rem; border-radius:12px;">☕ 오리지널 React 앱 실행 ↗</a>
+          <button class="btn" style="flex:0.8; background: rgba(255,255,255,0.06); color:var(--text-muted); font-size:0.8rem; border-radius:12px;" onclick="openM('study')">🪑 간이 모달</button>
+        </div>
+      </div>
+
+      <!-- 3. SelfStudy -->
+      <div class="card" style="cursor:pointer;" onclick="if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('/selfstudy/','_blank')">
+        <div>
+          <div class="card-top"><span class="icon">📚</span><span class="badge" style="background:rgba(16,185,129,0.15); color:#34d399;">34.31.10.12:9000/selfstudy</span></div>
+          <h3>자기주도학습 관리</h3>
+          <p>학생 학습 플래너, 온보딩 스케줄러, 진도 체크 및 Gemini AI 메타인지 멘토링입니다.</p>
+          <div class="tags"><span class="tag">학습 플래너</span><span class="tag">AI 멘토 피드백</span><span class="tag">진도 기록</span><span class="tag">Vite+React</span></div>
+        </div>
+        <div class="actions" style="display:flex; gap:0.5rem;">
+          <a href="/selfstudy/" target="_blank" class="btn-main" style="flex:1.4; text-align:center; text-decoration:none; background: linear-gradient(135deg, #10b981, #059669); color:white; font-weight:800; font-size:0.9rem; padding:0.75rem 0.5rem; border-radius:12px;">📚 오리지널 React 앱 실행 ↗</a>
+          <button class="btn" style="flex:0.8; background: rgba(255,255,255,0.06); color:var(--text-muted); font-size:0.8rem; border-radius:12px;" onclick="openM('self')">🎯 간이 모달</button>
+        </div>
+      </div>
+
+      <!-- 4. Store -->
+      <div class="card" style="cursor:pointer;" onclick="if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('/store/','_blank')">
+        <div>
+          <div class="card-top"><span class="icon">🍽️</span><span class="badge" style="background:rgba(245,158,11,0.15); color:#fbbf24;">34.31.10.12:9000/store</span></div>
+          <h3>매장 관제 & POS</h3>
+          <p>카운터 POS 주문 결제, 실시간 매장 상황실 관제 및 재고/상품 관리 풀 시스템입니다.</p>
+          <div class="tags"><span class="tag">카운터 POS</span><span class="tag">실시간 상황실</span><span class="tag">재고 관리</span><span class="tag">Vite+React</span></div>
+        </div>
+        <div class="actions" style="display:flex; gap:0.5rem;">
+          <a href="/store/" target="_blank" class="btn-main" style="flex:1.4; text-align:center; text-decoration:none; background: linear-gradient(135deg, #f59e0b, #ef4444); color:white; font-weight:800; font-size:0.9rem; padding:0.75rem 0.5rem; border-radius:12px;">🏪 오리지널 React 앱 실행 ↗</a>
+          <button class="btn" style="flex:0.8; background: rgba(255,255,255,0.06); color:var(--text-muted); font-size:0.8rem; border-radius:12px;" onclick="openM('store')">📱 간이 모달</button>
+        </div>
+      </div>
+
+      <!-- 5. MQFarm -->
+      <div class="card" style="cursor:pointer;" onclick="if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('/mqfarm/','_blank')">
+        <div>
+          <div class="card-top"><span class="icon">🌿</span><span class="badge" style="background:rgba(99,102,241,0.15); color:#a5b4fc;">34.31.10.12:9000/mqfarm</span></div>
+          <h3>MQFarm 센서 모니터링</h3>
+          <p>온도, 습도, CO2 센서 실시간 텔레메트리와 환풍/급수 원격 제어 및 AI 작물 생육 진단입니다.</p>
+          <div class="tags"><span class="tag">센서 관제</span><span class="tag">장비 제어</span><span class="tag">비전 생육 AI</span><span class="tag">Vite+React</span></div>
+        </div>
+        <div class="actions" style="display:flex; gap:0.5rem;">
+          <a href="/mqfarm/" target="_blank" class="btn-main" style="flex:1.4; text-align:center; text-decoration:none; background: linear-gradient(135deg, #6366f1, #8b5cf6); color:white; font-weight:800; font-size:0.9rem; padding:0.75rem 0.5rem; border-radius:12px;">🌿 오리지널 React 앱 실행 ↗</a>
+          <button class="btn" style="flex:0.8; background: rgba(255,255,255,0.06); color:var(--text-muted); font-size:0.8rem; border-radius:12px;" onclick="openM('farm')">📊 간이 모달</button>
+        </div>
+      </div>
+
+      <!-- 6. Immich Smart Gallery -->
+      <div class="card" style="cursor:pointer;" onclick="if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('/photos/','_blank')">
+        <div>
+          <div class="card-top"><span class="icon">📸</span><span class="badge" style="background:rgba(236,72,153,0.15); color:#f472b6;">34.31.10.12:9000/photos</span></div>
+          <h3>스마트 갤러리 (Immich AI)</h3>
+          <p>AI 안면인식 및 인물별 자동 분류, 위치 지도(GPS), 자연어 스마트 검색 및 모바일 앱 실시간 사진 백업 허브입니다.</p>
+          <div class="tags"><span class="tag">AI 안면인식</span><span class="tag">CLIP 시맨틱 검색</span><span class="tag">GPS 위치지도</span><span class="tag">모바일 자동백업</span><span class="tag">L: 드라이브</span></div>
+        </div>
+        <div class="actions" style="display:flex; gap:0.5rem;">
+          <a href="/photos/" target="_blank" class="btn-main" style="flex:1.4; text-align:center; text-decoration:none; background: linear-gradient(135deg, #ec4899, #8b5cf6); color:white; font-weight:800; font-size:0.9rem; padding:0.75rem 0.5rem; border-radius:12px;">📸 스마트 갤러리 열기 ↗</a>
+        </div>
+      </div>
+
+      <!-- 7. FileBrowser File Manager -->
+      <div class="card" style="cursor:pointer;" onclick="if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('/files','_blank')">
+        <div>
+          <div class="card-top"><span class="icon">📁</span><span class="badge" style="background:rgba(59,130,246,0.15); color:#60a5fa;">34.31.10.12:9000/files</span></div>
+          <h3>통합 파일 탐색기 (FileBrowser)</h3>
+          <p>L: 드라이브 내 모든 문서, 음악, 영상, 압축파일의 자유로운 탐색, 대용량 업로드/다운로드 및 파일 관리자입니다.</p>
+          <div class="tags"><span class="tag">파일 탐색기</span><span class="tag">문서/음악/영상</span><span class="tag">대용량 업·다운로드</span><span class="tag">원격 파일관리</span><span class="tag">L: 드라이브</span></div>
+        </div>
+        <div class="actions" style="display:flex; gap:0.5rem;">
+          <a href="/files" target="_blank" class="btn-main" style="flex:1.4; text-align:center; text-decoration:none; background: linear-gradient(135deg, #3b82f6, #06b6d4); color:white; font-weight:800; font-size:0.9rem; padding:0.75rem 0.5rem; border-radius:12px;">📁 파일 탐색기 열기 ↗</a>
+        </div>
+      </div>
+
+      <!-- 8. YTDownloader -->
+      <div class="card" style="cursor:pointer;" onclick="if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('/ytdownloader/','_blank')">
+        <div>
+          <div class="card-top"><span class="icon">🎬</span><span class="badge" style="background:rgba(239,68,68,0.15); color:#f87171;">34.31.10.12:9000/ytdownloader</span></div>
+          <h3>유튜브 미디어 다운로더</h3>
+          <p>YouTube 최고화질 MP4 영상/MP3 오디오 고속 추출 및 Gemini AI 3줄 요약 리포트 서비스입니다.</p>
+          <div class="tags"><span class="tag">YouTube 추출</span><span class="tag">MP4/MP3</span><span class="tag">AI 3줄 요약</span><span class="tag">고속 다운로드</span></div>
+        </div>
+        <div class="actions" style="display:flex; gap:0.5rem;">
+          <a href="/ytdownloader/" target="_blank" class="btn-main" style="flex:1.4; text-align:center; text-decoration:none; background: linear-gradient(135deg, #ef4444, #f97316); color:white; font-weight:800; font-size:0.9rem; padding:0.75rem 0.5rem; border-radius:12px;">🎬 유튜브 다운로더 열기 ↗</a>
+        </div>
+      </div>
+
+      <!-- 9. AI Gwansang -->
+      <div class="card" style="cursor:pointer;" onclick="if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('/gwansang/','_blank')">
+        <div>
+          <div class="card-top"><span class="icon">🔮</span><span class="badge" style="background:rgba(168,85,247,0.15); color:#c084fc;">34.31.10.12:9000/gwansang</span></div>
+          <h3>AI 관상 분석</h3>
+          <p>얼굴 이미지와 Gemini AI를 결합하여 동물상, 재물운, 연애운, 직업운을 분석합니다.</p>
+          <div class="tags"><span class="tag">얼굴 분석</span><span class="tag">동물상</span><span class="tag">Gemini 2.5 Flash</span><span class="tag">Vite+React</span></div>
+        </div>
+        <div class="actions" style="display:flex; gap:0.5rem;">
+          <a href="/gwansang/" target="_blank" class="btn-main" style="flex:1.4; text-align:center; text-decoration:none; background: linear-gradient(135deg, #a855f7, #ec4899); color:white; font-weight:800; font-size:0.9rem; padding:0.75rem 0.5rem; border-radius:12px;">🔮 오리지널 React 앱 실행 ↗</a>
+          <button class="btn" style="flex:0.8; background: rgba(255,255,255,0.06); color:var(--text-muted); font-size:0.8rem; border-radius:12px;" onclick="openM('ai')">✨ 간이 모달</button>
+        </div>
+      </div>
+
+      <!-- 10. Face Analy (Teto vs Egen) -->
+      <div class="card" style="cursor:pointer;" onclick="if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('/face_analy/','_blank')">
+        <div>
+          <div class="card-top"><span class="icon">🧑‍🎨</span><span class="badge" style="background:rgba(5,150,105,0.15); color:#34d399;">34.31.10.12:9000/face_analy</span></div>
+          <h3>테토/에겐 AI 얼굴 분석</h3>
+          <p>얼굴 사진 및 웹캠 기반으로 테토상(시크/도시적) vs 에겐상(따뜻/친근)을 분류하고 맞춤형 스타일링을 추천합니다.</p>
+          <div class="tags"><span class="tag">테토 vs 에겐</span><span class="tag">스타일링 조언</span><span class="tag">Gemini 2.5</span><span class="tag">Vite+React</span></div>
+        </div>
+        <div class="actions" style="display:flex; gap:0.5rem;">
+          <a href="/face_analy/" target="_blank" class="btn-main" style="flex:1.4; text-align:center; text-decoration:none; background: linear-gradient(135deg, #059669, #10b981); color:white; font-weight:800; font-size:0.9rem; padding:0.75rem 0.5rem; border-radius:12px;">🧑‍🎨 얼굴 분석 앱 실행 ↗</a>
+          <button class="btn" style="flex:0.8; background: rgba(255,255,255,0.06); color:var(--text-muted); font-size:0.8rem; border-radius:12px;" onclick="window.open('/face_analy/','_blank')">✨ 열기</button>
+        </div>
+      </div>
+
+      <!-- 11. Iron Man Game -->
+      <div class="card" style="cursor:pointer;" onclick="if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('/ironman/','_blank')">
+        <div>
+          <div class="card-top"><span class="icon">🎮</span><span class="badge" style="background:rgba(225,29,72,0.15); color:#fb7185;">34.31.10.12:9000/ironman</span></div>
+          <h3>아이언맨 제스처 게임</h3>
+          <p>실시간 웹캠 핸드 트래킹 및 p5.js 물리 엔진 기반의 아이언맨 리펄서 인터랙티브 슈팅 게임입니다.</p>
+          <div class="tags"><span class="tag">핸드 트래킹</span><span class="tag">p5.js</span><span class="tag">ML5/Handsfree</span><span class="tag">모션 게임</span></div>
+        </div>
+        <div class="actions" style="display:flex; gap:0.5rem;">
+          <a href="/ironman/" target="_blank" class="btn-main" style="flex:1.4; text-align:center; text-decoration:none; background: linear-gradient(135deg, #e11d48, #f59e0b); color:white; font-weight:800; font-size:0.9rem; padding:0.75rem 0.5rem; border-radius:12px;">🎮 게임 플레이 ↗</a>
+          <button class="btn" style="flex:0.8; background: rgba(255,255,255,0.06); color:var(--text-muted); font-size:0.8rem; border-radius:12px;" onclick="window.open('/ironman/','_blank')">🕹️ 시작</button>
+        </div>
+      </div>
+
+      <!-- 12. Modern Clock -->
+      <div class="card" style="cursor:pointer;" onclick="if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('/clock/','_blank')">
+        <div>
+          <div class="card-top"><span class="icon">⏰</span><span class="badge" style="background:rgba(14,165,233,0.15); color:#38bdf8;">34.31.10.12:9000/clock</span></div>
+          <h3>모던 스마트 클락</h3>
+          <p>네온 아날로그/디지털 듀얼 시계, 글로벌 5대 도시 세계시, 정밀 스톱워치 및 뽀모도로 타이머입니다.</p>
+          <div class="tags"><span class="tag">아날로그/디지털</span><span class="tag">세계시</span><span class="tag">스톱워치</span><span class="tag">뽀모도로</span></div>
+        </div>
+        <div class="actions" style="display:flex; gap:0.5rem;">
+          <a href="/clock/" target="_blank" class="btn-main" style="flex:1.4; text-align:center; text-decoration:none; background: linear-gradient(135deg, #0ea5e9, #6366f1); color:white; font-weight:800; font-size:0.9rem; padding:0.75rem 0.5rem; border-radius:12px;">⏰ 스마트 클락 열기 ↗</a>
+          <button class="btn" style="flex:0.8; background: rgba(255,255,255,0.06); color:var(--text-muted); font-size:0.8rem; border-radius:12px;" onclick="window.open('/clock/','_blank')">🕒 열기</button>
+        </div>
+      </div>
+
+      <!-- 13. VideoBooth -->
+      <div class="card" style="cursor:pointer;" onclick="if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('/videobooth/','_blank')">
+        <div>
+          <div class="card-top"><span class="icon">📺</span><span class="badge" style="background:rgba(202,138,4,0.15); color:#facc15;">34.31.10.12:9000/videobooth</span></div>
+          <h3>레트로 TV 비디오 부스</h3>
+          <p>레트로 브라운관 TV 스타일의 동영상 방명록으로, 실시간 웹캠 비디오 녹화 및 갤러리 아카이빙을 지원합니다.</p>
+          <div class="tags"><span class="tag">레트로 TV</span><span class="tag">비디오 녹화</span><span class="tag">방명록</span><span class="tag">TTS 음성</span></div>
+        </div>
+        <div class="actions" style="display:flex; gap:0.5rem;">
+          <a href="/videobooth/" target="_blank" class="btn-main" style="flex:1.4; text-align:center; text-decoration:none; background: linear-gradient(135deg, #854d0e, #ca8a04); color:white; font-weight:800; font-size:0.9rem; padding:0.75rem 0.5rem; border-radius:12px;">📺 비디오 부스 실행 ↗</a>
+          <button class="btn" style="flex:0.8; background: rgba(255,255,255,0.06); color:var(--text-muted); font-size:0.8rem; border-radius:12px;" onclick="window.open('/videobooth/','_blank')">📼 녹화하기</button>
+        </div>
+      </div>
+
+      <!-- 14. n8n AI Workflow Automation & Editor -->
+      <div class="card" style="cursor:pointer;" onclick="if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('http://34.31.10.12:5678/','_blank')">
+        <div>
+          <div class="card-top"><span class="icon">⚡</span><span class="badge" style="background:rgba(234,88,12,0.15); color:#fb923c;">34.31.10.12:5678</span></div>
+          <h3>n8n AI 워크플로우 자동화 & 편집기</h3>
+          <p>노드 기반 시각적 캔버스에서 Gemini AI, 구글 시트, 금융 파싱, 웹훅 및 스케줄러 워크플로우를 자유롭게 제작, 테스트 및 실행하는 통합 자동화 엔진입니다.</p>
+          <div class="tags"><span class="tag">⚡ 비주얼 노드 캔버스</span><span class="tag">➕ 워크플로우 제작/편집</span><span class="tag">Gemini 2.5 AI Agent</span><span class="tag">실시간 테스트 & 실행</span></div>
+        </div>
+        <div class="actions" style="display:flex;">
+          <a href="http://34.31.10.12:5678/" target="_blank" class="btn-main" style="width:100%; text-align:center; text-decoration:none; background: linear-gradient(135deg, #ea580c, #f97316); color:white; font-weight:800; font-size:0.95rem; padding:0.8rem 1rem; border-radius:12px; display:block;">⚡ n8n 워크플로우 편집기 열기 ↗</a>
+        </div>
+      </div>
+
+      <!-- 15. Grammar Quest (AI 영문법 퀘스트) -->
+      <div class="card" style="cursor:pointer;" onclick="if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('/grammar/','_blank')">
+        <div>
+          <div class="card-top"><span class="icon">🔤</span><span class="badge" style="background:rgba(16,185,129,0.15); color:#34d399;">34.31.10.12:9000/grammar</span></div>
+          <h3>Grammar Quest (AI 영문법 퀘스트)</h3>
+          <p>초3~고3 수능 영문법 무한 생성, STEM&AI 전문 어휘 및 원어민 음성 섀도잉 정밀 발음 코칭 에듀테크 플랫폼입니다.</p>
+          <div class="tags"><span class="tag">무한 예문 생성</span><span class="tag">STEM & AI 어휘</span><span class="tag">음성인식 섀도잉</span><span class="tag">AI 발음 코칭</span><span class="tag">초3~고3 수능</span></div>
+        </div>
+        <div class="actions" style="display:flex; gap:0.5rem;">
+          <a href="/grammar/" target="_blank" class="btn-main" style="flex:1.4; text-align:center; text-decoration:none; background: linear-gradient(135deg, #059669, #10b981); color:white; font-weight:800; font-size:0.9rem; padding:0.75rem 0.5rem; border-radius:12px;">🔤 영문법 퀘스트 실행 ↗</a>
+          <button class="btn" style="flex:0.8; background: rgba(255,255,255,0.06); color:var(--text-muted); font-size:0.8rem; border-radius:12px;" onclick="window.open('/docs#/AI%20영문법%20퀘스트','_blank')">📖 API</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- 🏛️ 1. 공통분모 리스트 (Shared Infrastructure & Core Components) -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div style="margin-top: 5rem; padding-top: 3rem; border-top: 1px solid rgba(255,255,255,0.08);">
+      <div style="text-align: center; margin-bottom: 2.5rem;">
+        <div style="display: inline-block; padding: 0.35rem 0.9rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700; background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.3); margin-bottom: 0.75rem;">
+          ⚙️ SHARED INFRASTRUCTURE
+        </div>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 800; margin-bottom: 0.75rem;">
+          14개 앱을 관통하는 <span style="background: var(--grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">7대 공통분모 모듈</span>
+        </h2>
+        <p style="color: var(--text-muted); max-width: 650px; margin: 0 auto; font-size: 0.95rem;">
+          각 앱이 개별 구축하지 않고 중앙 <code style="color:#a5b4fc; background:rgba(255,255,255,0.05); padding:0.15rem 0.4rem; border-radius:6px;">shared/</code> 패키지에서 재사용하는 표준 인프라입니다.
+        </p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+        <!-- 공통분모 1: 인증 및 보안 -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(12px);">
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom: 0.75rem;">
+            <span style="font-size: 1.6rem;">🔐</span>
+            <div>
+              <h4 style="font-size: 1.05rem; font-weight: 700; color: #fff;">공통 인증 & 보안 (Auth)</h4>
+              <span style="font-size: 0.75rem; color: #818cf8; font-family: monospace;">shared/auth/</span>
+            </div>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 0.75rem;">
+            JWT 토큰 기반 단일 로그인, 4단계 RBAC 역할 권한 (Master / Tenant / Staff / User), BCrypt 단방향 해싱.
+          </p>
+          <div style="font-size: 0.75rem; color: #34d399; display: flex; align-items: center; gap: 0.35rem;">
+            ✓ 전체 14개 서비스 공통 적용
+          </div>
+        </div>
+
+        <!-- 공통분모 2: 통합 데이터베이스 -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(12px);">
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom: 0.75rem;">
+            <span style="font-size: 1.6rem;">🗄️</span>
+            <div>
+              <h4 style="font-size: 1.05rem; font-weight: 700; color: #fff;">통합 데이터베이스 (Database)</h4>
+              <span style="font-size: 0.75rem; color: #34d399; font-family: monospace;">shared/core/base_database.py</span>
+            </div>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 0.75rem;">
+            Supabase(Postgres pgvector) 원격 동기화 지원 + 네트워크 단절 시 <b>로컬 SQLite 자동 폴백</b> 및 Session 풀링.
+          </p>
+          <div style="font-size: 0.75rem; color: #34d399; display: flex; align-items: center; gap: 0.35rem;">
+            ✓ 하이브리드 클라우드/로컬 지원
+          </div>
+        </div>
+
+        <!-- 공통분모 3: Gemini AI 비전 & LLM -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(12px);">
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom: 0.75rem;">
+            <span style="font-size: 1.6rem;">🤖</span>
+            <div>
+              <h4 style="font-size: 1.05rem; font-weight: 700; color: #fff;">통합 AI 엔진 (Gemini 2.5)</h4>
+              <span style="font-size: 0.75rem; color: #ec4899; font-family: monospace;">shared/ai/</span>
+            </div>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 0.75rem;">
+            Google Gemini 2.5 Flash 비전 & 텍스트 통합 클라이언트. 관상/얼굴 분석, 유튜브 요약, 작물 진단, 메타인지 멘토링.
+          </p>
+          <div style="font-size: 0.75rem; color: #34d399; display: flex; align-items: center; gap: 0.35rem;">
+            ✓ 프롬프트 템플릿 & OCR 공통화
+          </div>
+        </div>
+
+        <!-- 공통분모 4: 실시간 메시징 (MQTT/WS) -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(12px);">
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom: 0.75rem;">
+            <span style="font-size: 1.6rem;">📡</span>
+            <div>
+              <h4 style="font-size: 1.05rem; font-weight: 700; color: #fff;">실시간 통신 (MQTT & WS)</h4>
+              <span style="font-size: 0.75rem; color: #f59e0b; font-family: monospace;">shared/messaging/</span>
+            </div>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 0.75rem;">
+            MQFarm 센서 텔레메트리 스트리밍, 매장 POS-주방 KDS 즉시 전송, 스터디카페 NFC 도어락/좌석 이벤트 중계.
+          </p>
+          <div style="font-size: 0.75rem; color: #34d399; display: flex; align-items: center; gap: 0.35rem;">
+            ✓ 저지연 브로드캐스팅 파이프라인
+          </div>
+        </div>
+
+        <!-- 공통분모 5: 통합 결제 PG사 연동 -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(12px);">
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom: 0.75rem;">
+            <span style="font-size: 1.6rem;">💳</span>
+            <div>
+              <h4 style="font-size: 1.05rem; font-weight: 700; color: #fff;">공통 결제 (Payments)</h4>
+              <span style="font-size: 0.75rem; color: #38bdf8; font-family: monospace;">shared/payment/</span>
+            </div>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 0.75rem;">
+            토스페이먼츠(Toss) 및 스트라이프(Stripe) 다중 PG사 어댑터, 결제 승인/취소 및 웹훅 자동 정산 처리.
+          </p>
+          <div style="font-size: 0.75rem; color: #34d399; display: flex; align-items: center; gap: 0.35rem;">
+            ✓ 스터디카페·매장POS·관상 공통 사용
+          </div>
+        </div>
+
+        <!-- 공통분모 6: 스토리지 & L: 드라이브 -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(12px);">
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom: 0.75rem;">
+            <span style="font-size: 1.6rem;">📁</span>
+            <div>
+              <h4 style="font-size: 1.05rem; font-weight: 700; color: #fff;">파일 & 스토리지 (Storage)</h4>
+              <span style="font-size: 0.75rem; color: #fb7185; font-family: monospace;">shared/storage/ & L:\</span>
+            </div>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 0.75rem;">
+            로컬 대용량 <code>L:\</code> 스토리지 마운트, 썸네일 고속 캐시, S3 호환 오브젝트 스토리지 연동.
+          </p>
+          <div style="font-size: 0.75rem; color: #34d399; display: flex; align-items: center; gap: 0.35rem;">
+            ✓ Immich & FileBrowser 공유
+          </div>
+        </div>
+
+        <!-- 공통분모 7: 멀티테넌시 & 서비스 레지스트리 -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(12px);">
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom: 0.75rem;">
+            <span style="font-size: 1.6rem;">🏢</span>
+            <div>
+              <h4 style="font-size: 1.05rem; font-weight: 700; color: #fff;">멀티테넌시 (Tenant Registry)</h4>
+              <span style="font-size: 0.75rem; color: #a855f7; font-family: monospace;">shared/tenant/registry.py</span>
+            </div>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 0.75rem;">
+            14개 마이크로서비스 앱 등록, 테넌트별 데이터베이스 격리, 동적 라우팅 및 기능 플래그 제어.
+          </p>
+          <div style="font-size: 0.75rem; color: #34d399; display: flex; align-items: center; gap: 0.35rem;">
+            ✓ 단일 진입점 API 게이트웨이 연동
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- 📚 2. 참고자료 & 연동 가이드 (Reference Materials & Quick Guide) -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div style="margin-top: 4rem; padding-top: 3rem; border-top: 1px solid rgba(255,255,255,0.08);">
+      <div style="text-align: center; margin-bottom: 2.5rem;">
+        <div style="display: inline-block; padding: 0.35rem 0.9rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700; background: rgba(52,211,153,0.15); color: #34d399; border: 1px solid rgba(52,211,153,0.3); margin-bottom: 0.75rem;">
+          📖 CHEAT SHEET & QUICK LINKS
+        </div>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 800; margin-bottom: 0.75rem;">
+          아키텍처 <span style="background: linear-gradient(135deg,#34d399,#3b82f6); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">참고자료 & 설정 가이드</span>
+        </h2>
+        <p style="color: var(--text-muted); max-width: 650px; margin: 0 auto; font-size: 0.95rem;">
+          Cloudflare Zero Trust 터널 매핑, Docker 포트 레이아웃, 실행 명령어 요약입니다.
+        </p>
+      </div>
+
+      <div class="ref-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <!-- 참고자료 1: 스마트폰 및 외부 직접 접속 URL 매핑표 -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 1.75rem; backdrop-filter: blur(12px);">
+          <h3 style="font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+            📱 스마트폰 / 외부 직접 접속 주소 (Direct IP: 34.31.10.12)
+          </h3>
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem; text-align: left;">
+              <thead>
+                <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted);">
+                  <th style="padding: 0.5rem;">서비스 명칭</th>
+                  <th style="padding: 0.5rem;">스마트폰 직접 접속 링크 (URL)</th>
+                </tr>
+              </thead>
+              <tbody style="color: #cbd5e1;">
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;">통합 메인 포털</td><td><a href="http://34.31.10.12:9000/" target="_blank" style="color:#60a5fa; text-decoration:none;"><code>http://34.31.10.12:9000/</code></a></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;">통합 파일 탐색기</td><td><a href="http://34.31.10.12:9000/files" target="_blank" style="color:#38bdf8; text-decoration:none; font-weight:bold;"><code>http://34.31.10.12:9000/files</code></a></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;">MQhome 브랜드</td><td><a href="http://34.31.10.12:9000/mqhome/" target="_blank" style="color:#cbd5e1; text-decoration:none;"><code>http://34.31.10.12:9000/mqhome/</code></a></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;">스터디카페 관리</td><td><a href="http://34.31.10.12:9000/studycafe/" target="_blank" style="color:#cbd5e1; text-decoration:none;"><code>http://34.31.10.12:9000/studycafe/</code></a></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;">자기주도학습 관리</td><td><a href="http://34.31.10.12:9000/selfstudy/" target="_blank" style="color:#cbd5e1; text-decoration:none;"><code>http://34.31.10.12:9000/selfstudy/</code></a></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;">매장 관제 & POS</td><td><a href="http://34.31.10.12:9000/store/" target="_blank" style="color:#cbd5e1; text-decoration:none;"><code>http://34.31.10.12:9000/store/</code></a></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;">스마트팜 IoT (MQFarm)</td><td><a href="http://34.31.10.12:9000/mqfarm/" target="_blank" style="color:#cbd5e1; text-decoration:none;"><code>http://34.31.10.12:9000/mqfarm/</code></a></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;">스마트 갤러리 (Immich AI)</td><td><a href="http://34.31.10.12:9000/photos/" target="_blank" style="color:#cbd5e1; text-decoration:none;"><code>http://34.31.10.12:9000/photos/</code></a></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;">유튜브 다운로더</td><td><a href="http://34.31.10.12:9000/ytdownloader/" target="_blank" style="color:#cbd5e1; text-decoration:none;"><code>http://34.31.10.12:9000/ytdownloader/</code></a></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;">AI 관상 분석</td><td><a href="http://34.31.10.12:9000/gwansang/" target="_blank" style="color:#cbd5e1; text-decoration:none;"><code>http://34.31.10.12:9000/gwansang/</code></a></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;">AI 얼굴 분석 (테토/에겐)</td><td><a href="http://34.31.10.12:9000/face_analy/" target="_blank" style="color:#cbd5e1; text-decoration:none;"><code>http://34.31.10.12:9000/face_analy/</code></a></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;">아이언맨 제스처 게임</td><td><a href="http://34.31.10.12:9000/ironman/" target="_blank" style="color:#cbd5e1; text-decoration:none;"><code>http://34.31.10.12:9000/ironman/</code></a></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;">모던 스마트 클락</td><td><a href="http://34.31.10.12:9000/clock/" target="_blank" style="color:#cbd5e1; text-decoration:none;"><code>http://34.31.10.12:9000/clock/</code></a></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;">레트로 TV 비디오 부스</td><td><a href="http://34.31.10.12:9000/videobooth/" target="_blank" style="color:#cbd5e1; text-decoration:none;"><code>http://34.31.10.12:9000/videobooth/</code></a></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code style="color:#fb923c;">n8n 자동화 워크플로우</code></td><td><a href="http://34.31.10.12:5678/" target="_blank" style="color:#fb923c; text-decoration:none; font-weight:bold;"><code>http://34.31.10.12:5678/</code></a></td></tr>
+                <tr><td style="padding:0.45rem;">Grammar Quest (AI 영문법)</td><td><a href="http://34.31.10.12:9000/grammar/" target="_blank" style="color:#cbd5e1; text-decoration:none;"><code>http://34.31.10.12:9000/grammar/</code></a></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 참고자료 2: 빠른 실행 & 핵심 API 엔드포인트 -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 1.75rem; backdrop-filter: blur(12px); display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+              ⚡ 빠른 실행 & 개발자 API 링크
+            </h3>
+            
+            <div style="margin-bottom: 1.25rem;">
+              <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem;">💻 로컬 원클릭 실행 스크립트</div>
+              <div style="background: rgba(0,0,0,0.4); padding: 0.75rem 1rem; border-radius: 10px; font-family: monospace; font-size: 0.82rem; line-height: 1.6; border: 1px solid var(--border);">
+                <span style="color:#a855f7;">.\run.bat</span> <span style="color:#60a5fa;">gateway</span>  <span style="color:#64748b;"># 통합 단일 게이트웨이 (포트 9000 & 10000)</span><br>
+                <span style="color:#a855f7;">.\run.bat</span> <span style="color:#34d399;">docker</span>   <span style="color:#64748b;"># Docker Compose 9000번대 서비스 일괄 기동</span><br>
+                <span style="color:#a855f7;">.\run.bat</span> <span style="color:#f59e0b;">all</span>      <span style="color:#64748b;"># 7대 마이크로서비스 개별 창 분리 기동</span>
+              </div>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+              <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem;">🔗 핵심 개발자 및 관리자 엔드포인트</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                <a href="/docs" target="_blank" class="btn" style="text-align: center; font-size: 0.8rem;">📖 Swagger API Docs</a>
+                <a href="/redoc" target="_blank" class="btn" style="text-align: center; font-size: 0.8rem;">📑 ReDoc 기술 명세</a>
+                <a href="/health" target="_blank" class="btn" style="text-align: center; font-size: 0.8rem;">💚 시스템 Health</a>
+                <a href="/apps" target="_blank" class="btn" style="text-align: center; font-size: 0.8rem;">🏢 앱 레지스트리 JSON</a>
+              </div>
+            </div>
+          </div>
+
+          <div style="background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.25); border-radius: 12px; padding: 0.85rem; font-size: 0.8rem; color: #cbd5e1;">
+            💡 <b>실시간 파일 및 DB 저장 경로</b><br>
+            • L: 드라이브 마운트: <code>L:\</code> (사진 6,500+장 및 문서/영상 관리)<br>
+            • 데이터베이스: <code>integrat.db</code> (SQLite) & <code>immich_pgdata</code> (Postgres)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div style="text-align: center; margin-top: 4rem; color: var(--text-muted); font-size: 0.85rem; padding-bottom: 2rem;">
+      MQnet Unified SaaS Architecture Platform &copy; 2026. All Rights Reserved.
+    </div>
+
+
+
+  <div class="modal" id="modal" onclick="if(event.target.id==='modal')closeM()">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3 id="mTitle" style="font-size: 1.25rem;">서비스</h3>
+        <button class="close-btn" onclick="closeM()">&times;</button>
+      </div>
+      <div id="mBody"></div>
+    </div>
+  </div>
+
+  <script>
+    let selectedSeatId = '1';
+    let selectedTableNum = 'Table 01';
+    let uploadedBase64 = null;
+
+    async function openM(type) {
+      const m = document.getElementById('modal');
+      const title = document.getElementById('mTitle');
+      const body = document.getElementById('mBody');
+
+      if (type === 'ai') {
+        title.textContent = '🔮 AI 관상 분석 (Gemini 2.5 Flash)';
+        body.innerHTML = `
+          <div style="margin-bottom:1rem;">
+            <label style="font-size:0.85rem; color:var(--text-muted); display:block; margin-bottom:0.4rem;">분석 대상 이름</label>
+            <input type="text" id="gName" class="input" value="김민수">
+          </div>
+          <div style="margin-bottom:1rem;">
+            <label style="font-size:0.85rem; color:var(--text-muted); display:block; margin-bottom:0.4rem;">얼굴 사진 업로드 (미선택 시 기본 샘플)</label>
+            <input type="file" id="gFile" accept="image/*" class="input" style="padding:0.5rem;" onchange="previewImg(event)">
+            <div id="imgPrevContainer" style="display:none; text-align:center; margin:0.75rem 0;">
+              <img id="imgPrev" src="" style="max-height:160px; border-radius:12px; border:2px solid var(--primary);">
+            </div>
+          </div>
+          <button class="btn-main" style="width:100%; font-size:1rem; padding:0.8rem;" onclick="runAi()">✨ Gemini AI 관상 분석 시작</button>
+          <div id="gRes" class="res-box"></div>
+        `;
+      } else if (type === 'study') {
+        title.textContent = '☕ 스터디카페 회원 관리 & 좌석';
+        renderStudyCafeModal();
+      } else if (type === 'store') {
+        title.textContent = '🏪 MQnet Store 통합 매장 관제 & 역할별 POS/QR 시스템';
+        body.innerHTML = `
+          <!-- 역할(Role) 탭 네비게이션 -->
+          <div style="display:flex; gap:0.35rem; background:rgba(255,255,255,0.04); padding:0.35rem; border-radius:12px; margin-bottom:1rem; border:1px solid rgba(255,255,255,0.08);">
+            <button class="btn store-tab-btn" id="stTabCustomer" style="flex:1; padding:0.45rem 0.3rem; font-size:0.78rem; background:linear-gradient(135deg,#f59e0b,#ef4444); color:white; font-weight:700;" onclick="switchStoreTab('customer')">📱 고객 QR</button>
+            <button class="btn store-tab-btn" id="stTabPos" style="flex:1; padding:0.45rem 0.3rem; font-size:0.78rem; background:rgba(255,255,255,0.06); color:var(--text-muted);" onclick="switchStoreTab('pos')">🖥️ 카운터 POS</button>
+            <button class="btn store-tab-btn" id="stTabKitchen" style="flex:1; padding:0.45rem 0.3rem; font-size:0.78rem; background:rgba(255,255,255,0.06); color:var(--text-muted);" onclick="switchStoreTab('kitchen')">🍳 주방 KDS</button>
+            <button class="btn store-tab-btn" id="stTabSituation" style="flex:1; padding:0.45rem 0.3rem; font-size:0.78rem; background:rgba(255,255,255,0.06); color:var(--text-muted);" onclick="switchStoreTab('situation')">📊 상황실·점주</button>
+          </div>
+
+          <!-- 탭 1: 📱 고객 QR 모바일 주문 화면 (Customer) -->
+          <div id="stViewCustomer" class="store-view">
+            <div style="background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.25); border-radius:12px; padding:0.75rem; margin-bottom:0.75rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                <span style="font-size:0.82rem; font-weight:700; color:#fbbf24;">📱 고객 테이블 QR 스캔 주문 (인증 불필요)</span>
+                <span style="font-size:0.75rem; background:rgba(245,158,11,0.2); color:#fbbf24; padding:0.2rem 0.5rem; border-radius:12px;">테이블 셀프 주문</span>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+                <div>
+                  <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:0.2rem;">내 테이블 번호</label>
+                  <select id="stQrTable" class="input" style="padding:0.45rem; font-size:0.85rem;" onchange="selectedTableNum=this.value">
+                    ${Array.from({length:10}, (_,i)=>`<option value="Table ${String(i+1).padStart(2,'0')}">Table ${String(i+1).padStart(2,'0')}</option>`).join('')}
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:0.2rem;">주문 요청사항 (메모)</label>
+                  <input type="text" id="stQrNote" class="input" style="padding:0.45rem; font-size:0.85rem;" placeholder="예: 얼음 많이 주세요" value="얼음 가득 부탁드립니다">
+                </div>
+              </div>
+            </div>
+
+            <label style="font-size:0.82rem; color:var(--text-muted); display:block; margin-bottom:0.3rem;">📋 주문할 메뉴 선택</label>
+            <div id="stQrMenuList" style="display:flex; flex-direction:column; gap:0.35rem; margin-bottom:0.75rem; max-height:150px; overflow-y:auto;">
+              메뉴 로딩 중...
+            </div>
+
+            <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
+              <button class="btn-main" style="flex:1.2; background:linear-gradient(135deg,#f59e0b,#ef4444); font-size:0.9rem;" onclick="submitCustomerQrOrder()">📱 테이블 QR 주문 전송</button>
+              <button class="btn" style="flex:0.8; background:rgba(245,158,11,0.15); color:#fbbf24; border-color:rgba(245,158,11,0.3); font-size:0.8rem;" onclick="getMenuRecommendation()">✨ AI 추천 메뉴</button>
+            </div>
+            <div id="stQrRes" class="res-box"></div>
+          </div>
+
+          <!-- 탭 2: 🖥️ 카운터 POS 화면 (Staff / 점원) -->
+          <div id="stViewPos" class="store-view" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); padding:0.5rem 0.75rem; border-radius:10px; margin-bottom:0.75rem; border:1px solid rgba(255,255,255,0.06);">
+              <div style="display:flex; align-items:center; gap:0.5rem;">
+                <span style="font-size:0.8rem; color:var(--text-muted);">현재 조작 권한:</span>
+                <select id="stPosRoleSelect" class="input" style="width:auto; padding:0.25rem 0.6rem; font-size:0.75rem; margin:0; background:rgba(99,102,241,0.2); color:#a5b4fc; border-color:rgba(99,102,241,0.4);" onchange="activeStoreRole=this.value;loadStoreTables();">
+                  <option value="STAFF">점원 (박직원)</option>
+                  <option value="MANAGER">점장 (이점장)</option>
+                  <option value="OWNER">점주 (김점주)</option>
+                </select>
+              </div>
+              <button class="btn" style="padding:0.25rem 0.6rem; font-size:0.75rem;" onclick="loadStoreTables()">🔄 테이블 갱신</button>
+            </div>
+
+            <!-- 미결 테이블 주문 현황 카드 -->
+            <div style="margin-bottom:0.75rem;">
+              <div style="font-size:0.82rem; font-weight:700; color:#38bdf8; margin-bottom:0.4rem;">📋 실시간 테이블 미결 주문 현황</div>
+              <div id="stActiveTablesGrid" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:0.4rem; max-height:120px; overflow-y:auto;">
+                테이블 현황 조회 중...
+              </div>
+            </div>
+
+            <!-- POS 직접 주문 영역 -->
+            <div style="background:rgba(255,255,255,0.02); padding:0.6rem; border-radius:10px; border:1px solid rgba(255,255,255,0.06); margin-bottom:0.6rem;">
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.4rem; margin-bottom:0.4rem;">
+                <div>
+                  <label style="font-size:0.72rem; color:var(--text-muted);">테이블 선택</label>
+                  <select id="stPosTable" class="input" style="padding:0.35rem; font-size:0.8rem; margin-bottom:0;">
+                    <option value="카운터/포장">카운터 / 포장</option>
+                    ${Array.from({length:10}, (_,i)=>`<option value="Table ${String(i+1).padStart(2,'0')}">Table ${String(i+1).padStart(2,'0')}</option>`).join('')}
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size:0.72rem; color:var(--text-muted);">결제 수단</label>
+                  <select id="stPosPayMethod" class="input" style="padding:0.35rem; font-size:0.8rem; margin-bottom:0;">
+                    <option value="CARD">💳 신용카드</option>
+                    <option value="CASH">💵 현금 결제</option>
+                    <option value="KIOSK">🤖 키오스크</option>
+                  </select>
+                </div>
+              </div>
+              <div id="stPosMenuList" style="max-height:100px; overflow-y:auto; display:flex; flex-direction:column; gap:0.25rem; margin-bottom:0.4rem;"></div>
+              <button class="btn-main" style="width:100%; padding:0.5rem; font-size:0.85rem; background:linear-gradient(135deg,#06b6d4,#3b82f6);" onclick="submitPosOrder()">💳 POS 결제 승인 & 영수증 발급</button>
+            </div>
+            <div id="stPosRes" class="res-box"></div>
+          </div>
+
+          <!-- 탭 3: 🍳 주방 디스플레이 (KDS - Kitchen Display System) -->
+          <div id="stViewKitchen" class="store-view" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+              <span style="font-size:0.85rem; font-weight:700; color:#fbbf24;">🍳 주방 실시간 조리 관제 (KDS)</span>
+              <button class="btn" style="padding:0.25rem 0.6rem; font-size:0.75rem; background:rgba(245,158,11,0.2); color:#fbbf24;" onclick="loadKitchenTickets()">🔄 주방 새로고침</button>
+            </div>
+            <div id="stKitchenTicketsList" style="display:flex; flex-direction:column; gap:0.5rem; max-height:280px; overflow-y:auto; margin-bottom:0.75rem;">
+              주방 티켓 로딩 중...
+            </div>
+            <div id="stKitchenRes" class="res-box"></div>
+          </div>
+
+          <!-- 탭 4: 📊 실시간 상황실 & 점주/점장 관리 (Situation Room & Owner) -->
+          <div id="stViewSituation" class="store-view" style="display:none;">
+            <!-- 실시간 상황실 관제 메트릭 -->
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:0.75rem; border-radius:12px; margin-bottom:0.75rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                <span style="font-weight:700; color:#f59e0b; font-size:0.85rem;">🚨 매장 실시간 상황실 (Situation Room)</span>
+                <button class="btn" style="padding:0.2rem 0.5rem; font-size:0.72rem; background:rgba(245,158,11,0.2); color:#fbbf24;" onclick="loadSituationRoomMetrics()">🔄 갱신</button>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:0.4rem; text-align:center; margin-bottom:0.5rem;">
+                <div style="background:rgba(0,0,0,0.2); padding:0.35rem; border-radius:8px;">
+                  <div style="font-size:0.68rem; color:var(--text-muted);">총 매출</div>
+                  <div id="stSalesToday" style="font-weight:800; color:#10b981; font-size:0.95rem;">-</div>
+                </div>
+                <div style="background:rgba(0,0,0,0.2); padding:0.35rem; border-radius:8px;">
+                  <div style="font-size:0.68rem; color:var(--text-muted);">주문 건수</div>
+                  <div id="stOrderCount" style="font-weight:800; color:#38bdf8; font-size:0.95rem;">-</div>
+                </div>
+                <div style="background:rgba(0,0,0,0.2); padding:0.35rem; border-radius:8px;">
+                  <div style="font-size:0.68rem; color:var(--text-muted);">QR 매출</div>
+                  <div id="stQrSalesVal" style="font-weight:800; color:#fbbf24; font-size:0.95rem;">-</div>
+                </div>
+                <div style="background:rgba(0,0,0,0.2); padding:0.35rem; border-radius:8px;">
+                  <div style="font-size:0.68rem; color:var(--text-muted);">재고 경보</div>
+                  <div id="stLowStockCount" style="font-weight:800; color:#ef4444; font-size:0.95rem;">-</div>
+                </div>
+              </div>
+              <div id="stAiAnalysis" style="font-size:0.78rem; color:var(--text-main); line-height:1.4; background:rgba(245,158,11,0.08); padding:0.5rem; border-radius:6px; border-left:3px solid #f59e0b;">
+                🤖 Gemini AI 관제 진단 로딩 중...
+              </div>
+            </div>
+
+            <!-- 점주 메뉴 등록 & 재고 관리 -->
+            <div style="background:rgba(255,255,255,0.02); padding:0.6rem; border-radius:10px; border:1px solid rgba(255,255,255,0.06); margin-bottom:0.6rem;">
+              <div style="font-size:0.8rem; font-weight:700; color:#a5b4fc; margin-bottom:0.4rem;">📦 재고 현황 & 원터치 보충 (+10개)</div>
+              <div id="stInventoryManageList" style="display:flex; flex-direction:column; gap:0.3rem; max-height:110px; overflow-y:auto; margin-bottom:0.5rem;">
+                재고 목록 로딩 중...
+              </div>
+              <div style="display:flex; gap:0.4rem;">
+                <input type="text" id="stNewMenuName" class="input" style="flex:1.2; padding:0.35rem; font-size:0.78rem; margin:0;" placeholder="신규 메뉴명 (예: 바닐라라떼)">
+                <input type="number" id="stNewMenuPrice" class="input" style="flex:0.8; padding:0.35rem; font-size:0.78rem; margin:0;" placeholder="가격 (원)" value="5500">
+                <button class="btn-main" style="padding:0.35rem 0.7rem; font-size:0.78rem; background:linear-gradient(135deg,#6366f1,#8b5cf6); white-space:nowrap;" onclick="addNewMenuItem()">➕ 메뉴 등록</button>
+              </div>
+            </div>
+
+            <!-- 직원 목록 (Owner) -->
+            <div style="background:rgba(255,255,255,0.02); padding:0.6rem; border-radius:10px; border:1px solid rgba(255,255,255,0.06);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
+                <span style="font-size:0.8rem; font-weight:700; color:#34d399;">👥 직원 및 권한 목록 (점주 전용)</span>
+                <button class="btn" style="padding:0.2rem 0.4rem; font-size:0.7rem;" onclick="loadStaffList()">🔄 조회</button>
+              </div>
+              <div id="stStaffListContainer" style="display:flex; gap:0.4rem; font-size:0.75rem; flex-wrap:wrap;"></div>
+            </div>
+
+            <div id="stSituationRes" class="res-box"></div>
+          </div>
+        `;
+        loadStoreMenu();
+        loadSituationRoomMetrics();
+      } else if (type === 'self') {
+        title.textContent = '📚 MQstudy 자기주도학습 & 메타인지 AI 평가 시스템';
+        body.innerHTML = `
+          <!-- 실시간 학습 통계 카운터 바 -->
+          <div id="selfStudyStatsBar" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.5rem; margin-bottom:1rem; text-align:center; background:rgba(255,255,255,0.03); padding:0.6rem; border-radius:10px; border:1px solid rgba(255,255,255,0.06);">
+            <div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">🔥 연속 스트릭</div>
+              <div id="sfStreakVal" style="font-size:1.1rem; font-weight:800; color:#f59e0b;">3일 연속</div>
+            </div>
+            <div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">⏱️ 누적 공부시간</div>
+              <div id="sfHoursVal" style="font-size:1.1rem; font-weight:800; color:#10b981;">3.0시간</div>
+            </div>
+            <div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">⭐ 평균 몰입도</div>
+              <div id="sfScoreVal" style="font-size:1.1rem; font-weight:800; color:#38bdf8;">5.0 / 5.0</div>
+            </div>
+          </div>
+
+          <div style="margin-bottom:0.75rem;">
+            <label style="font-size:0.85rem; color:var(--text-muted); display:block; margin-bottom:0.3rem;">학습 과목 및 목표 설정</label>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+              <input type="text" id="sfSubject" class="input" value="고2 수학 (미적분)" placeholder="과목 (예: 수학)">
+              <input type="text" id="sfTarget" class="input" value="수능 1등급 / 미적분 개념완성" placeholder="목표 (예: 수능 1등급)">
+            </div>
+          </div>
+
+          <!-- 4대 주요 기능 버튼 라인 -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:0.5rem;">
+            <button class="btn-main" style="background:linear-gradient(135deg,#10b981,#059669);" onclick="generateStudyPlan()">🤖 AI 맞춤 캘린더 생성</button>
+            <button class="btn" style="background:rgba(16,185,129,0.15); color:#34d399; border-color:rgba(16,185,129,0.3);" onclick="recordStudyProgress()">📝 오늘 60분 진도 완료</button>
+          </div>
+
+          <!-- 🎙️ 메타인지 AI 구술/텍스트 개념 평가 챗봇 영역 -->
+          <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); padding:0.75rem; border-radius:10px; margin-bottom:0.75rem;">
+            <label style="font-size:0.8rem; color:#f59e0b; font-weight:700; display:block; margin-bottom:0.4rem;">🎙️ 메타인지 AI 개념 설명 및 평가받기</label>
+            <div style="display:flex; gap:0.5rem; margin-bottom:0.4rem;">
+              <input type="text" id="sfEvalUnit" class="input" style="width:40%; font-size:0.8rem;" value="미적분 삼각함수 합성" placeholder="학습한 단원명">
+              <input type="text" id="sfEvalExp" class="input" style="flex:1; font-size:0.8rem;" value="삼각함수 합성은 sin(x+a) 형태로 묶어 주기와 최댓값을 구하는 원리입니다." placeholder="스스로 설명한 개념을 입력하세요">
+            </div>
+            <button class="btn" style="width:100%; background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff;" onclick="evalStudyConcept()">✨ 메타인지 AI 평가받기 (성취율%)</button>
+          </div>
+
+          <!-- 1:1 AI 멘토 질문 입력 영역 -->
+          <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); padding:0.75rem; border-radius:10px; margin-bottom:0.75rem;">
+            <label style="font-size:0.8rem; color:#34d399; font-weight:700; display:block; margin-bottom:0.4rem;">💬 1:1 Gemini AI 수석 멘토 질의응답</label>
+            <div style="display:flex; gap:0.5rem;">
+              <input type="text" id="sfQuestion" class="input" style="flex:1;" value="미적분 공식을 쉽게 외우는 팁을 알려줘" placeholder="학습 질문이나 오답 고민을 입력하세요">
+              <button class="btn" style="background:linear-gradient(135deg,#6366f1,#4f46e5); color:#fff;" onclick="askStudyMentor()">질문하기</button>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:0.5rem;">
+            <button class="btn" style="flex:1; background:rgba(99,102,241,0.15); color:#818cf8; border-color:rgba(99,102,241,0.3);" onclick="analyzeStudyPerformance()">📊 AI 성취도 리포트</button>
+            <button class="btn" style="flex:1; background:rgba(245,158,11,0.15); color:#fbbf24; border-color:rgba(245,158,11,0.3);" onclick="rescheduleStudyPlan()">🔄 AI 리스케줄링</button>
+          </div>
+
+          <div id="sfRes" class="res-box"></div>
+        `;
+        loadStudyStats();
+      } else if (type === 'farm') {
+        title.textContent = '🌿 스마트팜 실시간 텔레메트리 & AI 제어';
+        body.innerHTML = `
+          <div id="sensorCards" style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:1rem;">
+            센서 데이터 로딩 중...
+          </div>
+          <div style="margin-bottom:1rem;">
+            <label style="font-size:0.85rem; color:var(--text-muted); display:block; margin-bottom:0.4rem;">원격 제어 장치</label>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+              <button class="btn" id="btnFan" onclick="toggleFarmDevice('fan')">🌀 환풍팬 (ON/OFF)</button>
+              <button class="btn" id="btnPump" onclick="toggleFarmDevice('irrigation')">💧 급수밸브 (ON/OFF)</button>
+            </div>
+          </div>
+          <button class="btn-main" style="width:100%; background:linear-gradient(135deg,#6366f1,#8b5cf6);" onclick="diagnoseFarm()">🌿 Gemini AI 작물 이상 진단</button>
+          <div id="fmRes" class="res-box"></div>
+        `;
+        loadFarmSensors();
+      }
+      m.classList.add('active');
+    }
+    function closeM() { document.getElementById('modal').classList.remove('active'); }
+
+    function previewImg(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          uploadedBase64 = evt.target.result;
+          document.getElementById('imgPrev').src = uploadedBase64;
+          document.getElementById('imgPrevContainer').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    // 1. AI Gwansang
+    async function runAi() {
+      const box = document.getElementById('gRes');
+      const name = document.getElementById('gName').value || '사용자';
+      box.style.display = 'block';
+      box.innerHTML = '<span style="color:#a855f7;">✨ Gemini AI가 얼굴 관상을 정밀 분석 중입니다...</span>';
+      
+      const sampleB64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+      const imgPayload = uploadedBase64 || sampleB64;
+      
+      try {
+        const res = await fetch('/api/ai_gwansang/analyze', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({image_data: imgPayload, user_name: name})
+        });
+        const data = await res.json();
+        const r = data.result || {};
+        box.innerHTML = `
+          <div style="display:inline-block; padding:0.35rem 0.85rem; border-radius:20px; background:var(--grad); font-weight:700; margin-bottom:0.75rem; font-size:1.05rem;">
+            ${r.animalType || '지혜로운 백조상'} (${r.overallScore || 88}점)
+          </div>
+          <p style="margin-bottom:0.85rem; font-size:0.95rem; color:#f8fafc; line-height:1.6;">
+            ${r.animalDescription || r.personality || '차분하고 신중하며 주변 사람들에게 신뢰를 주는 귀상입니다.'}
+          </p>
+          <div style="background:rgba(255,255,255,0.04); padding:0.85rem; border-radius:10px; font-size:0.85rem; color:var(--text-muted); line-height:1.6; border:1px solid rgba(255,255,255,0.06);">
+            💰 <b>재물운</b>: ${r.wealthLuck || '꾸준히 안정적으로 재물이 축적되는 흐름'}<br>
+            💼 <b>직업운</b>: ${r.careerLuck || '명확한 리더십과 판단력으로 성과 도출'}<br>
+            ❤️ <b>연애운</b>: ${r.loveLuck || '깊고 진실된 인연을 지속 발전'}<br>
+            🩺 <b>건강운</b>: ${r.healthLuck || '규칙적인 생활로 활력 유지'}<br>
+            💡 <b>조언</b>: ${r.advice || '차분하게 계획을 실행하면 좋은 결과가 따릅니다.'}
+          </div>
+        `;
+      } catch(e) { 
+        box.innerHTML = '<span style="color:#ef4444;">오류 발생: ' + e.message + '</span>'; 
+      }
+    }
+
+    // 2. StudyCafe (Login-first Flow)
+    let studyAuthUser = null;
+    // 2. StudyCafe (Original 100% Feature Suite)
+    let selectedStudyUserType = 'GENERAL';
+    let selectedSeatNumber = 'A-01';
+
+    function renderStudyCafeModal() {
+      const body = document.getElementById('mBody');
+      const title = document.getElementById('mTitle');
+      if (!body) return;
+
+      title.textContent = '☕ 스터디카페 & 관리형 학습 케어 (오리지널)';
+      body.innerHTML = `
+        <!-- 상단 회원 정보 및 모드 선택 -->
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:0.85rem; margin-bottom:1rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+            <span style="font-size:0.85rem; color:var(--text-muted);">회원 유형 선택</span>
+            <div style="display:flex; gap:0.4rem;">
+              <button class="btn" id="btnTypeGen" style="padding:0.25rem 0.6rem; font-size:0.75rem; background:${selectedStudyUserType==='GENERAL'?'var(--primary)':'rgba(255,255,255,0.06)'};" onclick="setStudyUserType('GENERAL')">🟢 일반회원</button>
+              <button class="btn" id="btnTypeMan" style="padding:0.25rem 0.6rem; font-size:0.75rem; background:${selectedStudyUserType==='MANAGED'?'#8b5cf6':'rgba(255,255,255,0.06)'};" onclick="setStudyUserType('MANAGED')">🟣 관리형 케어회원</button>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+            <div>
+              <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:0.2rem;">회원 성함</label>
+              <input type="text" id="scUserName" class="input" style="padding:0.45rem; font-size:0.85rem;" value="김민수">
+            </div>
+            <div>
+              <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:0.2rem;">휴대폰 번호 (NFC/식별키)</label>
+              <input type="text" id="scUserPhone" class="input" style="padding:0.45rem; font-size:0.85rem;" value="010-1234-5678">
+            </div>
+          </div>
+        </div>
+
+        <!-- 구역 안내 뱃지 -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; font-size:0.75rem; color:var(--text-muted);">
+          <div style="display:flex; gap:0.5rem;">
+            <span>🎯 <b>포커스존</b> (A01~A08)</span>
+            <span>📖 <b>일반존</b> (A09~A16)</span>
+            <span>💻 <b>노트북존</b> (A17~A20)</span>
+          </div>
+          <button class="btn" style="padding:0.2rem 0.5rem; font-size:0.7rem;" onclick="loadSeats()">🔄 새로고침</button>
+        </div>
+
+        <!-- 20개 구역별 좌석 배치도 (A-01 ~ A-20) -->
+        <div id="seatGrid" class="seat-grid" style="grid-template-columns: repeat(5, 1fr); max-height:180px; overflow-y:auto; margin-bottom:0.75rem;">좌석 로딩 중...</div>
+
+        <!-- 입실 / 퇴실 / 도어락 제어 버튼 그룹 -->
+        <div style="display:grid; grid-template-columns: 1.2fr 1fr 1.1fr; gap:0.4rem; margin-bottom:0.6rem;">
+          <button class="btn-main" style="padding:0.65rem 0.4rem; font-size:0.85rem; background:linear-gradient(135deg,#06b6d4,#3b82f6);" onclick="handleAssignSeat()">🪑 좌석 배정 및 입실</button>
+          <button class="btn" style="padding:0.65rem 0.4rem; font-size:0.85rem; background:rgba(239,68,68,0.15); color:#f87171; border-color:rgba(239,68,68,0.3);" onclick="handleLeaveSeat()">🚪 퇴실 처리</button>
+          <button class="btn" style="padding:0.65rem 0.4rem; font-size:0.85rem; background:rgba(245,158,11,0.15); color:#fbbf24; border-color:rgba(245,158,11,0.3);" onclick="triggerDoorLock()">🔓 도어 5초 개방</button>
+        </div>
+
+        <!-- AI 튜터 공부 질문 및 혼잡도 예측 -->
+        <div style="background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.2); border-radius:10px; padding:0.75rem; margin-bottom:0.75rem;">
+          <div style="font-size:0.8rem; font-weight:700; color:#a5b4fc; margin-bottom:0.3rem;">🤖 Gemini AI 1:1 학습 튜터 & 질문응답</div>
+          <div style="display:flex; gap:0.4rem;">
+            <input type="text" id="aiStudyQ" class="input" style="padding:0.45rem; font-size:0.85rem; flex:1;" placeholder="예: 미적분 삼각함수 적분 공식 설명해줘" value="수능 영어 빈칸추론 3단계 풀이 팁 알려줘">
+            <button class="btn-main" style="padding:0.45rem 0.8rem; font-size:0.8rem; background:linear-gradient(135deg,#6366f1,#8b5cf6); white-space:nowrap;" onclick="askAiTutor()">✨ 질문하기</button>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:0.5rem;">
+          <button class="btn" style="flex:1; font-size:0.8rem; background:rgba(255,255,255,0.05);" onclick="predictCongestion()">📊 AI 실시간 혼잡도 분석</button>
+          <button class="btn" style="flex:1; font-size:0.8rem; background:rgba(16,185,129,0.15); color:#34d399; border-color:rgba(16,185,129,0.3);" onclick="openSelfStudyLink()">🚀 SelfStudy AI 학습 케어 연동</button>
+        </div>
+
+        <div id="sRes" class="res-box"></div>
+      `;
+      loadSeats();
+    }
+
+    function setStudyUserType(type) {
+      selectedStudyUserType = type;
+      const bGen = document.getElementById('btnTypeGen');
+      const bMan = document.getElementById('btnTypeMan');
+      if (bGen && bMan) {
+        bGen.style.background = type === 'GENERAL' ? 'var(--primary)' : 'rgba(255,255,255,0.06)';
+        bMan.style.background = type === 'MANAGED' ? '#8b5cf6' : 'rgba(255,255,255,0.06)';
+      }
+    }
+
+    async function loadSeats() {
+      const grid = document.getElementById('seatGrid');
+      if (!grid) return;
+      try {
+        const res = await fetch('/api/studycafe/seats/?tenant_id=studycafe-main');
+        const data = await res.json();
+        const seats = data.seats || [];
+        grid.innerHTML = seats.map(s => {
+          const occ = s.is_occupied;
+          const isSelected = s.seat_number === selectedSeatNumber;
+          let zoneBg = 'rgba(255,255,255,0.05)';
+          if (occ) {
+            zoneBg = s.user_type === 'MANAGED' ? 'background:rgba(139,92,246,0.25); border-color:rgba(139,92,246,0.5); color:#c4b5fd;' : 'background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.4); color:#fca5a5;';
+          } else if (isSelected) {
+            zoneBg = 'background:var(--primary); border-color:#38bdf8;';
+          } else if (s.zone_type === 'FOCUS') {
+            zoneBg = 'background:rgba(6,182,212,0.08); border-color:rgba(6,182,212,0.2);';
+          } else if (s.zone_type === 'LAPTOP') {
+            zoneBg = 'background:rgba(245,158,11,0.08); border-color:rgba(245,158,11,0.2);';
+          }
+
+          const badge = occ ? (s.user_type === 'MANAGED' ? '🟣관리' : '사용중') : (s.zone_type==='FOCUS'?'🎯포커스':s.zone_type==='LAPTOP'?'💻노트북':'빈좌석');
+
+          return `
+            <button class="seat-btn" style="${zoneBg}; padding:0.4rem 0.2rem; min-height:52px;" onclick="selectedSeatNumber='${s.seat_number}';loadSeats();">
+              <b>${s.seat_number}</b><br>
+              <span style="font-size:0.65rem;">${badge}</span>
+            </button>
+          `;
+        }).join('');
+      } catch(e) {
+        grid.innerHTML = '<span style="color:#ef4444;">좌석 정보 로드 실패: ' + e.message + '</span>';
+      }
+    }
+
+    async function handleAssignSeat() {
+      const box = document.getElementById('sRes');
+      const name = document.getElementById('scUserName').value || '김민수';
+      const phone = document.getElementById('scUserPhone').value || '010-1234-5678';
+      box.style.display = 'block';
+      box.innerHTML = `${selectedSeatNumber} 좌석에 ${name} 회원 배정 중...`;
+
+      try {
+        const res = await fetch('/api/studycafe/seats/assign', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({
+            seat_number: selectedSeatNumber,
+            name: name,
+            phone: phone,
+            user_type: selectedStudyUserType
+          })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          box.innerHTML = `<span style="color:#34d399;font-weight:700;">✅ ${data.message}</span><br><small style="color:var(--text-muted);">세션 ID: ${data.session_id}</small>`;
+          loadSeats();
+        } else {
+          box.innerHTML = `<span style="color:#ef4444;">⚠️ ${data.detail || '배정 실패'}</span>`;
+        }
+      } catch(e) { box.innerHTML = '<span style="color:#ef4444;">오류: ' + e.message + '</span>'; }
+    }
+
+    async function handleLeaveSeat() {
+      const box = document.getElementById('sRes');
+      box.style.display = 'block';
+      box.innerHTML = `${selectedSeatNumber} 좌석 퇴실 처리 중...`;
+      try {
+        const res = await fetch(`/api/studycafe/seats/leave/${selectedSeatNumber}`, { method: 'POST' });
+        const data = await res.json();
+        if (res.ok) {
+          box.innerHTML = `<span style="color:#38bdf8;font-weight:700;">🚪 ${data.message}</span><br><small style="color:var(--text-muted);">총 이용 시간: ${data.used_minutes}분</small>`;
+          loadSeats();
+        } else {
+          box.innerHTML = `<span style="color:#ef4444;">⚠️ ${data.detail || '퇴실 실패'}</span>`;
+        }
+      } catch(e) { box.innerHTML = '<span style="color:#ef4444;">오류: ' + e.message + '</span>'; }
+    }
+
+    async function triggerDoorLock() {
+      const box = document.getElementById('sRes');
+      box.style.display = 'block';
+      box.innerHTML = '도어락 개방 신호 전송 중...';
+      try {
+        const res = await fetch('/api/studycafe/door/trigger/1', { method: 'POST' });
+        const data = await res.json();
+        box.innerHTML = `<span style="color:#fbbf24; font-weight:700;">🔓 ${data.message || '도어락이 5초간 개방되었습니다.'}</span>`;
+      } catch(e) { box.innerHTML = '<span style="color:#ef4444;">오류: ' + e.message + '</span>'; }
+    }
+
+    // 3. Store QR Order & Role-Based Multi-View Suite
+    let activeStoreRole = 'STAFF'; // STAFF | MANAGER | OWNER
+
+    function switchStoreTab(tab) {
+      const views = ['customer', 'pos', 'kitchen', 'situation'];
+      views.forEach(v => {
+        const el = document.getElementById('stView' + v.charAt(0).toUpperCase() + v.slice(1));
+        const btn = document.getElementById('stTab' + v.charAt(0).toUpperCase() + v.slice(1));
+        if (el) el.style.display = (v === tab) ? 'block' : 'none';
+        if (btn) {
+          if (v === tab) {
+            btn.style.background = 'linear-gradient(135deg, #f59e0b, #ef4444)';
+            btn.style.color = 'white';
+            btn.style.fontWeight = '700';
+          } else {
+            btn.style.background = 'rgba(255,255,255,0.06)';
+            btn.style.color = 'var(--text-muted)';
+            btn.style.fontWeight = '400';
+          }
+        }
+      });
+
+      if (tab === 'customer') loadStoreMenu();
+      if (tab === 'pos') { loadStoreMenu(); loadStoreTables(); }
+      if (tab === 'kitchen') loadKitchenTickets();
+      if (tab === 'situation') { loadSituationRoomMetrics(); loadInventoryManagement(); loadStaffList(); }
+    }
+
+    let storeMenuList = [];
+
+    async function loadStoreMenu() {
+      try {
+        const res = await fetch('/api/store/inventory/products');
+        const data = await res.json();
+        storeMenuList = data.products || [];
+
+        // 1. Customer QR Menu List
+        const qrContainer = document.getElementById('stQrMenuList');
+        if (qrContainer) {
+          if (storeMenuList.length === 0) {
+            qrContainer.innerHTML = '<span style="color:var(--text-muted);">등록된 상품이 없습니다.</span>';
+          } else {
+            qrContainer.innerHTML = storeMenuList.map((item, idx) => `
+              <label style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); padding:0.45rem 0.65rem; border-radius:8px; cursor:pointer;">
+                <div>
+                  <input type="checkbox" name="storeQrMenuItem" value="${item.name}" data-price="${item.price}" ${idx<2?'checked':''}>
+                  <span style="font-weight:600; margin-left:0.35rem; font-size:0.85rem;">${item.name}</span>
+                  <span style="font-size:0.72rem; color:var(--text-muted); margin-left:0.25rem;">[재고: ${item.stock_quantity}개]</span>
+                </div>
+                <span style="color:#fbbf24; font-weight:700; font-size:0.85rem;">${item.price.toLocaleString()}원</span>
+              </label>
+            `).join('');
+          }
+        }
+
+        // 2. POS Counter Menu List
+        const posContainer = document.getElementById('stPosMenuList');
+        if (posContainer) {
+          posContainer.innerHTML = storeMenuList.map((item, idx) => `
+            <label style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); padding:0.35rem 0.5rem; border-radius:6px; font-size:0.8rem; cursor:pointer;">
+              <div>
+                <input type="checkbox" name="storePosMenuItem" value="${item.name}" data-price="${item.price}" ${idx===0?'checked':''}>
+                <span style="margin-left:0.3rem;">${item.name}</span>
+              </div>
+              <span style="color:#38bdf8; font-weight:600;">${item.price.toLocaleString()}원</span>
+            </label>
+          `).join('');
+        }
+      } catch(e) {
+        console.error("loadStoreMenu error:", e);
+      }
+    }
+
+    // 1. Customer QR Order Submission
+    async function submitCustomerQrOrder() {
+      const box = document.getElementById('stQrRes');
+      box.style.display = 'block';
+      const table = document.getElementById('stQrTable') ? document.getElementById('stQrTable').value : 'Table 01';
+      const note = document.getElementById('stQrNote') ? document.getElementById('stQrNote').value : '';
+      const checkedBoxes = Array.from(document.querySelectorAll('input[name="storeQrMenuItem"]:checked'));
+      if (checkedBoxes.length === 0) {
+        box.innerHTML = '<span style="color:#ef4444;">최소 1개 이상의 메뉴를 선택하세요.</span>';
+        return;
+      }
+      const items = checkedBoxes.map(b => ({
+        product_name: b.value,
+        price: parseFloat(b.getAttribute('data-price')),
+        quantity: 1
+      }));
+      box.innerHTML = '<span style="color:#fbbf24;">🔄 비대면 테이블 QR 주문을 주방으로 전송 중...</span>';
+      try {
+        const res = await fetch('/api/store/orders/qr', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({
+            table_number: table,
+            items: items,
+            note: note
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          box.innerHTML = `<span style="color:#ef4444;">⚠️ 주문 실패: ${data.detail || JSON.stringify(data)}</span>`;
+          return;
+        }
+        box.innerHTML = `
+          <div style="color:#10b981; font-weight:700; margin-bottom:0.3rem;">✅ ${data.message}</div>
+          <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.5;">
+            • 주문 번호: <b style="color:#fbbf24;">${data.order_number}</b> (${table})<br>
+            • 결제 금액: <b>${(data.total_amount || 0).toLocaleString()}원 (QR 모바일 결제)</b><br>
+            • 예상 대기 시간: <b style="color:#38bdf8;">${data.estimated_wait || '5~10분'}</b><br>
+            • 🍳 <b>주방 디스플레이(KDS)</b>로 실시간 티켓이 즉시 전송되었습니다!
+          </div>
+        `;
+        loadStoreMenu();
+      } catch(e) { box.innerHTML = '<span style="color:#ef4444;">오류: ' + e.message + '</span>'; }
+    }
+
+    // 2. POS Counter Order Submission
+    async function submitPosOrder() {
+      const box = document.getElementById('stPosRes');
+      box.style.display = 'block';
+      const table = document.getElementById('stPosTable') ? document.getElementById('stPosTable').value : '카운터';
+      const payMethod = document.getElementById('stPosPayMethod') ? document.getElementById('stPosPayMethod').value : 'CARD';
+      const checkedBoxes = Array.from(document.querySelectorAll('input[name="storePosMenuItem"]:checked'));
+      if (checkedBoxes.length === 0) {
+        box.innerHTML = '<span style="color:#ef4444;">최소 1개 이상의 상품을 선택하세요.</span>';
+        return;
+      }
+      const items = checkedBoxes.map(b => ({
+        product_name: b.value,
+        price: parseFloat(b.getAttribute('data-price')),
+        quantity: 1
+      }));
+      box.innerHTML = '<span style="color:#38bdf8;">🔄 POS 승인 처리 중...</span>';
+      try {
+        const res = await fetch('/api/store/orders/', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json', 'X-Store-Role': activeStoreRole},
+          body: JSON.stringify({
+            table_number: table,
+            items: items,
+            payment_method: payMethod
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          box.innerHTML = `<span style="color:#ef4444;">⚠️ POS 오류: ${data.detail || JSON.stringify(data)}</span>`;
+          return;
+        }
+        box.innerHTML = `
+          <div style="color:#10b981; font-weight:700; margin-bottom:0.3rem;">✅ ${data.message}</div>
+          <div style="font-size:0.82rem; color:var(--text-muted);">
+            • 영수증: <b>${data.order_number}</b> | 결제: <b>${(data.total_amount||0).toLocaleString()}원 (${payMethod})</b>
+          </div>
+        `;
+        loadStoreTables();
+        loadStoreMenu();
+      } catch(e) { box.innerHTML = '<span style="color:#ef4444;">오류: ' + e.message + '</span>'; }
+    }
+
+    // 3. Load Active Tables for Staff
+    async function loadStoreTables() {
+      const grid = document.getElementById('stActiveTablesGrid');
+      if (!grid) return;
+      try {
+        const res = await fetch('/api/store/staff/tables', {
+          headers: {'X-Store-Role': activeStoreRole}
+        });
+        const data = await res.json();
+        const tables = data.tables || [];
+        if (tables.length === 0) {
+          grid.innerHTML = '<div style="grid-column:span 2; font-size:0.75rem; color:var(--text-muted); padding:0.5rem; text-align:center;">현재 미결 주문이 있는 테이블이 없습니다.</div>';
+          return;
+        }
+        grid.innerHTML = tables.map(t => `
+          <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:0.4rem 0.6rem; border-radius:8px;">
+            <div style="display:flex; justify-content:space-between; font-weight:700; font-size:0.8rem; color:#38bdf8;">
+              <span>${t.table_number}</span>
+              <span>${t.total.toLocaleString()}원</span>
+            </div>
+            <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.2rem;">
+              ${(t.orders || []).map(o => `${o.order_number.slice(-4)} (${o.kitchen_status})`).join(', ')}
+            </div>
+          </div>
+        `).join('');
+      } catch(e) {
+        grid.innerHTML = '<div style="grid-column:span 2; font-size:0.75rem; color:#ef4444;">테이블 조회 실패</div>';
+      }
+    }
+
+    // 4. Kitchen Tickets (KDS)
+    async function loadKitchenTickets() {
+      const container = document.getElementById('stKitchenTicketsList');
+      if (!container) return;
+      container.innerHTML = '<div style="font-size:0.8rem; color:var(--text-muted);">주방 티켓 확인 중...</div>';
+      try {
+        const res = await fetch('/api/store/staff/kitchen', {
+          headers: {'X-Store-Role': activeStoreRole}
+        });
+        const data = await res.json();
+        const tickets = data.tickets || [];
+        if (tickets.length === 0) {
+          container.innerHTML = '<div style="background:rgba(255,255,255,0.02); padding:1rem; text-align:center; border-radius:8px; font-size:0.82rem; color:var(--text-muted);">🍳 현재 대기 중인 주방 주문이 없습니다. (모든 요리 완료)</div>';
+          return;
+        }
+        container.innerHTML = tickets.map(t => {
+          const isCooking = t.status === 'COOKING';
+          const itemsStr = (t.items || []).map(i => `<b>${i.product_name}</b> x ${i.quantity}`).join(', ');
+          return `
+            <div style="background:rgba(255,255,255,0.03); border:1px solid ${isCooking?'rgba(245,158,11,0.4)':'rgba(255,255,255,0.08)'}; border-left:4px solid ${isCooking?'#f59e0b':'#38bdf8'}; padding:0.65rem; border-radius:10px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
+                <div>
+                  <span style="font-weight:700; font-size:0.85rem; color:#f8fafc;">${t.table_number}</span>
+                  <span style="font-size:0.72rem; color:var(--text-muted); margin-left:0.4rem;">#${t.order_number.slice(-8)}</span>
+                </div>
+                <span style="font-size:0.72rem; font-weight:700; padding:0.15rem 0.45rem; border-radius:10px; background:${isCooking?'rgba(245,158,11,0.2)':'rgba(56,189,248,0.2)'}; color:${isCooking?'#fbbf24':'#38bdf8'};">
+                  ${isCooking?'🔥 조리 중':'⏳ 대기 중'} (${t.waiting_minutes}분 경과)
+                </span>
+              </div>
+              <div style="font-size:0.82rem; color:var(--text-main); margin-bottom:0.4rem;">
+                메뉴: ${itemsStr}
+                ${t.note ? `<br><small style="color:#fbbf24;">📝 요청: ${t.note}</small>` : ''}
+              </div>
+              <div style="display:flex; gap:0.4rem;">
+                ${!isCooking ? `<button class="btn" style="flex:1; padding:0.3rem; font-size:0.75rem; background:rgba(245,158,11,0.2); color:#fbbf24; border-color:rgba(245,158,11,0.4);" onclick="updateKitchenTicketStatus(${t.id}, 'COOKING')">🔥 조리 시작</button>` : ''}
+                <button class="btn" style="flex:1; padding:0.3rem; font-size:0.75rem; background:rgba(16,185,129,0.2); color:#34d399; border-color:rgba(16,185,129,0.4);" onclick="updateKitchenTicketStatus(${t.id}, 'SERVED')">🏁 조리 완료 & 서빙</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch(e) {
+        container.innerHTML = '<div style="color:#ef4444; font-size:0.8rem;">주방 티켓 로드 실패: ' + e.message + '</div>';
+      }
+    }
+
+    async function updateKitchenTicketStatus(ticketId, status) {
+      const box = document.getElementById('stKitchenRes');
+      box.style.display = 'block';
+      try {
+        const res = await fetch(`/api/store/staff/kitchen/${ticketId}/status?status=${status}`, {
+          method: 'POST',
+          headers: {'X-Store-Role': activeStoreRole}
+        });
+        const data = await res.json();
+        box.innerHTML = `<span style="color:#34d399; font-weight:700;">✅ ${data.message}</span>`;
+        loadKitchenTickets();
+        loadStoreTables();
+      } catch(e) { box.innerHTML = '<span style="color:#ef4444;">오류: ' + e.message + '</span>'; }
+    }
+
+    // 5. Situation Room & Manager/Owner Controls
+    async function loadSituationRoomMetrics() {
+      const salesEl = document.getElementById('stSalesToday');
+      const countEl = document.getElementById('stOrderCount');
+      const qrSalesEl = document.getElementById('stQrSalesVal');
+      const lowStockEl = document.getElementById('stLowStockCount');
+      const aiAnalysisEl = document.getElementById('stAiAnalysis');
+
+      try {
+        const [mRes, dRes] = await Promise.all([
+          fetch('/api/store/situation/metrics'),
+          fetch('/api/store/staff/daily-summary', {headers: {'X-Store-Role': 'MANAGER'}})
+        ]);
+        const mData = await mRes.json();
+        const dData = await dRes.json();
+
+        if (salesEl) salesEl.textContent = `${((dData && dData.total_sales) || (mData && mData.sales_today) || 0).toLocaleString()}원`;
+        if (countEl) countEl.textContent = `${((dData && dData.total_orders) || (mData && mData.order_count) || 0)}건`;
+        if (qrSalesEl) qrSalesEl.textContent = `${((dData && dData.qr_orders && dData.qr_orders.sales) || 0).toLocaleString()}원`;
+        if (lowStockEl) lowStockEl.textContent = `${(mData && mData.low_stock_count) || 0}건`;
+        if (aiAnalysisEl && mData) {
+          aiAnalysisEl.innerHTML = `🤖 <b>Gemini AI 관제 진단</b>:<br>${(mData.ai_analysis || '매장 운영 상태가 양호합니다.').replace(/\n/g, '<br>')}`;
+        }
+      } catch(e) {
+        if (aiAnalysisEl) aiAnalysisEl.textContent = '🤖 AI 관제 진단: 정상 운영 중';
+      }
+    }
+
+    async function loadInventoryManagement() {
+      const container = document.getElementById('stInventoryManageList');
+      if (!container) return;
+      try {
+        const res = await fetch('/api/store/inventory/products');
+        const data = await res.json();
+        const prods = data.products || [];
+        container.innerHTML = prods.map(p => `
+          <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); padding:0.3rem 0.5rem; border-radius:6px; font-size:0.75rem;">
+            <span><b>${p.name}</b> (${p.price.toLocaleString()}원)</span>
+            <div style="display:flex; align-items:center; gap:0.4rem;">
+              <span style="color:${p.stock_quantity<20?'#ef4444':'#34d399'}; font-weight:700;">${p.stock_quantity}개</span>
+              <button class="btn" style="padding:0.15rem 0.4rem; font-size:0.7rem; background:rgba(16,185,129,0.15); color:#34d399;" onclick="adjustStock(${p.id}, ${p.stock_quantity + 10})">+10</button>
+              <button class="btn" style="padding:0.15rem 0.4rem; font-size:0.7rem; background:rgba(239,68,68,0.15); color:#ef4444;" onclick="deleteMenuItem(${p.id})">🗑️</button>
+            </div>
+          </div>
+        `).join('');
+      } catch(e) {
+        container.innerHTML = '<div style="color:#ef4444; font-size:0.75rem;">재고 목록 로드 실패</div>';
+      }
+    }
+
+    async function adjustStock(prodId, newQty) {
+      try {
+        await fetch(`/api/store/staff/menu/${prodId}/stock?quantity=${newQty}`, {
+          method: 'PATCH',
+          headers: {'X-Store-Role': 'MANAGER'}
+        });
+        loadInventoryManagement();
+        loadStoreMenu();
+        loadSituationRoomMetrics();
+      } catch(e) {}
+    }
+
+    async function deleteMenuItem(prodId) {
+      if (!confirm('해당 메뉴를 삭제(비활성화)하시겠습니까?')) return;
+      try {
+        await fetch(`/api/store/staff/menu/${prodId}`, {
+          method: 'DELETE',
+          headers: {'X-Store-Role': 'OWNER'}
+        });
+        loadInventoryManagement();
+        loadStoreMenu();
+      } catch(e) {}
+    }
+
+    async function addNewMenuItem() {
+      const nameInput = document.getElementById('stNewMenuName');
+      const priceInput = document.getElementById('stNewMenuPrice');
+      const name = nameInput ? nameInput.value.trim() : '';
+      const price = priceInput ? parseFloat(priceInput.value) : 5000;
+      if (!name) { alert('메뉴명을 입력하세요.'); return; }
+      try {
+        const res = await fetch('/api/store/staff/menu', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json', 'X-Store-Role': 'MANAGER'},
+          body: JSON.stringify({name: name, price: price, stock_quantity: 100, category: 'BEVERAGE'})
+        });
+        if (res.ok) {
+          if (nameInput) nameInput.value = '';
+          loadInventoryManagement();
+          loadStoreMenu();
+        }
+      } catch(e) {}
+    }
+
+    async function loadStaffList() {
+      const container = document.getElementById('stStaffListContainer');
+      if (!container) return;
+      try {
+        const res = await fetch('/api/store/staff/staff-list', {
+          headers: {'X-Store-Role': 'OWNER'}
+        });
+        const data = await res.json();
+        const staff = data.staff || [];
+        container.innerHTML = staff.map(s => {
+          const color = s.role === 'OWNER' ? '#fbbf24' : (s.role === 'MANAGER' ? '#a5b4fc' : '#34d399');
+          return `
+            <div style="background:rgba(255,255,255,0.04); padding:0.25rem 0.5rem; border-radius:6px; border-left:3px solid ${color};">
+              <b>${s.name}</b> <span style="color:${color};">(${s.role})</span>
+            </div>
+          `;
+        }).join('');
+      } catch(e) {
+        container.innerHTML = '<span style="color:var(--text-muted);">직원 목록 로드 실패</span>';
+      }
+    }
+
+    async function getMenuRecommendation() {
+      const box = document.getElementById('stQrRes') || document.getElementById('stPosRes');
+      if (!box) return;
+      box.style.display = 'block';
+      box.innerHTML = '<span style="color:#fbbf24;">✨ Gemini AI가 베스트 페어링 메뉴를 추천 중입니다...</span>';
+      try {
+        const res = await fetch('/api/store/menu/ai-recommend?item_name=아이스%20아메리카노');
+        const data = await res.json();
+        const r = data.ai_recommendation || {};
+        box.innerHTML = `
+          <div style="font-weight:700; color:#fbbf24; margin-bottom:0.3rem;">✨ AI 추천 조합 (${data.selected_item || '아이스 아메리카노'})</div>
+          <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.5;">
+            🥐 <b>추천 메뉴</b>: ${(r.recommendedItems||['초코 샌드위치', '치즈 케이크']).join(', ')}<br>
+            💡 <b>페어링 이유</b>: ${r.pairingReason || '쌉싸름한 커피와 달콤한 디저트의 환상적 조화'}<br>
+            🎁 <b>프로모션</b>: ${r.discountOffer || '디저트 세트 구매 시 10% 추가 할인'}
+          </div>
+        `;
+      } catch(e) { box.innerHTML = '<span style="color:#ef4444;">오류: ' + e.message + '</span>'; }
+    }
+
+    // 4. SelfStudy
+    async function loadStudyStats() {
+      try {
+        const res = await fetch('/api/selfstudy/progress/stats');
+        const data = await res.json();
+        if (data) {
+          const streakEl = document.getElementById('sfStreakVal');
+          const hoursEl = document.getElementById('sfHoursVal');
+          const scoreEl = document.getElementById('sfScoreVal');
+          if (streakEl) streakEl.textContent = `${data.streak_days || 3}일 연속`;
+          if (hoursEl) hoursEl.textContent = `${data.total_studied_hours || 3.0}시간`;
+          if (scoreEl) scoreEl.textContent = `${data.average_focus_score || 5.0} / 5.0`;
+        }
+      } catch(e) {}
+    }
+
+    async function generateStudyPlan() {
+      const box = document.getElementById('sfRes');
+      const subject = document.getElementById('sfSubject').value || '수학';
+      const target = document.getElementById('sfTarget').value || '수능 1등급';
+      box.style.display = 'block';
+      box.innerHTML = '<span style="color:#10b981;">🤖 Gemini AI가 맞춤형 주간 학습 플랜을 생성 중입니다...</span>';
+      try {
+        const res = await fetch('/api/selfstudy/ai/generate-plan', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({subject: subject, target: target, daily_minutes: 60})
+        });
+        const data = await res.json();
+        const plan = data.ai_plan || {};
+        const routines = (plan.weeklyRoutine || []).map(r => `• <b>${r.day}</b>: ${r.task}`).join('<br>');
+        box.innerHTML = `
+          <div style="font-weight:700; color:#10b981; margin-bottom:0.4rem;">🎯 ${plan.planTitle || '맞춤형 학습 플랜'}</div>
+          <div style="background:rgba(255,255,255,0.03); padding:0.75rem; border-radius:8px; font-size:0.85rem; line-height:1.6; margin-bottom:0.5rem;">
+            ${routines}
+          </div>
+          <div style="font-size:0.85rem; color:var(--text-muted);">💡 <b>멘토 조언</b>: ${plan.mentorAdvice}</div>
+        `;
+      } catch(e) { box.innerHTML = '<span style="color:#ef4444;">오류: ' + e.message + '</span>'; }
+    }
+
+    async function recordStudyProgress() {
+      const box = document.getElementById('sfRes');
+      box.style.display = 'block';
+      try {
+        const res = await fetch('/api/selfstudy/progress/', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({studied_minutes: 60, completed_tasks: ['개념 완성 30분', '문제 풀이 30분'], self_score: 5})
+        });
+        const data = await res.json();
+        box.innerHTML = `<span style="color:#34d399; font-weight:700;">✅ ${data.message}</span><br><small style="color:var(--text-muted);">연속 학습 스트릭이 갱신되었습니다.</small>`;
+        loadStudyStats();
+      } catch(e) { box.innerHTML = '<span style="color:#ef4444;">오류: ' + e.message + '</span>'; }
+    }
+
+    async function askStudyMentor() {
+      const box = document.getElementById('sfRes');
+      const q = document.getElementById('sfQuestion').value || '공부 몰입도를 높이는 팁';
+      const subject = document.getElementById('sfSubject').value || '전과목';
+      box.style.display = 'block';
+      box.innerHTML = '<span style="color:#818cf8;">💬 1:1 Gemini AI 수석 멘토가 답변을 작성하고 있습니다...</span>';
+      try {
+        const res = await fetch('/api/selfstudy/ai/ask-mentor', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({question: q, subject: subject})
+        });
+        const data = await res.json();
+        const m = data.mentor_response || {};
+        box.innerHTML = `
+          <div style="font-weight:700; color:#818cf8; margin-bottom:0.3rem;">💬 1:1 AI 멘토 답변</div>
+          <div style="font-size:0.85rem; color:var(--text-main); line-height:1.6; margin-bottom:0.5rem; background:rgba(255,255,255,0.03); padding:0.6rem; border-radius:8px;">
+            ${(m.answer||'').replace(/\n/g, '<br>')}
+          </div>
+          <div style="font-size:0.82rem; color:#34d399; margin-bottom:0.3rem;">💡 <b>실전 팁</b>: ${m.studyTip||''}</div>
+          <div style="font-size:0.82rem; color:#fbbf24;">🔥 <b>멘토의 응원</b>: ${m.encouragement||''}</div>
+        `;
+      } catch(e) { box.innerHTML = '<span style="color:#ef4444;">오류: ' + e.message + '</span>'; }
+    }
+
+    async function evalStudyConcept() {
+      const box = document.getElementById('sfRes');
+      const subject = document.getElementById('sfSubject').value || '수학';
+      const unit = document.getElementById('sfEvalUnit').value || '미적분 삼각함수';
+      const exp = document.getElementById('sfEvalExp').value || '개념을 스스로 요약 설명합니다.';
+      box.style.display = 'block';
+      box.innerHTML = '<span style="color:#f59e0b;">🎙️ 메타인지 AI 튜터가 구술 설명을 심층 분석 중입니다...</span>';
+      try {
+        const res = await fetch('/api/selfstudy/schedule/eval_chat', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({session_id: 'demo-session', subject: subject, unit_name: unit, explanation: exp, user_name: '김민수'})
+        });
+        const data = await res.json();
+        const ev = data.evaluation || {};
+        const strList = (ev.strengths||[]).map(s => `• ${s}`).join('<br>');
+        box.innerHTML = `
+          <div style="font-weight:700; color:#f59e0b; margin-bottom:0.3rem;">🎙️ 메타인지 AI 평가 결과 (성취율: ${ev.score_percent||92}%)</div>
+          <div style="font-size:0.85rem; color:var(--text-main); line-height:1.5; margin-bottom:0.4rem; background:rgba(255,255,255,0.03); padding:0.6rem; border-radius:8px;">
+            <b>${ev.feedback_title||'훌륭한 개념 정리!'}</b><br>
+            ${ev.feedback_body||''}
+          </div>
+          <div style="font-size:0.82rem; color:#34d399; margin-bottom:0.3rem;">
+            <b>우수한 점</b>:<br>${strList}
+          </div>
+          <div style="font-size:0.82rem; color:#fbbf24;">
+            🔥 <b>AI 멘토 응원</b>: ${ev.encouragement||''}
+          </div>
+        `;
+      } catch(e) { box.innerHTML = '<span style="color:#ef4444;">오류: ' + e.message + '</span>'; }
+    }
+
+    async function rescheduleStudyPlan() {
+      const box = document.getElementById('sfRes');
+      box.style.display = 'block';
+      box.innerHTML = '<span style="color:#fbbf24;">🔄 지능형 AI 스케줄러가 미완료 일정을 지능적으로 재배분 중입니다...</span>';
+      try {
+        const res = await fetch('/api/selfstudy/schedule/reschedule_auto', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({session_id: 'demo-session', reason: '일정 밀림'})
+        });
+        const data = await res.json();
+        box.innerHTML = `
+          <div style="font-weight:700; color:#fbbf24; margin-bottom:0.3rem;">✅ AI 스케줄 재조정 (리스케줄링) 완료</div>
+          <div style="font-size:0.85rem; color:var(--text-muted); line-height:1.5;">
+            완료된 일정은 안전하게 보존되었으며, 미완료 단원들이 오늘부터 마감일까지 지능적으로 균등 재배치되었습니다.
+          </div>
+        `;
+      } catch(e) { box.innerHTML = '<span style="color:#ef4444;">오류: ' + e.message + '</span>'; }
+    }
+
+    async function analyzeStudyPerformance() {
+      const box = document.getElementById('sfRes');
+      box.style.display = 'block';
+      box.innerHTML = '<span style="color:#38bdf8;">📊 Gemini AI가 누적 학습 성취도 및 개선 리포트를 생성 중입니다...</span>';
+      try {
+        const res = await fetch('/api/selfstudy/ai/analyze-performance', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({total_minutes: 180, session_count: 3, avg_score: 5.0, streak_days: 3})
+        });
+        const data = await res.json();
+        const r = data.report || {};
+        const strList = (r.strengths||[]).map(s => `• ${s}`).join('<br>');
+        box.innerHTML = `
+          <div style="font-weight:700; color:#38bdf8; margin-bottom:0.3rem;">📊 AI 학습 성취도 리포트 (평가 등급: ${r.grade||'A+'})</div>
+          <div style="font-size:0.85rem; color:var(--text-main); line-height:1.5; margin-bottom:0.4rem;">
+            ${r.summary||''}
+          </div>
+          <div style="font-size:0.82rem; color:#34d399; margin-bottom:0.4rem;">
+            <b>강점</b>:<br>${strList}
+          </div>
+          <div style="font-size:0.82rem; color:#fbbf24;">
+            🎯 <b>액션 플랜</b>: ${r.actionPlan||''}
+          </div>
+        `;
+      } catch(e) { box.innerHTML = '<span style="color:#ef4444;">오류: ' + e.message + '</span>'; }
+    }
+
+    // 5. SmartFarm
+    async function loadFarmSensors() {
+      const container = document.getElementById('sensorCards');
+      if (!container) return;
+      try {
+        const res = await fetch('/api/smartfarm/sensors/latest');
+        const data = await res.json();
+        container.innerHTML = (data.readings || []).map(r => `
+          <div style="background:rgba(255,255,255,0.04); padding:0.75rem; border-radius:10px; text-align:center; border:1px solid rgba(255,255,255,0.06);">
+            <div style="font-size:0.75rem; color:var(--text-muted);">${r.name}</div>
+            <div style="font-size:1.3rem; font-weight:800; color:#38bdf8; margin-top:0.2rem;">${r.value} <span style="font-size:0.85rem;">${r.unit}</span></div>
+          </div>
+        `).join('');
+      } catch(e) {
+        container.innerHTML = '<span style="color:#ef4444;">센서 데이터 로드 실패</span>';
+      }
+    }
+
+    async function toggleFarmDevice(devType) {
+      const box = document.getElementById('fmRes');
+      box.style.display = 'block';
+      try {
+        const res = await fetch(`/api/smartfarm/controls/${devType}/toggle`, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({})
+        });
+        const data = await res.json();
+        box.innerHTML = `<span style="color:#38bdf8; font-weight:700;">⚙️ ${data.message}</span>`;
+      } catch(e) { box.innerHTML = '<span style="color:#ef4444;">오류: ' + e.message + '</span>'; }
+    }
+
+    async function diagnoseFarm() {
+      const box = document.getElementById('fmRes');
+      box.style.display = 'block';
+      box.innerHTML = '<span style="color:#a855f7;">🌿 Gemini AI가 온실 온·습도 및 생육 상태를 정밀 진단 중입니다...</span>';
+      try {
+        const res = await fetch('/api/smartfarm/controls/ai-diagnose', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({crop_name: '딸기(설향)'})
+        });
+        const data = await res.json();
+        const d = data.ai_diagnosis || {};
+        box.innerHTML = `
+          <div style="font-weight:700; color:#34d399; margin-bottom:0.3rem;">🌿 생육 진단: ${d.overallStatus} (건강 점수 ${d.healthScore||95}점)</div>
+          <div style="font-size:0.85rem; color:var(--text-muted); line-height:1.5;">
+            📊 <b>요약</b>: ${d.summary}<br>
+            ⚠️ <b>위험 요소</b>: ${d.riskFactor}<br>
+            ⚙️ <b>권장 제어</b>: ${d.recommendedAction}
+          </div>
+        `;
+      } catch(e) { box.innerHTML = '<span style="color:#ef4444;">오류: ' + e.message + '</span>'; }
+    }
+
+    // ─── 🟢 14대 마이크로서비스 실시간 헬스 모니터링 ────────────────
+    async function updateSystemHealth() {
+      try {
+        const res = await fetch('/api/health/all');
+        const data = await res.json();
+        
+        // 1. 상단 활성 배지 갱신
+        const pill = document.querySelector('.status-pill');
+        if (pill) {
+          pill.innerHTML = `<div class="status-dot" style="background:${data.online_services >= 10 ? '#10b981' : '#f59e0b'};"></div>${data.online_services} / ${data.total_services} Online`;
+        }
+
+        // 2. 스토리지 용량 정보가 있으면 표기
+        if (data.storage && data.storage.total_gb) {
+          const statVal = document.querySelectorAll('.stat-val')[1];
+          if (statVal) {
+            statVal.innerHTML = `<span style="font-size:1.1rem; color:#38bdf8;">${data.storage.free_gb}GB 남음</span> <span style="font-size:0.75rem; color:var(--text-muted);">/ ${data.storage.total_gb}GB</span>`;
+          }
+        }
+      } catch (err) {
+        console.warn('Health check polling:', err);
+      }
+    }
+
+    // ─── 🌐 다른 PC / Tailscale / 공인 IP 접속 시 호스트 자동 동기화 ──────
+    function syncHostLinks() {
+      const currentHost = window.location.hostname;
+      if (!currentHost || currentHost === 'localhost' || currentHost === '127.0.0.1') return;
+
+      // 1. 카드 상단 배지 텍스트를 현재 접속한 호스트명/IP로 동적 교체
+      document.querySelectorAll('.badge').forEach(badge => {
+        if (badge.textContent.includes('34.31.10.12')) {
+          badge.textContent = badge.textContent.replaceAll('34.31.10.12', currentHost);
+        }
+      });
+
+      // 2. n8n 워크플로우 카드 및 열기 버튼 링크 동적 변경 (포트 5678)
+      document.querySelectorAll('a[href*="5678"]').forEach(a => {
+        a.href = `http://${currentHost}:5678/`;
+      });
+      document.querySelectorAll('.card[onclick*="5678"]').forEach(card => {
+        card.setAttribute('onclick', `if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('http://${currentHost}:5678/','_blank')`);
+      });
+
+      // 3. 하단 빠른 링크 및 매핑표 URL 동적 변경
+      document.querySelectorAll('.ref-grid table a').forEach(a => {
+        if (a.href.includes('34.31.10.12')) {
+          a.href = a.href.replaceAll('34.31.10.12', currentHost);
+          a.innerHTML = a.innerHTML.replaceAll('34.31.10.12', currentHost);
+        }
+      });
+    }
+
+    // 페이지 로드 시 즉시 실행 및 5초 주기 폴링
+    document.addEventListener('DOMContentLoaded', () => {
+      syncHostLinks();
+      updateSystemHealth();
+      setInterval(updateSystemHealth, 5000);
+    });
+  </script>
+</body>
+</html>

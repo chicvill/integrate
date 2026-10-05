@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ko" class="notranslate">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="google" content="notranslate">
+  <title>MQnet Files Hub — 통합 파일 스토리지 관리자</title>
+  <meta name="description" content="MQnet 통합 파일 스토리지 허브 — 폴더 탐색, 텍스트/코드 직접 편집, 작은 아이콘 뷰, 다중 파일 삭제 및 관리">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Pretendard:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
+
+  <!-- CSS 모듈 직접 로드 + 버전 태그 (가이드 준수: @import 중첩 금지) -->
+  <link rel="stylesheet" href="./css/variables.css?v=1.1">
+  <link rel="stylesheet" href="./css/layout.css?v=1.1">
+  <link rel="stylesheet" href="./css/components.css?v=1.1">
+  <link rel="stylesheet" href="./style.css?v=1.1">
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Top Header ──────────────────────────────────────── -->
+  <header class="app-header">
+    <a class="brand-group" href="/files/">
+      <div class="brand-icon">📁</div>
+      <div class="brand-title">
+        <span class="brand-name">MQnet Files</span>
+        <span class="brand-badge">Storage Hub</span>
+      </div>
+    </a>
+
+    <!-- 스토리지 루트 위치 선택 드롭다운 -->
+    <div class="scope-selector-wrap" title="탐색할 스토리지 루트 위치를 선택합니다">
+      <span style="font-size:0.8rem;color:var(--text-muted);font-weight:600">위치:</span>
+      <select id="scopeSelect" class="scope-select">
+        <option value="files" selected>📁 files 허브 (/media/files)</option>
+        <option value="all">🗄️ /media 전체 볼륨</option>
+        <option value="photos">🖼️ photos 갤러리 (/media/photos)</option>
+        <option value="downloads">📥 downloads (/media/downloads)</option>
+      </select>
+    </div>
+
+    <!-- 전역 검색창 -->
+    <div class="search-wrapper">
+      <span class="search-icon">🔍</span>
+      <input
+        id="globalSearchInput"
+        type="text"
+        class="search-input"
+        placeholder="현재 위치에서 파일 검색..."
+        autocomplete="off"
+        spellcheck="false"
+      >
+      <span class="search-shortcut">/</span>
+    </div>
+
+    <div class="header-actions">
+      <!-- 🔑 사용자 로그인 & 프로필 배지 영역 -->
+      <div id="userAuthBadge"></div>
+
+      <div class="storage-badge" id="storageInfoBadge">
+        💾 <strong>—</strong>
+      </div>
+      <a href="/" class="btn btn-secondary" title="포털 대시보드">🏠</a>
+    </div>
+  </header>
+
+  <!-- ── Toolbar / Breadcrumbs ────────────────────────────── -->
+  <div class="app-toolbar">
+    <nav class="breadcrumbs" id="breadcrumbsNav" aria-label="경로 탐색">
+      <span class="breadcrumb-item active">📁 /media/files (루트)</span>
+    </nav>
+
+    <!-- ★ 선택 작업 툴바 (파일/폴더 선택 시 노출) -->
+    <div class="selection-toolbar hidden" id="selectionToolbar">
+      <span class="selection-badge" id="selectionBadge">0개 선택됨</span>
+      <button class="btn btn-secondary btn-sm" id="selRenameBtn" title="선택한 항목 이름 변경">✏️ 이름 변경</button>
+      <button class="btn btn-primary btn-sm" id="selEditBtn" title="선택한 텍스트/코드 파일 내용 직접 편집">📝 내용 편집</button>
+      <button class="btn btn-secondary btn-sm" id="selPreviewBtn" title="미리보기">👁 미리보기</button>
+      <button class="btn btn-secondary btn-sm" id="selDownloadBtn" title="선택한 파일 다운로드">⬇ 다운로드</button>
+      <button class="btn btn-danger btn-sm" id="selDeleteBtn" title="선택한 항목 삭제">🗑 삭제</button>
+      <button class="btn btn-ghost btn-sm" id="selClearBtn" title="선택 해제">✕ 취소</button>
+    </div>
+
+    <!-- 일반 도구 모음 -->
+    <div class="toolbar-actions">
+      <button class="btn btn-secondary" id="selectAllBtn" title="전체 선택 / 해제">✓ 전체 선택</button>
+      <button class="btn btn-secondary" id="mkdirBtn" title="새 폴더 만들기">📁 새 폴더</button>
+      <button class="btn btn-secondary" id="toolbarUploadBtn" title="파일 업로드">⬆ 파일 업로드</button>
+      <button class="btn btn-secondary" id="toolbarUploadFolderBtn" title="폴더 업로드">📂 폴더 업로드</button>
+      <div style="width:1px;height:24px;background:var(--border-subtle)"></div>
+      <button class="btn-icon active" id="viewGridBtn" title="작은 아이콘 보기">⊞</button>
+      <button class="btn-icon" id="viewListBtn" title="상세 목록 보기">☰</button>
+    </div>
+  </div>
+
+  <!-- ── Category Filter Bar ──────────────────────────────── -->
+  <div class="filter-bar" role="tablist" aria-label="파일 유형 필터">
+    <button class="filter-pill active" data-filter="all" role="tab">🗂 전체</button>
+    <button class="filter-pill" data-filter="image" role="tab">🖼️ 이미지</button>
+    <button class="filter-pill" data-filter="video" role="tab">🎬 영상</button>
+    <button class="filter-pill" data-filter="audio" role="tab">🎵 음악</button>
+    <button class="filter-pill" data-filter="document" role="tab">📄 문서</button>
+    <button class="filter-pill" data-filter="code" role="tab">💻 코드</button>
+    <button class="filter-pill" data-filter="archive" role="tab">🗜️ 압축</button>
+  </div>
+
+  <!-- ── Main Viewport ─────────────────────────────────────── -->
+  <main class="main-viewport" id="mainViewport">
+
+    <!-- 폴더 섹션 -->
+    <section id="folderSection">
+      <div class="section-header">
+        <div class="section-title">📁 폴더</div>
+      </div>
+      <div class="folder-grid" id="folderGridContainer"></div>
+    </section>
+
+    <!-- 파일 섹션 (★ 작은 아이콘 그리드 렌더링) -->
+    <section id="fileSection">
+      <div class="section-header">
+        <div class="section-title">📄 파일</div>
+      </div>
+      <div id="fileGridContainer"></div>
+    </section>
+
+  </main>
+
+  <!-- ── Status Bar ────────────────────────────────────────── -->
+  <footer class="app-statusbar">
+    <span id="statusBarText" style="color:var(--text-dim)">로딩 중...</span>
+    <span style="color:var(--text-dim)">MQnet Files Hub v1.1</span>
+  </footer>
+
+  <!-- ── Drag & Drop Overlay ──────────────────────────────── -->
+  <div class="dropzone-overlay" id="dropzoneOverlay">
+    <div class="dropzone-icon">📂</div>
+    <p style="font-size:1.4rem;font-weight:700;color:#fff">여기에 파일을 놓으세요</p>
+    <p style="color:var(--text-muted);margin-top:0.5rem">현재 선택된 폴더에 즉시 업로드됩니다</p>
+  </div>
+
+  <!-- ── 숨겨진 파일 입력 ──────────────────────────────────── -->
+  <input type="file" id="uploadFileInput" multiple style="display:none">
+  <input type="file" id="uploadFolderInput" webkitdirectory multiple style="display:none">
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- Modals                                                    -->
+  <!-- ════════════════════════════════════════════════════════ -->
+
+  <!-- ★ 텍스트 / 코드 파일 직접 편집 모달 -->
+  <div class="modal-backdrop" id="textEditModal" role="dialog" aria-modal="true">
+    <div class="modal-box large" style="max-width:920px;height:82vh;display:flex;flex-direction:column">
+      <div class="modal-header">
+        <div style="min-width:0">
+          <h2 class="modal-title" id="textEditTitle">📝 파일 내용 편집</h2>
+          <div id="textEditPath" style="font-size:0.75rem;color:var(--text-dim);font-family:monospace;margin-top:0.2rem" class="truncate"></div>
+        </div>
+        <button class="modal-close-btn" data-close-modal="textEditModal" title="닫기 (ESC)">✕</button>
+      </div>
+      <div class="modal-body" style="flex:1;display:flex;flex-direction:column;padding:0.75rem 1.25rem">
+        <textarea
+          id="textEditArea"
+          class="text-editor-textarea"
+          placeholder="파일 내용..."
+          spellcheck="false"
+          autocomplete="off"
+        ></textarea>
+      </div>
+      <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:0.78rem;color:var(--text-muted)">UTF-8 인코딩 지원</span>
+        <div style="display:flex;gap:0.5rem">
+          <button class="btn btn-secondary" data-close-modal="textEditModal">취소</button>
+          <button class="btn btn-primary" id="textEditSaveBtn">💾 저장하기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 파일 미리보기 모달 -->
+  <div class="modal-backdrop" id="previewModal" role="dialog" aria-modal="true">
+    <div class="modal-box large">
+      <div class="modal-header">
+        <h2 class="modal-title" id="previewModalTitle">파일 미리보기</h2>
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          <a class="btn btn-secondary" id="previewDownloadBtn" download title="다운로드">⬇ 다운로드</a>
+          <button class="modal-close-btn" id="previewModalCloseBtn" title="닫기 (ESC)">✕</button>
+        </div>
+      </div>
+      <div class="modal-body" id="previewModalBody" style="max-height:80vh"></div>
+    </div>
+  </div>
+
+  <!-- 새 폴더 만들기 모달 -->
+  <div class="modal-backdrop" id="mkdirModal" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">📁 새 폴더 만들기</h2>
+        <button class="modal-close-btn" data-close-modal="mkdirModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="mkdirInput">폴더 이름</label>
+          <input id="mkdirInput" class="form-input" type="text" placeholder="새 폴더 이름 입력" autocomplete="off">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close-modal="mkdirModal">취소</button>
+        <button class="btn btn-primary" id="mkdirSubmitBtn">📁 만들기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 이름 변경 모달 -->
+  <div class="modal-backdrop" id="renameModal" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">✏️ 이름 변경</h2>
+        <button class="modal-close-btn" data-close-modal="renameModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="renameInput">새 이름</label>
+          <input id="renameInput" class="form-input" type="text" placeholder="새 이름 입력" autocomplete="off">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close-modal="renameModal">취소</button>
+        <button class="btn btn-primary" id="renameSubmitBtn">✏️ 변경</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 삭제 확인 모달 -->
+  <div class="modal-backdrop" id="deleteModal" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title" style="color:var(--danger)">🗑 삭제 확인</h2>
+        <button class="modal-close-btn" data-close-modal="deleteModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <p id="deleteModalDesc" style="line-height:1.7;color:var(--text-muted)">이 항목을 삭제하시겠습니까?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close-modal="deleteModal">취소</button>
+        <button class="btn btn-danger" id="deleteConfirmBtn">🗑 삭제</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ★ 유료 전환 안내 모달 (500KB 쿼터 초과 시 표시) -->
+  <div class="modal-backdrop" id="upgradeModal" role="dialog" aria-modal="true">
+    <div class="modal-box large" style="max-width:680px">
+
+      <div class="modal-header">
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <span style="font-size:1.5rem">💎</span>
+          <div>
+            <h2 class="modal-title">MQnet Pro Storage 전환 안내</h2>
+            <span id="upgradeModalPlanBadge" class="plan-badge-pill free">무료 플랜</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" data-close-modal="upgradeModal" title="닫기 (ESC)">✕</button>
+      </div>
+
+      <div class="modal-body" style="padding:1.25rem 1.5rem">
+        <p id="upgradeModalDesc" style="color:var(--text-muted);font-size:0.92rem;line-height:1.6;margin-bottom:1.25rem"></p>
+
+        <!-- 현재 사용량 게이지 -->
+        <div class="upgrade-status-box">
+          <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:600;margin-bottom:0.4rem">
+            <span>현재 스토리지 사용량</span>
+            <span id="upgradeModalUsedText" style="color:var(--accent-secondary)">0 B / 500 KB (0%)</span>
+          </div>
+          <div class="upgrade-progress-track">
+            <div id="upgradeModalBarFill" class="upgrade-progress-fill" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- 카테고리별 사용량 통계 -->
+        <div style="margin-top:1.25rem">
+          <h4 style="font-size:0.85rem;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin-bottom:0.6rem">📁 저장 용량 상세 분석</h4>
+          <div id="upgradeModalBreakdown" class="upgrade-breakdown-list"></div>
+        </div>
+
+        <!-- Pro 플랜 추천 카드 -->
+        <div class="pro-plan-card">
+          <div class="pro-plan-header">
+            <div>
+              <div class="pro-badge">추천 플랜</div>
+              <h3 style="font-size:1.15rem;font-weight:800;color:#fff;margin-top:0.25rem">MQnet Pro 플랜</h3>
+            </div>
+            <div class="pro-price">
+              <span class="price-val">₩2,900</span>
+              <span class="price-unit">/월</span>
+            </div>
+          </div>
+          <ul class="pro-feature-list">
+            <li>✨ <strong>10 GB 대용량 스토리지</strong> (무료 대비 20,000배 확장)</li>
+            <li>📸 사진 및 4K 동영상 원본 무제한 업로드</li>
+            <li>⚡ 실시간 텍스트/코드 인라인 편집 & 자동 백업</li>
+            <li>🔒 전용 암호화 개인 스토리지 보장</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center">
+        <button class="btn btn-ghost btn-sm" id="resetFreeBtn" title="테스트용: 무료 플랜(500KB)으로 초기화">🔄 무료(500KB)로 재설정</button>
+        <div style="display:flex;gap:0.5rem">
+          <button class="btn btn-secondary" data-close-modal="upgradeModal">닫기</button>
+          <button class="btn btn-primary" id="confirmUpgradeBtn" style="background:linear-gradient(135deg,#6366f1,#38bdf8);border:none;font-weight:700">
+            ⚡ Pro 플랜 업그레이드 (테스트 적용)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast 알림 컨테이너 -->
+  <div class="toast-container" id="toastContainer"></div>
+
+</div>
+
+<!-- 메인 스크립트 (모듈, 버전 태그 필수) -->
+<script type="module" src="./app.js?v=1.3"></script>
+</body>
+</html>

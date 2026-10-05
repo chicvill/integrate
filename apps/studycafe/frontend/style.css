@@ -1,0 +1,823 @@
+/* apps/studycafe/frontend/style.css */
+/* MQnet StudyCafe - Ultra Premium Cyber-Lounge Theme */
+
+:root {
+  --bg-primary: #0a0e17;
+  --bg-secondary: #111827;
+  --bg-card: rgba(17, 24, 39, 0.75);
+  --bg-card-hover: rgba(30, 41, 59, 0.9);
+  
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(99, 102, 241, 0.35);
+  
+  --primary: #6366f1;
+  --primary-glow: rgba(99, 102, 241, 0.4);
+  --accent: #38bdf8;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+  
+  --font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Inter", Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+  font-family: var(--font-family);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-image: 
+    radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 85% 85%, rgba(56, 189, 248, 0.06) 0%, transparent 40%);
+  background-attachment: fixed;
+}
+
+/* ── Top Header ─────────────────────────────────────────── */
+.sc-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(10, 14, 23, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brand-logo-icon {
+  font-size: 1.8rem;
+  background: linear-gradient(135deg, #6366f1, #38bdf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(90deg, #fff, #cbd5e1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-subtitle {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* ── Navigation Tabs ────────────────────────────────────── */
+.sc-nav-tabs {
+  display: flex;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  padding: 0.25rem;
+  border-radius: 12px;
+  gap: 0.25rem;
+}
+
+.nav-tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.nav-tab-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.nav-tab-btn.active {
+  color: #fff;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.my-seat-pill {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.35rem 0.8rem;
+  border-radius: 9999px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.my-seat-pill.none {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--border-color);
+  color: var(--text-dim);
+}
+
+/* ── Main Container ─────────────────────────────────────── */
+.sc-main {
+  flex: 1;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ── Stats Bar ──────────────────────────────────────────── */
+.sc-stats-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.sc-stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.stat-label { font-size: 0.78rem; color: var(--text-muted); font-weight: 600; }
+.stat-value { font-size: 1.5rem; font-weight: 800; color: #fff; display: flex; align-items: baseline; gap: 0.4rem; }
+.stat-unit { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+.stat-pct { font-size: 1.35rem; font-weight: 800; color: #fff; }
+
+.text-accent { color: var(--accent); }
+.text-success { color: var(--success); }
+
+.sc-congestion-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  margin-left: auto;
+}
+.sc-congestion-badge.free { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+.sc-congestion-badge.moderate { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+.sc-congestion-badge.busy { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+/* ── Zone Filter ────────────────────────────────────────── */
+.sc-zone-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.zone-filter-btn {
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.zone-filter-btn:hover { color: #fff; border-color: rgba(255, 255, 255, 0.2); }
+.zone-filter-btn.active {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+/* ── 20개 좌석 그리드 ───────────────────────────────────── */
+.sc-seat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 1.15rem;
+}
+
+.sc-seat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.sc-seat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.sc-seat-card.is-my-seat {
+  border-color: var(--accent);
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
+  background: linear-gradient(145deg, rgba(17, 24, 39, 0.85), rgba(56, 189, 248, 0.08));
+}
+
+.sc-seat-card.occupied {
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.seat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.seat-num {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.seat-zone-pill {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+}
+.zone-focus { background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); }
+.zone-normal { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+.zone-laptop { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+.seat-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.4rem;
+}
+
+.seat-icon { font-size: 2.2rem; }
+
+.status-badge {
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+}
+.status-badge.avail { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+.status-badge.occ { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+.status-badge.my { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid var(--accent); }
+
+.seat-zone-desc { font-size: 0.72rem; color: var(--text-dim); }
+
+.seat-footer { margin-top: auto; }
+
+.btn-seat-action {
+  width: 100%;
+  padding: 0.55rem;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+}
+
+.btn-seat-action.assign {
+  background: linear-gradient(135deg, #6366f1, #38bdf8);
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+}
+.btn-seat-action.assign:hover { transform: translateY(-1px); opacity: 0.95; }
+
+.btn-seat-action.leave {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+.btn-seat-action.leave:hover { background: rgba(239, 68, 68, 0.3); }
+
+.btn-seat-action.info {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+}
+.btn-seat-action.info:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
+
+/* ── 이용권 요금제 그리드 ───────────────────────────────── */
+.sc-tickets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+}
+
+.sc-ticket-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.sc-ticket-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.sc-ticket-card.popular {
+  border-color: var(--primary);
+  box-shadow: 0 0 25px rgba(99, 102, 241, 0.2);
+}
+
+.popular-ribbon {
+  position: absolute;
+  top: -10px;
+  right: 18px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+}
+
+.ticket-name { font-size: 1.15rem; font-weight: 700; color: #fff; }
+.ticket-type-pill { font-size: 0.72rem; color: var(--accent); margin-top: 0.2rem; }
+
+.ticket-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #fff;
+}
+.ticket-price .currency { font-size: 1.1rem; color: var(--text-muted); }
+
+.ticket-features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-color);
+  padding-top: 1rem;
+}
+
+.btn-ticket-purchase {
+  margin-top: auto;
+  padding: 0.75rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #6366f1, #38bdf8);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+}
+.btn-ticket-purchase:hover { opacity: 0.95; transform: translateY(-1px); }
+
+/* ── 스마트 출입문 & 모바일 패스 레이아웃 ───────────────── */
+.sc-door-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.sc-door-control-card, .sc-mobile-pass-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 1.75rem;
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.door-visual {
+  width: 140px;
+  height: 180px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 4px solid #334155;
+  border-radius: 12px;
+  position: relative;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.door-panel {
+  width: 90%;
+  height: 94%;
+  background: linear-gradient(145deg, #1e293b, #0f172a);
+  border: 2px solid #475569;
+  border-radius: 6px;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: left;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 10px;
+}
+
+.door-panel.open {
+  transform: perspective(600px) rotateY(-75deg);
+  border-color: #38bdf8;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+}
+
+.door-handle {
+  width: 8px;
+  height: 24px;
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.door-status-badge {
+  position: absolute;
+  bottom: -12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+}
+.door-status-badge.locked { background: #334155; color: #cbd5e1; }
+.door-status-badge.open { background: var(--success); color: #fff; box-shadow: 0 0 12px rgba(16, 185, 129, 0.5); }
+
+.door-title { font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 0.35rem; }
+.door-subtitle { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1.25rem; }
+
+.btn-door-unlock {
+  width: 100%;
+  padding: 0.9rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);
+  transition: all 0.2s;
+}
+.btn-door-unlock:hover:not(:disabled) { transform: translateY(-2px); opacity: 0.95; }
+.btn-door-unlock.disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* 모바일 출입증 */
+.sc-mobile-pass-card {
+  align-items: stretch;
+  text-align: left;
+  gap: 1rem;
+  background: linear-gradient(165deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+  border-color: rgba(56, 189, 248, 0.25);
+}
+
+.pass-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.75rem;
+}
+.pass-brand { font-size: 0.9rem; font-weight: 800; color: #fff; letter-spacing: 0.02em; }
+.pass-chip { font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 9999px; }
+.pass-chip.active { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+.pass-chip.inactive { background: rgba(255, 255, 255, 0.08); color: var(--text-dim); }
+
+.pass-user-info { display: flex; align-items: center; gap: 0.75rem; }
+.user-avatar-circle {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #38bdf8);
+  display: flex; align-items: center; justify-content: center; font-size: 1.25rem;
+}
+.pass-user-name { font-size: 1.05rem; font-weight: 700; color: #fff; }
+.pass-user-sub { font-size: 0.75rem; color: var(--text-muted); }
+
+.pass-seat-slot {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.6rem 0.9rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+.slot-label { color: var(--text-muted); font-size: 0.78rem; }
+.slot-value { font-weight: 700; color: #fff; }
+
+.pass-qr-box {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+}
+.qr-mock-code {
+  width: 110px; height: 110px;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 6px;
+  display: flex; align-items: center; justify-content: center;
+}
+.qr-pattern {
+  width: 100%; height: 100%;
+  background-image: 
+    radial-gradient(#000 35%, transparent 35%),
+    radial-gradient(#000 35%, transparent 35%);
+  background-size: 12px 12px;
+  background-position: 0 0, 6px 6px;
+}
+.qr-tip { font-size: 0.7rem; color: var(--text-dim); text-align: center; line-height: 1.4; }
+
+/* ── 자기주도학습 연동 탭 ───────────────────────────────── */
+.sc-selfstudy-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.selfstudy-banner {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(56, 189, 248, 0.08));
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 18px;
+  padding: 1.5rem;
+}
+.banner-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: rgba(56, 189, 248, 0.12);
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+.banner-title { font-size: 1.3rem; font-weight: 800; color: #fff; margin-bottom: 0.35rem; }
+.banner-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
+
+.selfstudy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.ss-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.ss-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.ss-card-header h3 { font-size: 0.95rem; font-weight: 700; color: #fff; }
+.ss-icon { font-size: 1.25rem; }
+
+.ss-seat-status {
+  display: flex;
+  justify-content: space-between;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.75rem;
+  border-radius: 10px;
+}
+.ss-seat-info { display: flex; flex-direction: column; gap: 0.2rem; }
+.ss-seat-info .lbl { font-size: 0.7rem; color: var(--text-dim); }
+.ss-seat-info .val { font-size: 0.9rem; font-weight: 700; color: #fff; }
+.ss-seat-info .val.active { color: var(--accent); }
+.ss-tip { font-size: 0.72rem; color: var(--text-dim); }
+
+.ss-timer-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.5rem 0;
+}
+.timer-time { font-size: 1.8rem; font-weight: 800; color: #fff; font-family: monospace; }
+.timer-goal { font-size: 0.75rem; color: var(--text-muted); }
+
+.ss-progress-bar {
+  width: 100%; height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.ss-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #38bdf8);
+  border-radius: 9999px;
+}
+
+.ss-ai-quote {
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.04);
+  border-left: 3px solid var(--accent);
+  padding: 0.6rem 0.8rem;
+  border-radius: 0 8px 8px 0;
+  line-height: 1.45;
+}
+
+.ss-ai-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.ss-ai-chips .chip {
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-color);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  color: var(--text-muted);
+}
+
+.selfstudy-cta-box {
+  display: flex;
+  justify-content: center;
+}
+
+.btn-launch-selfstudy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.95rem 1.8rem;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #10b981, #06b6d4);
+  color: #fff;
+  font-size: 0.98rem;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn-launch-selfstudy:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.5);
+}
+
+/* ── 모달 공통 스타일 ───────────────────────────────────── */
+.sc-modal-backdrop {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  display: none; align-items: center; justify-content: center;
+  padding: 1rem;
+}
+.sc-modal-backdrop.open { display: flex; animation: scFadeIn 0.2s ease; }
+
+.sc-modal {
+  background: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 18px;
+  width: 100%; max-width: 440px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75);
+  overflow: hidden;
+  color: #fff;
+}
+
+.sc-modal-header {
+  padding: 1.25rem 1.5rem;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border-color);
+}
+.sc-modal-title { font-size: 1.15rem; font-weight: 700; margin: 0; }
+.sc-modal-close {
+  background: transparent; border: none; color: var(--text-muted);
+  font-size: 1.25rem; cursor: pointer; border-radius: 6px; padding: 0.2rem;
+}
+.sc-modal-close:hover { color: #fff; }
+
+.sc-modal-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sc-form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+.sc-form-label { font-size: 0.8rem; font-weight: 600; color: #cbd5e1; }
+.sc-form-input, .sc-form-select {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff; font-size: 0.95rem; outline: none;
+}
+.sc-form-input:focus, .sc-form-select:focus {
+  border-color: var(--accent);
+}
+
+.sc-modal-submit-btn {
+  padding: 0.85rem;
+  border-radius: 10px;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #6366f1, #38bdf8);
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+
+/* ── Toast 알림 ─────────────────────────────────────────── */
+.sc-toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 9999;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  padding: 0.85rem 1.25rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.88rem;
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.sc-toast.show { transform: translateY(0); opacity: 1; }
+.sc-toast.success { border-color: rgba(16, 185, 129, 0.5); }
+.sc-toast.error { border-color: rgba(239, 68, 68, 0.5); }
+
+@keyframes scFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* 반응형 모바일 */
+@media (max-width: 768px) {
+  .sc-header { flex-direction: column; align-items: stretch; }
+  .sc-nav-tabs { overflow-x: auto; }
+  .sc-stats-bar { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── 외출(Step-Out) 모드 스타일 ───────────────────────── */
+.sc-seat-card.step-out {
+  border-color: rgba(245, 158, 11, 0.6) !important;
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.08), rgba(15, 23, 42, 0.7)) !important;
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);
+}
+.status-badge.step-out {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+.zone-focus {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+.zone-normal {
+  background: rgba(59, 130, 246, 0.2) !important;
+  color: #60a5fa !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+}

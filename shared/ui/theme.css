@@ -1,0 +1,69 @@
+/* ================================================================
+   MQnet Shared Design System & Theme Tokens (@mqnet/ui)
+   ================================================================ */
+
+:root {
+  --mq-bg: #090d16;
+  --mq-card-bg: rgba(18, 24, 38, 0.7);
+  --mq-border: rgba(255, 255, 255, 0.08);
+  --mq-border-hover: rgba(99, 102, 241, 0.4);
+  --mq-text: #f8fafc;
+  --mq-text-muted: #94a3b8;
+  --mq-primary: #6366f1;
+  --mq-primary-hover: #4f46e5;
+  --mq-gradient: linear-gradient(135deg, #6366f1, #3b82f6, #06b6d4);
+  --mq-font: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+}
+
+/* Glassmorphism Common Utilities */
+.mq-glass {
+  background: var(--mq-card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--mq-border);
+}
+
+.mq-glass-hover:hover {
+  border-color: var(--mq-border-hover);
+  transform: translateY(-2px);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Button Utilities */
+.mq-btn-primary {
+  background: var(--mq-gradient);
+  color: #ffffff;
+  font-weight: 700;
+  padding: 0.6rem 1.2rem;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+}
+
+.mq-btn-primary:hover {
+  opacity: 0.92;
+  transform: scale(1.02);
+}
+
+.mq-btn-secondary {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--mq-text);
+  border: 1px solid var(--mq-border);
+  font-weight: 600;
+  padding: 0.6rem 1.2rem;
+  border-radius: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.mq-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+}

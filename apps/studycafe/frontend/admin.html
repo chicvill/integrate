@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MQnet StudyCafe | 점주 실시간 관제 대시보드</title>
+  <link rel="stylesheet" href="./style.css?v=2.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: #0b0f19;
+      color: #f1f5f9;
+      font-family: 'Pretendard', sans-serif;
+      margin: 0;
+      padding: 1.25rem;
+    }
+    .admin-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.25rem 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .admin-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+    .admin-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1.25rem;
+    }
+    .seat-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    .seat-table th, .seat-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .seat-table th {
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .btn-action {
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      border: none;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-action.kick {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="admin-container">
+    <!-- 🚀 현장/역할별 빠른 페이지 이동 버튼 바 -->
+    <div class="sc-quick-portal-bar" style="background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 0.8rem 1.1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.8rem;">
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span style="font-size: 1.15rem;">🚀</span>
+        <span style="font-weight: 800; font-size: 0.88rem; color: #fff;">바로가기:</span>
+      </div>
+      <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+        <a href="/studycafe/" class="quick-nav-btn" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.95rem; border-radius: 10px; font-size: 0.82rem; font-weight: 700; text-decoration: none; background: rgba(56,189,248,0.18); border: 1px solid rgba(56,189,248,0.45); color: #38bdf8; transition: all 0.2s;">
+          <span>📱</span> 스터디카페 키오스크/모바일
+        </a>
+        <a href="./admin.html" class="quick-nav-btn active" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.95rem; border-radius: 10px; font-size: 0.82rem; font-weight: 700; text-decoration: none; background: rgba(139,92,246,0.3); border: 1px solid rgba(139,92,246,0.6); color: #c084fc; transition: all 0.2s;">
+          <span>📊</span> 점주 실시간 관제 및 순찰 모달
+        </a>
+        <a href="./parent.html?phone=010-5555-4444" class="quick-nav-btn" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.95rem; border-radius: 10px; font-size: 0.82rem; font-weight: 700; text-decoration: none; background: rgba(16,185,129,0.18); border: 1px solid rgba(16,185,129,0.45); color: #34d399; transition: all 0.2s;">
+          <span>👨‍👩‍👧</span> 학부모 실시간 순찰 리포트 확인
+        </a>
+      </div>
+    </div>
+
+    <header class="admin-header">
+      <div>
+        <h1 style="font-size:1.4rem;font-weight:800;color:#fff;margin:0 0 0.3rem;">📊 점주 실시간 관제 대시보드</h1>
+        <div style="font-size:0.82rem;color:var(--text-muted);">스터디카페 20석 실시간 재실 모니터링 & 스마트 출입문 제어</div>
+      </div>
+      <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+        <button id="btnManualDoor" class="sc-modal-submit-btn" style="margin:0;background:#10b981;padding:0.65rem 1.1rem;" type="button">
+          🔓 출입문 5초 강제 개방
+        </button>
+        <button id="btnCleanupExpired" class="sc-modal-submit-btn" style="margin:0;background:#f59e0b;padding:0.65rem 1.1rem;" type="button">
+          🧹 60분 초과 외출자 자동 퇴실
+        </button>
+        <button id="btnRefresh" class="btn-action" style="background:rgba(255,255,255,0.1);color:#fff;padding:0.65rem 1rem;" type="button">
+          🔄 새로고침
+        </button>
+      </div>
+    </header>
+
+    <!-- 통계 카드 그리드 -->
+    <div class="admin-stat-grid">
+      <div class="admin-card">
+        <div style="font-size:0.8rem;color:var(--text-muted);">전체 좌석</div>
+        <div id="statTotal" style="font-size:1.8rem;font-weight:800;color:#fff;margin-top:0.3rem;">20석</div>
+      </div>
+      <div class="admin-card">
+        <div style="font-size:0.8rem;color:var(--text-muted);">현재 이용 중</div>
+        <div id="statOccupied" style="font-size:1.8rem;font-weight:800;color:var(--accent);margin-top:0.3rem;">-</div>
+      </div>
+      <div class="admin-card">
+        <div style="font-size:0.8rem;color:var(--text-muted);">외출 (자리비움)</div>
+        <div id="statStepOut" style="font-size:1.8rem;font-weight:800;color:#f59e0b;margin-top:0.3rem;">-</div>
+      </div>
+      <div class="admin-card">
+        <div style="font-size:0.8rem;color:var(--text-muted);">잔여 빈 좌석</div>
+        <div id="statAvailable" style="font-size:1.8rem;font-weight:800;color:#10b981;margin-top:0.3rem;">-</div>
+      </div>
+      <div class="admin-card">
+        <div style="font-size:0.8rem;color:var(--text-muted);">실시간 점유율</div>
+        <div id="statRate" style="font-size:1.8rem;font-weight:800;color:#38bdf8;margin-top:0.3rem;">0%</div>
+      </div>
+    </div>
+
+    <!-- 좌석 테이블 -->
+    <div class="admin-card">
+      <h3 style="font-size:1.1rem;font-weight:800;color:#fff;margin:0 0 1rem;">🪑 좌석별 실시간 이용 현황</h3>
+      <div style="overflow-x:auto;">
+        <table class="seat-table">
+          <thead>
+            <tr>
+              <th>좌석 번호</th>
+              <th>구역</th>
+              <th>상태</th>
+              <th>이용자 성명</th>
+              <th>회원 유형</th>
+              <th>연락처</th>
+              <th>관리 조치</th>
+            </tr>
+          </thead>
+          <tbody id="seatTableBody">
+            <!-- 동적 렌더링 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { fetchAdminDashboard, cleanupExpiredSeats, triggerDoor, leaveSeat, submitPatrolLog } from './js/api.js?v=2.1';
+
+    async function loadDashboard() {
+      try {
+        const data = await fetchAdminDashboard();
+        document.getElementById('statTotal').textContent = `${data.total_seats}석`;
+        document.getElementById('statOccupied').textContent = `${data.occupied_count}석`;
+        document.getElementById('statStepOut').textContent = `${data.step_out_count}석`;
+        document.getElementById('statAvailable').textContent = `${data.available_count}석`;
+        document.getElementById('statRate').textContent = `${data.occupancy_rate}%`;
+
+        const tbody = document.getElementById('seatTableBody');
+        tbody.innerHTML = data.seats.map(s => {
+          const isStepOut = s.status === 'STEP_OUT';
+          const isOccupied = s.is_occupied || s.status === 'OCCUPIED' || isStepOut;
+          
+          let statusBadge = '<span style="color:#10b981;font-weight:700;">빈 좌석</span>';
+          if (isStepOut) statusBadge = '<span style="color:#f59e0b;font-weight:700;">외출 중 🚶‍♂️</span>';
+          else if (isOccupied) statusBadge = '<span style="color:var(--accent);font-weight:700;">이용 중 🟢</span>';
+
+          return `
+            <tr>
+              <td style="font-weight:700;color:#fff;">${s.seat_number}</td>
+              <td><span class="sc-badge zone-${s.zone_type.toLowerCase()}">${s.zone_type}</span></td>
+              <td>${statusBadge}</td>
+              <td>${s.user_name || '-'}</td>
+              <td><span class="sc-badge ${s.user_type === 'MANAGED' ? 'zone-focus' : 'zone-normal'}">${s.user_type === 'MANAGED' ? '관리형' : '일반'}</span></td>
+              <td style="color:var(--text-muted);">${s.phone || '-'}</td>
+              <td>
+                ${isOccupied ? `
+                  <div style="display:flex;gap:0.4rem;">
+                    <button class="btn-action" style="background:rgba(139,92,246,0.2);color:#c084fc;border:1px solid rgba(139,92,246,0.4);" onclick="window.openPatrolModal('${s.seat_number}', '${s.user_name || '회원'}', '${s.phone || ''}')">
+                      📋 순찰 기록
+                    </button>
+                    <button class="btn-action kick" onclick="window.adminForceLeave('${s.seat_number}')">
+                      강제 퇴실
+                    </button>
+                  </div>
+                ` : '-'}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (e) {
+        console.error('대시보드 에러:', e);
+      }
+    }
+
+    // 🎯 현장 순찰 일지 팝업
+    window.openPatrolModal = function(seatNum, userName, phone) {
+      let modal = document.getElementById('patrolModal');
+      if (modal) modal.remove();
+
+      modal = document.createElement('div');
+      modal.id = 'patrolModal';
+      modal.className = 'sc-modal-backdrop open';
+      modal.style.display = 'flex';
+      modal.innerHTML = `
+        <div class="sc-modal" style="max-width:420px;">
+          <div class="sc-modal-header">
+            <h3 class="sc-modal-title">📋 현장 순찰 일지 기록</h3>
+            <button class="sc-modal-close" onclick="document.getElementById('patrolModal').remove()">✕</button>
+          </div>
+          <div class="sc-modal-body" style="display:flex;flex-direction:column;gap:1rem;">
+            <div style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);padding:0.75rem;border-radius:10px;font-size:0.85rem;color:#c084fc;">
+              🎯 대상: <strong>${seatNum}석</strong> (${userName} 님) | 학부모 안심포털에 실시간 반영됩니다.
+            </div>
+
+            <div class="sc-form-group">
+              <label class="sc-form-label">순찰 점검 항목</label>
+              <select id="patrolCategory" class="sc-form-input" style="background:#1e293b;color:#fff;">
+                <option value="SLEEP" data-pen="1">😴 졸음 주의 (벌점 +1점)</option>
+                <option value="DISTRACTION" data-pen="1">📱 스마트폰 / 웹서핑 딴짓 (벌점 +1점)</option>
+                <option value="AWAY" data-pen="2">🚶 무단 장기 이탈 (벌점 +2점)</option>
+                <option value="FOCUS" data-pen="0">👍 100% 몰입 학습 우수 (칭찬 0점)</option>
+              </select>
+            </div>
+
+            <div class="sc-form-group">
+              <label class="sc-form-label">현장 지도 메모 (학부모 열람 가능)</label>
+              <input id="patrolNote" type="text" class="sc-form-input" placeholder="예: 가볍게 깨워서 세안 안내함" value="가볍게 주의 환기 및 세안 안내">
+            </div>
+
+            <button id="btnSubmitPatrol" class="sc-modal-submit-btn" style="background:#8b5cf6;font-weight:700;" type="button">
+              📝 순찰 일지 저장 & 학부모 리포트 전송
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      document.getElementById('btnSubmitPatrol').onclick = async () => {
+        const catSelect = document.getElementById('patrolCategory');
+        const category = catSelect.value;
+        const penalty = parseInt(catSelect.options[catSelect.selectedIndex].dataset.pen || 0);
+        const note = document.getElementById('patrolNote').value.trim();
+
+        try {
+          const res = await submitPatrolLog(seatNum, category, penalty, note, '관리실장');
+          alert(res.message);
+          modal.remove();
+          loadDashboard();
+        } catch (err) {
+          alert(err.message);
+        }
+      };
+    };
+
+    window.adminForceLeave = async function(seatNum) {
+      if (!confirm(`[점주 권한] 좌석 ${seatNum}을 강제 퇴실 처리하시겠습니까?`)) return;
+      try {
+        await leaveSeat(seatNum);
+        alert(`좌석 ${seatNum} 강제 퇴실 완료`);
+        loadDashboard();
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+
+    document.getElementById('btnManualDoor').addEventListener('click', async () => {
+      try {
+        const res = await triggerDoor(1);
+        alert(`출입문이 5초간 수동 개방되었습니다.`);
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    document.getElementById('btnCleanupExpired').addEventListener('click', async () => {
+      try {
+        const res = await cleanupExpiredSeats();
+        alert(`외출 60분 초과 ${res.cleaned_seats_count}개 좌석이 자동 퇴실 정리되었습니다.`);
+        loadDashboard();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    document.getElementById('btnRefresh').addEventListener('click', loadDashboard);
+
+    loadDashboard();
+    setInterval(loadDashboard, 15000);
+  </script>
+</body>
+</html>

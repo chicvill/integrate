@@ -1,0 +1,180 @@
+{
+  "name": "Nonghyup Bank Deposit Email Alert Parser (himin50@gmail.com)",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "readStatus": "unread"
+        },
+        "format": "resolved"
+      },
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2,
+      "position": [
+        250,
+        300
+      ],
+      "id": "node-imap-trigger",
+      "name": "Nonghyup Email Trigger (himin50@gmail.com)",
+      "credentials": {
+        "imap": {
+          "id": "gmail_credential_id",
+          "name": "himin50@gmail.com IMAP Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-account",
+              "leftValue": "={{ $json.text + ' ' + $json.html + ' ' + $json.subject }}",
+              "rightValue": "130027-52-081538",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "cond-deposit",
+              "leftValue": "={{ $json.text + ' ' + $json.subject }}",
+              "rightValue": "입금",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        470,
+        300
+      ],
+      "id": "node-filter-nonghyup",
+      "name": "Filter Account 130027-52-081538"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nonghyup Bank Deposit Notification Email Parser\nconst item = $input.first().json;\nconst content = (item.text || '') + '\\n' + (item.html || '') + '\\n' + (item.subject || '');\n\n// 1. Account Number matching\nconst accountMatch = content.match(/130027-?52-?081538/);\nconst account = accountMatch ? '130027-52-081538' : '130027-52-081538';\n\n// 2. Date & Time matching (언제)\n// Matches standard formats like 2026-08-12 10:15:30, 2026.08.12 10:15, 08/12 10:15 etc.\nlet dateMatch = content.match(/(\\d{4}[-.\\/]\\d{2}[-.\\/]\\d{2}\\s+\\d{2}:\\d{2}(?::\\d{2})?)/);\nif (!dateMatch) {\n  dateMatch = content.match(/(거래일시|일시)[:\\s]*([\\d-.\\/:\\s]+)/);\n}\nconst depositDate = dateMatch ? (dateMatch[1] || dateMatch[2]).trim() : new Date().toLocaleString('ko-KR');\n\n// 3. Depositor / Sender matching (누가)\n// Matches '보내신분:', '입금자:', '적요:', '보낸이:', or bracket pattern '[NH농협] 홍길동'\nlet depositorMatch = content.match(/(?:보내신분|입금자|보낸이|적요)[:\\s]*([^\\r\\n<,]+)/);\nif (!depositorMatch) {\n  depositorMatch = content.match(/(?:입금|통지)[:\\s]*([^\\r\\n<,]+님|[^\\r\\n<,]+)/);\n}\nlet depositor = depositorMatch ? depositorMatch[1].trim() : '미확인 (알 수 없음)';\n// Clean up common prefix labels, suffix, or HTML tags\ndepositor = depositor.replace(/<[^>]*>/g, '').replace(/^(?:\\(적요\\)|보내신분|입금자|보낸이)[:\\s]*/, '').replace(/님$/, '').trim();\n\n// 4. Deposit Amount (얼마)\nlet amountMatch = content.match(/(?:입금금액|입금액|금액)[:\\s]*([\\d,]+)(?:\\s*원)?/);\nlet amountStr = amountMatch ? amountMatch[1].replace(/,/g, '') : '0';\nconst amount = parseInt(amountStr, 10) || 0;\n\n// 5. Balance (잔액)\nlet balanceMatch = content.match(/(?:거래후잔액|잔액)[:\\s]*([\\d,]+)(?:\\s*원)?/);\nlet balanceStr = balanceMatch ? balanceMatch[1].replace(/,/g, '') : '0';\nconst balance = parseInt(balanceStr, 10) || 0;\n\nreturn {\n  json: {\n    account: account,\n    recipientEmail: 'himin50@gmail.com',\n    depositDate: depositDate,\n    depositor: depositor,\n    amount: amount,\n    balance: balance,\n    subject: item.subject || '농협 입출금 알림',\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        690,
+        300
+      ],
+      "id": "node-parse-email",
+      "name": "Parse Depositor & Time (언제/누가)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/webhook/deposit",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "account",
+              "value": "={{ $json.account }}"
+            },
+            {
+              "name": "depositDate",
+              "value": "={{ $json.depositDate }}"
+            },
+            {
+              "name": "depositor",
+              "value": "={{ $json.depositor }}"
+            },
+            {
+              "name": "amount",
+              "value": "={{ $json.amount }}"
+            },
+            {
+              "name": "balance",
+              "value": "={{ $json.balance }}"
+            },
+            {
+              "name": "recipientEmail",
+              "value": "={{ $json.recipientEmail }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        910,
+        300
+      ],
+      "id": "node-send-to-dashboard",
+      "name": "Push Alert to Screen Dashboard"
+    }
+  ],
+  "connections": {
+    "Nonghyup Email Trigger (himin50@gmail.com)": {
+      "main": [
+        [
+          {
+            "node": "Filter Account 130027-52-081538",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Account 130027-52-081538": {
+      "main": [
+        [
+          {
+            "node": "Parse Depositor & Time (언제/누가)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Depositor & Time (언제/누가)": {
+      "main": [
+        [
+          {
+            "node": "Push Alert to Screen Dashboard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "nh-deposit-130027-52-081538-v1"
+}

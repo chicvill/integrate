@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  store:
+    build: .
+    container_name: mqnet-store
+    restart: always
+    ports:
+      - "8002:8002"
+
+    environment:
+      - DEPLOYMENT_MODE=LOCAL_STANDALONE
+      - ENABLE_AI_ANALYTICS=true
+      - DATABASE_URL=sqlite:////app/backend/store.db
+    volumes:
+      - ./backend/data:/app/backend/data

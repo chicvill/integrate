@@ -1,0 +1,22 @@
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.pytest_cache
+**/.coverage
+**/htmlcov
+
+# Node dependencies (the built dist/ folders are retained!)
+**/node_modules/
+**/.npm/
+
+# Git & IDE
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Scratch & Logs
+scratch/
+brain/
+*.log

@@ -1,0 +1,102 @@
+﻿# MQnet 통합 SaaS 플랫폼 - Docker Compose
+# 실행: docker-compose up -d
+
+version: '3.9'
+
+services:
+  # ─── 통합 API 게이트웨이 (포트 8000) ───────────────────────
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mqnet-gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - DEPLOYMENT_MODE=DOCKER
+    env_file:
+      - .env.shared
+    command: uvicorn gateway.main:app --host 0.0.0.0 --port 8000
+    volumes:
+      - .:/app
+    restart: unless-stopped
+
+  # ─── 스터디카페 앱 (포트 8001) ─────────────────────────────
+  studycafe:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mqnet-studycafe
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env.shared
+      - apps/studycafe/.env
+    command: uvicorn apps.studycafe.backend.main:app --host 0.0.0.0 --port 8001
+    volumes:
+      - .:/app
+    restart: unless-stopped
+
+  # ─── 매장 QR 주문 앱 (포트 8002) ──────────────────────────
+  store:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mqnet-store
+    ports:
+      - "8002:8002"
+    env_file:
+      - .env.shared
+      - apps/store/.env
+    command: uvicorn apps.store.backend.main:app --host 0.0.0.0 --port 8002
+    volumes:
+      - .:/app
+    restart: unless-stopped
+
+  # ─── 자기주도학습 앱 (포트 8003) ───────────────────────────
+  selfstudy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mqnet-selfstudy
+    ports:
+      - "8003:8003"
+    env_file:
+      - .env.shared
+      - apps/selfstudy/.env
+    command: uvicorn apps.selfstudy.backend.main:app --host 0.0.0.0 --port 8003
+    volumes:
+      - .:/app
+    restart: unless-stopped
+
+  # ─── 스마트팜 앱 (포트 8004) ────────────────────────────────
+  smartfarm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mqnet-smartfarm
+    ports:
+      - "8004:8004"
+    env_file:
+      - .env.shared
+      - apps/smartfarm/.env
+    command: uvicorn apps.smartfarm.backend.main:app --host 0.0.0.0 --port 8004
+    volumes:
+      - .:/app
+    restart: unless-stopped
+
+  # ─── AI 관상 앱 (포트 8005) ─────────────────────────────────
+  ai_gwansang:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mqnet-ai-gwansang
+    ports:
+      - "8005:8005"
+    env_file:
+      - .env.shared
+      - apps/ai_gwansang/.env
+    command: uvicorn apps.ai_gwansang.backend.main:app --host 0.0.0.0 --port 8005
+    volumes:
+      - .:/app
+    restart: unless-stopped

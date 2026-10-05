@@ -1,0 +1,1063 @@
+import { $, state, formatBytes, saveFavorites } from './state.js?v=6.0';
+import { createFolderApi, deleteItemApi, batchDeleteApi, batchMoveApi, moveItemApi, fetchFoldersApi, fetchDuplicatesApi } from './api.js?v=6.0';
+import { copyLinkToClipboard, renderGallery, shareItem } from './ui.js?v=6.0';
+
+// ── Lightbox Controller ────────────────────────────────────────
+export function openLightbox(index) {
+  const lightbox = $('lightbox');
+  if (!lightbox || index < 0 || index >= state.mediaItems.length) return;
+  state.lightboxIdx = index;
+  state.currentRotation = 0;
+  renderLightboxItem(index);
+  lightbox.classList.add('open');
+}
+
+export function closeLightbox() {
+  const lightbox = $('lightbox');
+  const lbVideo  = $('lbVideo');
+  if (lbVideo) { lbVideo.pause(); lbVideo.src = ''; }
+  if (lightbox) lightbox.classList.remove('open');
+  state.lightboxIdx = -1;
+  state.currentRotation = 0;
+  stopSlideshow();
+}
+
+export function rotateLightboxImage() {
+  const lbImg = $('lbImg');
+  if (!lbImg) return;
+  state.currentRotation = (state.currentRotation + 90) % 360;
+  lbImg.style.transform = `rotate(${state.currentRotation}deg)`;
+}
+
+export function toggleSlideshow(handlers) {
+  const slideshowBtn = $('lbSlideshowBtn');
+  if (state.slideshowTimer) {
+    stopSlideshow();
+    if (slideshowBtn) slideshowBtn.textContent = '▶️';
+  } else {
+    if (slideshowBtn) slideshowBtn.textContent = '⏸️';
+    state.slideshowTimer = setInterval(() => {
+      if (state.lightboxIdx < state.mediaItems.length - 1) {
+        state.lightboxIdx++;
+      } else {
+        state.lightboxIdx = 0;
+      }
+      state.currentRotation = 0;
+      renderLightboxItem(state.lightboxIdx);
+    }, 3000);
+  }
+}
+
+export function stopSlideshow() {
+  const slideshowBtn = $('lbSlideshowBtn');
+  if (state.slideshowTimer) {
+    clearInterval(state.slideshowTimer);
+    state.slideshowTimer = null;
+  }
+  if (slideshowBtn) slideshowBtn.textContent = '▶️';
+}
+
+export function renderLightboxItem(index) {
+  const item = state.mediaItems[index];
+  if (!item) return;
+
+  const lbFilename      = $('lbFilename');
+  const lbDownload      = $('lbDownload');
+  const lbImg           = $('lbImg');
+  const lbVideo         = $('lbVideo');
+  const lbPdf           = $('lbPdf');
+  const lbText          = $('lbText');
+  const lbDocFallback   = $('lbDocFallback');
+  const lbDocDownloadBtn= $('lbDocDownloadBtn');
+  const lbDocTitle      = $('lbDocTitle');
+  const lbCounter       = $('lbCounter');
+  const lbPrev          = $('lbPrev');
+  const lbNext          = $('lbNext');
+  const lbFavBtn        = $('lbFavBtn');
+
+  if (lbFilename) lbFilename.textContent = item.name;
+  if (lbDownload) {
+    lbDownload.href = item.url;
+    lbDownload.download = item.name;
+  }
+  if (lbCounter) lbCounter.textContent = `${index + 1} / ${state.mediaItems.length}`;
+  if (lbPrev) lbPrev.disabled = index === 0;
+  if (lbNext) lbNext.disabled = index === state.mediaItems.length - 1;
+
+  if (lbFavBtn) {
+    const isFav = state.favorites.has(item.path);
+    lbFavBtn.classList.toggle('active', isFav);
+  }
+
+  if (lbImg) {
+    lbImg.style.display = 'none';
+    lbImg.style.transform = `rotate(${state.currentRotation}deg)`;
+  }
+  if (lbVideo) { lbVideo.style.display = 'none'; lbVideo.pause(); }
+  if (lbPdf) lbPdf.style.display = 'none';
+  if (lbText) lbText.style.display = 'none';
+  if (lbDocFallback) lbDocFallback.classList.add('hidden');
+
+  if (item.type === 'image') {
+    if (lbImg) {
+      lbImg.src = item.url;
+      lbImg.alt = item.name;
+      lbImg.style.display = 'block';
+    }
+  } else if (item.type === 'video') {
+    if (lbVideo) {
+      lbVideo.src = item.url;
+      lbVideo.style.display = 'block';
+    }
+  } else if (item.type === 'document') {
+    const ext = item.name.split('.').pop().toLowerCase();
+    if (ext === 'pdf') {
+      if (lbPdf) {
+        lbPdf.src = item.url;
+        lbPdf.style.display = 'block';
+      }
+    } else if (['txt', 'md', 'json', 'py', 'js', 'html', 'css', 'csv', 'log', 'sh', 'bat', 'yml', 'yaml'].includes(ext)) {
+      if (lbText) {
+        lbText.style.display = 'block';
+        lbText.textContent = '문서 내용 로딩 중…';
+        fetch(item.url)
+          .then(r => r.arrayBuffer())
+          .then(buf => {
+            let txt = new TextDecoder('utf-8').decode(buf);
+            if (txt.includes('')) {
+              try {
+                txt = new TextDecoder('euc-kr').decode(buf);
+              } catch (e) {}
+            }
+            lbText.textContent = txt;
+          })
+          .catch(err => { lbText.textContent = '문서를 읽을 수 없습니다: ' + err.message; });
+      }
+    } else {
+      if (lbDocFallback) {
+        lbDocFallback.classList.remove('hidden');
+        if (lbDocTitle) lbDocTitle.textContent = item.name;
+        if (lbDocDownloadBtn) {
+          lbDocDownloadBtn.href = item.url;
+          lbDocDownloadBtn.download = item.name;
+        }
+      }
+    }
+  }
+}
+
+// ── Mkdir Modal Controller ────────────────────────────────────
+export function openMkdirModal() {
+  const mkdirModal       = $('mkdirModal');
+  const mkdirInput       = $('mkdirInput');
+  const mkdirLocationSub = $('mkdirLocationSub');
+  if (!mkdirModal) return;
+
+  const currentPath = state.currentFolder ? `L:\\${state.currentFolder.replace(/\//g, '\\')}` : 'L:\\ (루트)';
+  if (mkdirLocationSub) mkdirLocationSub.textContent = `새 폴더 위치: ${currentPath}`;
+
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const defaultName = `upload_${yyyy}${mm}${dd}`;
+
+  if (mkdirInput) mkdirInput.value = defaultName;
+  mkdirModal.classList.remove('hidden');
+  if (mkdirInput) {
+    setTimeout(() => {
+      mkdirInput.focus();
+      mkdirInput.select();
+    }, 100);
+  }
+}
+
+export function closeMkdirModal() {
+  const mkdirModal = $('mkdirModal');
+  if (mkdirModal) mkdirModal.classList.add('hidden');
+}
+
+export async function handleCreateFolder(onNavigate) {
+  const mkdirInput = $('mkdirInput');
+  const folderName = mkdirInput ? mkdirInput.value.trim() : '';
+  if (!folderName) {
+    alert('폴더 이름을 입력해 주세요.');
+    return;
+  }
+
+  try {
+    const data = await createFolderApi(state.currentFolder, folderName);
+    closeMkdirModal();
+    if (onNavigate) onNavigate(data.folder || state.currentFolder);
+  } catch (err) {
+    alert(`폴더 생성 실패: ${err.message}`);
+  }
+}
+
+// ── Upload Mode Modal Controller ──────────────────────────────
+export async function openUploadOptModal() {
+  const uploadOptModal    = $('uploadOptModal');
+  const uploadOptLocation = $('uploadOptLocation');
+  const uploadDestSelect  = $('uploadDestSelect');
+  if (!uploadOptModal) return;
+
+  const currentPath = state.currentFolder ? `L:\\${state.currentFolder.replace(/\//g, '\\')}` : 'L:\\ (최상위 루트)';
+  if (uploadOptLocation) uploadOptLocation.textContent = `현재 열린 위치: ${currentPath}`;
+
+  if (uploadDestSelect) {
+    uploadDestSelect.innerHTML = '<option value="">L:\\ (최상위 루트)</option>';
+    try {
+      const data = await fetchFoldersApi();
+      const folders = data.folders || [];
+      uploadDestSelect.innerHTML = '';
+      folders.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f.path;
+        const prefix = (f.depth && f.depth > 0) ? '　'.repeat(f.depth) + '└ ' : '';
+        opt.textContent = `${prefix}${f.name || 'L:\\ (최상위 루트)'}`;
+        if (f.path === (state.currentFolder || '')) {
+          opt.selected = true;
+        }
+        uploadDestSelect.appendChild(opt);
+      });
+    } catch (e) {
+      console.warn('Failed to populate uploadDestSelect:', e);
+    }
+  }
+
+  uploadOptModal.classList.remove('hidden');
+}
+
+export function getSelectedUploadFolder() {
+  const uploadDestSelect = $('uploadDestSelect');
+  if (uploadDestSelect) {
+    return uploadDestSelect.value;
+  }
+  return state.currentFolder || '';
+}
+
+export function closeUploadOptModal() {
+  const uploadOptModal = $('uploadOptModal');
+  if (uploadOptModal) uploadOptModal.classList.add('hidden');
+}
+
+// ── Multi-Selection Controller ────────────────────────────────
+export function enableSelectMode(handlers) {
+  if (!state.isSelectMode) {
+    state.isSelectMode = true;
+    const selectModeBtn = $('selectModeBtn');
+    const selectionBar  = $('selectionBar');
+    if (selectModeBtn) selectModeBtn.classList.add('active');
+    if (selectionBar) selectionBar.classList.remove('hidden');
+    updateSelectionUI();
+    renderGallery(state.filteredItems, handlers);
+  }
+}
+
+export function toggleSelectMode(enable, handlers) {
+  state.isSelectMode = typeof enable === 'boolean' ? enable : !state.isSelectMode;
+  if (!state.isSelectMode) {
+    state.selectedPaths.clear();
+    state.lastSelectedIndex = -1;
+  }
+
+  const selectModeBtn = $('selectModeBtn');
+  const selectionBar  = $('selectionBar');
+
+  if (selectModeBtn) selectModeBtn.classList.toggle('active', state.isSelectMode);
+  if (selectionBar) {
+    if (state.isSelectMode) selectionBar.classList.remove('hidden');
+    else selectionBar.classList.add('hidden');
+  }
+  updateSelectionUI();
+  renderGallery(state.filteredItems, handlers);
+}
+
+export function toggleItemSelection(path, handlers, isShiftKey = false, currentIndex = -1) {
+  const displayList = state.displayItems || state.filteredItems || [];
+
+  if (isShiftKey && state.lastSelectedIndex >= 0 && currentIndex >= 0) {
+    const start = Math.min(state.lastSelectedIndex, currentIndex);
+    const end = Math.max(state.lastSelectedIndex, currentIndex);
+
+    for (let i = start; i <= end; i++) {
+      if (displayList[i]) {
+        state.selectedPaths.add(displayList[i].path);
+      }
+    }
+  } else {
+    if (state.selectedPaths.has(path)) {
+      state.selectedPaths.delete(path);
+    } else {
+      state.selectedPaths.add(path);
+    }
+  }
+
+  if (currentIndex >= 0) {
+    state.lastSelectedIndex = currentIndex;
+  }
+
+  updateSelectionUI();
+  renderGallery(state.items, handlers);
+}
+
+export function updateSelectionUI() {
+  const selectionCount = $('selectionCount');
+  const count = state.selectedPaths.size;
+  if (selectionCount) selectionCount.textContent = `${count}개 선택됨`;
+}
+
+export async function handleBatchShare() {
+  if (state.selectedPaths.size === 0) {
+    alert('공유할 항목을 선택해 주세요.');
+    return;
+  }
+
+  const selectedItems = state.filteredItems.filter(i => state.selectedPaths.has(i.path));
+  if (selectedItems.length === 1) {
+    await shareItem(selectedItems[0]);
+  } else {
+    const urls = selectedItems.map(i => window.location.origin + i.url);
+    copyLinkToClipboard(urls.join('\n\n'));
+  }
+}
+
+export async function handleBatchDelete(onNavigate, handlers) {
+  const count = state.selectedPaths.size;
+  if (count === 0) {
+    alert('삭제할 항목을 선택해 주세요.');
+    return;
+  }
+
+  if (!confirm(`⚠️ 선택한 ${count}개 항목을 서버에서 영구 삭제하시겠습니까?`)) {
+    return;
+  }
+
+  try {
+    const pathsArray = Array.from(state.selectedPaths);
+    await batchDeleteApi(pathsArray);
+    pathsArray.forEach(p => state.favorites.delete(p));
+    saveFavorites();
+    toggleSelectMode(false, handlers);
+    if (onNavigate) await onNavigate(state.currentFolder);
+  } catch (err) {
+    alert(`삭제 중 오류가 발생했습니다: ${err.message}`);
+  }
+}
+
+// ── Toast Notification ────────────────────────────────────────
+let toastTimer = null;
+export function showToast(message, icon = '🚚', duration = 3000) {
+  const toast = $('appToast');
+  const toastMsg = $('toastMessage');
+  const toastIcon = $('toastIcon');
+  if (!toast) return;
+  if (toastMsg) toastMsg.textContent = message;
+  if (toastIcon) toastIcon.textContent = icon;
+  toast.classList.remove('hidden');
+
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.classList.add('hidden');
+  }, duration);
+}
+
+// ── Move Destination Modal Controller ─────────────────────────
+let activeMovePaths = [];
+let selectedDestFolder = '';
+
+export async function openMoveModal(pathsToMove, onNavigate, handlers) {
+  let targets = pathsToMove;
+  if (!targets || targets.length === 0) {
+    if (state.selectedPaths && state.selectedPaths.size > 0) {
+      targets = Array.from(state.selectedPaths);
+    }
+  }
+
+  if (!targets || targets.length === 0) {
+    if (!state.isSelectMode && handlers) {
+      toggleSelectMode(true, handlers);
+      showToast('이동할 항목을 먼저 선택해 주세요.', 'ℹ️');
+    } else {
+      showToast('이동할 항목을 먼저 선택해 주세요.', 'ℹ️');
+    }
+    return;
+  }
+
+  activeMovePaths = targets;
+  selectedDestFolder = '';
+
+  const moveModal = $('moveModal');
+  const moveModalSub = $('moveModalSub');
+  const moveDestPath = $('moveDestPath');
+  const container = $('moveFolderContainer');
+
+  const names = activeMovePaths.map(p => p.split('/').pop());
+  const previewText = names.slice(0, 3).join(', ') + (names.length > 3 ? ` 외 ${names.length - 3}개` : '');
+
+  if (moveModalSub) {
+    moveModalSub.textContent = `이동할 항목: ${activeMovePaths.length}개 (${previewText})`;
+  }
+  if (moveDestPath) {
+    moveDestPath.textContent = 'L:\\ (최상위 루트)';
+  }
+
+  if (moveModal) moveModal.classList.remove('hidden');
+
+  await renderMoveFolderList(container, onNavigate);
+}
+
+export async function renderMoveFolderList(container, onNavigate) {
+  if (!container) return;
+  container.innerHTML = '<div class="move-tree-loading">📂 폴더 목록 로딩 중…</div>';
+
+  try {
+    const data = await fetchFoldersApi();
+    const folders = data.folders || [];
+    container.innerHTML = '';
+
+    folders.forEach(f => {
+      const itemEl = document.createElement('div');
+      itemEl.className = 'move-folder-item';
+      if (f.path === selectedDestFolder) itemEl.classList.add('selected');
+
+      let isDisabled = false;
+      let badgeText = '';
+
+      for (const p of activeMovePaths) {
+        if (p === f.path) {
+          isDisabled = true;
+          badgeText = '자신';
+          break;
+        }
+        if (f.path.startsWith(p + '/')) {
+          isDisabled = true;
+          badgeText = '하위 폴더';
+          break;
+        }
+      }
+
+      if (f.path === state.currentFolder) {
+        badgeText = badgeText || '현재 폴더';
+      }
+
+      if (isDisabled) {
+        itemEl.classList.add('disabled');
+      }
+
+      const indent = (f.depth || 0) * 16;
+      itemEl.style.paddingLeft = `${indent + 12}px`;
+
+      itemEl.innerHTML = `
+        <span class="folder-tree-icon">${f.path === '' ? '🏠' : '📁'}</span>
+        <span class="folder-tree-name">${f.name}</span>
+        ${badgeText ? `<span class="folder-badge">${badgeText}</span>` : ''}
+      `;
+
+      if (!isDisabled) {
+        itemEl.addEventListener('click', () => {
+          selectedDestFolder = f.path;
+          container.querySelectorAll('.move-folder-item').forEach(el => el.classList.remove('selected'));
+          itemEl.classList.add('selected');
+          const moveDestPath = $('moveDestPath');
+          if (moveDestPath) {
+            moveDestPath.textContent = f.path ? `L:\\${f.path.replace(/\//g, '\\')}` : 'L:\\ (최상위 루트)';
+          }
+        });
+      }
+
+      container.appendChild(itemEl);
+    });
+
+  } catch (err) {
+    container.innerHTML = `<div class="move-tree-loading" style="color:var(--danger)">⚠️ 폴더 목록 로드 실패: ${err.message}</div>`;
+  }
+}
+
+export function closeMoveModal() {
+  const moveModal = $('moveModal');
+  if (moveModal) moveModal.classList.add('hidden');
+  activeMovePaths = [];
+}
+
+export async function handleConfirmMove(onNavigate, handlers) {
+  if (!activeMovePaths || activeMovePaths.length === 0) {
+    closeMoveModal();
+    return;
+  }
+
+  const confirmBtn = $('moveModalConfirmBtn');
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = '이동 중…';
+  }
+
+  try {
+    const destName = selectedDestFolder ? selectedDestFolder.split('/').pop() : 'L:\\ (루트)';
+    await batchMoveApi(activeMovePaths, selectedDestFolder);
+    const count = activeMovePaths.length;
+    closeMoveModal();
+
+    if (state.isSelectMode && handlers) {
+      toggleSelectMode(false, handlers);
+    } else {
+      state.selectedPaths.clear();
+      updateSelectionUI();
+    }
+
+    showToast(`${count}개 항목을 '${destName}'(으)로 이동했습니다.`, '🚚');
+    if (onNavigate) await onNavigate(state.currentFolder);
+  } catch (err) {
+    alert(`이동 중 오류 발생: ${err.message}`);
+  } finally {
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = '이곳으로 이동';
+    }
+  }
+}
+
+export async function handleMoveModalNewFolder(onNavigate) {
+  const name = prompt('새로 생성할 폴더 이름을 입력하세요:');
+  if (!name || !name.trim()) return;
+  try {
+    await createFolderApi(selectedDestFolder, name.trim());
+    showToast(`'${name.trim()}' 폴더가 생성되었습니다.`, '📁');
+    selectedDestFolder = selectedDestFolder ? `${selectedDestFolder}/${name.trim()}` : name.trim();
+    const moveDestPath = $('moveDestPath');
+    if (moveDestPath) {
+      moveDestPath.textContent = `L:\\${selectedDestFolder.replace(/\//g, '\\')}`;
+    }
+    const cont = $('moveFolderContainer');
+    if (cont) await renderMoveFolderList(cont, onNavigate);
+  } catch (err) {
+    alert(`폴더 생성 실패: ${err.message}`);
+  }
+}
+
+// ── Duplicate Photos Detection Controller (Immich Feature) ──────
+let activeDuplicatesData = null;
+let selectedDupPaths = new Set();
+
+export function openDuplicatesModal(onNavigate, handlers) {
+  const modal = $('duplicatesModal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+
+  const scopeSelect = $('dupScopeSelect');
+  if (scopeSelect && scopeSelect.options.length > 0) {
+    const curFolderText = state.currentFolder ? `현재 폴더 (L:\\${state.currentFolder.replace(/\//g, '\\')})` : '현재 폴더 (L:\\ 루트)';
+    scopeSelect.options[0].textContent = curFolderText;
+  }
+}
+
+export function closeDuplicatesModal() {
+  const modal = $('duplicatesModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+export async function handleScanDuplicates(onNavigate, handlers) {
+  const container = $('dupResultsContainer');
+  const summaryBar = $('dupSummaryBar');
+  const scope = $('dupScopeSelect') ? $('dupScopeSelect').value : 'all';
+  const mode = $('dupModeSelect') ? $('dupModeSelect').value : 'all';
+  const folder = (scope === 'current') ? state.currentFolder : '';
+
+  if (summaryBar) summaryBar.classList.add('hidden');
+  selectedDupPaths.clear();
+  updateDupSelectedCount();
+
+  if (container) {
+    container.innerHTML = `
+      <div class="dup-loading">
+        <div class="dup-spinner"></div>
+        <p class="dup-loading-title">L: 드라이브 중복 및 유사 사진 분석 중…</p>
+        <p class="dup-loading-sub">초고속 멀티스레드 해시 및 시각적 지문 대조를 병렬 수행하고 있습니다. 잠시만 기다려 주세요.</p>
+      </div>
+    `;
+  }
+
+  try {
+    const data = await fetchDuplicatesApi(folder, true, mode, 150);
+    activeDuplicatesData = data;
+    renderDuplicatesResults(data, onNavigate, handlers);
+  } catch (err) {
+    if (container) {
+      container.innerHTML = `
+        <div class="dup-empty-prompt">
+          <div class="dup-empty-icon">⚠️</div>
+          <p class="dup-empty-title">중복 검사 실패</p>
+          <p class="dup-empty-desc">${err.message}</p>
+        </div>
+      `;
+    }
+  }
+}
+
+export function renderDuplicatesResults(data, onNavigate, handlers) {
+  const container = $('dupResultsContainer');
+  const summaryBar = $('dupSummaryBar');
+  const summaryStats = $('dupSummaryStats');
+  if (!container) return;
+
+  const groups = data.groups || [];
+  if (groups.length === 0) {
+    if (summaryBar) summaryBar.classList.add('hidden');
+    container.innerHTML = `
+      <div class="dup-empty-prompt">
+        <div class="dup-empty-icon">🎉</div>
+        <p class="dup-empty-title">중복된 사진이 없습니다!</p>
+        <p class="dup-empty-desc">총 <strong>${data.total_files_scanned || 0}개</strong>의 파일을 정밀 스캔하였으며, 디스크 공간이 완벽하게 정리되어 있습니다.</p>
+      </div>
+    `;
+    return;
+  }
+
+  if (summaryBar) summaryBar.classList.remove('hidden');
+  if (summaryStats) {
+    summaryStats.innerHTML = `
+      <span>🎯 <strong>${data.total_groups}개</strong> 중복 그룹 (총 <strong>${data.total_duplicate_files}개</strong> 사본)</span>
+      <span class="dup-stat-divider">·</span>
+      <span class="dup-waste-highlight">절약 가능 용량: <strong>${data.formatted_wasted_bytes}</strong></span>
+    `;
+  }
+
+  container.innerHTML = '';
+
+  groups.forEach((grp, grpIdx) => {
+    const groupCard = document.createElement('div');
+    groupCard.className = 'dup-group-card';
+    groupCard.dataset.groupId = grp.group_id;
+
+    const groupHeader = document.createElement('div');
+    groupHeader.className = 'dup-group-header';
+    groupHeader.innerHTML = `
+      <div class="dup-group-meta">
+        <span class="dup-group-num">#${grpIdx + 1}</span>
+        <span class="dup-badge-type ${grp.type || 'exact'}">${grp.type_label || (grp.type === 'exact' ? '👑 완전 일치' : '📷 유사 사진')}</span>
+        <span class="dup-group-size">파일당: ${grp.formatted_size}</span>
+      </div>
+      <div class="dup-group-right-actions">
+        <div class="dup-group-waste">
+          낭비 용량: <strong>${grp.formatted_wasted_size}</strong>
+        </div>
+        <button class="dup-group-btn highlight btn-group-compare" title="이 그룹의 사진들을 1:1 큰 화면으로 비교합니다">
+          🔍 나란히 사진 비교
+        </button>
+        <button class="dup-group-btn btn-group-keep-orig" title="첫 번째 원본만 남기고 다른 사본들을 모두 삭제 선택합니다">
+          👑 원본만 보관
+        </button>
+      </div>
+    `;
+
+    // Group comparison button
+    const compareBtn = groupHeader.querySelector('.btn-group-compare');
+    if (compareBtn) {
+      compareBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openDuplicatesComparison(grp);
+      });
+    }
+
+    // Keep original only button
+    const keepOrigBtn = groupHeader.querySelector('.btn-group-keep-orig');
+    if (keepOrigBtn) {
+      keepOrigBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        grp.items.forEach((it, idx) => {
+          const card = groupCard.querySelector(`.dup-item-card[data-path="${CSS.escape(it.path)}"]`);
+          if (idx === 0) {
+            selectedDupPaths.delete(it.path);
+            if (card) updateCardVisualState(card, false, true);
+          } else {
+            selectedDupPaths.add(it.path);
+            if (card) updateCardVisualState(card, true, false);
+          }
+        });
+        updateDupSelectedCount();
+      });
+    }
+
+    groupCard.appendChild(groupHeader);
+
+    const itemsGrid = document.createElement('div');
+    itemsGrid.className = 'dup-items-grid';
+
+    grp.items.forEach((item) => {
+      const isOriginal = !!item.is_suggested_original;
+      const isSelected = !isOriginal;
+      if (isSelected) {
+        selectedDupPaths.add(item.path);
+      }
+
+      const itemEl = document.createElement('div');
+      itemEl.className = `dup-item-card ${isOriginal ? 'is-original' : 'is-duplicate'} ${isSelected ? 'selected-for-delete' : ''}`;
+      itemEl.dataset.path = item.path;
+
+      const thumbUrl = item.thumb || `${getApiBase()}/thumb/${encodeURIComponent(item.path)}`;
+      const rawUrl = item.url || `${getApiBase()}/raw/${encodeURIComponent(item.path)}`;
+
+      itemEl.innerHTML = `
+        <img class="dup-photo-img" src="${thumbUrl}" alt="${item.name}" loading="lazy" onerror="if (this.dataset.triedRaw !== 'true') { this.dataset.triedRaw = 'true'; this.src = '${rawUrl}'; } else { this.src = '/photos/assets/images/folder_placeholder.svg'; }">
+        <div class="dup-delete-tint"></div>
+
+        <div class="dup-photo-top-bar">
+          <div class="dup-status-badge ${isOriginal ? 'orig' : 'copy'}">
+            ${isOriginal ? '👑 보관 원본' : '🗑️ 삭제 사본'}
+          </div>
+          <div class="dup-check-circle" title="클릭하여 삭제 대상 선택/해제">
+            ${isSelected ? '✓' : ''}
+          </div>
+        </div>
+
+        <div class="dup-photo-center-action">
+          <button class="dup-zoom-action-btn" title="사진 1:1 확대 비교">
+            🔍 큰 사진 비교
+          </button>
+        </div>
+
+        <div class="dup-photo-bottom-meta">
+          <div class="dup-photo-name" title="${item.name}">${item.name}</div>
+          <div class="dup-photo-folder" title="${item.folder_display || item.path}">
+            📁 ${item.folder_display || item.path}
+          </div>
+          <div class="dup-photo-sub">
+            <span>📅 ${item.mtime_str || ''}</span>
+            <span>💾 ${item.formatted_size}</span>
+          </div>
+        </div>
+      `;
+
+      // Zoom action
+      const zoomBtn = itemEl.querySelector('.dup-zoom-action-btn');
+      if (zoomBtn) {
+        zoomBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openDuplicatesComparison(grp, item);
+        });
+      }
+
+      // Card click toggles selection
+      itemEl.addEventListener('click', (e) => {
+        if (e.target.closest('.dup-zoom-action-btn')) return;
+        const nowSelected = selectedDupPaths.has(item.path);
+        if (nowSelected) {
+          selectedDupPaths.delete(item.path);
+          updateCardVisualState(itemEl, false, isOriginal);
+        } else {
+          selectedDupPaths.add(item.path);
+          updateCardVisualState(itemEl, true, isOriginal);
+        }
+        updateDupSelectedCount();
+      });
+
+      itemsGrid.appendChild(itemEl);
+    });
+
+    groupCard.appendChild(itemsGrid);
+    container.appendChild(groupCard);
+  });
+
+  updateDupSelectedCount();
+}
+
+function updateCardVisualState(card, isSelected, isOriginal) {
+  const checkCircle = card.querySelector('.dup-check-circle');
+  const badge = card.querySelector('.dup-status-badge');
+
+  if (isSelected) {
+    card.classList.add('selected-for-delete');
+    if (checkCircle) checkCircle.textContent = '✓';
+    if (badge) {
+      badge.className = 'dup-status-badge copy';
+      badge.innerHTML = '🗑️ 삭제 사본';
+    }
+  } else {
+    card.classList.remove('selected-for-delete');
+    if (checkCircle) checkCircle.textContent = '';
+    if (badge) {
+      if (isOriginal) {
+        badge.className = 'dup-status-badge orig';
+        badge.innerHTML = '👑 보관 원본';
+      } else {
+        badge.className = 'dup-status-badge kept';
+        badge.innerHTML = '✔️ 보관 유지';
+      }
+    }
+  }
+}
+
+export function autoSelectDuplicateCopies() {
+  selectedDupPaths.clear();
+  const cards = document.querySelectorAll('.dup-item-card');
+  cards.forEach(card => {
+    const path = card.dataset.path;
+    const isOriginal = card.classList.contains('is-original');
+    if (!isOriginal) {
+      selectedDupPaths.add(path);
+      updateCardVisualState(card, true, false);
+    } else {
+      updateCardVisualState(card, false, true);
+    }
+  });
+  updateDupSelectedCount();
+}
+
+export function deselectAllDuplicates() {
+  selectedDupPaths.clear();
+  const cards = document.querySelectorAll('.dup-item-card');
+  cards.forEach(card => {
+    const isOriginal = card.classList.contains('is-original');
+    updateCardVisualState(card, false, isOriginal);
+  });
+  updateDupSelectedCount();
+}
+
+export function openDuplicatesComparison(grp, focusItem) {
+  const modal = $('dupCompareModal');
+  const body = $('dupCompareBody');
+  const title = $('dupCompareTitle');
+  const sub = $('dupCompareSub');
+  if (!modal || !body) return;
+
+  if (title) {
+    title.textContent = `중복 사진 1:1 정밀 비교 (${grp.type_label || (grp.type === 'exact' ? '완전 일치' : '유사 사진')})`;
+  }
+  if (sub) {
+    sub.textContent = `총 ${grp.items.length}장의 사진을 비교합니다. 낭비 용량: ${grp.formatted_wasted_size} · 각 사진의 버튼을 눌러 보관/삭제를 변경하세요.`;
+  }
+
+  body.innerHTML = '';
+
+  grp.items.forEach((item) => {
+    const isOriginal = !!item.is_suggested_original;
+    const isSelected = selectedDupPaths.has(item.path);
+
+    const card = document.createElement('div');
+    card.className = `dup-compare-card ${isSelected ? 'is-delete' : 'is-keep'}`;
+    card.dataset.path = item.path;
+
+    const rawUrl = item.url || `${getApiBase()}/raw/${encodeURIComponent(item.path)}`;
+    const thumbUrl = item.thumb || `${getApiBase()}/thumb/${encodeURIComponent(item.path)}`;
+
+    card.innerHTML = `
+      <div class="dup-compare-img-box" title="원본 해상도 사진">
+        <img class="dup-compare-img" src="${rawUrl}" alt="${item.name}" loading="lazy" onerror="this.src='${thumbUrl}'">
+      </div>
+      <div class="dup-compare-card-footer">
+        <div class="dup-compare-file-info">
+          <div class="dup-compare-file-name" title="${item.name}">
+            ${isOriginal ? '👑 ' : ''}${item.name}
+          </div>
+          <div class="dup-compare-file-path" title="${item.folder_display || item.path}">
+            📁 ${item.folder_display || item.path}
+          </div>
+          <div class="dup-photo-sub">
+            <span>📅 ${item.mtime_str || ''}</span>
+            <span>💾 ${item.formatted_size}</span>
+          </div>
+        </div>
+
+        <button class="dup-compare-toggle-btn ${isSelected ? 'btn-delete' : 'btn-keep'}">
+          ${isSelected ? '🗑️ 삭제 사본 (클릭하여 보관)' : '👑 보관 유지 (클릭하여 삭제)'}
+        </button>
+      </div>
+    `;
+
+    const toggleBtn = card.querySelector('.dup-compare-toggle-btn');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        const nowSelected = selectedDupPaths.has(item.path);
+        const mainCard = document.querySelector(`.dup-item-card[data-path="${CSS.escape(item.path)}"]`);
+        if (nowSelected) {
+          selectedDupPaths.delete(item.path);
+          card.classList.remove('is-delete');
+          card.classList.add('is-keep');
+          toggleBtn.className = 'dup-compare-toggle-btn btn-keep';
+          toggleBtn.textContent = '👑 보관 유지 (클릭하여 삭제)';
+          if (mainCard) updateCardVisualState(mainCard, false, isOriginal);
+        } else {
+          selectedDupPaths.add(item.path);
+          card.classList.remove('is-keep');
+          card.classList.add('is-delete');
+          toggleBtn.className = 'dup-compare-toggle-btn btn-delete';
+          toggleBtn.textContent = '🗑️ 삭제 사본 (클릭하여 보관)';
+          if (mainCard) updateCardVisualState(mainCard, true, isOriginal);
+        }
+        updateDupSelectedCount();
+      });
+    }
+
+    body.appendChild(card);
+  });
+
+  modal.classList.remove('hidden');
+}
+
+export function closeDuplicatesComparison() {
+  const modal = $('dupCompareModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function updateDupSelectedCount() {
+  const countEl = $('dupSelectedCount');
+  const deleteBtn = $('dupDeleteSelectedBtn');
+  const count = selectedDupPaths.size;
+  if (countEl) countEl.textContent = String(count);
+  if (deleteBtn) {
+    deleteBtn.disabled = count === 0;
+  }
+}
+
+export async function handleDeleteSelectedDuplicates(onNavigate, handlers) {
+  const count = selectedDupPaths.size;
+  if (count === 0) {
+    alert('삭제할 중복 사진을 선택해 주세요.');
+    return;
+  }
+
+  if (!confirm(`⚠️ 선택한 ${count}개의 중복 사진(사본)을 삭제하시겠습니까?\n이 작업은 즉시 디스크 공간을 확보합니다.`)) {
+    return;
+  }
+
+  const paths = Array.from(selectedDupPaths);
+  const deleteBtn = $('dupDeleteSelectedBtn');
+  if (deleteBtn) {
+    deleteBtn.disabled = true;
+    deleteBtn.textContent = '삭제 중…';
+  }
+
+  try {
+    const res = await batchDeleteApi(paths);
+    showToast(`${res.deleted ? res.deleted.length : count}개의 중복 사진을 삭제했습니다.`, '🧹', 4000);
+    selectedDupPaths.clear();
+    updateDupSelectedCount();
+
+    if (onNavigate) await onNavigate(state.currentFolder);
+    await handleScanDuplicates(onNavigate, handlers);
+  } catch (err) {
+    alert(`중복 사진 삭제 실패: ${err.message}`);
+  } finally {
+    if (deleteBtn) {
+      deleteBtn.textContent = `🗑️ 선택한 사본 삭제 (${selectedDupPaths.size}개)`;
+      deleteBtn.disabled = selectedDupPaths.size === 0;
+    }
+  }
+}
+
+// ── 유료 전환 안내 모달 & 500KB 쿼터 위젯 ─────────────────────
+export function openUpgradeModal(quotaInfo = null, customMessage = '') {
+  const modal = $('upgradeModal');
+  if (!modal) return;
+
+  const quota = quotaInfo || state.quota || {
+    plan_tier: 'free',
+    plan_name: '무료 플랜 (Free)',
+    max_quota_formatted: '500 KB',
+    total_used_formatted: '0 B',
+    used_percentage: 0,
+    categories: []
+  };
+
+  const descEl = $('upgradeModalDesc');
+  const barEl = $('upgradeModalBarFill');
+  const usedTextEl = $('upgradeModalUsedText');
+  const breakdownEl = $('upgradeModalBreakdown');
+  const planBadgeEl = $('upgradeModalPlanBadge');
+
+  if (descEl) {
+    descEl.textContent = customMessage || `무료 플랜의 기본 저장 공간(${quota.max_quota_formatted})을 모두 사용했습니다. 계속해서 사진, 동영상, 문서를 안전하게 저장하려면 Pro 플랜으로 업그레이드하세요.`;
+  }
+  if (planBadgeEl) {
+    planBadgeEl.textContent = quota.plan_name;
+    planBadgeEl.className = `plan-badge-pill ${quota.plan_tier}`;
+  }
+  const pct = quota.used_percentage != null ? quota.used_percentage : (quota.usage_percentage || 0);
+  if (usedTextEl) {
+    usedTextEl.textContent = `${quota.total_used_formatted} / ${quota.max_quota_formatted} (${pct}%)`;
+  }
+  if (barEl) {
+    barEl.style.width = `${Math.min(100, pct)}%`;
+    barEl.style.background = pct >= 100
+      ? 'linear-gradient(90deg, #f59e0b, #ef4444)'
+      : 'linear-gradient(90deg, #6366f1, #38bdf8)';
+  }
+
+  const cats = quota.categories || quota.breakdown || [];
+  if (breakdownEl && cats.length) {
+    breakdownEl.innerHTML = cats
+      .filter(b => b.bytes > 0)
+      .map(b => `
+        <div class="quota-cat-row">
+          <span class="quota-cat-name">${b.label} <span class="quota-cat-count">(${b.count}개)</span></span>
+          <div class="quota-cat-bar-wrap">
+            <div class="quota-cat-bar-fill" style="width:${Math.min(100, Math.round(b.bytes / (quota.max_quota_bytes || 512000) * 100))}%;background:${b.color || '#38bdf8'}"></div>
+          </div>
+          <span class="quota-cat-size">${b.formatted}</span>
+        </div>
+      `).join('');
+  } else if (breakdownEl) {
+    breakdownEl.innerHTML = '<div style="color:rgba(255,255,255,0.4);font-size:0.8rem">저장된 파일이 없습니다.</div>';
+  }
+
+  modal.style.display = 'flex';
+  modal.classList.add('open');
+}
+
+export function closeUpgradeModal() {
+  const modal = $('upgradeModal');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.classList.remove('open');
+  }
+}
+
+export function renderStorageQuotaWidget(container, quota, onUpgradeClick) {
+  if (!container || !quota) return;
+
+  const pct = Math.min(100, quota.used_percentage != null ? quota.used_percentage : (quota.usage_percentage || 0));
+  const isFull = pct >= 100;
+  const isWarn = pct >= 80 && !isFull;
+
+  let barColor = 'linear-gradient(90deg, #38bdf8, #6366f1)';
+  if (isFull) barColor = 'linear-gradient(90deg, #f59e0b, #ef4444)';
+  else if (isWarn) barColor = 'linear-gradient(90deg, #38bdf8, #f59e0b)';
+
+  const planClass = quota.plan_tier === 'pro' ? 'badge-pro' : 'badge-free';
+  const cats = quota.categories || quota.breakdown || [];
+
+  container.innerHTML = `
+    <div class="quota-widget-wrapper" title="스토리지 상세 사용량을 확인하고 업그레이드합니다">
+      <div class="quota-info-row">
+        <span class="quota-plan-tag ${planClass}">${quota.plan_name}</span>
+        <span class="quota-usage-text">${quota.total_used_formatted} / ${quota.max_quota_formatted} (${pct}%)</span>
+        <button class="quota-upgrade-btn" id="photosHeaderUpgradeBtn" title="유료 플랜 업그레이드">⚡ Pro</button>
+      </div>
+      <div class="quota-mini-progress">
+        <div class="quota-mini-fill" style="width:${pct}%;background:${barColor}"></div>
+      </div>
+
+      <div class="quota-breakdown-tooltip">
+        <div class="tooltip-title">📊 카테고리별 저장 용량 분석</div>
+        ${cats.length && cats.some(b => b.bytes > 0) ? cats.filter(b => b.bytes > 0).map(b => `
+          <div class="tooltip-row">
+            <span>${b.label} (${b.count}개)</span>
+            <strong>${b.formatted}</strong>
+          </div>
+        `).join('') : '<div style="color:rgba(255,255,255,0.4);font-size:0.75rem">사용 중인 파일이 없습니다.</div>'}
+        <div class="tooltip-footer">
+          클릭하여 Pro 플랜으로 업그레이드하세요!
+        </div>
+      </div>
+    </div>
+  `;
+
+  container.querySelector('#photosHeaderUpgradeBtn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (onUpgradeClick) onUpgradeClick();
+  });
+
+  container.querySelector('.quota-widget-wrapper')?.addEventListener('click', () => {
+    if (onUpgradeClick) onUpgradeClick();
+  });
+}

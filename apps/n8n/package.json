@@ -1,0 +1,15 @@
+{
+  "name": "nonghyup-deposit-notifier",
+  "version": "1.0.0",
+  "description": "Nonghyup Bank deposit email notification parser and real-time screen alert dashboard",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "xlsx": "^0.18.5"
+  }
+}

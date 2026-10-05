@@ -1,0 +1,226 @@
+# MQnet 통합 SaaS 플랫폼 - Docker Compose
+# 실행: docker compose up -d
+
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-build: &default-build
+  context: .
+  dockerfile: Dockerfile
+
+services:
+  gateway:
+    build: *default-build
+    image: mqnet-gateway:latest
+    container_name: mqnet-gateway
+    logging: *default-logging
+    ports:
+      - "9000:9000"
+      - "10000:9000"
+    environment:
+      - DEPLOYMENT_MODE=DOCKER
+      - PYTHONPATH=/app
+    volumes:
+      - "${MEDIA_PATH:-./media}:/media"
+    env_file:
+      - path: .env.shared
+        required: false
+    command: python -m uvicorn gateway.main:app --host 0.0.0.0 --port 9000 --proxy-headers --forwarded-allow-ips="*"
+    networks:
+      default:
+        aliases:
+          - mqnet-gateway
+          - mqnet-ytdownloader
+    restart: unless-stopped
+
+  bgutil-provider:
+    image: brainicism/bgutil-ytdlp-pot-provider:latest
+    container_name: mqnet-bgutil-provider
+    logging: *default-logging
+    restart: unless-stopped
+    init: true
+    networks:
+      default:
+        aliases:
+          - bgutil-provider
+
+
+  studycafe:
+    build: *default-build
+    image: mqnet-studycafe:latest
+    container_name: mqnet-studycafe
+    logging: *default-logging
+    working_dir: /app/apps/studycafe
+    ports:
+      - "9002:9002"
+    environment:
+      - PYTHONPATH=/app:/app/apps/studycafe
+
+    env_file:
+      - path: .env.shared
+        required: false
+    command: python -m uvicorn backend.main:app --host 0.0.0.0 --port 9002
+    networks:
+      default:
+        aliases:
+          - mqnet-studycafe
+    restart: unless-stopped
+    depends_on:
+      - gateway
+
+  selfstudy:
+    build: *default-build
+    image: mqnet-selfstudy:latest
+    container_name: mqnet-selfstudy
+    logging: *default-logging
+    working_dir: /app/apps/selfstudy/SelfStudy/backend
+    ports:
+      - "9003:9003"
+    environment:
+      - PYTHONPATH=/app:/app/apps/selfstudy/SelfStudy/backend
+
+    env_file:
+      - path: .env.shared
+        required: false
+    command: python -m uvicorn main:app --host 0.0.0.0 --port 9003
+    networks:
+      default:
+        aliases:
+          - mqnet-selfstudy
+    restart: unless-stopped
+    depends_on:
+      - gateway
+
+  store:
+    build: *default-build
+    image: mqnet-store:latest
+    container_name: mqnet-store
+    logging: *default-logging
+    working_dir: /app/apps/store
+    ports:
+      - "9004:9004"
+    environment:
+      - PYTHONPATH=/app:/app/apps/store
+
+    env_file:
+      - path: .env.shared
+        required: false
+    command: python -m uvicorn backend.main:app --host 0.0.0.0 --port 9004
+    networks:
+      default:
+        aliases:
+          - mqnet-store
+    restart: unless-stopped
+    depends_on:
+      - gateway
+
+  mqfarm:
+    build: *default-build
+    image: mqnet-mqfarm:latest
+    container_name: mqnet-mqfarm
+    logging: *default-logging
+    working_dir: /app/apps/mqfarm
+    ports:
+      - "9005:9005"
+    environment:
+      - PYTHONPATH=/app:/app/apps/mqfarm
+
+    env_file:
+      - path: .env.shared
+        required: false
+    command: python -m uvicorn backend.main:app --host 0.0.0.0 --port 9005
+    networks:
+      default:
+        aliases:
+          - mqnet-smartfarm
+          - mqnet-mqfarm
+    restart: unless-stopped
+    depends_on:
+      - gateway
+
+  ai_gwansang:
+    build: *default-build
+    image: mqnet-ai-gwansang:latest
+    container_name: mqnet-ai-gwansang
+    logging: *default-logging
+    working_dir: /app/apps/ai_gwansang
+    ports:
+      - "9009:9009"
+    environment:
+      - PYTHONPATH=/app:/app/apps/ai_gwansang
+
+    env_file:
+      - path: .env.shared
+        required: false
+    command: python -m uvicorn backend.main:app --host 0.0.0.0 --port 9009
+    networks:
+      default:
+        aliases:
+          - mqnet-ai-gwansang
+    restart: unless-stopped
+    depends_on:
+      - gateway
+
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: mqnet-n8n-editor
+    logging: *default-logging
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - N8N_SECURE_COOKIE=false
+      - WEBHOOK_URL=http://34.31.10.12:5678/
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - GENERIC_TIMEZONE=Asia/Seoul
+      - TZ=Asia/Seoul
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      default:
+        aliases:
+          - mqnet-n8n-editor
+    restart: unless-stopped
+
+  filebrowser:
+    image: filebrowser/filebrowser:latest
+    container_name: mqnet-filebrowser
+    logging: *default-logging
+    ports:
+      - "9007:80"
+    volumes:
+      - "${MEDIA_PATH:-./media}:/srv"
+    networks:
+      default:
+        aliases:
+          - mqnet-filebrowser
+    restart: unless-stopped
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: mqnet-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN:-eyJhIjoiODY2NmZlODI1Mzg2NTVjZjY2ZjJmZGE5NGVmMDE2OTMiLCJ0IjoiNTRiYWU5YWEtMmNmNS00NWE5LWJlZWMtNmIwODFhM2I5YzczIiwicyI6Ik1qVm1ZMkppTW1FdE9EUTRNQzAwWWpkbUxUZ3lNbUV0TVRKbE9UUmpPR05rT1RRNSJ9}
+    depends_on:
+      - gateway
+    networks:
+      - default
+
+networks:
+  default:
+    name: integrate_default
+
+volumes:
+  n8n_data:
+
+

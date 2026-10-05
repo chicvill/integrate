@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MQnet SelfStudy | 자기주도 학습 & AI 멘토링</title>
+
+  <!-- CSS 스타일 직접 로드 (캐시 버스팅 v=2.7) -->
+  <link rel="stylesheet" href="./style.css?v=2.7">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Pretendard:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- 상단 공통 헤더 -->
+  <header class="ss-header">
+    <div class="brand-section">
+      <div class="brand-logo-icon">📚</div>
+      <div>
+        <h1 class="brand-title">MQnet SelfStudy</h1>
+        <div class="brand-subtitle">자기주도 학습 & AI 멘토링 (StudyCafe 연동)</div>
+      </div>
+    </div>
+
+    <!-- 네비게이션 탭 -->
+    <nav class="ss-nav-tabs">
+      <button class="nav-tab-btn" data-tab="timer" type="button">
+        <span>⏱️</span> 순공 타이머
+      </button>
+      <button class="nav-tab-btn active" data-tab="planner" type="button">
+        <span>📚</span> 과목 플래너
+      </button>
+      <button class="nav-tab-btn" data-tab="ai" type="button">
+        <span>🤖</span> AI 멘토
+      </button>
+      <button class="nav-tab-btn" data-tab="report" type="button">
+        <span>📊</span> 학습 리포트
+      </button>
+    </nav>
+
+    <!-- 우측 스터디카페 연동 상태 & 통합 인증 배지 -->
+    <div class="header-right">
+      <div id="scSeatConnectionBadge" class="sc-seat-connection-badge disconnected">
+        <span>🪑 스터디카페 좌석 조회 중...</span>
+      </div>
+      <!-- MQnet 공통 인증 배지 렌더링 컨테이너 -->
+      <div id="userAuthBadge"></div>
+    </div>
+  </header>
+
+  <!-- 메인 컨텐츠 영역 -->
+  <main class="ss-main">
+
+    <!-- 1. 타이머 섹션 -->
+    <section id="tabTimer" class="ss-tab-content" style="display:none;">
+      <div class="timer-hero-container">
+        <!-- 모드 토글 (과목 몰입 vs 스톱워치) & 백색소음 토글 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;width:100%;max-width:480px;gap:0.5rem;flex-wrap:wrap">
+          <div class="timer-mode-toggle" style="margin:0;flex:1">
+            <button id="btnModePomodoro" class="mode-btn active" type="button">🎯 과목 몰입 타이머</button>
+            <button id="btnModeStopwatch" class="mode-btn" type="button">⏱️ 연속 스톱워치</button>
+          </div>
+          <button id="btnToggleWhiteNoise" class="whitenoise-btn" type="button" title="백색소음(빗소리) 켜기/끄기">
+            <span id="whiteNoiseIcon">🌧️</span>
+            <span id="whiteNoiseText">백색소음 OFF</span>
+          </button>
+        </div>
+
+        <!-- 대형 원형 타이머 디스플레이 -->
+        <div id="timerCircle" class="timer-circle-display">
+          <div id="timerModeBadge" class="timer-mode-badge">🎯 [수학] 48분 몰입</div>
+          <div id="timerDigits" class="timer-digits">48 : 00</div>
+          <div id="timerSubjectPill" class="timer-subject-pill">집중 과목: 수학</div>
+        </div>
+
+        <!-- 제어 버튼군 -->
+        <div class="timer-controls">
+          <button id="btnTimerReset" class="btn-timer-secondary" type="button" title="타이머 초기화">🔄 리셋</button>
+          <button id="btnTimerStart" class="btn-timer-primary" type="button">
+            <span>▶ 집중 시작</span>
+          </button>
+          <button id="btnTimerCompleteTask" class="btn-timer-complete" type="button" title="학습을 완료하고 과목 플래너로 이동하여 완료 페이지를 기록합니다">
+            <span>🏁 학습 완료 & 플래너 복귀</span>
+          </button>
+        </div>
+
+        <!-- 플래너 바로가기 안내 -->
+        <div style="display:flex;justify-content:center;margin-top:-0.3rem">
+          <button id="btnBackToPlanner" class="btn-back-planner" type="button">
+            <span>← 과목 플래너로 이동</span>
+          </button>
+        </div>
+
+        <!-- 오늘 누적 순공 요약 카드 -->
+        <div class="today-summary-strip">
+          <div class="summary-strip-header">
+            <span class="summary-label">오늘 총 누적 순공</span>
+            <span id="todayFocusTime" class="summary-val">2시간 25분</span>
+          </div>
+          <div class="summary-progress-bar">
+            <div id="timerProgressFill" class="summary-progress-fill" style="width: 48%"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span id="todayGoalProgress" class="summary-goal">목표 5시간 중 48% 달성</span>
+            <span style="font-size:0.75rem;color:var(--primary);font-weight:700">🔥 연속 7일차 달성 중</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. 과목 플래너 섹션 -->
+    <section id="tabPlanner" class="ss-tab-content">
+      <div class="planner-container">
+        <div class="planner-header-bar">
+          <div>
+            <h2 style="font-size:1.4rem;font-weight:800;color:#fff;margin-bottom:0.25rem">📚 오늘의 과목별 학습 플래너</h2>
+            <div id="taskSummaryText" style="font-size:0.85rem;color:var(--text-muted)">5개 중 2개 완료 (40%)</div>
+          </div>
+          <div class="planner-actions">
+            <button id="btnOpenCurriculumModal" class="btn-action-curriculum" type="button">📋 진도계획표 생성</button>
+            <button id="btnOpenAiPlanModal" class="btn-action-ai" type="button">✨ AI 플랜 추천</button>
+          </div>
+        </div>
+
+        <!-- D-day 진도 종합 현황 바 -->
+        <div id="curriculumSummaryBar" class="curriculum-summary-bar" style="display:none;"></div>
+
+        <div id="tasksListContainer" class="tasks-list-container"></div>
+
+        <!-- 하단 저장(퇴실 정산 + 내일 진도표 생성) 액션 바 -->
+        <div class="planner-bottom-bar">
+          <div class="bottom-bar-hint">
+            <span>💡 오늘 공부를 마쳤다면 [저장]을 눌러 달성 페이지를 확정하세요. 내일 진도표가 자동 생성됩니다.</span>
+          </div>
+          <button id="btnBottomCheckOut" class="btn-action-checkout" type="button">💾 저장</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. AI 멘토 섹션 -->
+    <section id="tabAi" class="ss-tab-content" style="display:none;">
+      <div class="ai-mentor-container">
+        <div class="ai-mentor-header">
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <span style="font-size:1.4rem">🤖</span>
+            <div>
+              <div style="font-size:0.95rem;font-weight:700;color:#fff">Gemini AI 학습 코치 & 멘토</div>
+              <div style="font-size:0.72rem;color:var(--text-muted)">실시간 질문, 멘탈 케어, 과목별 공부법 코칭</div>
+            </div>
+          </div>
+          <div class="ai-status-pill">● 실시간 코칭 연결됨</div>
+        </div>
+
+        <!-- 채팅 메시지 창 -->
+        <div id="aiChatMessages" class="ai-chat-messages"></div>
+
+        <!-- 빠른 질문 칩 바 -->
+        <div class="ai-chips-bar">
+          <button class="quick-chip" data-q="수학 미적분 오답 정리 효과적인 루틴 알려줘">💡 수학 오답 정리법</button>
+          <button class="quick-chip" data-q="공부하다가 집중력이 흐려질 때 극복하는 팁">⚡ 집중력 회복 팁</button>
+          <button class="quick-chip" data-q="오늘 순공 5시간 달성을 위한 시간 배분 전략">📅 일일 스케줄 배분</button>
+        </div>
+
+        <!-- 입력 창 -->
+        <div class="ai-chat-input-bar">
+          <input id="aiChatInput" type="text" class="ai-chat-input" placeholder="학습 고민이나 과목 질문을 자유롭게 입력하세요...">
+          <button id="btnAiSend" class="btn-ai-send" type="button">전송</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. 학습 리포트 섹션 -->
+    <section id="tabReport" class="ss-tab-content" style="display:none;">
+      <div id="reportContainer"></div>
+    </section>
+
+  </main>
+
+  <!-- ── AI 목표 기반 과목/교재 추천 모달 ───────────────────── -->
+  <div id="aiPlanModal" class="ss-modal-backdrop">
+    <div class="ss-modal ss-modal-lg">
+      <div class="ss-modal-header">
+        <div>
+          <h3 class="ss-modal-title">✨ AI 플랜 추천</h3>
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px">목표를 입력하면 필요한 과목과 교재를 추천하고, 진도계획표로 바로 완성합니다.</div>
+        </div>
+        <button class="ss-modal-close" type="button" onclick="document.getElementById('aiPlanModal').classList.remove('open')">✕</button>
+      </div>
+      <div class="ss-modal-body">
+        <div class="ss-form-group">
+          <label class="ss-form-label">🎯 나의 목표</label>
+          <input id="aiGoalInput" type="text" class="ss-form-input" list="aiGoalPresets" placeholder="예: 건축사 자격 취득, 정보처리기사 필기 합격, 토익 900점">
+          <datalist id="aiGoalPresets">
+            <option value="건축사 자격 취득">
+            <option value="건축기사 필기 합격">
+            <option value="정보처리기사 필기 합격">
+            <option value="공인중개사 1·2차 동차 합격">
+            <option value="전기기사 필기 합격">
+            <option value="토익 900점">
+            <option value="컴퓨터활용능력 1급">
+            <option value="한국사능력검정 1급">
+            <option value="수능 국영수 1등급">
+          </datalist>
+        </div>
+
+        <div class="step-grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem">
+          <div class="ss-form-group">
+            <label class="ss-form-label">📅 목표 시험일</label>
+            <input id="aiGoalDate" type="date" class="ss-form-input">
+          </div>
+          <div class="ss-form-group">
+            <label class="ss-form-label">⏱️ 하루 공부 시간 (시간)</label>
+            <input id="aiGoalHours" type="number" class="ss-form-input" value="4" min="1" max="16" step="0.5">
+          </div>
+        </div>
+
+        <button id="aiPlanSubmit" class="ss-modal-submit-btn" type="button">🔍 필요 과목 · 교재 추천받기</button>
+
+        <!-- 추천 결과 -->
+        <div id="aiRecommendResult" class="ai-recommend-result" style="display:none;">
+          <div id="aiRecommendHeader" class="ai-recommend-header"></div>
+          <div class="books-table-container">
+            <table class="books-input-table">
+              <thead>
+                <tr>
+                  <th style="width:8%;text-align:center">선택</th>
+                  <th style="width:26%">과목</th>
+                  <th style="width:42%">추천 교재</th>
+                  <th style="width:24%;text-align:center">분량(p)</th>
+                </tr>
+              </thead>
+              <tbody id="aiRecommendBody"></tbody>
+            </table>
+          </div>
+          <div id="aiRecommendAdvice" class="ai-recommend-advice"></div>
+          <button id="aiApplyToCurriculum" class="ss-modal-submit-btn curr-submit-btn" type="button">📋 이 과목들로 진도계획표 완성하기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── D-day 맞춤 진도계획표 작성 및 온보딩 모달 ────────── -->
+  <div id="curriculumModal" class="ss-modal-backdrop">
+    <div class="ss-modal ss-modal-lg">
+      <div class="ss-modal-header">
+        <div>
+          <h3 class="ss-modal-title">📋 진도계획표 생성 & 수정</h3>
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px">
+            시험일까지의 공부 가능 시간과 5과목 교재 범위를 설정하면, 일일 목표와 배정 시간이 자동 산출됩니다.
+          </div>
+        </div>
+        <button class="ss-modal-close" onclick="document.getElementById('curriculumModal').classList.remove('open')">✕</button>
+      </div>
+
+      <div class="ss-modal-body curriculum-modal-body">
+        <!-- 1단계: D-day 기간 -->
+        <div class="curriculum-step-box">
+          <div class="step-title">
+            <span class="step-num">1</span>
+            <strong>목표 기간 (D-day) 설정</strong>
+          </div>
+          <div class="step-grid-2">
+            <div class="ss-form-group">
+              <label class="ss-form-label">학습 개시일</label>
+              <input id="currStartDate" type="date" class="ss-form-input">
+            </div>
+            <div class="ss-form-group">
+              <label class="ss-form-label">목표 시험/종료일 (D-day)</label>
+              <input id="currEndDate" type="date" class="ss-form-input">
+            </div>
+          </div>
+          <div id="currDdayBadge" class="curr-calc-badge">
+            📅 총 학습 기간: <strong id="currTotalDaysText">30일</strong> (D-30)
+          </div>
+        </div>
+
+        <!-- 2단계: 요일별 스터디카페 가능 시간 -->
+        <div class="curriculum-step-box">
+          <div class="step-title">
+            <span class="step-num">2</span>
+            <strong>요일별 등원 가능 시간 (시간 단위)</strong>
+            <span class="step-hint">평일 4시간, 토 8시간, 일 4시간(버퍼) 권장</span>
+          </div>
+          <div class="weekly-time-grid">
+            <div class="day-time-card">
+              <span class="day-label">월</span>
+              <div class="time-input-wrap">
+                <input type="number" id="currHourMon" class="time-input" value="4" min="0" max="16"><span>h</span>
+              </div>
+            </div>
+            <div class="day-time-card">
+              <span class="day-label">화</span>
+              <div class="time-input-wrap">
+                <input type="number" id="currHourTue" class="time-input" value="4" min="0" max="16"><span>h</span>
+              </div>
+            </div>
+            <div class="day-time-card">
+              <span class="day-label">수</span>
+              <div class="time-input-wrap">
+                <input type="number" id="currHourWed" class="time-input" value="4" min="0" max="16"><span>h</span>
+              </div>
+            </div>
+            <div class="day-time-card">
+              <span class="day-label">목</span>
+              <div class="time-input-wrap">
+                <input type="number" id="currHourThu" class="time-input" value="4" min="0" max="16"><span>h</span>
+              </div>
+            </div>
+            <div class="day-time-card">
+              <span class="day-label">금</span>
+              <div class="time-input-wrap">
+                <input type="number" id="currHourFri" class="time-input" value="4" min="0" max="16"><span>h</span>
+              </div>
+            </div>
+            <div class="day-time-card weekend">
+              <span class="day-label">토</span>
+              <div class="time-input-wrap">
+                <input type="number" id="currHourSat" class="time-input" value="8" min="0" max="16"><span>h</span>
+              </div>
+            </div>
+            <div class="day-time-card buffer">
+              <span class="day-label">일(버퍼)</span>
+              <div class="time-input-wrap">
+                <input type="number" id="currHourSun" class="time-input" value="4" min="0" max="16"><span>h</span>
+              </div>
+            </div>
+          </div>
+          <div id="currWeeklyTotalText" class="curr-calc-badge" style="margin-top:0.5rem">
+            ⏱️ 주당 총 가용 시간: <strong>32시간</strong> (1,920분)
+          </div>
+        </div>
+
+        <!-- 3단계: 과목별 교재 정보 및 페이지 설정 (추가/삭제 지원) -->
+        <div class="curriculum-step-box">
+          <div class="step-title" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem">
+            <div>
+              <span class="step-num">3</span>
+              <strong id="currStep3Title">과목별 교재명 및 완독 목표 페이지</strong>
+              <div class="step-hint">과목과 교재를 자유롭게 추가/삭제할 수 있으며, 일일 가용 시간이 균등 배분됩니다.</div>
+            </div>
+            <button id="btnCurrAddBook" type="button" class="btn-curr-add-book">➕ 과목/교재 추가</button>
+          </div>
+          <!-- 빠른 목표 프리셋 바 -->
+          <div class="curr-presets-bar" style="margin: 0.75rem 0; display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+            <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600">⚡ 자격증/목표 세팅:</span>
+            <button type="button" class="preset-chip-btn" data-preset="csat">🎓 수능/내신 (5과목)</button>
+            <button type="button" class="preset-chip-btn" data-preset="it">💻 정보처리기사</button>
+            <button type="button" class="preset-chip-btn" data-preset="realtor">🏠 공인중개사</button>
+            <button type="button" class="preset-chip-btn" data-preset="cert">🌐 어학/컴활</button>
+          </div>
+          <div class="books-table-container">
+            <table class="books-input-table">
+              <thead>
+                <tr>
+                  <th style="width:20%">과목</th>
+                  <th style="width:36%">교재명</th>
+                  <th style="width:18%; text-align:center">시작p</th>
+                  <th style="width:18%; text-align:center">완독 목표p</th>
+                  <th style="width:8%; text-align:center">삭제</th>
+                </tr>
+              </thead>
+              <tbody id="currBooksTableBody">
+                <!-- Rows injected dynamically by modals.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 4단계: 오늘(1일차) 자동 산출 오더 미리보기 -->
+        <div class="curr-preview-card">
+          <div class="preview-title">⚡ 오늘(1일차) 자동 배정되는 일일 목표 미리보기:</div>
+          <div id="currDailyPreviewGrid" class="preview-grid">
+            <!-- 5 subjects preview cards -->
+          </div>
+        </div>
+
+        <button id="currSubmitBtn" class="ss-modal-submit-btn curr-submit-btn" type="button">
+          🚀 진도계획표 저장 및 1일차 오더 생성하기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. 퇴실 및 내일 진도표 생성 모달 -->
+  <div id="checkoutModal" class="ss-modal-backdrop">
+    <div class="ss-modal ss-modal-lg">
+      <div class="ss-modal-header">
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <span style="font-size:1.4rem">🚪</span>
+          <div>
+            <h3 style="margin:0;font-size:1.15rem;color:#fff">오늘 공부 완주 확인 및 퇴실 정산</h3>
+            <div style="font-size:0.75rem;color:var(--text-muted)">오늘 달성한 페이지를 확인하고 내일의 맞춤 진도표를 자동 생성합니다.</div>
+          </div>
+        </div>
+        <button class="ss-modal-close" onclick="document.getElementById('checkoutModal').classList.remove('open')">✕</button>
+      </div>
+
+      <div class="ss-modal-body" style="display:flex;flex-direction:column;gap:1.25rem">
+        <!-- 상단 오늘 정산 요약 카드 -->
+        <div class="checkout-summary-strip">
+          <div class="co-stat-item">
+            <span class="co-stat-label">완료 과목</span>
+            <strong id="coFinishedCount" class="co-stat-val text-primary">0 / 5</strong>
+          </div>
+          <div class="co-stat-item">
+            <span class="co-stat-label">총 공부 시간</span>
+            <strong id="coTotalTime" class="co-stat-val text-accent">0분</strong>
+          </div>
+          <div class="co-stat-item">
+            <span class="co-stat-label">총 완독 페이지</span>
+            <strong id="coTotalPages" class="co-stat-val text-success">0 p</strong>
+          </div>
+          <div class="co-stat-item">
+            <span class="co-stat-label">평균 학습속도</span>
+            <strong id="coAvgPph" class="co-stat-val text-warning">0.0 PPH</strong>
+          </div>
+        </div>
+
+        <!-- 5과목 오늘 달성 페이지 확인 테이블 -->
+        <div class="curriculum-step-box">
+          <div class="step-title">
+            <span class="step-num">✓</span>
+            <strong>과목별 최종 달성 페이지 확인 (10초 완주 체크)</strong>
+            <span class="step-hint">오늘 마친 실제 페이지와 다를 경우 숫자를 바로 수정할 수 있습니다.</span>
+          </div>
+          <div class="books-table-container">
+            <table class="books-input-table">
+              <thead>
+                <tr>
+                  <th style="width:18%">과목</th>
+                  <th style="width:30%">교재</th>
+                  <th style="width:16%">시작P</th>
+                  <th style="width:18%">오늘 목표P</th>
+                  <th style="width:18%">실제 달성P</th>
+                </tr>
+              </thead>
+              <tbody id="checkoutTableBody">
+                <!-- Injected dynamically by modals.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 내일 진도표 생성 미리보기 안내 -->
+        <div class="curr-preview-card" style="background:rgba(6,182,212,0.06);border-color:rgba(6,182,212,0.25)">
+          <div class="preview-title" style="color:#38bdf8">📅 퇴실 완료 시 내일(익일 진도) 자동 반영 사항:</div>
+          <ul style="margin:0;padding-left:1.2rem;font-size:0.82rem;color:#cbd5e1;line-height:1.6">
+            <li>오늘 입력한 최종 <strong>달성 페이지 + 1페이지</strong>가 내일의 <strong>새로운 시작 페이지(시작P)</strong>로 자동 지정됩니다.</li>
+            <li>과목별 실제 학습 속도(PPH)에 맞춰 <strong>내일의 과목별 배정시간과 목표 페이지</strong>가 최적화 재분배됩니다.</li>
+            <li>스터디카페 좌석 퇴실 처리가 완료되며 출입문 개방(문열림 QR 승인)이 진행됩니다.</li>
+          </ul>
+        </div>
+
+        <button id="btnConfirmCheckout" class="ss-modal-submit-btn checkout-submit-btn" type="button">
+          🚀 최종 퇴실 확인 및 내일 진도표 생성하기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 메인 모듈 진입점 (캐시 버스팅 v=2.9) -->
+  <script type="module" src="./app.js?v=2.9"></script>
+</body>
+</html>

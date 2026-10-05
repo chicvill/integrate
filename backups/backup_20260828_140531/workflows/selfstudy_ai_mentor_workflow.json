@@ -1,0 +1,138 @@
+{
+  "name": "SelfStudy AI Meta-Cognitive Mentor & Study Tracker",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      },
+      "id": "schedule-morning-trigger",
+      "name": "매일 아침 8시 학습 플래너 생성",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 240]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "selfstudy-feedback",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook-student-journal",
+      "name": "학생 학습 일기 & 질문 수신 Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [240, 440],
+      "webhookId": "selfstudy-feedback"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=당신은 자기주도학습(SelfStudy)의 전문 AI 메타인지 멘토입니다.\n\n[학생 정보 및 학습 내용]\n- 학생명: {{ $json.student_name || '김학생' }}\n- 오늘 공부 과목: {{ $json.subject || '수학/영어' }}\n- 공부 시간: {{ $json.study_minutes || 120 }}분\n- 학생 일기/고민: {{ $json.journal_text || '오늘 집중이 잘 안되고 문제 풀이가 어려웠음' }}\n\n다음 3가지 원칙에 맞춰 격려와 실천 가능한 3단계 메타인지 조언을 300자 이내로 정돈해 주세요:\n1. 감정 공감 및 칭찬\n2. 구체적 학습 방법 피드백 (개념 복습, 오답노트 등)\n3. 내일의 작은 실행 목표 1가지 제안",
+        "options": {
+          "systemMessage": "당신은 따뜻하고 전문적인 교육 컨설턴트이자 메타인지 코치입니다."
+        }
+      },
+      "id": "gemini-ai-mentor",
+      "name": "Gemini 2.5 AI 메타인지 멘토링 분석",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [540, 340]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "sheetId": "1_SelfStudy_Daily_Study_Log",
+        "range": "A:F",
+        "options": {
+          "values": {
+            "values": [
+              [
+                "={{ $now.format('yyyy-MM-dd HH:mm') }}",
+                "={{ $json.student_name }}",
+                "={{ $json.subject }}",
+                "={{ $json.study_minutes }}",
+                "={{ $json.journal_text }}",
+                "={{ $json.output }}"
+              ]
+            ]
+          }
+        }
+      },
+      "id": "google-sheets-logger",
+      "name": "Google Sheets 실시간 학습 로그 기록",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.1,
+      "position": [840, 340]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"SUCCESS\",\n  \"student_name\": \"{{ $json.student_name }}\",\n  \"ai_feedback\": \"{{ $json.output }}\",\n  \"logged_at\": \"{{ $now.toISO() }}\"\n}",
+        "options": {}
+      },
+      "id": "respond-to-webhook",
+      "name": "피드백 응답 반환",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1080, 340]
+    }
+  ],
+  "connections": {
+    "매일 아침 8시 학습 플래너 생성": {
+      "main": [
+        [
+          {
+            "node": "Gemini 2.5 AI 메타인지 멘토링 분석",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "학생 학습 일기 & 질문 수신 Webhook": {
+      "main": [
+        [
+          {
+            "node": "Gemini 2.5 AI 메타인지 멘토링 분석",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini 2.5 AI 메타인지 멘토링 분석": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets 실시간 학습 로그 기록",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets 실시간 학습 로그 기록": {
+      "main": [
+        [
+          {
+            "node": "피드백 응답 반환",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

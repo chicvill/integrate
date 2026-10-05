@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <title>Grammar Quest - 초3~고3 영문법 퀘스트 (PC & 모바일 웹)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Pretendard:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=20260926_mobile_hud">
+</head>
+<body>
+  <!-- 메인 앱 컨테이너 (반응형 PC & 모바일 지원) -->
+  <div class="app-container tv-safe-area">
+    <!-- MQnet 통합 플랫폼 홈 바로가기 -->
+    <a href="/" style="position: fixed; top: 12px; right: 14px; z-index: 9999; background: rgba(15, 23, 42, 0.88); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.45); padding: 7px 13px; border-radius: 20px; font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 700; text-decoration: none; backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: all 0.2s;" onmouseover="this.style.background='#38bdf8';this.style.color='#0f172a'" onmouseout="this.style.background='rgba(15, 23, 42, 0.88)';this.style.color='#38bdf8'">
+      🏠 MQnet 홈
+    </a>
+    
+    <!-- 상단 헤더 & HUD -->
+    <header class="hud-header">
+      <!-- 1행: 햄버거 + 로고 + 마이크 버튼 -->
+      <div class="header-left-group">
+        <!-- 햄버거 사이드 메뉴 토글 버튼 -->
+        <button class="hamburger-btn focusable" id="hamburgerBtn" aria-label="메뉴 및 설정 열기" title="설정 & 메뉴 열기 (M키)">
+          <span class="hamburger-bar"></span>
+          <span class="hamburger-bar"></span>
+          <span class="hamburger-bar"></span>
+        </button>
+
+        <div class="logo-area">
+          <span class="game-badge">AI STEM QUEST</span>
+          <h1 class="game-title">GRAMMAR QUEST <span class="grade-tag" id="currentGradeBadge">AI 적응형: LV.2 기초</span></h1>
+        </div>
+
+        <!-- 2인 대전 모드 활성화 시 점수 HUD -->
+        <div class="battle-scoreboard" id="battleScoreboard" style="display: none;">
+          <div class="player-score-tag p1" id="p1Tag"><span class="p-dot"></span>1P: <span id="p1Score">0</span></div>
+          <div class="vs-tag">VS</div>
+          <div class="player-score-tag p2" id="p2Tag"><span class="p-dot"></span>2P: <span id="p2Score">0</span></div>
+        </div>
+
+        <!-- 상단 미니 마이크 상태 인디케이터 (로고 우측 끝) -->
+        <div class="header-mic-pill focusable" id="voiceStatusCard" title="마이크 켜기/끄기 (V키 또는 클릭)">
+          <span class="mic-dot" id="headerMicDot"></span>
+          <span class="mic-label" id="voiceStatusText">마이크 OFF (V)</span>
+          <span class="mic-heard-preview" id="voiceHeardText" style="display: none;"></span>
+        </div>
+      </div>
+
+      <!-- 2행: 통계 카드 (QUESTION / SOLVED / SCORE / STREAK / TIME) -->
+      <div class="hud-stats">
+        <div class="stat-card">
+          <span class="stat-label">QUESTION</span>
+          <span class="stat-value" id="qNumText">1 / 10</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">SOLVED</span>
+          <span class="stat-value master-val" id="masteredProgressText">0개 완료</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">SCORE</span>
+          <span class="stat-value" id="scoreText">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">STREAK</span>
+          <span class="stat-value streak-val" id="streakText">0 🔥</span>
+        </div>
+        <div class="stat-card timer-card">
+          <span class="stat-label">TIME</span>
+          <div class="timer-bar-wrap">
+            <div class="timer-bar-fill" id="timerBar" style="width: 100%;"></div>
+          </div>
+          <span class="timer-number" id="timerNumber">20s</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- 모바일 전용 뷰포트 전환 탭 (스마트폰 세로 화면에서 노출) -->
+    <div class="mobile-viewport-tabs" id="mobileViewportTabs">
+      <button class="m-tab-btn active focusable" id="mTabSolve" data-target="solve">
+        <span>📝 1. 문제 풀기</span>
+      </button>
+      <button class="m-tab-btn focusable" id="mTabExplain" data-target="explain">
+        <span>💡 2. 해설 & 섀도잉</span>
+        <span class="feedback-badge" id="mExplainBadge" style="display: none;">NEW</span>
+      </button>
+    </div>
+
+    <!-- 메인 듀얼 뷰포트 (PC: 좌우 2분할 50:50 / 스마트폰: 좌우 스크롤 스냅 페이징) -->
+    <main class="quest-dual-viewport" id="questDualViewport">
+      
+      <!-- ◀ 좌측 패널: 문제 풀이 영역 -->
+      <section class="quest-panel panel-solve" id="panelSolve">
+        
+        <!-- 문법 카테고리 태그 & 개념 보기 버튼 -->
+        <div class="category-pill-wrap">
+          <div class="category-left-group">
+            <span class="category-pill" id="categoryTag">Be동사 현재형</span>
+            <button class="concept-guide-btn focusable" id="conceptGuideBtn" tabindex="0" title="이 문제의 핵심 문법 개념 보기 (음성으로 '설명' 또는 C키)">
+              <span class="icon">📖</span>
+              <span class="text">핵심 문법</span>
+            </button>
+            <button class="concept-guide-btn ai-socratic-btn focusable" id="aiSocraticHintBtn" tabindex="0" title="AI 소크라테스 힌트 코치 (H키 또는 음성으로 '힌트')">
+              <span class="icon">💡</span>
+              <span class="text">AI 힌트 코치 (H)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 소크라테스식 AI 인터랙티브 힌트 말풍선 -->
+        <div class="ai-socratic-bubble" id="aiSocraticBubble" style="display: none;"></div>
+
+        <!-- 영문법 Hero 문제 쇼케이스 보드 (100% 와이드 텍스트 집중형 보드) -->
+        <div class="hero-question-showcase" id="heroQuestionShowcase">
+          <div class="sentence-board" id="sentenceBoard">
+            <div class="question-pill-header">
+              <span class="q-focus-badge" id="qFocusBadge">TARGET SENTENCE</span>
+            </div>
+            <p class="target-sentence" id="targetSentence">
+              Artificial intelligence and robotics <span class="blank-box">[ ? ]</span> transforming modern science.
+            </p>
+            <p class="sentence-translation" id="sentenceTranslation">
+              "인공지능과 로봇공학은 현대 과학을 변화시키고 있다."
+            </p>
+          </div>
+        </div>
+
+        <!-- 2x2 보기 카드 그리드 (선택형 문제일 때 노출) -->
+        <div class="options-grid" id="optionsGrid" role="radiogroup">
+          <!-- 1번: 좌상 -->
+          <div class="option-card focusable" id="opt-0" tabindex="0" data-idx="0">
+            <div class="opt-key-badge">1</div>
+            <div class="opt-text" id="optText-0">is</div>
+          </div>
+          <!-- 2번: 우상 -->
+          <div class="option-card focusable" id="opt-1" tabindex="0" data-idx="1">
+            <div class="opt-key-badge">2</div>
+            <div class="opt-text" id="optText-1">are</div>
+          </div>
+          <!-- 3번: 좌하 -->
+          <div class="option-card focusable" id="opt-2" tabindex="0" data-idx="2">
+            <div class="opt-key-badge">3</div>
+            <div class="opt-text" id="optText-2">am</div>
+          </div>
+          <!-- 4번: 우하 -->
+          <div class="option-card focusable" id="opt-3" tabindex="0" data-idx="3">
+            <div class="opt-key-badge">4</div>
+            <div class="opt-text" id="optText-3">be</div>
+          </div>
+        </div>
+
+        <!-- 주관식 말하기 & 듣기 평가 전용 대형 보이스 패널 (보기가 없는 문제일 때 노출) -->
+        <div class="speech-stage-wrap" id="speechStageWrap" style="display: none;">
+          <div class="speech-prompt-card">
+            <!-- 리스닝 오디오 다시 듣기 버튼 -->
+            <button class="audio-listen-btn focusable" id="audioListenBtn" tabindex="0">
+              <span class="sound-icon">🔊</span>
+              <span class="btn-caption" id="audioBtnCaption">원어민 발음 다시 듣기 (클릭 / "다시 들려줘")</span>
+            </button>
+            
+            <div class="speaking-hint-box" id="speakingHintBox">
+              힌트: go의 과거형 (w _ _ _)
+            </div>
+
+            <!-- 마이크 비주얼라이저 -->
+            <div class="voice-wave-container">
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+            </div>
+
+            <!-- 마이크 직접 켜기/끄기 대형 제어 버튼 -->
+            <button class="speech-mic-toggle-btn focusable" id="speechMicToggleBtn" tabindex="0">
+              <span class="mic-icon">🎙️</span>
+              <span class="mic-btn-text" id="speechMicBtnText">마이크 켜고 음성으로 답하기</span>
+            </button>
+
+            <div class="speech-instruction" id="speechInstruction">
+              🎙️ 마이크에 영어로 정답 단어를 직접 말씀하세요!
+            </div>
+            <div class="speech-live-heard" id="speechLiveHeard">
+              인식 대기중...
+            </div>
+
+            <!-- 키보드 직접 입력 비상 탈출 폼 (마이크 불가 환경 대비) -->
+            <div class="speech-manual-fallback" id="speechManualFallback">
+              <input type="text" class="speech-text-input" id="speechTextInput" placeholder="마이크 대신 키보드로 입력 가능 (영어 단어)" autocomplete="off" spellcheck="false" />
+              <button type="button" class="speech-submit-btn" id="speechTextSubmitBtn">확인</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 단어 어순 배열 (Sentence Scramble) 블록 자리바꾸기 스테이지 -->
+        <div class="scramble-stage-wrap" id="scrambleStageWrap" style="display: none;">
+          <div class="scramble-prompt-card">
+            <div class="scramble-header">
+              <span class="scramble-badge">🧩 단어 어순 배열 퀘스트</span>
+              <span class="scramble-translation-guide" id="scrambleTranslationGuide">"올바른 순서로 단어를 배열하세요 (블록 탭 또는 드래그)"</span>
+            </div>
+
+            <!-- 실시간 문장 조립 미리보기 -->
+            <div class="scramble-sentence-preview" id="scrambleSentencePreview">
+              "Artificial intelligence and robotics are transforming modern science."
+            </div>
+
+            <!-- 단어 블록 트랙 (터치 탭 스왑 & 마우스 드래그 영역) -->
+            <div class="scramble-track" id="scrambleTrack" role="group" aria-label="단어 어순 배열 블록">
+              <!-- scrambleManager에 의해 동적 렌더링 -->
+            </div>
+
+            <!-- 조작 액션 바 -->
+            <div class="scramble-action-bar">
+              <button class="scramble-btn secondary focusable" id="scrambleResetBtn" tabindex="0">
+                <span>🔄 다시 섞기</span>
+              </button>
+              <button class="scramble-btn primary focusable" id="scrambleSubmitBtn" tabindex="0">
+                <span>✅ 완성 확인 (Enter / 터치)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ▶ 우측 패널: 해설 & 섀도잉 & 발음 클리닉 영역 -->
+      <section class="quest-panel panel-explain" id="panelExplain">
+        
+        <!-- 문제 풀기 전 대기 안내 플레이스홀더 (미풀이 상태) -->
+        <div class="explain-placeholder-card" id="explainPlaceholder">
+          <div class="ph-glow-icon">💡</div>
+          <h3 class="ph-title">문법 해설 & 섀도잉 랩</h3>
+          <p class="ph-desc">
+            좌측에서 문제의 정답을 선택하시면<br>
+            <strong>핵심 문법 공식, 상세 해설, 문장 전체 섀도잉 연습 및 AI 발음 클리닉</strong>이 이곳에 실시간으로 표시됩니다.
+          </p>
+          <div class="ph-tip-box">
+            <span>TIP</span> 키보드 <strong>[1]~[4]</strong>번 또는 보기를 터치하여 답안을 제출해 보세요!
+          </div>
+        </div>
+
+        <!-- 문제 해설 및 피드백 바 (정답 확인 시 활성화) -->
+        <div class="explanation-box" id="explanationBox">
+          <div class="exp-header">
+            <span class="exp-badge correct" id="expResultBadge">정답! 🎉</span>
+            <span class="exp-title">핵심 문법 공식</span>
+            <span class="next-guide-tag">[Enter] 또는 [다음 문제 ▶]</span>
+          </div>
+          <p class="exp-content" id="expContent">
+            주어가 'Artificial intelligence and robotics'로 2개의 첨단 기술 분야(복수)이므로 복수형 be동사 'are'를 씁니다.
+          </p>
+
+          <!-- 1. AI 오답 선택 심리 역추적 카드 -->
+          <div class="ai-misconception-card" id="aiMisconceptionCard" style="display: none;"></div>
+
+          <!-- 2. AI 즉석 쌍둥이 확인 문항 카드 -->
+          <div class="ai-twin-card" id="aiTwinCard" style="display: none;"></div>
+
+          <!-- 문장 전체 섀도잉 & 발음 점수 평가 패널 -->
+          <div class="shadowing-panel" id="shadowingPanel">
+            <div class="shadowing-header">
+              <span class="shadowing-badge">🎙️ 문장 전체 섀도잉 도전</span>
+              <span class="shadowing-guide">원어민 발음을 듣고 마이크로 문장 전체를 따라 읽어보세요!</span>
+            </div>
+            <div class="shadowing-controls">
+              <button class="shadow-btn shadow-listen focusable" id="shadowListenBtn" tabindex="0" title="원문 전체 듣기">
+                <span>🔊 원문 전체 듣기</span>
+              </button>
+              <button class="shadow-btn shadow-record focusable" id="shadowRecordBtn" tabindex="0" title="따라 말하기 시작 (마이크 녹음)">
+                <span>🎙️ 따라 말하기 시작</span>
+              </button>
+              <button class="shadow-btn shadow-user-voice focusable" id="playUserVoiceBtn" tabindex="0" title="방금 내가 녹음한 목소리 다시 듣기">
+                <span class="icon">🎧</span>
+                <span class="text" id="playUserVoiceText">내 목소리 다시 듣기</span>
+                <span class="audio-wave-anim" id="userAudioWave">
+                  <i></i><i></i><i></i><i></i>
+                </span>
+              </button>
+              <button class="shadow-btn shadow-compare focusable" id="playNativeCompareBtn" tabindex="0" title="원어민 발음과 나란히 비교해서 듣기">
+                <span class="icon">🔊</span>
+                <span class="text">원어민 발음 비교</span>
+              </button>
+            </div>
+
+            <!-- 발음 채점 결과 카드 -->
+            <div class="shadow-result-box" id="shadowResultBox" style="display: none;">
+              <div class="shadow-result-header">
+                <div class="score-stars" id="shadowScoreStars">⭐⭐⭐</div>
+                <div class="score-number-pill" id="shadowScoreNumber">발음 점수: 95점</div>
+                <div class="shadow-heard-text" id="shadowHeardText">"Artificial intelligence and robotics are transforming modern science"</div>
+              </div>
+              <div class="shadow-result-tip">
+                💡 <strong>[🎧 내 목소리 다시 듣기]</strong>와 <strong>[🔊 원어민 발음 비교]</strong>를 눌러 억양과 발음 차이를 직접 비교해 보세요!
+              </div>
+
+              <!-- AI 원어민 발음 정밀 클리닉 & 교정 코칭 패널 (V vs B, P vs F, R vs L, TH, 강세) -->
+              <div class="pronunciation-clinic-panel" id="pronunciationClinicPanel" style="display: none;"></div>
+              <!-- 3. AI 실시간 피치 억양 컨투어 시각화 -->
+              <div id="aiPitchContourContainer"></div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- 하단 전후 문제 이동 네비게이션 바 -->
+    <nav class="bottom-nav-bar" id="bottomNavBar" aria-label="문제 탐색 네비게이션">
+      <button class="nav-arrow-btn focusable" id="prevQuestionBtn" title="이전 문제로 이동 (Alt+Left)">
+        <span class="arrow-icon">◀</span>
+        <span class="btn-label">이전 문제</span>
+      </button>
+
+      <div class="nav-question-track" id="navQuestionTrack">
+        <!-- 1~10번 문제 닷/상태가 동적으로 렌더링됩니다 -->
+      </div>
+
+      <button class="nav-arrow-btn primary focusable" id="nextQuestionBtn" title="다음 문제로 이동 (Alt+Right / Enter)">
+        <span class="btn-label" id="nextBtnLabel">다음 문제</span>
+        <span class="arrow-icon">▶</span>
+      </button>
+    </nav>
+
+    <!-- 오버레이 화면 (시작 / 결과 리포트) -->
+    <div class="game-overlay active" id="gameOverlay">
+      <div class="overlay-card">
+        <div class="overlay-icon-badge" id="overlayIcon">📚</div>
+        <h2 class="overlay-title" id="overlayTitle">초3~고3 영문법 퀘스트</h2>
+        <p class="overlay-desc" id="overlayDesc">
+          PC(키보드/마우스), 스마트폰(터치/음성) 어디서나 접속하여<br>
+          10개의 첨단 STEM & AI 영문법 퀘스트를 풀어보세요!
+        </p>
+
+        <div class="overlay-controls-guide">
+          <div class="guide-item"><span class="key-pill">1~4 / 터치</span> 키보드 번호키 또는 화면 보기 직접 터치</div>
+          <div class="guide-item"><span class="key-pill">Enter / Space</span> 정답 확정 및 다음 문제 진행</div>
+          <div class="guide-item"><span class="key-pill">🎙️ 음성 인식</span> 단어 직접 발음 / "다음" / "시작" 음성 제어</div>
+        </div>
+
+        <button class="tv-btn focusable" id="startBtn" tabindex="0">
+          <span class="btn-text" id="startBtnText">퀘스트 시작 (Enter / 터치 / "시작")</span>
+        </button>
+        <button class="tv-btn voice-toggle-btn focusable" id="micToggleBtn" tabindex="0">
+          <span class="btn-text" id="micToggleBtnText">🎙️ 마이크 음성 제어 켜기</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 좌상단 햄버거 사이드 드로어 메뉴 (Side Drawer) -->
+  <div class="drawer-overlay" id="drawerOverlay" role="dialog" aria-modal="true" aria-label="학습 설정 및 메뉴">
+    <aside class="drawer-menu" id="drawerMenu">
+      <div class="drawer-header">
+        <div class="drawer-title-wrap">
+          <span class="drawer-icon">⚙️</span>
+          <h2 class="drawer-title">학습 설정 & 메뉴</h2>
+        </div>
+        <button class="drawer-close-btn focusable" id="drawerCloseBtn" aria-label="메뉴 닫기">✕</button>
+      </div>
+
+      <div class="drawer-body">
+        <!-- 1. 학습 레벨 (AI 실시간 적응형) -->
+        <div class="drawer-section">
+          <div class="drawer-section-title">🎯 학습 난이도 단계 (AI 실시간 적응형)</div>
+          <div class="drawer-adaptive-desc" style="font-size: 13px; color: var(--accent-cyan); margin-bottom: 10px; opacity: 0.85;">
+            🤖 학습자의 정답률과 연속 정답에 따라 실시간으로 최적 수준이 자동 조정됩니다.
+          </div>
+          <div class="drawer-grade-grid" id="gradeSelectorBar">
+            <button class="grade-tab focusable" data-grade="1" tabindex="0">
+              <span class="tab-badge">Level 1: 입문</span>
+              <span class="tab-sub">Be동사·지시대명사</span>
+            </button>
+            <button class="grade-tab focusable active" data-grade="2" tabindex="0">
+              <span class="tab-badge">Level 2: 기초</span>
+              <span class="tab-sub">현재진행·조동사 can</span>
+            </button>
+            <button class="grade-tab focusable" data-grade="3" tabindex="0">
+              <span class="tab-badge">Level 3: 발전</span>
+              <span class="tab-sub">3인칭단수·불규칙과거</span>
+            </button>
+            <button class="grade-tab focusable" data-grade="4" tabindex="0">
+              <span class="tab-badge">Level 4: 도약</span>
+              <span class="tab-sub">동명사·수동태·비교급</span>
+            </button>
+            <button class="grade-tab focusable" data-grade="5" tabindex="0">
+              <span class="tab-badge">Level 5: 숙련</span>
+              <span class="tab-sub">현재완료·관계대명사</span>
+            </button>
+            <button class="grade-tab focusable" data-grade="6" tabindex="0">
+              <span class="tab-badge">Level 6: 마스터</span>
+              <span class="tab-sub">수일치·관계사·가정법</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. 음성 인식 제어 -->
+        <div class="drawer-section">
+          <div class="drawer-section-title">🎙️ 음성 인식 (마이크)</div>
+          <div class="drawer-action-card">
+            <div class="drawer-action-info">
+              <span class="drawer-action-label" id="drawerMicStatusText">마이크 꺼짐 (V키)</span>
+              <span class="drawer-action-desc">음성으로 정답 단어 구술 및 섀도잉 발음 진단</span>
+            </div>
+            <button class="drawer-toggle-btn focusable" id="drawerMicToggleBtn">
+              <span class="toggle-text" id="drawerMicBtnText">마이크 켜기</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3. 2인 턴제 대전 모드 -->
+        <div class="drawer-section">
+          <div class="drawer-section-title">👥 2인 턴제 대전 모드</div>
+          <div class="drawer-action-card">
+            <div class="drawer-action-info">
+              <span class="drawer-action-label" id="drawerBattleStatusText">1인 솔로 모드</span>
+              <span class="drawer-action-desc">친구 또는 가족과 번갈아가며 점수 경쟁</span>
+            </div>
+            <button class="drawer-toggle-btn focusable" id="modeToggleBtn">
+              <span class="toggle-text" id="modeToggleText">1인 솔로</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4. AI 실시간 문법 뇌 지도 리포트 -->
+        <div class="drawer-section">
+          <div class="drawer-section-title">🧠 AI 실시간 문법 뇌 지도</div>
+          <div class="drawer-action-card">
+            <div class="drawer-action-info">
+              <span class="drawer-action-label">8대 문법 영역 정밀 진단</span>
+              <span class="drawer-action-desc">실시간 방사형 레이더 차트 & AI 족집게 처방전</span>
+            </div>
+            <button class="drawer-toggle-btn focusable" id="openKnowledgeRadarBtn">
+              <span class="toggle-text">뇌 지도 보기</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 5. 도움말 & 전체화면 -->
+        <div class="drawer-section">
+          <div class="drawer-section-title">🛠️ 부가 도구</div>
+          <div class="drawer-btn-row">
+            <button class="drawer-tool-btn focusable" id="helpBtn" title="도움말 열기 (H키)">
+              <span class="icon">❓</span>
+              <span class="text">학습 도움말</span>
+            </button>
+            <button class="drawer-tool-btn focusable" id="uiScaleBtn" title="전체화면 전환 (F키)">
+              <span class="icon">⛶</span>
+              <span class="text" id="uiScaleText">전체화면</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  </div>
+
+  <!-- 문법 개념 치트시트 모달 (Grammar Concept Modal) -->
+  <div class="concept-modal-overlay" id="conceptModalOverlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="conceptTitle">
+    <div class="concept-modal-card">
+      <div class="concept-modal-header">
+        <div class="concept-header-left">
+          <span class="concept-grade-badge" id="conceptGradeBadge">초등 5~6 필수</span>
+          <h2 class="concept-title" id="conceptTitle">현재진행형 (Present Continuous)</h2>
+        </div>
+        <button class="concept-close-btn focusable" id="conceptCloseBtn" aria-label="모달 닫기">✕</button>
+      </div>
+
+      <div class="concept-modal-body">
+        <!-- 핵심 공식 (Formula Box) -->
+        <div class="concept-section formula-section">
+          <div class="concept-section-title">📐 핵심 공식</div>
+          <div class="formula-box" id="conceptFormula">주어 + be동사(am / are / is) + 동사-ing</div>
+          <p class="usage-text" id="conceptUsage">지금 말하고 있는 이 순간에 일어나는 동작을 나타냅니다.</p>
+        </div>
+
+        <!-- 3대 규칙 & 포인트 (Rules List) -->
+        <div class="concept-section rules-section">
+          <div class="concept-section-title">💡 꼭 알아야 할 핵심 규칙</div>
+          <ul class="concept-rules-list" id="conceptRulesList">
+            <!-- 동적 삽입 -->
+          </ul>
+        </div>
+
+        <!-- 🚨 시험 단골 함정 (Trap Alert Box) -->
+        <div class="concept-section trap-section">
+          <div class="concept-section-title">🚨 시험 단골 함정 주의!</div>
+          <div class="trap-box">
+            <div class="trap-item trap-wrong">
+              <span class="trap-badge wrong-badge">오답 ❌</span>
+              <span class="trap-text" id="conceptTrapWrong">He listening to music now.</span>
+            </div>
+            <div class="trap-item trap-correct">
+              <span class="trap-badge correct-badge">정답 ✅</span>
+              <span class="trap-text" id="conceptTrapCorrect">He is listening to music now.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 대표 예문 (Examples List) -->
+        <div class="concept-section examples-section">
+          <div class="concept-section-title">🌟 대표 예문으로 익히기</div>
+          <ul class="concept-examples-list" id="conceptExamplesList">
+            <!-- 동적 삽입 -->
+          </ul>
+        </div>
+      </div>
+
+      <div class="concept-modal-footer">
+        <button class="concept-ok-btn focusable" id="conceptOkBtn">
+          <span>확인 완료! 문제 풀러 가기</span>
+          <span class="key-hint">(Enter / 터치 / ESC)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 조작 및 사용법 도움말 모달 (Help Modal) -->
+  <div class="help-modal-overlay" id="helpModalOverlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="help-modal-card">
+      <div class="help-modal-header">
+        <div class="help-header-left">
+          <span class="help-badge">GUIDE & HELP</span>
+          <h2 class="help-title" id="helpTitle">💻📱 PC & 스마트폰 학습 및 조작 가이드</h2>
+        </div>
+        <button class="help-close-btn focusable" id="helpCloseBtn" aria-label="도움말 닫기">✕</button>
+      </div>
+
+      <div class="help-modal-body">
+        <div class="help-grid">
+          <!-- 1. PC 키보드 & 마우스 조작법 -->
+          <div class="help-card">
+            <div class="help-card-title">💻 PC 키보드 & 마우스</div>
+            <ul class="help-item-list">
+              <li><span class="key-pill">1 ~ 4</span> 보기 번호키 즉시 선택 (마우스 클릭도 지원)</li>
+              <li><span class="key-pill">Enter / Space</span> 정답 확인, 퀘스트 시작, 다음 문제</li>
+              <li><span class="key-pill">V 키</span> 마이크 켜기 / 끄기 음성 제어 토글</li>
+              <li><span class="key-pill">C / M / F1</span> [핵심 문법 개념] 치트시트 열기</li>
+              <li><span class="key-pill">F 키</span> 전체화면 토글 / <span class="key-pill">ESC</span> 모달 닫기</li>
+            </ul>
+          </div>
+
+          <!-- 2. 스마트폰 & 모바일 터치 조작법 -->
+          <div class="help-card">
+            <div class="help-card-title">📱 스마트폰 터치 제스처</div>
+            <ul class="help-item-list">
+              <li><span class="cmd-pill">보기 카드 탭</span> 화면의 보기를 터치하여 바로 답안 선택</li>
+              <li><span class="cmd-pill">단어 원터치 스왑</span> 어순 배열 시 단어를 탭하여 순서 맞바꿈</li>
+              <li><span class="cmd-pill">마이크 터치</span> 상단 마이크 아이콘으로 음성 인식 시작</li>
+              <li><span class="cmd-pill">반응형 스크롤</span> 모바일 세로 화면에서도 완벽한 자동 정렬</li>
+              <li><span class="cmd-pill">섀도잉 원터치</span> [🔊 원문] 듣고 [🎙️ 따라 말하기]로 발음 진단</li>
+            </ul>
+          </div>
+
+          <!-- 3. 마이크 음성 제어 & 섀도잉 -->
+          <div class="help-card">
+            <div class="help-card-title">🎙️ 음성 인식 & AI 발음 클리닉</div>
+            <ul class="help-item-list">
+              <li><span class="cmd-pill">영어 단어 직접 발음</span> 주관식 말하기/듣기 단어 음성 입력</li>
+              <li><span class="cmd-pill">"1번" ~ "4번"</span> 해당 번호 보기 즉시 선택</li>
+              <li><span class="cmd-pill">"시작" / "다음"</span> 문제 진행 및 다음 퀘스트 넘기기</li>
+              <li><span class="cmd-pill">"설명" / "개념"</span> 핵심 문법 공식 치트시트 팝업</li>
+              <li><span class="cmd-pill">AI 발음 진단</span> V-B, P-F, R-L, 강세 차이점 실시간 피드백</li>
+            </ul>
+          </div>
+
+          <!-- 4. 2인 대전 모드 & 유용한 팁 -->
+          <div class="help-card">
+            <div class="help-card-title">💡 2인 대전 & 학습 모드</div>
+            <ul class="help-item-list">
+              <li><strong>2인 턴제 대전:</strong> [👥 1인 솔로] 클릭 시 1P와 2P 점수 배틀</li>
+              <li><strong>학년별 맞춤:</strong> 상단 탭에서 초3부터 고등/수능까지 자유 변경</li>
+              <li><strong>무한 자동 생성:</strong> 매번 새로운 STEM & AI 문장이 생성됩니다</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="help-modal-footer">
+        <button class="help-ok-btn focusable" id="helpOkBtn">
+          <span>확인 완료! 퀘스트로 돌아가기</span>
+          <span class="key-hint">(Enter / 터치 / ESC)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 스크립트 로드 순서: 문법 생성기 -> 어순 배열 -> 문법 개념 데이터 -> 개념 모달 -> 도움말 모달 -> 발음 코치 -> 섀도잉 엔진 -> 효과음 -> 음성 인식 -> 게임 코어 -->
+  <script src="grammarGenerator.js?v=20260922_11"></script>
+  <script src="scrambleManager.js?v=20260922_11"></script>
+  <script src="grammarConceptData.js?v=20260922_11"></script>
+  <script src="conceptModalManager.js?v=20260922_11"></script>
+  <script src="helpModalManager.js?v=20260922_11"></script>
+  <script src="pronunciationCoach.js?v=20260922_12"></script>
+  <script src="shadowingManager.js?v=20260926_pitch_fix"></script>
+  <script src="aiLearningEngine.js?v=20260926_pitch_fix"></script>
+  <script src="audio.js?v=20260922_11"></script>
+  <script src="voice.js?v=20260922_11"></script>
+  <script src="game.js?v=20260926_scramble_time"></script>
+</body>
+</html>
