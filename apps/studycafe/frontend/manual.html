@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MQnet StudyCafe & SelfStudy 공식 운영 매뉴얼</title>
+  <link rel="stylesheet" href="./style.css?v=2.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0b0f19;
+      --card-bg: rgba(255, 255, 255, 0.03);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-amber: #f59e0b;
+      --accent-blue: #38bdf8;
+      --accent-green: #10b981;
+      --accent-purple: #c084fc;
+      --accent-red: #ef4444;
+    }
+    body {
+      background: var(--bg-dark);
+      color: #e2e8f0;
+      font-family: 'Pretendard', sans-serif;
+      line-height: 1.65;
+      margin: 0;
+      padding: 1.5rem;
+    }
+    .manual-container {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .manual-header {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(56, 189, 248, 0.08));
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      border-radius: 16px;
+      padding: 1.75rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .manual-title {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .manual-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent-amber);
+      background: rgba(245, 158, 11, 0.15);
+      padding: 0.25rem 0.7rem;
+      border-radius: 6px;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .btn-header {
+      padding: 0.55rem 1.1rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-header.primary {
+      background: var(--accent-amber);
+      color: #0b0f19;
+      border: none;
+    }
+    .btn-header.secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .toc-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.25rem 1.5rem;
+    }
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 0.5rem 1.5rem;
+      margin-top: 0.75rem;
+    }
+    .toc-link {
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 0.88rem;
+      transition: color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .toc-link:hover {
+      color: var(--accent-amber);
+    }
+    .section-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.75rem 2rem;
+    }
+    h2 {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 1rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 1.25rem 0 0.6rem;
+    }
+    p, li {
+      font-size: 0.92rem;
+      color: #cbd5e1;
+    }
+    ul, ol {
+      padding-left: 1.3rem;
+      margin: 0.5rem 0;
+    }
+    li {
+      margin-bottom: 0.4rem;
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+      margin: 1rem 0;
+    }
+    .data-table th, .data-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .data-table th {
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+      font-weight: 700;
+    }
+    .data-table td {
+      background: rgba(255, 255, 255, 0.015);
+    }
+    .alert-box {
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+    .alert-box.info {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #bae6fd;
+    }
+    .alert-box.warning {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #fde68a;
+    }
+    .alert-box.danger {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fecaca;
+    }
+    .alert-box.success {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #a7f3d0;
+    }
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.2rem 0.45rem;
+      border-radius: 5px;
+      color: #f39c12;
+      font-size: 0.85em;
+    }
+    pre {
+      background: #060911;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.84rem;
+      color: #a5f3fc;
+      line-height: 1.5;
+    }
+    @media print {
+      body { background: #fff; color: #000; padding: 0; }
+      .sc-quick-portal-bar, .btn-header, #btnScrollTop { display: none !important; }
+      .section-card, .manual-header { border: 1px solid #ccc; background: none; color: #000; }
+      h1, h2, h3 { color: #000 !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="manual-container">
+    <!-- 🚀 현장/역할별 빠른 페이지 이동 버튼 바 -->
+    <div class="sc-quick-portal-bar" style="background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 0.8rem 1.1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.8rem;">
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span style="font-size: 1.15rem;">🚀</span>
+        <span style="font-weight: 800; font-size: 0.88rem; color: #fff;">바로가기:</span>
+      </div>
+      <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+        <a href="/studycafe/" class="quick-nav-btn" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.95rem; border-radius: 10px; font-size: 0.82rem; font-weight: 700; text-decoration: none; background: rgba(56,189,248,0.18); border: 1px solid rgba(56,189,248,0.45); color: #38bdf8; transition: all 0.2s;">
+          <span>📱</span> 스터디카페 키오스크
+        </a>
+        <a href="./admin.html" class="quick-nav-btn" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.95rem; border-radius: 10px; font-size: 0.82rem; font-weight: 700; text-decoration: none; background: rgba(139,92,246,0.18); border: 1px solid rgba(139,92,246,0.45); color: #c084fc; transition: all 0.2s;">
+          <span>📊</span> 점주 실시간 관제
+        </a>
+        <a href="./parent.html?phone=010-5555-4444" class="quick-nav-btn" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.95rem; border-radius: 10px; font-size: 0.82rem; font-weight: 700; text-decoration: none; background: rgba(16,185,129,0.18); border: 1px solid rgba(16,185,129,0.45); color: #34d399; transition: all 0.2s;">
+          <span>👨‍👩‍👧</span> 학부모 안심 웹 포털
+        </a>
+        <a href="./manual.html" class="quick-nav-btn active" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.95rem; border-radius: 10px; font-size: 0.82rem; font-weight: 700; text-decoration: none; background: rgba(245,158,11,0.3); border: 1px solid rgba(245,158,11,0.6); color: #fbbf24; transition: all 0.2s;">
+          <span>📖</span> 운영 매뉴얼 (현재창)
+        </a>
+      </div>
+    </div>
+
+    <!-- 헤더 카드 -->
+    <header class="manual-header">
+      <div>
+        <div class="manual-badge">MQnet StudyCafe & SelfStudy 공식 운영 지침서</div>
+        <h1 class="manual-title">📖 점주 및 관리실장 공식 운영 매뉴얼</h1>
+        <div style="font-size: 0.85rem; color: #94a3b8;">
+          스터디카페 현장 관제, 순찰 일지 기록, PPH 진도 연산, 소방 Fail-Safe 도어 제어 종합 안내
+        </div>
+      </div>
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <button class="btn-header secondary" onclick="window.print()">🖨️ 매뉴얼 인쇄</button>
+        <a href="./admin.html" class="btn-header primary">📊 점주 대시보드로 이동</a>
+      </div>
+    </header>
+
+    <!-- 빠른 목차 바로가기 -->
+    <nav class="toc-card">
+      <div style="font-weight: 700; color: #fff; font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem;">
+        <span>📑</span> 빠른 목차 탐색
+      </div>
+      <div class="toc-grid">
+        <a href="#sec-1" class="toc-link">1. 시스템 개요 및 주요 특징</a>
+        <a href="#sec-2" class="toc-link">2. 접속 경로 및 계정 체계</a>
+        <a href="#sec-3" class="toc-link">3. 점주 관제 대시보드 운영법</a>
+        <a href="#sec-4" class="toc-link">4. 현장 순찰 일지 & 학부모 연동</a>
+        <a href="#sec-5" class="toc-link">5. 청소년 22시 셧다운 & 점주 예외</a>
+        <a href="#sec-6" class="toc-link">6. SelfStudy(PPH) 진도 연동</a>
+        <a href="#sec-7" class="toc-link">7. 스마트 도어락 & 화재 비상 개방</a>
+        <a href="#sec-8" class="toc-link">8. 개인정보보호 및 90일 파기</a>
+        <a href="#sec-9" class="toc-link">9. 자주 묻는 질문(FAQ) & 장애 대응</a>
+      </div>
+    </nav>
+
+    <!-- 1. 시스템 개요 -->
+    <section id="sec-1" class="section-card">
+      <h2>1. 시스템 개요 및 주요 특징</h2>
+      <ul>
+        <li><strong>일반형 vs 관리형 듀얼 모드</strong>:
+          <ul>
+            <li><strong>일반 자율형(GENERAL)</strong>: 자율 좌석 이용 및 출입문 스마트 제어</li>
+            <li><strong>관리형 프리미엄(MANAGED)</strong>: 실장 라운딩 순찰(졸음/딴짓/이탈 감시), 실시간 지도 메모, 당일 PPH(시간당 학습 속도) 연산, 익일 진도 자동 리밸런싱, 학부모 실시간 리포트 연동</li>
+          </ul>
+        </li>
+        <li><strong>Zero-Message 정책 (문자 발송비 0원)</strong>:
+          알림톡/문자 비용 없이 학생과 학부모 모두 웹 링크와 PWA 홈 화면 추가로 100% 실시간 공유합니다.
+        </li>
+        <li><strong>소방법 100% 준수 Fail-Safe 아키텍처</strong>:
+          화재 및 정전 시 PC나 소프트웨어 상태와 무관하게 전자기식 락(EM-Lock) 전원이 물리적으로 차단되어 즉시 문이 열립니다.
+        </li>
+      </ul>
+    </section>
+
+    <!-- 2. 접속 경로 -->
+    <section id="sec-2" class="section-card">
+      <h2>2. 접속 경로 및 계정 체계</h2>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>포털 구분</th>
+            <th>대상</th>
+            <th>기본 접속 URL</th>
+            <th>주요 역할</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>점주 실시간 관제</strong></td>
+            <td>점주, 관리실장</td>
+            <td><code>/studycafe/admin.html</code></td>
+            <td>좌석 모니터링, 순찰 일지 등록, 비상 도어 제어, 심야 예외 관리</td>
+          </tr>
+          <tr>
+            <td><strong>키오스크 / 학생</strong></td>
+            <td>수험생, 학생</td>
+            <td><code>/studycafe/</code></td>
+            <td>좌석 배정, 이용권 구매, 외출/복귀/퇴실, 오늘 끝 페이지 입력</td>
+          </tr>
+          <tr>
+            <td><strong>학부모 안심 웹 포털</strong></td>
+            <td>보호자</td>
+            <td><code>/studycafe/parent.html?phone={전화번호}</code></td>
+            <td>실시간 재실 위치, 순공 시간, 현장 순찰 일지, 출결 타임로그 확인</td>
+          </tr>
+          <tr>
+            <td><strong>자기주도학습 (MQstudy)</strong></td>
+            <td>관리형 학생/멘토</td>
+            <td><code>/selfstudy/</code></td>
+            <td>주간 계획, AI 멘토링, 과목별 진도율 상세 대시보드</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="alert-box info">
+        🔑 <strong>기본 관리자 계정</strong>: <code>admin@mqnet.io</code> / 비밀번호: <code>1212</code><br/>
+        (현장 정식 오픈 전 반드시 비밀번호를 변경해 주십시오.)
+      </div>
+    </section>
+
+    <!-- 3. 점주 관제 대시보드 운영법 -->
+    <section id="sec-3" class="section-card">
+      <h2>3. 점주 관제 대시보드 운영법</h2>
+      <p>점주는 태블릿이나 PC 브라우저로 <code>/studycafe/admin.html</code>을 상시 띄워두고 현장을 관리합니다. (15초마다 자동 새로고침)</p>
+      
+      <h3>주요 제어 버튼 기능</h3>
+      <ul>
+        <li><strong>🔓 출입문 5초 개방</strong>: 학부모 방문 상담, 택배 수령 시 원격으로 문을 5초간 개방합니다.</li>
+        <li><strong>🚶 60분 초과 외출 정리</strong>: 외출 후 60분이 지난 미복귀 좌석을 1-클릭으로 자동 퇴실 처리하여 빈 좌석으로 회수합니다.</li>
+        <li><strong>강제 퇴실 ([강제 퇴실] 버튼)</strong>: 규정 위반자나 오배정 좌석을 점주 권한으로 즉시 반납 처리합니다.</li>
+      </ul>
+    </section>
+
+    <!-- 4. 순찰 일지 & 학부모 연동 -->
+    <section id="sec-4" class="section-card">
+      <h2>4. 현장 순찰 일지 & 학부모 안심 포털 연동</h2>
+      <p>관리형 스터디카페의 가장 큰 경쟁력은 <strong>실장의 실시간 현장 라운딩</strong>입니다.</p>
+
+      <h3>순찰 일지 작성 절차</h3>
+      <ol>
+        <li>30분~1시간 간격으로 열람실을 순찰합니다.</li>
+        <li>조는 학생이나 스마트폰 딴짓 학생 발견 시 해당 좌석의 <strong><code>[📋 순찰 기록]</code></strong> 버튼을 클릭합니다.</li>
+        <li>점검 항목 선택 후 <strong><code>[📝 순찰 일지 저장 & 학부모 리포트 전송]</code></strong>을 누릅니다.</li>
+      </ol>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>점검 항목</th>
+            <th>벌점</th>
+            <th>지도 예시</th>
+            <th>학부모 화면 표기</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>😴 졸음 주의</td>
+            <td>+1점</td>
+            <td>가볍게 어깨를 두드려 깨운 뒤 세안 권유</td>
+            <td>오렌지 배지 + 메모 표시</td>
+          </tr>
+          <tr>
+            <td>📱 스마트폰 / 딴짓</td>
+            <td>+1점</td>
+            <td>SNS/유튜브 시청 경고, 인강 외 앱 종료 지도</td>
+            <td>레드 배지 + 메모 표시</td>
+          </tr>
+          <tr>
+            <td>🚶 무단 장기 이탈</td>
+            <td>+2점</td>
+            <td>사유 없는 60분 초과 자리비움 경고</td>
+            <td>레드 배지 + 메모 표시</td>
+          </tr>
+          <tr>
+            <td>👍 몰입 학습 우수</td>
+            <td>0점 (칭찬)</td>
+            <td>3시간 연속 고도의 집중 학습 유지 격려</td>
+            <td>그린 칭찬 배지 + 칭찬 메모</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="alert-box success">
+        👨‍👩‍👧 <strong>학부모 안심 포털 즉시 반영</strong>: 실장이 순찰 일지를 등록하는 순간 학부모 화면에 실시간으로 반영되므로, 관리형 스터디카페에 대한 학부모 신뢰가 크게 향상됩니다.
+      </div>
+    </section>
+
+    <!-- 5. 청소년 22시 셧다운 & 예외 관리 -->
+    <section id="sec-5" class="section-card">
+      <h2>5. 청소년 22:00 심야 셧다운 및 점주 예외 관리</h2>
+      <p>청소년보호법에 따라 밤 22:00 이후 만 19세 미만 청소년의 이용은 엄격히 제한됩니다.</p>
+      
+      <h3>자동 셧다운 일정</h3>
+      <ul>
+        <li><strong>21:50</strong>: 키오스크 및 학생 화면에 <em>"⚠️ 밤 22:00 청소년 이용 종료 사전 안내"</em> 토스트 발송</li>
+        <li><strong>22:00</strong>: 백엔드 스케줄러가 미성년자 좌석을 자동으로 퇴실 처리하고 스마트 출입문을 차단</li>
+      </ul>
+
+      <h3>점주 예외 승인 (고3 / 동의서 제출자)</h3>
+      <ul>
+        <li><strong>예외 대상</strong>: 만 18세 이상 고3 수험생 또는 학부모 동의서를 제출한 학생</li>
+        <li><strong>토글 방법</strong>: 점주 대시보드의 좌석 테이블에서 <code>[⛔ 22시 퇴실]</code> 버튼을 클릭하면 즉시 <code>[🌙 예외 허용]</code> 상태로 전환되어 22시 이후에도 퇴실되지 않고 학습을 지속할 수 있습니다.</li>
+      </ul>
+    </section>
+
+    <!-- 6. SelfStudy 진도 연동 -->
+    <section id="sec-6" class="section-card">
+      <h2>6. SelfStudy(PPH 진도 연산) 연동 워크플로우</h2>
+      <p>관리형 회원이 퇴실할 때 <strong>단 10초 만에 학습 실적을 수집</strong>하여 다음 날 학습량을 자동 산출합니다.</p>
+
+      <pre>
+[학생 키오스크 퇴실] ──▶ [10초 컷 교재 끝 페이지 입력] ──▶ [스마트 퇴실 완료]
+                                     │
+                                     ▼
+                   [PPH(시간당 학습속도) 자동 연산]
+                                     │
+                                     ▼
+                   [내일 분량 자동 스케줄링 & 학부모 리포트 연동]
+      </pre>
+
+      <div class="alert-box info">
+        💡 <strong>PPH(Pages Per Hour) 공식</strong>: 당일 소화 페이지 수 ÷ 실제 순공 시간<br/>
+        오늘 목표치에 미달한 과목은 학생의 PPH 속도에 맞춰 내일 학습 분량으로 지능형 자동 이월(Rebalancing)됩니다.
+      </div>
+    </section>
+
+    <!-- 7. 스마트 도어락 & 화재 비상 개방 -->
+    <section id="sec-7" class="section-card">
+      <h2>7. 스마트 출입문 제어 & 화재 비상(Fail-Safe) 매뉴얼</h2>
+
+      <div class="alert-box danger">
+        🚨 <strong>소방법 피난시설 기준 (Fail-Safe 절대 원칙)</strong><br/>
+        화재 또는 정전 발생 시 모든 출입문은 컴퓨터 조작이나 소프트웨어 정상 여부와 무관하게 <strong>물리적으로 즉시 전면 개방</strong>되어야 합니다.
+      </div>
+
+      <h3>하드웨어 배선 구조</h3>
+      <ul>
+        <li><strong>전원 차단형 락(EM-Lock)</strong>: 전기가 공급될 때만 잠기고, 전기가 끊기면 즉시 열리는 락 사용.</li>
+        <li><strong>소방 수신기 직렬 결선</strong>: SMPS DC 12V(+) 전원선이 건물 소방 수신기의 <strong>화재 무전압 b접점(Normally Closed, NC)</strong>을 거쳐 도어락으로 들어가도록 직렬 연결. 화재 발생 시 회로가 끊어지며 문이 100% 개방됩니다.</li>
+      </ul>
+
+      <h3>소프트웨어 비상 개방 발령 & 복구</h3>
+      <ul>
+        <li><strong>비상 발령</strong>: 관제 상단의 <strong><code>[🚨 비상 전면 개방]</code></strong> 클릭 ➔ 도어락 영구 상시 개방 모드 전환 & 키오스크 대피 배너 작동</li>
+        <li><strong>정상 복구</strong>: 상황 종료 후 <strong><code>[✅ 비상 해제 (정상 복구)]</code></strong> 클릭 ➔ 정상 자동 잠금 모드로 복원</li>
+      </ul>
+    </section>
+
+    <!-- 8. 개인정보보호 -->
+    <section id="sec-8" class="section-card">
+      <h2>8. 개인정보보호 및 데이터 정리 수칙</h2>
+      <ul>
+        <li><strong>필수 동의서</strong>: 좌석 배정 시 <code>[필수] 개인정보 수집 및 이용 동의</code> 체크박스 운영.</li>
+        <li><strong>90일 경과 순찰 기록 파기</strong>: 학생의 벌점 및 졸음 순찰 기록은 법정 보존 기한(90일) 이후 보관할 수 없습니다. 매달 1회 점주 대시보드의 <strong><code>[🧹 90일 순찰기록 파기]</code></strong> 버튼을 클릭하여 안전하게 파기하십시오.</li>
+      </ul>
+    </section>
+
+    <!-- 9. FAQ -->
+    <section id="sec-9" class="section-card">
+      <h2>9. 자주 묻는 질문(FAQ) & 장애 대응</h2>
+      
+      <h3>Q1. 학생이 문 앞인데 문이 안 열린다고 합니다.</h3>
+      <p>점주 대시보드에서 <strong><code>[🔓 출입문 5초 개방]</code></strong>을 눌러 우선 입장시킨 후, 외출 60분 초과로 자동 퇴실되었는지 확인하십시오.</p>
+
+      <h3>Q2. 학부모님이 자녀 상태를 어디서 보는지 모른다고 하십니다.</h3>
+      <p>점주 화면에서 학생 전화번호를 확인하고 아래 안내 문구를 카카오톡/문자로 전달합니다:<br/>
+      <code>👉 https://{매장도메인}/studycafe/parent.html?phone=010-XXXX-XXXX</code><br/>
+      <em>"링크 접속 후 [홈 화면에 추가]를 눌러두시면 매일 1-터치로 확인하실 수 있습니다."</em></p>
+
+      <h3>Q3. 서버 재시작 명령어 (Windows 콘솔)</h3>
+      <pre>cd c:\Users\USER\Desktop\Workstation\integrated
+py -3.14 -m uvicorn gateway.main:app --host 0.0.0.0 --port 9000</pre>
+    </section>
+
+    <!-- 푸터 -->
+    <footer style="text-align: center; color: #64748b; font-size: 0.8rem; padding: 1.5rem 0;">
+      © 2026 MQnet Integrated Platform. StudyCafe & SelfStudy 공식 운영 매뉴얼.
+    </footer>
+  </div>
+
+</body>
+</html>
