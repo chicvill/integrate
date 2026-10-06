@@ -114,3 +114,27 @@ class PatrolLog(Base, TimestampMixin):
     penalty: Mapped[int] = mapped_column(Integer, default=0)           # 벌점 (+1, +2, 0)
     note: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     manager_name: Mapped[str] = mapped_column(String(50), default="관리실장")
+
+
+class StudyCafeBranch(Base, TimestampMixin):
+    """스터디카페 지점(매장) 마스터 모델"""
+    __tablename__ = "studycafe_branches"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    branch_id: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)  # 'studycafe-main', 'sc-gangnam', 'sc-daechi'
+    name: Mapped[str] = mapped_column(String(100), nullable=False)                                # 'MQnet 스터디카페 본점'
+    business_number: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)             # 사업자등록번호
+    contact_phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    address: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    total_seats: Mapped[int] = mapped_column(Integer, default=20)
+    
+    # IoT 스마트 출입문 릴레이 하드웨어 설정
+    relay_type: Mapped[str] = mapped_column(String(20), default="HTTP")                           # 'HTTP', 'MQTT', 'TCP'
+    relay_host: Mapped[str] = mapped_column(String(100), default="127.0.0.1")
+    relay_port: Mapped[int] = mapped_column(Integer, default=8080)
+    
+    # SelfStudy OS 관리형 연동 여부
+    has_selfstudy_lms: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_emergency_open: Mapped[bool] = mapped_column(Boolean, default=False)
+

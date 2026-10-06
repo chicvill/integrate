@@ -9,7 +9,7 @@ from apps.studycafe.backend.config import settings
 from shared.core.base_database import Base, get_database_service
 from apps.studycafe.backend.routers import (
     seat_router, ticket_router, session_router,
-    door_router, ai_router, studycafe_selfstudy_router, study_auth_router
+    door_router, ai_router, studycafe_selfstudy_router, study_auth_router, branch_router
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -36,6 +36,7 @@ app.add_middleware(
 
 # Register Core Routers
 app.include_router(study_auth_router, prefix="/api/auth", tags=["스터디카페 - 인증"])
+app.include_router(branch_router, prefix="/api/branches", tags=["스터디카페 - 지점"])
 app.include_router(seat_router, prefix="/api/seats", tags=["스터디카페 - 좌석"])
 app.include_router(ticket_router, prefix="/api/tickets", tags=["스터디카페 - 이용권"])
 app.include_router(door_router, prefix="/api/door", tags=["스터디카페 - 출입문"])

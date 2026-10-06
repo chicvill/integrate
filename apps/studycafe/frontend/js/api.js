@@ -3,6 +3,20 @@
 
 import { MQnetAuth } from '/shared/ui/auth.js?v=2.0';
 
+// ── 지점(Tenant) 식별 및 전역 상태 관리 ──
+const _urlParams = new URLSearchParams(window.location.search);
+export let CURRENT_BRANCH = _urlParams.get('branch') || _urlParams.get('tenant_id') || localStorage.getItem('studycafe_branch') || 'studycafe-main';
+
+export function setCurrentBranch(branchId) {
+  if (!branchId) return;
+  CURRENT_BRANCH = branchId;
+  localStorage.setItem('studycafe_branch', branchId);
+}
+
+export function getCurrentBranch() {
+  return CURRENT_BRANCH;
+}
+
 export function getApiBase() {
   const p = window.location.pathname;
   if (p.startsWith('/studycafe')) {
@@ -14,7 +28,8 @@ export function getApiBase() {
 function getHeaders() {
   const headers = {
     'Content-Type': 'application/json',
-    'X-App-ID': 'studycafe'
+    'X-App-ID': 'studycafe',
+    'X-Tenant-ID': CURRENT_BRANCH
   };
   const token = localStorage.getItem('mqnet_auth_token') || sessionStorage.getItem('mqnet_auth_token');
   if (token) {
@@ -23,10 +38,35 @@ function getHeaders() {
   return headers;
 }
 
+// 0. 지점(매장) 목록 및 신규 지점 등록
+export async function fetchBranches() {
+  const base = getApiBase();
+  const res = await fetch(`${base}/branches/?t=${Date.now()}`, {
+    headers: getHeaders(),
+    cache: 'no-store'
+  });
+  if (!res.ok) throw new Error(`지점 목록 조회 실패 (HTTP ${res.status})`);
+  return await res.json();
+}
+
+export async function createBranch(branchData) {
+  const base = getApiBase();
+  const res = await fetch(`${base}/branches/`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(branchData)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || '지점 등록 실패');
+  }
+  return await res.json();
+}
+
 // 1. 전체 좌석 현황 조회
 export async function fetchSeats() {
   const base = getApiBase();
-  const res = await fetch(`${base}/seats/?t=${Date.now()}`, {
+  const res = await fetch(`${base}/seats/?tenant_id=${encodeURIComponent(CURRENT_BRANCH)}&t=${Date.now()}`, {
     headers: getHeaders(),
     cache: 'no-store'
   });
@@ -352,10 +392,10 @@ export async function submitPatrolLog(seatNumber, category, penalty = 0, note = 
   return data;
 }
 
-// 21. 출입문 및 화재 비상 상태 조회 (Fail-Safe)
+// 21. 출입문 및 화재 비상 상태 조회 (Fail-Safe, 지점별)
 export async function fetchDoorStatus() {
   const base = getApiBase();
-  const res = await fetch(`${base}/door/status?t=${Date.now()}`, {
+  const res = await fetch(`${base}/door/status?tenant_id=${encodeURIComponent(CURRENT_BRANCH)}&t=${Date.now()}`, {
     headers: getHeaders(),
     cache: 'no-store'
   });
@@ -363,10 +403,10 @@ export async function fetchDoorStatus() {
   return await res.json();
 }
 
-// 22. 화재/비상 전면 개방 발령
+// 22. 화재/비상 전면 개방 발령 (지점별)
 export async function emergencyOpenDoor(reason = '점주 수동 비상 개방 발령') {
   const base = getApiBase();
-  const res = await fetch(`${base}/door/emergency-open`, {
+  const res = await fetch(`${base}/door/emergency-open?tenant_id=${encodeURIComponent(CURRENT_BRANCH)}`, {
     method: 'POST',
     headers: getHeaders(),
     body: JSON.stringify({ reason })
@@ -376,10 +416,10 @@ export async function emergencyOpenDoor(reason = '점주 수동 비상 개방 �
   return data;
 }
 
-// 23. 비상 개방 해제 및 정상 모드 복구
+// 23. 비상 개방 해제 및 정상 모드 복구 (지점별)
 export async function emergencyResetDoor() {
   const base = getApiBase();
-  const res = await fetch(`${base}/door/emergency-reset`, {
+  const res = await fetch(`${base}/door/emergency-reset?tenant_id=${encodeURIComponent(CURRENT_BRANCH)}`, {
     method: 'POST',
     headers: getHeaders()
   });
@@ -403,7 +443,7 @@ export async function toggleNightExempt(userIdOrPhone) {
 // 25. 개인정보보호법 준수 오래된 순찰 기록 파기 (기본 90일)
 export async function cleanupOldPatrolLogs(days = 90) {
   const base = getApiBase();
-  const res = await fetch(`${base}/seats/cleanup-old-logs?days=${days}`, {
+  const res = await fetch(`${base}/seats/cleanup-old-logs?days=${days}&tenant_id=${encodeURIComponent(CURRENT_BRANCH)}`, {
     method: 'POST',
     headers: getHeaders()
   });
@@ -412,10 +452,10 @@ export async function cleanupOldPatrolLogs(days = 90) {
   return data;
 }
 
-// 26. 점주 매출 통계 상세 조회
+// 26. 점주 매출 통계 상세 조회 (지점별)
 export async function fetchAdminSalesStats() {
   const base = getApiBase();
-  const res = await fetch(`${base}/seats/admin/sales?t=${Date.now()}`, {
+  const res = await fetch(`${base}/seats/admin/sales?tenant_id=${encodeURIComponent(CURRENT_BRANCH)}&t=${Date.now()}`, {
     headers: getHeaders(),
     cache: 'no-store'
   });
@@ -423,19 +463,20 @@ export async function fetchAdminSalesStats() {
   return await res.json();
 }
 
-// 27. 세무·소득신고용 월별 매출 조회
+// 27. 세무·소득신고용 월별 매출 조회 (지점별)
 export async function fetchMonthlySales(year = null) {
   const base = getApiBase();
-  const url = year ? `${base}/seats/admin/sales/monthly?year=${year}&t=${Date.now()}` : `${base}/seats/admin/sales/monthly?t=${Date.now()}`;
+  const yearParam = year ? `&year=${year}` : '';
+  const url = `${base}/seats/admin/sales/monthly?tenant_id=${encodeURIComponent(CURRENT_BRANCH)}${yearParam}&t=${Date.now()}`;
   const res = await fetch(url, { headers: getHeaders(), cache: 'no-store' });
   if (!res.ok) throw new Error('월별 매출 조회 실패');
   return await res.json();
 }
 
-// 28. 세무·소득신고용 기간 지정 매출 조회
+// 28. 세무·소득신고용 기간 지정 매출 조회 (지점별)
 export async function fetchRangeSales(startDate, endDate) {
   const base = getApiBase();
-  const res = await fetch(`${base}/seats/admin/sales/range?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}&t=${Date.now()}`, {
+  const res = await fetch(`${base}/seats/admin/sales/range?tenant_id=${encodeURIComponent(CURRENT_BRANCH)}&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}&t=${Date.now()}`, {
     headers: getHeaders(),
     cache: 'no-store'
   });
@@ -443,10 +484,10 @@ export async function fetchRangeSales(startDate, endDate) {
   return await res.json();
 }
 
-// 29. 세무 신고용 CSV 다운로드 URL 생성
+// 29. 세무 신고용 CSV 다운로드 URL 생성 (지점별)
 export function getSalesCsvExportUrl(startDate, endDate) {
   const base = getApiBase();
-  return `${base}/seats/admin/sales/export-csv?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`;
+  return `${base}/seats/admin/sales/export-csv?tenant_id=${encodeURIComponent(CURRENT_BRANCH)}&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`;
 }
 
 

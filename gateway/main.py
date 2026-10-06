@@ -15,7 +15,7 @@ from shared.tenant.registry import list_apps, get_app_config
 from shared.tenant.middleware import app_context_middleware
 
 # 각 앱 라우터 임포트
-from apps.studycafe.backend.routers import seat_router, ticket_router, session_router
+from apps.studycafe.backend.routers import seat_router, ticket_router, session_router, branch_router
 from apps.studycafe.backend.routers.door_router import router as study_door_router
 from apps.studycafe.backend.routers.ai_router import router as study_ai_tutor_router
 from apps.studycafe.backend.routers.auth import router as study_auth_router
@@ -148,6 +148,7 @@ app.middleware("http")(app_context_middleware)
 app.include_router(auth_router, prefix="/auth", tags=["공통 인증 (X-App-ID 필수)"])
 
 # 1. 스터디카페 앱
+app.include_router(branch_router, prefix="/api/studycafe/branches", tags=["스터디카페 - 지점"])
 app.include_router(seat_router, prefix="/api/studycafe/seats", tags=["스터디카페 - 좌석"])
 app.include_router(study_door_router, prefix="/api/studycafe/door", tags=["스터디카페 - 스마트 도어락"])
 app.include_router(study_ai_tutor_router, prefix="/api/studycafe/ai", tags=["스터디카페 - AI 학습 튜터"])
@@ -203,6 +204,7 @@ app.include_router(files_router, prefix="/api/files", tags=["파일 스토리지
 app.include_router(files_router, prefix="/api/filebrowser", include_in_schema=False)
 
 # ── 원본 앱 API 호환 라우팅 ──
+app.include_router(branch_router, prefix="/api/branches", include_in_schema=False)
 app.include_router(seat_router, prefix="/api/seats", include_in_schema=False)
 app.include_router(study_auth_router, prefix="/api/auth", include_in_schema=False)
 app.include_router(ticket_router, prefix="/api/tickets", include_in_schema=False)

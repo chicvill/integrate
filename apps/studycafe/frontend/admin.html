@@ -117,7 +117,17 @@
     <header class="admin-header">
       <div>
         <h1 style="font-size:1.4rem;font-weight:800;color:#fff;margin:0 0 0.3rem;">📊 점주 실시간 관제 대시보드</h1>
-        <div style="font-size:0.82rem;color:var(--text-muted);">스터디카페 20석 실시간 재실 모니터링 & 스마트 출입문 제어 (Fail-Safe 연동)</div>
+        <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.4rem;">스터디카페 지점별 실시간 재실 모니터링 & 스마트 출입문 제어 (Fail-Safe 연동)</div>
+        <!-- 🏢 지점 선택 및 관리 셀렉터 -->
+        <div style="display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap;">
+          <span style="font-size:0.82rem;color:#94a3b8;font-weight:700;">🏢 관제 매장:</span>
+          <select id="branchSelector" style="padding:0.35rem 0.65rem;font-size:0.82rem;background:#1e293b;color:#f8fafc;border:1px solid #3b82f6;border-radius:8px;cursor:pointer;font-weight:600;outline:none;">
+            <!-- 동적 지점 옵션 -->
+          </select>
+          <button id="btnOpenNewBranchModal" class="btn-action" style="padding:0.35rem 0.65rem;font-size:0.78rem;background:rgba(59,130,246,0.18);color:#93c5fd;border:1px solid rgba(59,130,246,0.4);border-radius:6px;cursor:pointer;" type="button">
+            ➕ 신규 매장(가맹점) 등록
+          </button>
+        </div>
       </div>
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
         <button id="btnManualDoor" class="sc-modal-submit-btn" style="margin:0;background:#10b981;padding:0.6rem 0.95rem;font-size:0.82rem;" type="button">
@@ -397,8 +407,50 @@
     </div>
   </div>
 
+  <!-- 🏢 신규 매장(가맹점/지점) 등록 모달 -->
+  <div id="newBranchModal" class="sc-modal-backdrop">
+    <div class="sc-modal" style="max-width: 460px;">
+      <div class="sc-modal-header">
+        <h3 class="sc-modal-title">🏢 신규 스터디카페 매장 등록</h3>
+        <button class="sc-modal-close" onclick="document.getElementById('newBranchModal').classList.remove('open')">✕</button>
+      </div>
+      <div class="sc-modal-body" style="display:flex;flex-direction:column;gap:0.9rem;">
+        <div class="sc-form-group">
+          <label class="sc-form-label">매장 코드 (영문 고유 식별자)</label>
+          <input id="nbBranchId" type="text" class="sc-form-input" placeholder="예: sc-sinchon, sc-bundang">
+        </div>
+        <div class="sc-form-group">
+          <label class="sc-form-label">매장명 (지점명)</label>
+          <input id="nbName" type="text" class="sc-form-input" placeholder="예: MQnet 스터디카페 신촌연세점">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+          <div class="sc-form-group">
+            <label class="sc-form-label">보유 좌석 수</label>
+            <input id="nbTotalSeats" type="number" class="sc-form-input" value="20" min="5" max="100">
+          </div>
+          <div class="sc-form-group">
+            <label class="sc-form-label">매장 대표 전화</label>
+            <input id="nbPhone" type="tel" class="sc-form-input" placeholder="02-1234-5678">
+          </div>
+        </div>
+        <div class="sc-form-group">
+          <label class="sc-form-label">매장 주소</label>
+          <input id="nbAddress" type="text" class="sc-form-input" placeholder="서울특별시 서대문구 연세로 12">
+        </div>
+        <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.25);border-radius:10px;padding:0.75rem;font-size:0.78rem;color:#93c5fd;line-height:1.45;">
+          💡 <strong>자동 초기화</strong>: 매장 등록 즉시 지정된 좌석 수(A-01~A-N)의 좌석 배치도 및 포커스/일반/노트북존이 자동 생성됩니다.
+        </div>
+        <button id="btnSubmitNewBranch" class="sc-modal-submit-btn" type="button">🚀 신규 매장 등록 완료</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { 
+      CURRENT_BRANCH,
+      setCurrentBranch,
+      fetchBranches,
+      createBranch,
       fetchAdminDashboard, 
       cleanupExpiredSeats, 
       triggerDoor, 
@@ -412,7 +464,7 @@
       fetchMonthlySales,
       fetchRangeSales,
       getSalesCsvExportUrl
-    } from './js/api.js?v=2.5';
+    } from './js/api.js?v=2.6';
 
     async function checkDoorEmergencyStatus() {
       try {
@@ -853,7 +905,77 @@
 
     document.getElementById('btnRefresh').addEventListener('click', loadDashboard);
 
-    loadDashboard();
+    // ── 🏢 지점 선택기 및 신규 지점 등록 로직 ──────────────────────
+    async function initBranchSelector() {
+      const selector = document.getElementById('branchSelector');
+      if (!selector) return;
+      try {
+        const res = await fetchBranches();
+        if (res.branches && res.branches.length > 0) {
+          selector.innerHTML = res.branches.map(b => 
+            `<option value="${b.branch_id}" ${b.branch_id === CURRENT_BRANCH ? 'selected' : ''}>
+              ${b.name} (${b.total_seats}석)
+            </option>`
+          ).join('');
+        }
+        selector.onchange = (e) => {
+          setCurrentBranch(e.target.value);
+          loadDashboard();
+        };
+      } catch (err) {
+        console.warn('지점 목록 로드 알림:', err);
+      }
+    }
+
+    document.getElementById('btnOpenNewBranchModal')?.addEventListener('click', () => {
+      document.getElementById('newBranchModal')?.classList.add('open');
+    });
+
+    document.getElementById('btnSubmitNewBranch')?.addEventListener('click', async () => {
+      const branchId = document.getElementById('nbBranchId')?.value.trim();
+      const name = document.getElementById('nbName')?.value.trim();
+      const totalSeats = parseInt(document.getElementById('nbTotalSeats')?.value || '20', 10);
+      const phone = document.getElementById('nbPhone')?.value.trim();
+      const address = document.getElementById('nbAddress')?.value.trim();
+
+      if (!branchId || !name) {
+        alert('매장 코드와 매장명을 입력해 주세요.');
+        return;
+      }
+
+      try {
+        const btn = document.getElementById('btnSubmitNewBranch');
+        btn.disabled = true;
+        btn.textContent = '등록 처리 중...';
+
+        const res = await createBranch({
+          branch_id: branchId,
+          name,
+          total_seats: totalSeats,
+          contact_phone: phone,
+          address
+        });
+
+        alert(res.message);
+        document.getElementById('newBranchModal')?.classList.remove('open');
+        setCurrentBranch(branchId);
+        await initBranchSelector();
+        await loadDashboard();
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        const btn = document.getElementById('btnSubmitNewBranch');
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '🚀 신규 매장 등록 완료';
+        }
+      }
+    });
+
+    // 초기 실행
+    initBranchSelector().then(() => {
+      loadDashboard();
+    });
     setInterval(loadDashboard, 15000);
   </script>
 </body>

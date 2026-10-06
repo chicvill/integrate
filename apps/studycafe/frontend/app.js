@@ -10,11 +10,12 @@ import {
   isLmsAllowed
 } from './js/state.js?v=2.3';
 import {
+  CURRENT_BRANCH, fetchBranches,
   fetchSeats, fetchMySeat, assignSeat, leaveSeat,
   fetchTicketPlans, purchaseTicket, fetchMyActiveTicket, triggerDoor, fetchAiCongestion,
   stepOutSeat, stepInSeat, submitDailyCheckoutResult, cleanupExpiredSeats, fetchDoorStatus,
   autoAssignFixedSeat
-} from './js/api.js?v=2.3';
+} from './js/api.js?v=2.6';
 import {
   renderStatsBar, renderSeatGrid, renderTicketPlans,
   renderDoorPass, renderSelfstudyTab
@@ -655,6 +656,23 @@ async function init() {
     }
   });
   MQnetAuth.renderBadge('userAuthBadge');
+
+  // 🏢 지점(매장) 식별 및 상단 브랜드 배너 반영
+  try {
+    const branchRes = await fetchBranches();
+    if (branchRes && branchRes.branches) {
+      const cur = branchRes.branches.find(b => b.branch_id === CURRENT_BRANCH);
+      if (cur) {
+        document.title = `${cur.name} | MQnet StudyCafe`;
+        const sub = document.querySelector('.brand-subtitle');
+        if (sub) {
+          sub.innerHTML = `<span style="color:#60a5fa;font-weight:700;">📍 ${cur.name}</span> (${cur.total_seats}석) & 자기주도 학습 시스템`;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('지점 정보 로드 알림:', err);
+  }
 
   state.currentUser = MQnetAuth.getUser();
   if (state.currentUser) {

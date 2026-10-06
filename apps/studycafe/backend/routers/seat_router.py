@@ -14,7 +14,7 @@ import datetime
 
 from shared.core.base_database import get_db
 from sqlalchemy import text
-from apps.studycafe.backend.models import Seat, StudyCafeUser, StudyCafeSession, Ticket, PatrolLog
+from apps.studycafe.backend.models import Seat, StudyCafeUser, StudyCafeSession, Ticket, PatrolLog, StudyCafeBranch
 from apps.studycafe.backend.config import get_settings
 from apps.studycafe.backend.db.studycafe_ai_service import StudyCafeAIService
 
@@ -52,21 +52,32 @@ def _ensure_sqlite_columns(db: Session):
 
 
 def _ensure_original_20_seats(db: Session, tenant_id: str = "studycafe-main"):
-    """오리지널 studycafe 20개 구역별 좌석(A-01 ~ A-20) 시딩 및 스키마 검증"""
+    """오리지널 studycafe 구역별 좌석 시딩 및 스키마 검증 (지점별 좌석 수 자동 반영)"""
     _ensure_sqlite_columns(db)
+
+    # 지점 시드 확인
+    from apps.studycafe.backend.routers.branch_router import ensure_default_branches_seed
+    ensure_default_branches_seed(db)
+
+    branch = db.query(StudyCafeBranch).filter(StudyCafeBranch.branch_id == tenant_id).first()
+    target_count = (branch.total_seats if branch and branch.total_seats else 20)
+
     seats = db.query(Seat).filter(Seat.tenant_id == tenant_id).all()
     
-    # 만약 좌석이 없거나 구버전(1~16번)이면 20개 좌석(A-01~A-20)으로 갱신
-    if len(seats) < 20 or (seats and not seats[0].seat_number.startswith("A-")):
-        # 기존 임시 좌석 삭제 후 20개 신규 생성
+    # 만약 좌석이 없거나 규격과 다르면 지점 설정 좌석 수(A-01~A-N)로 갱신
+    if len(seats) < target_count or (seats and not seats[0].seat_number.startswith("A-")):
+        # 기존 임시 좌석 삭제 후 신규 생성
         db.query(Seat).filter(Seat.tenant_id == tenant_id).delete()
         db.commit()
 
-        for i in range(1, 21):
+        focus_threshold = max(4, int(target_count * 0.4))
+        normal_threshold = max(focus_threshold + 4, int(target_count * 0.8))
+
+        for i in range(1, target_count + 1):
             s_num = f"A-{i:02d}"
-            if 1 <= i <= 8:
+            if 1 <= i <= focus_threshold:
                 zone = "FOCUS"
-            elif 9 <= i <= 16:
+            elif focus_threshold < i <= normal_threshold:
                 zone = "NORMAL"
             else:
                 zone = "LAPTOP"
