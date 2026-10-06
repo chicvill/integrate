@@ -15,7 +15,7 @@ import threading
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Dict, Any, List, Optional
-import psutil
+import psutil  # type: ignore[import-untyped]
 
 logger = logging.getLogger("mqnet.monitoring")
 
