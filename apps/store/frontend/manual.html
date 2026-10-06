@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MQnet Store 매장 POS & 실시간 상황실 운영 매뉴얼</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0b1120;
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-amber: #fbbf24;
+      --accent-cyan: #22d3ee;
+      --accent-green: #34d399;
+      --accent-rose: #f43f5e;
+    }
+    body {
+      background: var(--bg-dark);
+      color: #e2e8f0;
+      font-family: 'Pretendard', sans-serif;
+      line-height: 1.65;
+      margin: 0;
+      padding: 1.5rem;
+    }
+    .manual-container {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .manual-header {
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(34, 211, 238, 0.08));
+      border: 1px solid rgba(251, 191, 36, 0.35);
+      border-radius: 16px;
+      padding: 1.75rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .manual-title {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .manual-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent-amber);
+      background: rgba(251, 191, 36, 0.15);
+      padding: 0.25rem 0.7rem;
+      border-radius: 6px;
+      border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+    .btn-header {
+      padding: 0.55rem 1.1rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-header.primary {
+      background: var(--accent-amber);
+      color: #0b1120;
+      border: none;
+    }
+    .btn-header.secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .toc-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.25rem 1.5rem;
+    }
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 0.5rem 1.5rem;
+      margin-top: 0.75rem;
+    }
+    .toc-link {
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 0.88rem;
+      transition: color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .toc-link:hover { color: var(--accent-amber); }
+    .section-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.75rem 2rem;
+    }
+    h2 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 0 0 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 0.75rem;
+    }
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--accent-amber);
+      margin: 1.25rem 0 0.5rem;
+    }
+    p { margin: 0 0 0.75rem; font-size: 0.92rem; color: #cbd5e1; }
+    ul, ol { margin: 0 0 1rem; padding-left: 1.4rem; font-size: 0.92rem; color: #cbd5e1; }
+    li { margin-bottom: 0.35rem; }
+    .callout {
+      border-radius: 10px;
+      padding: 0.9rem 1.2rem;
+      margin: 1rem 0;
+      font-size: 0.88rem;
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+    }
+    .callout.info {
+      background: rgba(34, 211, 238, 0.08);
+      border: 1px solid rgba(34, 211, 238, 0.25);
+      color: #a5f3fc;
+    }
+    .callout.warning {
+      background: rgba(251, 191, 36, 0.08);
+      border: 1px solid rgba(251, 191, 36, 0.25);
+      color: #fde68a;
+    }
+    .callout.success {
+      background: rgba(52, 211, 153, 0.08);
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      color: #a7f3d0;
+    }
+    .step-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .step-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 1rem;
+    }
+    .step-num {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      line-height: 24px;
+      text-align: center;
+      background: var(--accent-amber);
+      color: #0b1120;
+      font-weight: 800;
+      font-size: 0.8rem;
+      border-radius: 50%;
+      margin-bottom: 0.5rem;
+    }
+    .step-box h4 { margin: 0 0 0.3rem; font-size: 0.95rem; color: #fff; }
+    .step-box p { margin: 0; font-size: 0.82rem; color: #94a3b8; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.86rem;
+    }
+    th, td {
+      border: 1px solid var(--card-border);
+      padding: 0.65rem 0.9rem;
+      text-align: left;
+    }
+    th { background: rgba(255, 255, 255, 0.04); color: #fff; font-weight: 600; }
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.82rem;
+      color: var(--accent-amber);
+    }
+    @media print {
+      body { background: #fff !important; color: #000 !important; }
+      .manual-container { max-width: 100% !important; gap: 1rem; }
+      .manual-header, .section-card, .toc-card { border: 1px solid #ccc !important; background: #fff !important; box-shadow: none !important; }
+      .btn-header, .no-print { display: none !important; }
+      h2, h3, .manual-title { color: #000 !important; }
+      p, li, td, th { color: #222 !important; }
+      .callout { border: 1px solid #999 !important; background: #f9f9f9 !important; color: #111 !important; }
+      a { color: #000 !important; text-decoration: underline; }
+    }
+  </style>
+</head>
+<body>
+  <div class="manual-container">
+    <!-- Header -->
+    <header class="manual-header">
+      <div>
+        <div class="manual-badge">MQnet Store POS & Kitchen Edition v1.8</div>
+        <h1 class="manual-title">🍽️ Store 매장 POS & 실시간 상황실 운영 매뉴얼</h1>
+        <p style="margin: 0; color: #94a3b8; font-size: 0.88rem;">
+          카운터 결제, 테이블 QR 오더, 주방 KDS 연동, 재고 관리 및 N100 로컬/클라우드 동기화 가이드
+        </p>
+      </div>
+      <div style="display: flex; gap: 0.6rem;" class="no-print">
+        <button class="btn-header primary" onclick="window.print()">🖨️ 매뉴얼 인쇄 / PDF 저장</button>
+        <a href="/store" class="btn-header secondary">← 매장 POS 화면 복귀</a>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="toc-card no-print">
+      <div style="font-size: 0.85rem; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 0.05em;">목차 바로가기</div>
+      <div class="toc-grid">
+        <a href="#sec1" class="toc-link">📌 1. 시스템 구조 및 동작 모드 (POS / 상황실)</a>
+        <a href="#sec2" class="toc-link">💳 2. 카운터 POS 주문 및 결제 승인/취소</a>
+        <a href="#sec3" class="toc-link">📱 3. 테이블 QR 주문 및 셀프 오더 시스템</a>
+        <a href="#sec4" class="toc-link">👨‍🍳 4. 주방 디스플레이(KDS) 조리 관제</a>
+        <a href="#sec5" class="toc-link">📦 5. 실시간 재고 추적 및 품절 자동 전환</a>
+        <a href="#sec6" class="toc-link">🔄 6. N100 로컬 Standalone ↔ SaaS 클라우드 동기화</a>
+        <a href="#sec7" class="toc-link">❓ 7. 긴급 장애 대처 (인터넷 단절, 영수증 출력 실패)</a>
+      </div>
+    </nav>
+
+    <!-- Sec 1 -->
+    <section id="sec1" class="section-card">
+      <h2>📌 1. 시스템 구조 및 동작 모드 (POS / 상황실)</h2>
+      <p>
+        <strong>MQnet Store</strong>는 일반 매장 카운터 결제와 홀 테이블 오더, 주방 및 점주의 실시간 관제를 단일 엔진으로 
+        통합한 매장 운영 관리 시스템입니다.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>동작 모드</th>
+            <th>경로</th>
+            <th>주요 대상 및 역할</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>카운터 POS</strong></td>
+            <td><code>/pos</code> 또는 메인 탭</td>
+            <td>주문 입력, 카드/현금 결제, 영수증 출력, 테이블 현황 확인</td>
+          </tr>
+          <tr>
+            <td><strong>실시간 상황실</strong></td>
+            <td><code>/situation</code></td>
+            <td>대형 모니터 전용. 홀 주문 상태, 주방 조리 대기열, 실시간 매출 집계</td>
+          </tr>
+          <tr>
+            <td><strong>재고 & 상품</strong></td>
+            <td>메인 탭 <code>재고 관리</code></td>
+            <td>메뉴 가격 수정, 식자재 재고 수량 추적, 안전재고 경고 설정</td>
+          </tr>
+          <tr>
+            <td><strong>설정 & Sync</strong></td>
+            <td>메인 탭 <code>설정</code></td>
+            <td>N100 로컬 SQLite와 Supabase/클라우드 DB 동기화 제어</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Sec 2 -->
+    <section id="sec2" class="section-card">
+      <h2>💳 2. 카운터 POS 주문 및 결제 승인/취소</h2>
+      <div class="step-grid">
+        <div class="step-box">
+          <div class="step-num">1</div>
+          <h4>테이블/주문 선택</h4>
+          <p>홀 테이블을 지정하거나 포장(Take-out) 모드를 선택합니다.</p>
+        </div>
+        <div class="step-box">
+          <div class="step-num">2</div>
+          <h4>메뉴 담기</h4>
+          <p>카테고리별 메뉴 및 옵션(샷 추가, 맵기 조절 등)을 선택해 장바구니에 담습니다.</p>
+        </div>
+        <div class="step-box">
+          <div class="step-num">3</div>
+          <h4>결제 진행</h4>
+          <p>신용카드(VAN/Toss), 간편결제(카카오/네이버페이) 또는 현금 결제를 선택합니다.</p>
+        </div>
+        <div class="step-box">
+          <div class="step-num">4</div>
+          <h4>주방 자동 전송</h4>
+          <p>결제 완료 즉시 주방 KDS 화면에 주문서가 생성되고 번호표가 발행됩니다.</p>
+        </div>
+      </div>
+      <div class="callout warning">
+        <span>⚠️</span>
+        <div>
+          <strong>결제 취소/환불 시 주의사항:</strong>
+          당일 결제 건은 POS [결제 내역]에서 영수증 번호 조회 후 즉시 망취소(Cancel) 가능하며, 
+          재고 수량은 자동으로 원복됩니다.
+        </div>
+      </div>
+    </section>
+
+    <!-- Sec 3 -->
+    <section id="sec3" class="section-card">
+      <h2>📱 3. 테이블 QR 주문 및 셀프 오더 시스템</h2>
+      <p>
+        각 테이블에 부착된 고유 QR 코드를 고객이 스마트폰 카메라로 스캔하면 별도 앱 설치 없이 웹 브라우저에서 메뉴판이 열립니다.
+      </p>
+      <ul>
+        <li><strong>선불 결제 모드:</strong> 모바일 PG(Toss Payments)로 스마트폰에서 결제 후 주방 접수.</li>
+        <li><strong>후불 합산 모드:</strong> 주문만 접수되고 카운터 POS의 해당 테이블에 합산 누적.</li>
+        <li><strong>QR 위변조 방지:</strong> 테이블 번호와 타임스탬프 토큰이 암호화된 일회용 URL 적용.</li>
+      </ul>
+    </section>
+
+    <!-- Sec 4 -->
+    <section id="sec4" class="section-card">
+      <h2>👨‍🍳 4. 주방 디스플레이(KDS) 조리 관제</h2>
+      <p>
+        주방 태블릿에 띄워진 KDS는 주문 인입 시간 순으로 티켓 카드가 표시됩니다.
+      </p>
+      <ul>
+        <li><code>대기 (Yellow)</code>: 신규 주문 접수 (주방 알림음 삐- 발생).</li>
+        <li><code>조리 중 (Blue)</code>: 셰프가 티켓을 터치하여 조리 시작 상태로 변경.</li>
+        <li><code>완료 (Green)</code>: [조리 완료] 클릭 시 홀 상황실 화면 및 고객 DID 모니터에 호출 번호 표출.</li>
+      </ul>
+    </section>
+
+    <!-- Sec 5 -->
+    <section id="sec5" class="section-card">
+      <h2>📦 5. 실시간 재고 추적 및 품절 자동 전환</h2>
+      <p>
+        주문이 완료될 때마다 연결된 식자재 수량이 실시간 차감됩니다.
+      </p>
+      <div class="callout info">
+        <span>💡</span>
+        <div>
+          <strong>자동 품절 (Sold Out) 보호:</strong>
+          재고 수량이 0이 되면 카운터 POS와 테이블 QR 메뉴판에서 즉시 [품절] 뱃지가 표시되며 
+          고객의 추가 주문이 차단됩니다.
+        </div>
+      </div>
+    </section>
+
+    <!-- Sec 6 -->
+    <section id="sec6" class="section-card">
+      <h2>🔄 6. N100 로컬 Standalone ↔ SaaS 클라우드 동기화</h2>
+      <p>
+        매장 현장 PC(인텔 N100 미니PC)가 인터넷이 끊겨도 영업이 지속되도록 <strong>Local First Architecture</strong>를 지원합니다.
+      </p>
+      <ul>
+        <li><strong>오프라인 동작:</strong> 로컬 SQLite에 주문 및 결제가 기록되어 정상 영업 지속.</li>
+        <li><strong>인터넷 복구 시:</strong> 백그라운드 워커가 클라우드 본사 서버로 미전송 내역을 자동 동기화(Sync).</li>
+      </ul>
+    </section>
+
+    <!-- Sec 7 -->
+    <section id="sec7" class="section-card">
+      <h2>❓ 7. 긴급 장애 대처 (인터넷 단절, 영수증 출력 실패)</h2>
+      <h3>Q1. 매장 인터넷이 끊겼습니다. POS 결제가 가능한가요?</h3>
+      <p>상단 배지가 <code>STANDALONE MODE</code>로 전환되며 로컬 결제가 유지됩니다. 인터넷 복구 시 자동 싱크됩니다.</p>
+
+      <h3>Q2. 영수증 프린터에서 종이가 나오지 않습니다.</h3>
+      <p>프린터 전원 및 USB/LAN 케이블 결착 여부를 확인한 후, [설정] 메뉴의 [프린터 테스트 출력]을 클릭하십시오.</p>
+    </section>
+  </div>
+</body>
+</html>

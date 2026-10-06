@@ -85,9 +85,12 @@
       </div>
     </div>
 
-    <div class="header-center">
+    <div class="header-center" style="display: flex; gap: 8px;">
       <a href="./index.html" class="btn btn-secondary btn-sm" style="text-decoration: none;">
         ← 메인 대시보드로 돌아가기
+      </a>
+      <a href="./manual.html" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration: none;">
+        📖 운영 매뉴얼
       </a>
     </div>
 
@@ -122,58 +125,135 @@
       </div>
     </section>
 
-    <!-- Toolbar / Search / Controls -->
-    <section class="toolbar-section">
-      <div class="search-filter-box">
-        <input type="text" id="branchSearchInput" class="form-input" placeholder="매장명 또는 코드 검색..." autocomplete="off">
-        <select id="billingFilter" class="form-select">
-          <option value="">모든 수납 상태</option>
-          <option value="PAID">완납 (PAID)</option>
-          <option value="PENDING">결제 대기 (PENDING)</option>
-          <option value="OVERDUE">미납/연체 (OVERDUE)</option>
-        </select>
-        <select id="activeFilter" class="form-select">
-          <option value="">모든 운영 상태</option>
-          <option value="true">정상 운영 중</option>
-          <option value="false">영업 정지 / 점검</option>
-        </select>
-      </div>
-      <div class="action-buttons">
-        <button id="openNewBranchBtn" class="btn btn-primary btn-sm">
-          <span>➕</span> 신규 매장(가맹점) 등록
-        </button>
-      </div>
-    </section>
+    <!-- Navigation Tabs -->
+    <div style="display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+      <button id="tabBranchesBtn" class="btn btn-primary btn-sm" style="border-radius: 6px;">
+        🏢 가맹점 & 수납 관리
+      </button>
+      <button id="tabUpgradesBtn" class="btn btn-secondary btn-sm" style="border-radius: 6px;">
+        👥 점주/실장 등업 신청 관리 <span id="badgePendingUpgrades" style="background:#ef4444;color:#fff;border-radius:9999px;padding:1px 6px;font-size:0.7rem;margin-left:4px;display:none;">0</span>
+      </button>
+      <button id="btnOpenLoginModal" class="btn btn-secondary btn-sm" style="margin-left: auto; border-radius: 6px; background: rgba(59,130,246,0.15); color: #93c5fd; border-color: rgba(59,130,246,0.4);">
+        🔑 관리자 계정 로그인 테스트
+      </button>
+    </div>
 
-    <!-- Branch Management Table -->
-    <section class="content-section">
-      <div style="overflow-x: auto;">
+    <!-- Section 1: Branches & Billing -->
+    <div id="sectionBranches">
+      <!-- Toolbar / Search / Controls -->
+      <section class="toolbar-section">
+        <div class="search-filter-box">
+          <input type="text" id="branchSearchInput" class="form-input" placeholder="매장명 또는 코드 검색..." autocomplete="off">
+          <select id="billingFilter" class="form-select">
+            <option value="">모든 수납 상태</option>
+            <option value="PAID">완납 (PAID)</option>
+            <option value="PENDING">결제 대기 (PENDING)</option>
+            <option value="OVERDUE">미납/연체 (OVERDUE)</option>
+          </select>
+          <select id="activeFilter" class="form-select">
+            <option value="">모든 운영 상태</option>
+            <option value="true">정상 운영 중</option>
+            <option value="false">영업 정지 / 점검</option>
+          </select>
+        </div>
+        <div class="action-buttons">
+          <button id="openNewBranchBtn" class="btn btn-primary btn-sm">
+            <span>➕</span> 신규 매장(가맹점) 등록
+          </button>
+        </div>
+      </section>
+
+      <!-- Branch Management Table -->
+      <section class="content-section">
+        <div style="overflow-x: auto;">
+          <table class="billing-table">
+            <thead>
+              <tr>
+                <th>매장 코드</th>
+                <th>매장명</th>
+                <th>연락처 / 주소</th>
+                <th>요금제 플랜</th>
+                <th>월 이용료</th>
+                <th>수납 상태</th>
+                <th>납부일 / 최근수납</th>
+                <th>운영 상태</th>
+                <th>관리 조치</th>
+              </tr>
+            </thead>
+            <tbody id="branchTableBody">
+              <!-- Rendered by js/branches.js -->
+            </tbody>
+          </table>
+        </div>
+        <div id="emptyBranchState" class="empty-state" style="display: none;">
+          <span class="empty-icon">🏢</span>
+          <p class="empty-text">등록된 매장이 없습니다. 신규 매장을 등록해주세요.</p>
+          <button id="emptyNewBranchBtn" class="btn btn-primary btn-sm">첫 매장 등록하기</button>
+        </div>
+      </section>
+    </div> <!-- End of sectionBranches -->
+
+    <!-- Section 2: Role Upgrade Requests -->
+    <div id="sectionUpgrades" style="display: none;">
+      <section style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem;">
+        <h3 style="font-size: 1.05rem; font-weight: 700; color: #fff; margin-bottom: 0.4rem;">
+          👥 점주/실장 관리자 등업 신청 검토 및 권한 승인
+        </h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">
+          일반 개인 회원으로 가입한 후 가맹점 점주 또는 총괄 실장 권한을 신청한 회원 목록입니다. 승인 시 해당 지점의 전용 관제 권한(branch_admin)이 즉시 부여됩니다.
+        </p>
+      </section>
+
+      <section class="content-section" style="overflow-x: auto;">
         <table class="billing-table">
           <thead>
             <tr>
-              <th>매장 코드</th>
-              <th>매장명</th>
-              <th>연락처 / 주소</th>
-              <th>요금제 플랜</th>
-              <th>월 이용료</th>
-              <th>수납 상태</th>
-              <th>납부일 / 최근수납</th>
-              <th>운영 상태</th>
-              <th>관리 조치</th>
+              <th>신청자 명칭</th>
+              <th>연락처</th>
+              <th>희망 지점</th>
+              <th>신청 사유</th>
+              <th>신청 일시</th>
+              <th>상태</th>
+              <th>본사 승인 조치</th>
             </tr>
           </thead>
-          <tbody id="branchTableBody">
+          <tbody id="upgradeTableBody">
             <!-- Rendered by js/branches.js -->
           </tbody>
         </table>
-      </div>
-      <div id="emptyBranchState" class="empty-state" style="display: none;">
-        <span class="empty-icon">🏢</span>
-        <p class="empty-text">등록된 매장이 없습니다. 신규 매장을 등록해주세요.</p>
-        <button id="emptyNewBranchBtn" class="btn btn-primary btn-sm">첫 매장 등록하기</button>
-      </div>
-    </section>
+      </section>
+    </div>
   </main>
+
+  <!-- Modal: Admin Login Test (역할 및 지점별 자동 분기 테스트) -->
+  <div id="loginModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 class="modal-title">🔑 관리자 계정 로그인 (지점 자동 분기)</h3>
+        <button id="closeLoginModalBtn" class="modal-close">&times;</button>
+      </div>
+      <form id="adminLoginForm" class="modal-body">
+        <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.8rem; background: rgba(255,255,255,0.03); padding: 0.6rem; border-radius: 6px;">
+          <div>• <strong>admin</strong> / 1212 : 본사 총괄 최고관리자 (전체 매장 포털)</div>
+          <div>• <strong>admin01</strong> / 1212 : 제1매장 본점 관제 (main)</div>
+          <div>• <strong>admin02</strong> / 1212 : 제2매장 강남점 관제 (branch-gangnam)</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">관리자 아이디</label>
+          <input type="text" id="loginUsername" class="form-input" required placeholder="예: admin, admin01, admin02">
+        </div>
+        <div class="form-group">
+          <label class="form-label">비밀번호</label>
+          <input type="password" id="loginPassword" class="form-input" required placeholder="기본: 1212">
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="cancelLoginModalBtn" class="btn btn-secondary">닫기</button>
+          <button type="submit" class="btn btn-primary" style="flex: 1;">로그인 & 해당 페이지 이동</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
 
   <!-- Modal: Branch Create / Edit -->
   <div id="branchModal" class="modal-backdrop" style="display: none;">

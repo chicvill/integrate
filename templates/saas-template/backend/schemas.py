@@ -113,3 +113,21 @@ class SystemStatusResponse(BaseModel):
     items_count: int
     branches_count: int
     storage_dir: str
+
+
+# ── 인증 & 계정별 라우팅 & 등업 워크플로우 스키마 ──
+class AdminLoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class UpgradeRequestPayload(BaseModel):
+    user_name: str
+    contact: str
+    target_branch_id: str
+    reason: Optional[str] = "매장/가맹점 운영 관리자 희망"
+
+
+class UpgradeApprovePayload(BaseModel):
+    assigned_branch_id: Optional[str] = None
+

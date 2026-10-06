@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📖 {{APP_NAME}} 공식 운영 & 관리자 매뉴얼</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="./css/variables.css?v=2.0">
+  <link rel="stylesheet" href="./css/layout.css?v=2.0">
+  <link rel="stylesheet" href="./css/components.css?v=2.0">
+  <style>
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      font-family: var(--font-family);
+      line-height: 1.7;
+      padding: 2rem 1rem;
+    }
+    .manual-wrapper {
+      max-width: 980px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+    .manual-header {
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(168, 85, 247, 0.1));
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .manual-title {
+      font-family: var(--font-title);
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .card-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.6rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .manual-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 0.8rem 0;
+    }
+    .manual-table th, .manual-table td {
+      border: 1px solid var(--border-color);
+      padding: 0.75rem 1rem;
+      text-align: left;
+    }
+    .manual-table th {
+      background: rgba(15, 23, 42, 0.8);
+      color: var(--accent-cyan);
+      font-weight: 700;
+    }
+    .callout {
+      background: rgba(6, 182, 212, 0.08);
+      border-left: 4px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      font-size: 0.9rem;
+    }
+    .step-list {
+      padding-left: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    @media print {
+      body { background: #fff; color: #000; padding: 0; }
+      .manual-header, .card-section { border: 1px solid #ccc; background: #fff; color: #000; }
+      .btn { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="manual-wrapper">
+    <!-- Header -->
+    <header class="manual-header">
+      <div>
+        <h1 class="manual-title">
+          <span>📖</span>
+          <span>{{APP_NAME}} 공식 운영 매뉴얼</span>
+        </h1>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 0.3rem;">
+          MQnet 표준 SaaS 플랫폼 가맹점주 및 본사 관리자를 위한 공식 통합 운영 지침서입니다.
+        </p>
+      </div>
+      <div style="display: flex; gap: 0.5rem;">
+        <button onclick="window.print()" class="btn btn-secondary btn-sm">🖨️ 매뉴얼 인쇄</button>
+        <a href="./index.html" class="btn btn-primary btn-sm" style="text-decoration: none;">← 메인 대시보드</a>
+      </div>
+    </header>
+
+    <!-- 목차 -->
+    <section class="card-section">
+      <h2 class="section-title">📑 목차 (Quick Navigation)</h2>
+      <ul class="step-list">
+        <li><strong>1. 시스템 개요 및 접속 계정 체계</strong>: 역할별(Role) 권한 및 지점별 접속 주소</li>
+        <li><strong>2. 다중 매장(Multi-Branch) 관제 운영법</strong>: 지점 즉시 전환 및 신규 가맹점 1-클릭 등록</li>
+        <li><strong>3. 본사 솔루션 이용료 수납 관리 (Billing)</strong>: 요금제 플랜, 완납/미납 전환, 수납 현황</li>
+        <li><strong>4. 점주/실장 등업 신청 및 본사 승인</strong>: 일반 회원가입 후 관리자 권한 승격 워크플로우</li>
+        <li><strong>5. 자주 묻는 질문(FAQ) 및 트러블슈팅</strong></li>
+      </ul>
+    </section>
+
+    <!-- 1. 계정 체계 -->
+    <section class="card-section">
+      <h2 class="section-title">1. 시스템 개요 및 접속 계정 체계</h2>
+      <p>단일 로그인 포털에서 입력된 아이디에 따라 본사 관리 센터, 지점 관제, 일반 사용자 페이지로 0.1초 만에 자동 분기됩니다:</p>
+      <table class="manual-table">
+        <thead>
+          <tr>
+            <th>로그인 ID</th>
+            <th>기본 패스워드</th>
+            <th>권한 (Role)</th>
+            <th>접속 페이지</th>
+            <th>주요 권한</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>admin</strong></td>
+            <td><code>1212</code></td>
+            <td>본사 총괄 최고관리자</td>
+            <td><code>/branches.html</code></td>
+            <td>전 지점 등록/폐점, 이용료 수납, 등업 승인</td>
+          </tr>
+          <tr>
+            <td><strong>admin01</strong></td>
+            <td><code>1212</code></td>
+            <td>제1매장 점주실장</td>
+            <td><code>/index.html?branch=main</code></td>
+            <td>본점 전용 데이터 관제 및 아이템 관리</td>
+          </tr>
+          <tr>
+            <td><strong>admin02</strong></td>
+            <td><code>1212</code></td>
+            <td>제2매장 점주실장</td>
+            <td><code>/index.html?branch=branch-gangnam</code></td>
+            <td>강남역점 전용 데이터 관제</td>
+          </tr>
+          <tr>
+            <td>일반 회원</td>
+            <td>개인 비밀번호</td>
+            <td>일반 사용자 (User)</td>
+            <td><code>/index.html</code></td>
+            <td>서비스 자율 이용 및 관리자 등업 신청</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 2. 다중 매장 관제 -->
+    <section class="card-section">
+      <h2 class="section-title">2. 다중 매장(Multi-Branch) 관제 운영법</h2>
+      <ol class="step-list">
+        <li><strong>지점 셀렉터(상단 헤더)</strong>: <code>[🏢 전체 매장 (통합 관제) ▼]</code> 드롭다운에서 원하는 지점을 선택하면 해당 지점의 데이터만 격리 표시됩니다.</li>
+        <li><strong>신규 가맹점 1-클릭 등록</strong>: <code>[➕ 매장 등록]</code> 버튼을 클릭하고 고유 매장 코드(예: <code>branch-sinchon</code>), 매장명, 연락처, 주소를 입력하면 즉시 등록 완료됩니다.</li>
+      </ol>
+      <div class="callout">
+        💡 <strong>매장 격리 원칙</strong>: 각 지점 관리자는 자신이 속한 지점의 데이터만 제어할 수 있으며, 타 지점의 기밀 데이터나 본사 가맹비 수납 정보는 조회할 수 없습니다.
+      </div>
+    </section>
+
+    <!-- 3. 수납 관리 -->
+    <section class="card-section">
+      <h2 class="section-title">3. 본사 솔루션 이용료 수납 관리 (Billing)</h2>
+      <p>본사 관리 포털(<code>branches.html</code>)에서 가맹점별 SaaS 구독 이용료를 실시간 관리합니다:</p>
+      <ul class="step-list">
+        <li><strong>요금제 플랜</strong>: 베이직(월 5만원), 프리미엄 관리형(월 15만원), 엔터프라이즈(월 25만원) 지원.</li>
+        <li><strong>수납 상태 뱃지</strong>: <code>완납 ✅</code>, <code>결제 대기 ⏳</code>, <code>연체/미납 🚨</code> 실시간 표기.</li>
+        <li><strong>1-클릭 수납 확인</strong>: 가맹점의 입금 확인 시 <code>[완납확인]</code> 버튼을 누르면 당월 수납 처리 완료.</li>
+      </ul>
+    </section>
+
+    <!-- 4. 등업 승인 -->
+    <section class="card-section">
+      <h2 class="section-title">4. 점주/실장 등업 신청 및 본사 승인 절차</h2>
+      <ol class="step-list">
+        <li><strong>개인 가입</strong>: 가맹점주 및 관리자도 초기에는 일반 회원으로 가입합니다.</li>
+        <li><strong>등업 신청</strong>: 회원 대시보드에서 <code>[점주 등업 신청]</code> 클릭 후 희망 지점과 가맹점 증빙 사유를 제출합니다.</li>
+        <li><strong>본사 원클릭 승인</strong>: 본사 관리자가 <code>branches.html</code>의 <code>[👥 점주/실장 등업 신청 관리]</code> 탭에서 <code>[승인]</code> 버튼을 클릭하면 즉시 관리자 권한과 매장 배정이 완료됩니다.</li>
+      </ol>
+    </section>
+
+    <!-- 5. 트러블슈팅 -->
+    <section class="card-section">
+      <h2 class="section-title">5. 자주 묻는 질문(FAQ) 및 트러블슈팅</h2>
+      <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+        <div>
+          <strong style="color: var(--accent-cyan);">Q. 지점 관리자가 로그인했는데 전체 매장 데이터가 보입니다.</strong>
+          <p style="color: var(--text-muted); font-size: 0.88rem;">A. 해당 계정이 superadmin으로 지정되어 있는지 확인하십시오. 지점 관리자는 <code>assigned_branch_id</code>가 올바르게 매핑되어 있어야 격리 관제 모드로 동작합니다.</p>
+        </div>
+        <div>
+          <strong style="color: var(--accent-cyan);">Q. 새로운 매장을 생성했는데 목록에 즉시 나타나지 않습니다.</strong>
+          <p style="color: var(--text-muted); font-size: 0.88rem;">A. 브라우저 새로고침(F5)을 누르거나 대시보드 상단의 지점 드롭다운을 확인하십시오. NoCacheStaticFiles 캐시 방어가 적용되어 있어 즉시 동기화됩니다.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

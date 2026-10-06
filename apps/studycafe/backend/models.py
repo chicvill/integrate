@@ -30,6 +30,16 @@ class StudyCafeUser(Base, TimestampMixin):
     penalty_points: Mapped[int] = mapped_column(Integer, default=0)
     fixed_seat_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)  # 4주 관리형/12주 올인원 고정석
 
+    # 🔑 관리자 로그인 & RBAC & 지점 배정 & 등업 워크플로우
+    username: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
+    password: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    role: Mapped[str] = mapped_column(String(30), default="student", index=True)  # superadmin, branch_admin, student, parent
+    assigned_branch_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
+    upgrade_status: Mapped[str] = mapped_column(String(20), default="NONE")  # NONE, PENDING, APPROVED, REJECTED
+    upgrade_requested_branch: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    upgrade_requested_reason: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+
+
 
 class Seat(Base, TimestampMixin):
     """스터디카페 구역별 좌석 모델 (A-01 ~ A-20, FOCUS / NORMAL / LAPTOP)"""

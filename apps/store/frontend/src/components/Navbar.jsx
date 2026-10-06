@@ -71,6 +71,16 @@ export default function Navbar({ activeTab, setActiveTab, systemStatus }) {
           <ExternalLink size={14} style={{ marginRight: '4px' }} />
           상황실 전용창 (/situation)
         </a>
+
+        <a
+          href="./manual.html"
+          target="_blank"
+          rel="noreferrer"
+          className="btn-primary"
+          style={{ background: 'rgba(251, 191, 36, 0.15)', border: '1px solid var(--accent-amber)', color: '#fbbf24', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+        >
+          📖 운영 매뉴얼
+        </a>
       </div>
     </nav>
   );

@@ -1,6 +1,6 @@
 /**
  * templates/saas-template/frontend/js/branches.js
- * Controller for Branch CRUD and SaaS Subscription Billing Management.
+ * Controller for Branch CRUD, Subscription Billing, Role Upgrade Approval & Dynamic Admin Login routing.
  */
 
 import { MQnetAuth } from '/shared/ui/auth.js?v=2.0';
@@ -10,6 +10,7 @@ import { showToast } from './ui.js?v=2.0';
 const API_BASE = getApiBase('{{APP_ID}}');
 
 let branchesList = [];
+let upgradeRequests = [];
 let searchKeyword = '';
 let billingFilter = '';
 let activeFilter = '';
@@ -118,7 +119,6 @@ function render() {
       </td>
     `;
 
-    // 이벤트 리스너 바인딩
     tr.querySelector('.toggle-pay-btn')?.addEventListener('click', () => handleTogglePayment(b));
     tr.querySelector('.edit-btn')?.addEventListener('click', () => openBranchModal(b));
     tr.querySelector('.delete-btn')?.addEventListener('click', () => handleDeleteBranch(b));
@@ -175,7 +175,7 @@ function openBranchModal(branch = null) {
     titleElem.textContent = '매장 정보 수정';
     editIdInput.value = branch.branch_id;
     codeInput.value = branch.branch_id;
-    codeInput.disabled = true; // 코드는 수정 불가
+    codeInput.disabled = true;
     nameInput.value = branch.name || '';
     phoneInput.value = branch.contact_phone || '';
     addressInput.value = branch.address || '';
@@ -252,16 +252,120 @@ async function handleSaveBranch(e) {
   }
 }
 
-async function checkSystemStatus() {
-  const beacon = document.getElementById('systemStatusBeacon');
-  const textElem = document.getElementById('systemStatusText');
+// ── 👥 점주/실장 등업 신청 관리 ──
+async function loadUpgradeRequests() {
   try {
-    const status = await fetchWithAuth(`${API_BASE}/status`);
-    if (textElem) textElem.textContent = 'ONLINE 🟢';
-    if (beacon) beacon.querySelector('.status-dot').className = 'status-dot online';
+    const data = await fetchWithAuth(`${API_BASE}/auth/upgrade/requests`);
+    upgradeRequests = data.requests || [];
+    renderUpgrades();
   } catch (err) {
-    if (textElem) textElem.textContent = 'OFFLINE 🔴';
-    if (beacon) beacon.querySelector('.status-dot').className = 'status-dot';
+    console.warn('등업 목록 로드 안내:', err);
+  }
+}
+
+function renderUpgrades() {
+  const tbody = document.getElementById('upgradeTableBody');
+  const badge = document.getElementById('badgePendingUpgrades');
+  if (!tbody) return;
+
+  tbody.innerHTML = '';
+  const pendingCount = upgradeRequests.filter(r => r.status === 'PENDING').length;
+
+  if (badge) {
+    badge.textContent = pendingCount;
+    badge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+  }
+
+  if (upgradeRequests.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 2rem; color: var(--text-muted);">대기 중인 등업 신청이 없습니다.</td></tr>`;
+    return;
+  }
+
+  for (const r of upgradeRequests) {
+    const tr = document.createElement('tr');
+    const isPending = r.status === 'PENDING';
+    const statusBadge = isPending 
+      ? '<span class="badge-pending">검토 대기 ⏳</span>' 
+      : (r.status === 'APPROVED' ? '<span class="badge-paid">승인 완료 ✅</span>' : '<span class="badge-overdue">반려됨 ❌</span>');
+
+    tr.innerHTML = `
+      <td><strong>${escapeHtml(r.user_name)}</strong></td>
+      <td>${escapeHtml(r.contact)}</td>
+      <td><span style="color:#38bdf8; font-weight:700;">${escapeHtml(r.target_branch_id)}</span></td>
+      <td><small>${escapeHtml(r.reason || '-')}</small></td>
+      <td><small style="color: var(--text-muted);">${escapeHtml(r.created_at || '-')}</small></td>
+      <td>${statusBadge}</td>
+      <td>
+        <div class="actions-cell">
+          ${isPending ? `
+            <button class="btn btn-primary btn-xs approve-btn">승인</button>
+            <button class="btn btn-danger btn-xs reject-btn">반려</button>
+          ` : `<span style="font-size:0.75rem; color:var(--text-muted);">${r.assigned_branch_id || '-'}</span>`}
+        </div>
+      </td>
+    `;
+
+    tr.querySelector('.approve-btn')?.addEventListener('click', () => handleApproveUpgrade(r));
+    tr.querySelector('.reject-btn')?.addEventListener('click', () => handleRejectUpgrade(r));
+
+    tbody.appendChild(tr);
+  }
+}
+
+async function handleApproveUpgrade(req) {
+  if (!confirm(`'${req.user_name}'님을 '${req.target_branch_id}' 지점 점주(branch_admin)로 승인하시겠습니까?`)) return;
+
+  try {
+    await fetchWithAuth(`${API_BASE}/auth/upgrade/requests/${req.id}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ assigned_branch_id: req.target_branch_id })
+    });
+    showToast(`'${req.user_name}'님이 '${req.target_branch_id}' 점주로 승격되었습니다.`, 'success');
+    await loadUpgradeRequests();
+  } catch (err) {
+    showToast('승인 실패: ' + err.message, 'error');
+  }
+}
+
+async function handleRejectUpgrade(req) {
+  if (!confirm(`'${req.user_name}'님의 등업 신청을 반려하시겠습니까?`)) return;
+
+  try {
+    await fetchWithAuth(`${API_BASE}/auth/upgrade/requests/${req.id}/reject`, {
+      method: 'POST'
+    });
+    showToast(`등업 신청이 반려되었습니다.`, 'info');
+    await loadUpgradeRequests();
+  } catch (err) {
+    showToast('반려 실패: ' + err.message, 'error');
+  }
+}
+
+// ── 🔑 관리자 로그인 & 지점 자동 분기 테스트 ──
+async function handleAdminLogin(e) {
+  e.preventDefault();
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value.trim();
+
+  if (!username || !password) {
+    showToast('아이디와 비밀번호를 입력해주세요.', 'warning');
+    return;
+  }
+
+  try {
+    const res = await fetchWithAuth(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      body: JSON.stringify({ username, password })
+    });
+
+    showToast(`${res.user.name}님 로그인 성공! 전용 페이지로 이동합니다.`, 'success');
+    localStorage.setItem('saas_user', JSON.stringify(res.user));
+
+    setTimeout(() => {
+      window.location.href = res.redirect_url;
+    }, 600);
+  } catch (err) {
+    showToast('로그인 실패: ' + err.message, 'error');
   }
 }
 
@@ -282,6 +386,40 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('closeBranchModalBtn')?.addEventListener('click', closeBranchModal);
   document.getElementById('cancelBranchModalBtn')?.addEventListener('click', closeBranchModal);
   document.getElementById('branchForm')?.addEventListener('submit', handleSaveBranch);
+
+  // 로그인 모달
+  const loginModal = document.getElementById('loginModal');
+  document.getElementById('btnOpenLoginModal')?.addEventListener('click', () => {
+    if (loginModal) loginModal.style.display = 'flex';
+  });
+  document.getElementById('closeLoginModalBtn')?.addEventListener('click', () => {
+    if (loginModal) loginModal.style.display = 'none';
+  });
+  document.getElementById('cancelLoginModalBtn')?.addEventListener('click', () => {
+    if (loginModal) loginModal.style.display = 'none';
+  });
+  document.getElementById('adminLoginForm')?.addEventListener('submit', handleAdminLogin);
+
+  // 탭 전환
+  const tabBranchesBtn = document.getElementById('tabBranchesBtn');
+  const tabUpgradesBtn = document.getElementById('tabUpgradesBtn');
+  const sectionBranches = document.getElementById('sectionBranches');
+  const sectionUpgrades = document.getElementById('sectionUpgrades');
+
+  tabBranchesBtn?.addEventListener('click', () => {
+    tabBranchesBtn.className = 'btn btn-primary btn-sm';
+    tabUpgradesBtn.className = 'btn btn-secondary btn-sm';
+    sectionBranches.style.display = 'block';
+    sectionUpgrades.style.display = 'none';
+  });
+
+  tabUpgradesBtn?.addEventListener('click', () => {
+    tabUpgradesBtn.className = 'btn btn-primary btn-sm';
+    tabBranchesBtn.className = 'btn btn-secondary btn-sm';
+    sectionBranches.style.display = 'none';
+    sectionUpgrades.style.display = 'block';
+    loadUpgradeRequests();
+  });
 
   // 검색 & 필터
   document.getElementById('branchSearchInput')?.addEventListener('input', (e) => {
@@ -304,6 +442,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   MQnetAuth.renderBadge('userAuthBadge');
 
-  checkSystemStatus();
   loadBranches();
+  loadUpgradeRequests();
 });

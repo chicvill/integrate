@@ -157,3 +157,96 @@ async def analyze_with_ai(payload: AiAnalysisRequest, db: Session = Depends(get_
             detail = str(item.detail)
     result = await service.run_ai_task(payload.prompt, detail, branch_id=payload.branch_id)
     return {"success": True, "data": result}
+
+
+# ── 계정 권한별 로그인 & 등업 승인 워크플로우 ──
+# 메모리/DB 기반 모의 등업 신청 저장소
+_upgrade_requests = []
+
+
+@router.post("/auth/login", summary="관리자 ID/PW 로그인 (역할 및 지점별 자동 분기)")
+async def login_admin(payload: AdminLoginRequest):
+    """
+    admin/1212 -> 본사 매장 관리 센터 (/branches.html)
+    admin01/1212 -> 제1매장 본점 관제 (/index.html?branch=main)
+    admin02/1212 -> 제2매장 강남역점 관제 (/index.html?branch=branch-gangnam)
+    """
+    u = payload.username.strip()
+    p = payload.password.strip()
+
+    if p != "1212":
+        raise HTTPException(status_code=401, detail="아이디 또는 비밀번호가 일치하지 않습니다.")
+
+    if u == "admin":
+        role = "superadmin"
+        branch_id = "main"
+        name = "본사 총괄 최고관리자"
+        redirect_url = "./branches.html"
+    elif u == "admin01":
+        role = "branch_admin"
+        branch_id = "main"
+        name = "본점 점주실장"
+        redirect_url = "./index.html?branch=main"
+    elif u == "admin02":
+        role = "branch_admin"
+        branch_id = "branch-gangnam"
+        name = "강남역점 점주실장"
+        redirect_url = "./index.html?branch=branch-gangnam"
+    else:
+        role = "user"
+        branch_id = "main"
+        name = f"회원_{u}"
+        redirect_url = "./index.html"
+
+    return {
+        "success": True,
+        "message": f"환영합니다, {name}님!",
+        "user": {
+            "username": u,
+            "name": name,
+            "role": role,
+            "assigned_branch_id": branch_id
+        },
+        "redirect_url": redirect_url
+    }
+
+
+@router.post("/auth/upgrade/request", summary="점주/관리자 등업 신청 제출")
+async def request_upgrade(payload: UpgradeRequestPayload):
+    req_id = f"req_{len(_upgrade_requests) + 1}"
+    req_item = {
+        "id": req_id,
+        "user_name": payload.user_name,
+        "contact": payload.contact,
+        "target_branch_id": payload.target_branch_id,
+        "reason": payload.reason,
+        "status": "PENDING",
+        "created_at": "방금 전"
+    }
+    _upgrade_requests.append(req_item)
+    return {"success": True, "message": "등업 신청이 접수되었습니다. 본사 승인 대기 중입니다.", "request": req_item}
+
+
+@router.get("/auth/upgrade/requests", summary="등업 신청 목록 조회 (본사용)")
+async def list_upgrade_requests():
+    return {"success": True, "requests": _upgrade_requests}
+
+
+@router.post("/auth/upgrade/requests/{req_id}/approve", summary="등업 신청 승인 (본사용)")
+async def approve_upgrade(req_id: str, payload: Optional[UpgradeApprovePayload] = None):
+    for req in _upgrade_requests:
+        if req["id"] == req_id:
+            req["status"] = "APPROVED"
+            req["assigned_branch_id"] = (payload and payload.assigned_branch_id) or req["target_branch_id"]
+            return {"success": True, "message": f"'{req['user_name']}'님이 '{req['assigned_branch_id']}' 점주로 승인되었습니다."}
+    raise HTTPException(status_code=404, detail="신청을 찾을 수 없습니다.")
+
+
+@router.post("/auth/upgrade/requests/{req_id}/reject", summary="등업 신청 반려 (본사용)")
+async def reject_upgrade(req_id: str):
+    for req in _upgrade_requests:
+        if req["id"] == req_id:
+            req["status"] = "REJECTED"
+            return {"success": True, "message": "등업 신청이 반려되었습니다."}
+    raise HTTPException(status_code=404, detail="신청을 찾을 수 없습니다.")
+

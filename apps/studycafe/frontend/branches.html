@@ -237,6 +237,9 @@
       <a href="./admin.html" class="btn btn-secondary btn-sm" style="text-decoration: none;">
         ← 점주 실시간 관제 복귀
       </a>
+      <a href="./manual.html" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration: none;">
+        📖 운영 매뉴얼
+      </a>
       <div id="userAuthBadge"></div>
     </div>
   </header>
@@ -261,9 +264,22 @@
         <span class="kpi-label">미납 / 연체 가맹점</span>
         <span class="kpi-value red" id="kpiOverdueBranches">0</span>
       </div>
-    </section>
+    <!-- Navigation Tabs -->
+    <div style="display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+      <button id="tabBranchesBtn" class="btn btn-primary btn-sm" style="border-radius: 6px;">
+        🏢 가맹점 & 수납 관리
+      </button>
+      <button id="tabUpgradesBtn" class="btn btn-secondary btn-sm" style="border-radius: 6px;">
+        👥 점주/실장 등업 신청 관리 <span id="badgePendingUpgrades" style="background:#ef4444;color:#fff;border-radius:9999px;padding:1px 6px;font-size:0.7rem;margin-left:4px;display:none;">0</span>
+      </button>
+      <button id="btnOpenLoginModal" class="btn btn-secondary btn-sm" style="margin-left: auto; border-radius: 6px; background: rgba(59,130,246,0.15); color: #93c5fd; border-color: rgba(59,130,246,0.4);">
+        🔑 관리자 계정 로그인 테스트
+      </button>
+    </div>
 
-    <!-- Toolbar -->
+    <!-- Section 1: Branches & Billing -->
+    <div id="sectionBranches">
+
     <section class="toolbar">
       <div class="search-box">
         <input type="text" id="branchSearchInput" placeholder="매장명 또는 코드 검색..." style="flex: 1;">
@@ -309,7 +325,70 @@
         </tbody>
       </table>
     </section>
+    </div> <!-- End of sectionBranches -->
+
+    <!-- Section 2: Role Upgrade Requests -->
+    <div id="sectionUpgrades" style="display: none;">
+      <section style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem;">
+        <h3 style="font-size: 1.05rem; font-weight: 700; color: #fff; margin-bottom: 0.4rem;">
+          👥 점주/실장 관리자 등업 신청 검토 및 권한 승인
+        </h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">
+          일반 개인 회원으로 가입한 후 가맹점 점주 또는 총괄 실장 권한을 신청한 회원 목록입니다. 승인 시 해당 지점의 전용 관제 권한(branch_admin)이 즉시 부여됩니다.
+        </p>
+      </section>
+
+      <section style="overflow-x: auto;">
+        <table class="branch-table">
+          <thead>
+            <tr>
+              <th>신청자 성명</th>
+              <th>연락처 (010)</th>
+              <th>현재 권한</th>
+              <th>희망 지점</th>
+              <th>신청 사유</th>
+              <th>신청 일시</th>
+              <th>상태</th>
+              <th>본사 승인 조치</th>
+            </tr>
+          </thead>
+          <tbody id="upgradeTableBody">
+            <!-- Rendered by js/branches.js -->
+          </tbody>
+        </table>
+      </section>
+    </div>
   </main>
+
+  <!-- Modal: Admin Login Test (역할 및 지점별 자동 분기 테스트) -->
+  <div id="loginModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 class="modal-title">🔑 관리자 계정 로그인 (지점 자동 분기)</h3>
+        <button id="closeLoginModalBtn" class="modal-close">&times;</button>
+      </div>
+      <form id="adminLoginForm">
+        <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.8rem; background: rgba(255,255,255,0.03); padding: 0.6rem; border-radius: 6px;">
+          <div>• <strong>admin</strong> / 1212 : 본사 총괄 최고관리자 (전체 매장 포털)</div>
+          <div>• <strong>admin01</strong> / 1212 : 강남역점 전용 점주 관제 (sc-gangnam)</div>
+          <div>• <strong>admin02</strong> / 1212 : 대치학원가점 전용 점주 관제 (sc-daechi)</div>
+        </div>
+        <div class="form-group" style="margin-bottom: 0.8rem;">
+          <label class="form-label">관리자 아이디</label>
+          <input type="text" id="loginUsername" required placeholder="예: admin, admin01, admin02">
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label">비밀번호</label>
+          <input type="password" id="loginPassword" required placeholder="기본: 1212">
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="cancelLoginModalBtn" class="btn btn-secondary">닫기</button>
+          <button type="submit" class="btn btn-primary" style="flex: 1;">로그인 & 해당 페이지 이동</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
 
   <!-- Modal: Branch Create / Edit -->
   <div id="branchModal" class="modal-backdrop" style="display: none;">

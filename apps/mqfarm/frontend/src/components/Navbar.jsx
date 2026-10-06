@@ -62,6 +62,16 @@ export default function Navbar({ activeTab, setActiveTab, systemStatus }) {
           <ExternalLink size={14} style={{ marginRight: '4px' }} />
           센서 관제 전용창 (/monitoring)
         </a>
+
+        <a
+          href="./manual.html"
+          target="_blank"
+          rel="noreferrer"
+          className="btn-primary"
+          style={{ background: 'rgba(45, 212, 191, 0.15)', border: '1px solid var(--accent-teal)', color: '#2dd4bf', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+        >
+          📖 운영 매뉴얼
+        </a>
       </div>
     </nav>
   );
