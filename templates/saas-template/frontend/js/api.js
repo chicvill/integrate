@@ -83,3 +83,24 @@ export async function createBranch(apiBase, payload) {
   });
 }
 
+export async function updateBranch(apiBase, branchId, payload) {
+  return await fetchWithAuth(`${apiBase}/branches/${encodeURIComponent(branchId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function updateBranchBilling(apiBase, branchId, billingStatus, lastPaidAt = null) {
+  return await fetchWithAuth(`${apiBase}/branches/${encodeURIComponent(branchId)}/billing`, {
+    method: 'PATCH',
+    body: JSON.stringify({ billing_status: billingStatus, last_paid_at: lastPaidAt })
+  });
+}
+
+export async function deleteBranch(apiBase, branchId) {
+  return await fetchWithAuth(`${apiBase}/branches/${encodeURIComponent(branchId)}`, {
+    method: 'DELETE'
+  });
+}
+
+

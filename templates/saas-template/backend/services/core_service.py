@@ -1,25 +1,26 @@
 """
 templates/saas-template/backend/services/core_service.py
-핵심 비즈니스 로직, 다중 매장(Multi-Branch) 관리 및 이벤트 루프 블로킹 방지를 위한 스레드 풀 워커.
+핵심 비즈니스 로직, 다중 매장(Multi-Branch) CRUD 및 솔루션 이용료 수납(Billing) 관리.
 """
 import asyncio
 import uuid
+from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
 
 from ..db.models import AppItem, AppBranch
-from ..schemas import ItemCreate, ItemUpdate, BranchCreate, BranchUpdate
+from ..schemas import ItemCreate, ItemUpdate, BranchCreate, BranchUpdate, BranchBillingUpdate
 from ..config import settings
 
 _executor = ThreadPoolExecutor(max_workers=3, thread_name_prefix="{{APP_ID}}_worker")
 
 
 class CoreService:
-    # ── 지점(매장) 관리 ──
+    # ── 지점(매장) & 수납 관리 ──
     @staticmethod
     def ensure_default_branches(db: Session):
-        """기본 지점 데이터 보장 (본점, 강남점 등)"""
+        """기본 지점 데이터 보장 (본점, 강남점 등) 및 수납 데이터 시드"""
         try:
             count = db.query(AppBranch).count()
             if count == 0:
@@ -30,6 +31,11 @@ class CoreService:
                         name="MQnet 본점",
                         contact_phone="02-1234-5678",
                         address="서울특별시 서초구 서초대로 396",
+                        fee_plan="프리미엄 관리형",
+                        monthly_fee=150000,
+                        billing_status="PAID",
+                        billing_due_day=25,
+                        last_paid_at=datetime.now().strftime("%Y-%m-01"),
                         is_active=True
                     ),
                     AppBranch(
@@ -38,6 +44,24 @@ class CoreService:
                         name="MQnet 강남역점",
                         contact_phone="02-555-1234",
                         address="서울특별시 강남구 테헤란로 101",
+                        fee_plan="엔터프라이즈",
+                        monthly_fee=250000,
+                        billing_status="PAID",
+                        billing_due_day=25,
+                        last_paid_at=datetime.now().strftime("%Y-%m-01"),
+                        is_active=True
+                    ),
+                    AppBranch(
+                        id=str(uuid.uuid4()),
+                        branch_id="branch-daechi",
+                        name="MQnet 대치학원가점",
+                        contact_phone="02-777-9876",
+                        address="서울특별시 강남구 삼성로 212",
+                        fee_plan="프리미엄 관리형",
+                        monthly_fee=180000,
+                        billing_status="PENDING",
+                        billing_due_day=10,
+                        last_paid_at="2026-09-10",
                         is_active=True
                     ),
                 ]
@@ -48,7 +72,7 @@ class CoreService:
             db.rollback()
 
     @staticmethod
-    def list_branches(db: Session, active_only: bool = True) -> List[AppBranch]:
+    def list_branches(db: Session, active_only: bool = False) -> List[AppBranch]:
         CoreService.ensure_default_branches(db)
         q = db.query(AppBranch)
         if active_only:
@@ -70,6 +94,11 @@ class CoreService:
             name=payload.name.strip(),
             contact_phone=payload.contact_phone,
             address=payload.address,
+            fee_plan=payload.fee_plan or "프리미엄 관리형",
+            monthly_fee=payload.monthly_fee if payload.monthly_fee is not None else 150000,
+            billing_status=payload.billing_status or "PAID",
+            billing_due_day=payload.billing_due_day or 25,
+            last_paid_at=payload.last_paid_at or datetime.now().strftime("%Y-%m-%d"),
             is_active=payload.is_active,
             metadata_json=payload.metadata_json or {}
         )
@@ -77,6 +106,42 @@ class CoreService:
         db.commit()
         db.refresh(branch)
         return branch
+
+    @staticmethod
+    def update_branch(db: Session, branch_id: str, payload: BranchUpdate) -> Optional[AppBranch]:
+        branch = db.query(AppBranch).filter(AppBranch.branch_id == branch_id).first()
+        if not branch:
+            return None
+        data = payload.model_dump(exclude_unset=True)
+        for k, v in data.items():
+            setattr(branch, k, v)
+        db.commit()
+        db.refresh(branch)
+        return branch
+
+    @staticmethod
+    def update_branch_billing(db: Session, branch_id: str, payload: BranchBillingUpdate) -> Optional[AppBranch]:
+        branch = db.query(AppBranch).filter(AppBranch.branch_id == branch_id).first()
+        if not branch:
+            return None
+        branch.billing_status = payload.billing_status
+        if payload.last_paid_at:
+            branch.last_paid_at = payload.last_paid_at
+        elif payload.billing_status == "PAID":
+            branch.last_paid_at = datetime.now().strftime("%Y-%m-%d")
+        db.commit()
+        db.refresh(branch)
+        return branch
+
+    @staticmethod
+    def delete_branch(db: Session, branch_id: str) -> bool:
+        branch = db.query(AppBranch).filter(AppBranch.branch_id == branch_id).first()
+        if not branch:
+            return False
+        # 소속된 아이템과 함께 삭제 또는 비활성화 처리
+        db.delete(branch)
+        db.commit()
+        return True
 
     # ── 아이템 관리 (지점별 필터링 지원) ──
     @staticmethod

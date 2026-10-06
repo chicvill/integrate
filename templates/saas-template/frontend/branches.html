@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>🏢 매장 & 이용료 수납 관리 센터 - {{APP_NAME}}</title>
+
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- MQnet SaaS Standard CSS (Direct Link + Cache Busting) -->
+  <link rel="stylesheet" href="./css/variables.css?v=2.0">
+  <link rel="stylesheet" href="./css/layout.css?v=2.0">
+  <link rel="stylesheet" href="./css/components.css?v=2.0">
+  <link rel="stylesheet" href="./style.css?v=2.0">
+  <link rel="stylesheet" href="/shared/ui/theme.css?v=2.0">
+  <style>
+    .billing-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .billing-table th, .billing-table td {
+      padding: 0.85rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.85rem;
+    }
+    .billing-table th {
+      background: rgba(15, 23, 42, 0.7);
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+    .billing-table tbody tr:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .badge-paid {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-weight: 600;
+    }
+    .badge-pending {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-weight: 600;
+    }
+    .badge-overdue {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-weight: 600;
+    }
+    .actions-cell {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header / Navigation Bar -->
+  <header class="saas-header">
+    <div class="header-left">
+      <span class="app-icon">{{APP_ICON}}</span>
+      <div class="brand-titles">
+        <h1 class="brand-title">{{APP_NAME}}</h1>
+        <span class="brand-badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.3);">HQ 본사 관리 센터</span>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <a href="./index.html" class="btn btn-secondary btn-sm" style="text-decoration: none;">
+        ← 메인 대시보드로 돌아가기
+      </a>
+    </div>
+
+    <div class="header-right">
+      <div class="system-status-indicator" id="systemStatusBeacon">
+        <span class="status-dot online"></span>
+        <span class="status-text" id="systemStatusText">연결 중...</span>
+      </div>
+      <div id="userAuthBadge"></div>
+    </div>
+  </header>
+
+  <!-- Main Viewport Container -->
+  <main class="saas-container">
+    <!-- Hero / KPI Banner -->
+    <section class="kpi-banner">
+      <div class="kpi-card">
+        <span class="kpi-label">총 가맹/직영 매장</span>
+        <span class="kpi-value" id="kpiTotalBranches">0</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">정상 운영 매장</span>
+        <span class="kpi-value highlight" id="kpiActiveBranches">0</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">당월 수납 완료액</span>
+        <span class="kpi-value healthy" id="kpiCollectedAmount">₩ 0</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">미납 / 연체 매장</span>
+        <span class="kpi-value" style="color: #f43f5e;" id="kpiOverdueBranches">0</span>
+      </div>
+    </section>
+
+    <!-- Toolbar / Search / Controls -->
+    <section class="toolbar-section">
+      <div class="search-filter-box">
+        <input type="text" id="branchSearchInput" class="form-input" placeholder="매장명 또는 코드 검색..." autocomplete="off">
+        <select id="billingFilter" class="form-select">
+          <option value="">모든 수납 상태</option>
+          <option value="PAID">완납 (PAID)</option>
+          <option value="PENDING">결제 대기 (PENDING)</option>
+          <option value="OVERDUE">미납/연체 (OVERDUE)</option>
+        </select>
+        <select id="activeFilter" class="form-select">
+          <option value="">모든 운영 상태</option>
+          <option value="true">정상 운영 중</option>
+          <option value="false">영업 정지 / 점검</option>
+        </select>
+      </div>
+      <div class="action-buttons">
+        <button id="openNewBranchBtn" class="btn btn-primary btn-sm">
+          <span>➕</span> 신규 매장(가맹점) 등록
+        </button>
+      </div>
+    </section>
+
+    <!-- Branch Management Table -->
+    <section class="content-section">
+      <div style="overflow-x: auto;">
+        <table class="billing-table">
+          <thead>
+            <tr>
+              <th>매장 코드</th>
+              <th>매장명</th>
+              <th>연락처 / 주소</th>
+              <th>요금제 플랜</th>
+              <th>월 이용료</th>
+              <th>수납 상태</th>
+              <th>납부일 / 최근수납</th>
+              <th>운영 상태</th>
+              <th>관리 조치</th>
+            </tr>
+          </thead>
+          <tbody id="branchTableBody">
+            <!-- Rendered by js/branches.js -->
+          </tbody>
+        </table>
+      </div>
+      <div id="emptyBranchState" class="empty-state" style="display: none;">
+        <span class="empty-icon">🏢</span>
+        <p class="empty-text">등록된 매장이 없습니다. 신규 매장을 등록해주세요.</p>
+        <button id="emptyNewBranchBtn" class="btn btn-primary btn-sm">첫 매장 등록하기</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal: Branch Create / Edit -->
+  <div id="branchModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="branchModalTitle" class="modal-title">신규 매장 등록</h3>
+        <button id="closeBranchModalBtn" class="modal-close">&times;</button>
+      </div>
+      <form id="branchForm" class="modal-body">
+        <input type="hidden" id="editBranchId">
+        <div class="form-group">
+          <label for="branchCode" class="form-label">매장 식별 코드 (branch_id)</label>
+          <input type="text" id="branchCode" class="form-input" required placeholder="예: branch-gangnam, sc-sinchon">
+        </div>
+        <div class="form-group">
+          <label for="branchName" class="form-label">매장명</label>
+          <input type="text" id="branchName" class="form-input" required placeholder="예: MQnet 강남역점">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="branchPhone" class="form-label">매장 연락처</label>
+            <input type="text" id="branchPhone" class="form-input" placeholder="02-1234-5678">
+          </div>
+          <div class="form-group">
+            <label for="feePlan" class="form-label">솔루션 요금제</label>
+            <select id="feePlan" class="form-select">
+              <option value="베이직">베이직 (월 5만원)</option>
+              <option value="프리미엄 관리형" selected>프리미엄 관리형 (월 15만원)</option>
+              <option value="엔터프라이즈">엔터프라이즈 (월 25만원)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="monthlyFee" class="form-label">월 이용료(원)</label>
+            <input type="number" id="monthlyFee" class="form-input" value="150000" step="10000">
+          </div>
+          <div class="form-group">
+            <label for="billingDueDay" class="form-label">월 납부 마감일</label>
+            <input type="number" id="billingDueDay" class="form-input" value="25" min="1" max="31">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="branchAddress" class="form-label">매장 소재지 주소</label>
+          <input type="text" id="branchAddress" class="form-input" placeholder="서울특별시 강남구 테헤란로...">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="billingStatusSelect" class="form-label">수납 상태</label>
+            <select id="billingStatusSelect" class="form-select">
+              <option value="PAID">완납 (PAID)</option>
+              <option value="PENDING">결제 대기 (PENDING)</option>
+              <option value="OVERDUE">미납/연체 (OVERDUE)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="isActiveSelect" class="form-label">운영 상태</label>
+            <select id="isActiveSelect" class="form-select">
+              <option value="true">정상 운영 중 🟢</option>
+              <option value="false">영업 정지 / 점검 🔴</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="cancelBranchModalBtn" class="btn btn-secondary">취소</button>
+          <button type="submit" class="btn btn-primary">저장하기</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- ES Module Controller -->
+  <script type="module" src="./js/branches.js?v=2.0"></script>
+</body>
+</html>

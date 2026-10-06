@@ -138,3 +138,11 @@ class StudyCafeBranch(Base, TimestampMixin):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_emergency_open: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    # 본사 솔루션 이용료 & 수납 관리
+    fee_plan: Mapped[str] = mapped_column(String(50), default="프리미엄 관리형")
+    monthly_fee: Mapped[int] = mapped_column(Integer, default=150000)
+    billing_status: Mapped[str] = mapped_column(String(30), default="PAID", index=True)  # PAID, PENDING, OVERDUE
+    billing_due_day: Mapped[int] = mapped_column(Integer, default=25)
+    last_paid_at: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
+
+

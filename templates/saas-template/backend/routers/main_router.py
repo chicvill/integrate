@@ -1,7 +1,7 @@
 """
 templates/saas-template/backend/routers/main_router.py
 prefix="" 로 정의된 표준 REST API 라우터.
-다중 매장(Multi-Branch) 관제 및 지점별 데이터 조회를 기본 지원합니다.
+다중 매장(Multi-Branch) 관제, 지점 CRUD 및 본사 솔루션 이용료 수납(Billing) 관리를 지원합니다.
 게이트웨이에서 app.include_router(main_router, prefix="/api/{{APP_ID}}") 로 마운트됩니다.
 """
 from typing import Optional, List
@@ -12,7 +12,7 @@ from ..db.database import get_db
 from ..db.models import AppItem, AppBranch
 from ..schemas import (
     ItemCreate, ItemUpdate, ItemResponse, ItemListResponse,
-    BranchCreate, BranchUpdate, BranchResponse, BranchListResponse,
+    BranchCreate, BranchUpdate, BranchBillingUpdate, BranchResponse, BranchListResponse,
     AiAnalysisRequest, SystemStatusResponse
 )
 from ..services.core_service import service
@@ -44,11 +44,14 @@ async def get_system_status(db: Session = Depends(get_db)):
     )
 
 
-# ── 다중 매장(지점) 관리 라우트 ──
+# ── 다중 매장(지점) CRUD & 수납 관리 라우트 ──
 @router.get("/branches", response_model=BranchListResponse)
-async def list_branches(db: Session = Depends(get_db)):
-    """등록된 전체 매장(지점) 목록 조회"""
-    branches = service.list_branches(db)
+async def list_branches(
+    active_only: bool = Query(False, description="활성 지점만 조회 여부"),
+    db: Session = Depends(get_db)
+):
+    """등록된 전체 매장(지점) 목록 및 수납 현황 조회"""
+    branches = service.list_branches(db, active_only=active_only)
     return BranchListResponse(success=True, total=len(branches), branches=branches)
 
 
@@ -68,6 +71,33 @@ async def create_branch(payload: BranchCreate, db: Session = Depends(get_db)):
         return service.create_branch(db, payload)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.patch("/branches/{branch_id}", response_model=BranchResponse)
+async def update_branch(branch_id: str, payload: BranchUpdate, db: Session = Depends(get_db)):
+    """매장 기본 정보/설정 갱신"""
+    branch = service.update_branch(db, branch_id, payload)
+    if not branch:
+        raise HTTPException(status_code=404, detail="수정할 매장을 찾을 수 없습니다.")
+    return branch
+
+
+@router.patch("/branches/{branch_id}/billing", response_model=BranchResponse)
+async def update_branch_billing(branch_id: str, payload: BranchBillingUpdate, db: Session = Depends(get_db)):
+    """매장 솔루션 이용료 수납 상태 갱신 (완납/미납 처리)"""
+    branch = service.update_branch_billing(db, branch_id, payload)
+    if not branch:
+        raise HTTPException(status_code=404, detail="매장을 찾을 수 없습니다.")
+    return branch
+
+
+@router.delete("/branches/{branch_id}")
+async def delete_branch(branch_id: str, db: Session = Depends(get_db)):
+    """매장(지점) 삭제 (가맹 해지)"""
+    success = service.delete_branch(db, branch_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="삭제할 매장을 찾을 수 없습니다.")
+    return {"success": True, "message": f"매장 '{branch_id}'이(가) 삭제되었습니다."}
 
 
 # ── 아이템 관리 라우트 (지점별 필터링 지원) ──

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>🏢 MQnet 스터디카페 본사 매장 & 수납 관리 센터</title>
+
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/shared/ui/theme.css?v=2.0">
+  <style>
+    :root {
+      --bg-primary: #0a0f1d;
+      --bg-card: rgba(17, 24, 39, 0.85);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --accent-cyan: #06b6d4;
+      --accent-purple: #a855f7;
+      --accent-green: #10b981;
+      --accent-rose: #f43f5e;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .brand-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .brand-badge {
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      background: rgba(168, 85, 247, 0.2);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      font-weight: 700;
+    }
+    .container {
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      flex: 1;
+    }
+    .kpi-banner {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .kpi-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
+    .kpi-value { font-size: 1.8rem; font-weight: 800; color: #fff; }
+    .kpi-value.highlight { color: var(--accent-cyan); }
+    .kpi-value.green { color: var(--accent-green); }
+    .kpi-value.red { color: var(--accent-rose); }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .search-box {
+      display: flex;
+      gap: 0.5rem;
+      flex: 1;
+      max-width: 600px;
+    }
+    input, select {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: #fff;
+      padding: 0.6rem 0.9rem;
+      font-size: 0.875rem;
+      outline: none;
+    }
+    input:focus, select:focus {
+      border-color: var(--accent-cyan);
+    }
+    .btn {
+      padding: 0.6rem 1.1rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .btn-primary { background: var(--accent-cyan); color: #041017; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-secondary { background: rgba(255, 255, 255, 0.08); color: #fff; border: 1px solid var(--border-color); }
+    .btn-secondary:hover { background: rgba(255, 255, 255, 0.15); }
+    .btn-danger { background: rgba(244, 63, 94, 0.15); color: var(--accent-rose); border: 1px solid rgba(244, 63, 94, 0.3); }
+    .btn-danger:hover { background: rgba(244, 63, 94, 0.3); }
+    .btn-xs { padding: 0.3rem 0.6rem; font-size: 0.78rem; border-radius: 6px; }
+
+    .branch-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .branch-table th, .branch-table td {
+      padding: 0.85rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.85rem;
+    }
+    .branch-table th {
+      background: rgba(15, 23, 42, 0.7);
+      font-weight: 600;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .branch-table tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+    .badge-paid {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-weight: 700;
+    }
+    .badge-pending {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-weight: 700;
+    }
+    .badge-overdue {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-weight: 700;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-card {
+      background: #0f172a;
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      max-width: 580px;
+      width: 90%;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.8rem;
+    }
+    .modal-title { font-size: 1.1rem; font-weight: 700; }
+    .modal-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
+    .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+    .form-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
+    .actions-cell { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="brand-title">
+      <span>☕</span>
+      <span>MQnet StudyCafe</span>
+      <span class="brand-badge">🏢 본사 매장 & 이용료 수납 센터</span>
+    </div>
+    <div style="display: flex; gap: 0.8rem; align-items: center;">
+      <a href="./admin.html" class="btn btn-secondary btn-sm" style="text-decoration: none;">
+        ← 점주 실시간 관제 복귀
+      </a>
+      <div id="userAuthBadge"></div>
+    </div>
+  </header>
+
+  <!-- Container -->
+  <main class="container">
+    <!-- KPI Banner -->
+    <section class="kpi-banner">
+      <div class="kpi-card">
+        <span class="kpi-label">총 가맹점 / 직영점</span>
+        <span class="kpi-value" id="kpiTotalBranches">0</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">정상 가동 매장</span>
+        <span class="kpi-value highlight" id="kpiActiveBranches">0</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">당월 솔루션 이용료 수납액</span>
+        <span class="kpi-value green" id="kpiCollectedAmount">₩ 0</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">미납 / 연체 가맹점</span>
+        <span class="kpi-value red" id="kpiOverdueBranches">0</span>
+      </div>
+    </section>
+
+    <!-- Toolbar -->
+    <section class="toolbar">
+      <div class="search-box">
+        <input type="text" id="branchSearchInput" placeholder="매장명 또는 코드 검색..." style="flex: 1;">
+        <select id="billingFilter">
+          <option value="">모든 수납 상태</option>
+          <option value="PAID">완납 (PAID)</option>
+          <option value="PENDING">결제 대기 (PENDING)</option>
+          <option value="OVERDUE">미납/연체 (OVERDUE)</option>
+        </select>
+        <select id="activeFilter">
+          <option value="">모든 운영 상태</option>
+          <option value="true">정상 가동 중 🟢</option>
+          <option value="false">영업 정지/점검 🔴</option>
+        </select>
+      </div>
+      <div>
+        <button id="openNewBranchBtn" class="btn btn-primary">
+          <span>➕</span> 신규 매장(가맹점) 등록
+        </button>
+      </div>
+    </section>
+
+    <!-- Table -->
+    <section style="overflow-x: auto;">
+      <table class="branch-table">
+        <thead>
+          <tr>
+            <th>지점 코드</th>
+            <th>매장명</th>
+            <th>규모 (좌석)</th>
+            <th>연락처 / 주소</th>
+            <th>요금제 플랜</th>
+            <th>월 이용료</th>
+            <th>수납 상태</th>
+            <th>납부일 / 최근수납</th>
+            <th>도어락 릴레이 IP</th>
+            <th>운영 상태</th>
+            <th>본사 관리 조치</th>
+          </tr>
+        </thead>
+        <tbody id="branchTableBody">
+          <!-- Rendered by js/branches.js -->
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- Modal: Branch Create / Edit -->
+  <div id="branchModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="branchModalTitle" class="modal-title">신규 매장(가맹점) 등록</h3>
+        <button id="closeBranchModalBtn" class="modal-close">&times;</button>
+      </div>
+      <form id="branchForm">
+        <input type="hidden" id="editBranchId">
+        <div class="form-group">
+          <label for="branchCode" class="form-label">매장 코드 (고유 식별자, 영문/숫자)</label>
+          <input type="text" id="branchCode" required placeholder="예: sc-sinchon, sc-bundang">
+        </div>
+        <div class="form-group">
+          <label for="branchName" class="form-label">매장명 (지점명)</label>
+          <input type="text" id="branchName" required placeholder="예: MQnet 스터디카페 신촌점">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="totalSeats" class="form-label">총 좌석 수</label>
+            <input type="number" id="totalSeats" value="20" min="5" max="200">
+          </div>
+          <div class="form-group">
+            <label for="branchPhone" class="form-label">매장 연락처</label>
+            <input type="text" id="branchPhone" placeholder="02-555-1234">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="feePlan" class="form-label">솔루션 이용료 플랜</label>
+            <select id="feePlan">
+              <option value="베이직">베이직 (월 5만원)</option>
+              <option value="프리미엄 관리형" selected>프리미엄 관리형 (월 15만원)</option>
+              <option value="엔터프라이즈">엔터프라이즈 (월 25만원)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="monthlyFee" class="form-label">월 이용료(원)</label>
+            <input type="number" id="monthlyFee" value="150000" step="10000">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="billingDueDay" class="form-label">월 납부 마감일</label>
+            <input type="number" id="billingDueDay" value="25" min="1" max="31">
+          </div>
+          <div class="form-group">
+            <label for="billingStatusSelect" class="form-label">수납 상태</label>
+            <select id="billingStatusSelect">
+              <option value="PAID">완납 (PAID) ✅</option>
+              <option value="PENDING">결제 대기 (PENDING) ⏳</option>
+              <option value="OVERDUE">미납/연체 (OVERDUE) 🚨</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="relayHost" class="form-label">도어락 릴레이 IP</label>
+            <input type="text" id="relayHost" value="192.168.1.100">
+          </div>
+          <div class="form-group">
+            <label for="relayPort" class="form-label">릴레이 Port</label>
+            <input type="number" id="relayPort" value="8080">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="branchAddress" class="form-label">매장 소재지 주소</label>
+          <input type="text" id="branchAddress" placeholder="서울특별시 서초구...">
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="cancelBranchModalBtn" class="btn btn-secondary">취소</button>
+          <button type="submit" class="btn btn-primary">저장하기</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toastContainer" style="position:fixed;bottom:20px;right:20px;z-index:2000;display:flex;flex-direction:column;gap:8px;"></div>
+
+  <script type="module" src="./js/branches.js?v=2.0"></script>
+</body>
+</html>
