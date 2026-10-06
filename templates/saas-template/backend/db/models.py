@@ -44,3 +44,16 @@ class AppItem(Base, TimestampMixin):
     metadata_json: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
     
     owner_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
+
+
+class AppUpgradeRequest(Base, TimestampMixin):
+    """표준 SaaS 가맹점주/관리자 등업 신청 영속화 모델"""
+    __tablename__ = "{{APP_ID}}_upgrade_requests"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    contact: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    target_branch_id: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    assigned_branch_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(30), default="PENDING", index=True)  # PENDING, APPROVED, REJECTED

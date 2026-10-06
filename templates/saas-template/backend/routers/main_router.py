@@ -208,20 +208,20 @@ async def login_admin(payload: AdminLoginRequest):
 
 
 @router.post("/auth/upgrade/request", summary="점주/관리자 등업 신청 제출")
-async def request_upgrade(payload: UpgradeRequestPayload):
-    req_item = service.create_upgrade_request(payload)
+async def request_upgrade(payload: UpgradeRequestPayload, db: Session = Depends(get_db)):
+    req_item = service.create_upgrade_request(db, payload)
     return {"success": True, "message": "등업 신청이 접수되었습니다. 본사 승인 대기 중입니다.", "request": req_item}
 
 
 @router.get("/auth/upgrade/requests", summary="등업 신청 목록 조회 (본사용)")
-async def list_upgrade_requests():
-    return {"success": True, "requests": service.list_upgrade_requests()}
+async def list_upgrade_requests(db: Session = Depends(get_db)):
+    return {"success": True, "requests": service.list_upgrade_requests(db)}
 
 
 @router.post("/auth/upgrade/requests/{req_id}/approve", summary="등업 신청 승인 (본사용)")
-async def approve_upgrade(req_id: str, payload: Optional[UpgradeApprovePayload] = None):
+async def approve_upgrade(req_id: str, payload: Optional[UpgradeApprovePayload] = None, db: Session = Depends(get_db)):
     assigned = payload.assigned_branch_id if payload else None
-    approved_req = service.approve_upgrade_request(req_id, assigned)
+    approved_req = service.approve_upgrade_request(db, req_id, assigned)
     if not approved_req:
         raise HTTPException(status_code=404, detail="신청을 찾을 수 없습니다.")
     return {
@@ -231,8 +231,8 @@ async def approve_upgrade(req_id: str, payload: Optional[UpgradeApprovePayload] 
 
 
 @router.post("/auth/upgrade/requests/{req_id}/reject", summary="등업 신청 반려 (본사용)")
-async def reject_upgrade(req_id: str):
-    rejected = service.reject_upgrade_request(req_id)
+async def reject_upgrade(req_id: str, db: Session = Depends(get_db)):
+    rejected = service.reject_upgrade_request(db, req_id)
     if not rejected:
         raise HTTPException(status_code=404, detail="신청을 찾을 수 없습니다.")
     return {"success": True, "message": "등업 신청이 반려되었습니다."}

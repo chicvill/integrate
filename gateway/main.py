@@ -58,6 +58,8 @@ from apps.grammer.backend.routers.grammer_router import router as grammer_router
 from apps.files.backend.routers import files_router
 from shared.core.base_database import Base, get_database_service
 from apps.YTDownloader.backend.db import models as yt_models
+from shared.monitoring.router import router as monitoring_router
+from shared.monitoring.service import monitor_service
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("mqnet.gateway")
@@ -143,6 +145,18 @@ async def subdomain_host_router_middleware(request: Request, call_next):
 
 # 미들웨어
 app.middleware("http")(app_context_middleware)
+
+# ── 💾 서버 저장 메모리 한계 사전 감지 & 경보 데몬 라이프사이클 ──
+@app.on_event("startup")
+async def startup_monitoring_daemon():
+    monitor_service.start()
+
+@app.on_event("shutdown")
+async def shutdown_monitoring_daemon():
+    monitor_service.stop()
+
+# 서버 모니터링 & 관리자 이메일 경보 라우터
+app.include_router(monitoring_router)
 
 # 공통 인증 라우터
 app.include_router(auth_router, prefix="/auth", tags=["공통 인증 (X-App-ID 필수)"])

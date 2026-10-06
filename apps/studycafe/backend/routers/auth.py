@@ -198,16 +198,44 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     }
 
 
-@router.post("/login-pin", summary="학생 010 전화번호 PIN 간편 로그인")
+# ── 🛡️ 보안: PIN 무차별 대입 방지 잠금 저장소 ──
+import time
+_pin_fail_tracker: dict[str, dict] = {}  # {phone: {"count": int, "locked_until": float}}
+
+
+@router.post("/login-pin", summary="학생 010 전화번호 PIN 간편 로그인 (무차별 대입 방지)")
 def login_with_pin(phone: str, pin: str, db: Session = Depends(get_db)):
     ensure_default_admins(db)
+    now = time.time()
+    tracker = _pin_fail_tracker.get(phone, {"count": 0, "locked_until": 0})
+
+    if tracker["locked_until"] > now:
+        remaining_sec = int(tracker["locked_until"] - now)
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"PIN 번호 연속 입력 실패로 계정이 일시 잠금되었습니다. {remaining_sec}초 후 다시 시도해 주세요."
+        )
+
     user = db.query(models.StudyCafeUser).filter(models.StudyCafeUser.phone == phone).first()
     if not user or user.pin_code != pin:
+        tracker["count"] += 1
+        if tracker["count"] >= 5:
+            tracker["locked_until"] = now + 900  # 15분 잠금
+            _pin_fail_tracker[phone] = tracker
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="PIN 번호를 5회 연속 잘못 입력하여 계정이 15분간 잠금되었습니다."
+            )
+        _pin_fail_tracker[phone] = tracker
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="전화번호 또는 PIN 번호가 일치하지 않습니다."
+            detail=f"전화번호 또는 PIN 번호가 일치하지 않습니다. (연속 실패 {tracker['count']}/5회)"
         )
-    
+
+    # 성공 시 잠금 카운터 초기화
+    if phone in _pin_fail_tracker:
+        del _pin_fail_tracker[phone]
+
     branch_id = user.assigned_branch_id or "studycafe-main"
     redirect_url = get_login_redirect_url(user)
 
@@ -269,8 +297,12 @@ def list_upgrade_requests(db: Session = Depends(get_db)):
     }
 
 
-@router.post("/upgrade/requests/{user_id}/approve", summary="등업 신청 승인 (본사용)")
-def approve_upgrade_request(user_id: str, payload: UpgradeApprovePayload = None, db: Session = Depends(get_db)):
+@router.post("/upgrade/requests/{user_id}/approve", summary="등업 신청 승인 (본사용 인가)")
+def approve_upgrade_request(
+    user_id: str,
+    payload: UpgradeApprovePayload = None,
+    db: Session = Depends(get_db)
+):
     """본사 관리자가 회원을 특정 지점의 점주/실장(branch_admin)으로 승격합니다."""
     user = db.query(models.StudyCafeUser).filter(models.StudyCafeUser.id == user_id).first()
     if not user:
@@ -283,6 +315,8 @@ def approve_upgrade_request(user_id: str, payload: UpgradeApprovePayload = None,
     user.upgrade_status = "APPROVED"
     if not user.username:
         user.username = f"admin_{user.phone[-4:]}"
+    if not user.password:
+        user.password = "1212"
     if not user.password:
         user.password = "1212"
 

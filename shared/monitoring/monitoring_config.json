@@ -1,0 +1,26 @@
+{
+  "enabled": true,
+  "check_interval_seconds": 180,
+  "disk_warning_percent": 80.0,
+  "disk_critical_percent": 90.0,
+  "memory_warning_percent": 85.0,
+  "cooldown_minutes": 60,
+  "default_admin_email": "himin5004@gmail.com",
+  "app_admin_emails": {
+    "gateway": "himin5004@gmail.com",
+    "studycafe": "himin5004@gmail.com",
+    "selfstudy": "himin5004@gmail.com",
+    "store": "himin5004@gmail.com",
+    "mqfarm": "himin5004@gmail.com",
+    "photos": "himin5004@gmail.com",
+    "saas-template": "himin5004@gmail.com"
+  },
+  "smtp": {
+    "enabled": false,
+    "host": "smtp.gmail.com",
+    "port": 587,
+    "username": "",
+    "password": "",
+    "from_email": "mqnet-system@noreply.com"
+  }
+}

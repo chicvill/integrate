@@ -62,39 +62,44 @@ def _ensure_original_20_seats(db: Session, tenant_id: str = "studycafe-main"):
     branch = db.query(StudyCafeBranch).filter(StudyCafeBranch.branch_id == tenant_id).first()
     target_count = (branch.total_seats if branch and branch.total_seats else 20)
 
-    seats = db.query(Seat).filter(Seat.tenant_id == tenant_id).all()
-    
-    # 만약 좌석이 없거나 규격과 다르면 지점 설정 좌석 수(A-01~A-N)로 갱신
-    if len(seats) < target_count or (seats and not seats[0].seat_number.startswith("A-")):
-        # 기존 임시 좌석 삭제 후 신규 생성
-        db.query(Seat).filter(Seat.tenant_id == tenant_id).delete()
-        db.commit()
+    existing_seats = db.query(Seat).filter(Seat.tenant_id == tenant_id).all()
+    existing_map = {s.seat_number: s for s in existing_seats}
 
-        focus_threshold = max(4, int(target_count * 0.4))
-        normal_threshold = max(focus_threshold + 4, int(target_count * 0.8))
+    focus_threshold = max(4, int(target_count * 0.4))
+    normal_threshold = max(focus_threshold + 4, int(target_count * 0.8))
 
-        for i in range(1, target_count + 1):
-            s_num = f"A-{i:02d}"
-            if 1 <= i <= focus_threshold:
-                zone = "FOCUS"
-            elif focus_threshold < i <= normal_threshold:
-                zone = "NORMAL"
-            else:
-                zone = "LAPTOP"
+    added_any = False
+    for i in range(1, target_count + 1):
+        s_num = f"A-{i:02d}"
+        if s_num in existing_map:
+            continue
 
-            seat = Seat(
-                id=str(uuid.uuid4()),
-                tenant_id=tenant_id,
-                seat_number=s_num,
-                zone_type=zone,
-                seat_type=zone.lower(),
-                status="EMPTY",
-                is_occupied=False,
-                is_available=True,
-                qr_code=f"https://studycafe.mqnet.io/seat/{tenant_id}/{s_num}",
-            )
-            db.add(seat)
-        db.commit()
+        if 1 <= i <= focus_threshold:
+            zone = "FOCUS"
+        elif focus_threshold < i <= normal_threshold:
+            zone = "NORMAL"
+        else:
+            zone = "LAPTOP"
+
+        seat = Seat(
+            id=str(uuid.uuid4()),
+            tenant_id=tenant_id,
+            seat_number=s_num,
+            zone_type=zone,
+            seat_type=zone.lower(),
+            status="EMPTY",
+            is_occupied=False,
+            is_available=True,
+            qr_code=f"https://studycafe.mqnet.io/seat/{tenant_id}/{s_num}",
+        )
+        db.add(seat)
+        added_any = True
+
+    if added_any:
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
 
 
 @router.get("/", summary="전체 20개 좌석 현황 조회 (A-01 ~ A-20)")
@@ -290,14 +295,26 @@ async def assign_seat(
     else:
         user.user_type = "GENERAL"
 
-    # 4. 좌석 점유 상태 변경
-    seat.is_occupied = True
-    seat.status = "OCCUPIED"
-    seat.current_user_id = user.id
-    seat.current_user_name = user.name
-    seat.current_user_phone = user.phone
-    seat.current_user_type = user.user_type
-    seat.step_out_at = None
+    # 4. 좌석 원자적 점유 갱신 (동시 선점 충돌 방지)
+    rows_updated = db.query(Seat).filter(
+        Seat.id == seat.id,
+        Seat.is_occupied == False
+    ).update({
+        "is_occupied": True,
+        "status": "OCCUPIED",
+        "current_user_id": user.id,
+        "current_user_name": user.name,
+        "current_user_phone": user.phone,
+        "current_user_type": user.user_type,
+        "step_out_at": None
+    }, synchronize_session="fetch")
+
+    if rows_updated == 0:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail=f"방금 다른 사용자가 해당 좌석을 먼저 배정받았습니다 ({seat.seat_number}). 다른 좌석을 선택해 주세요."
+        )
 
     # 5. 세션 기록 생성 (티켓 ID 바인딩)
     session = StudyCafeSession(

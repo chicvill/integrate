@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
 
-from ..db.models import AppItem, AppBranch
+from ..db.models import AppItem, AppBranch, AppUpgradeRequest
 from ..schemas import ItemCreate, ItemUpdate, BranchCreate, BranchUpdate, BranchBillingUpdate
 from ..config import settings
 
@@ -222,42 +222,80 @@ class CoreService:
             ]
         }
 
-    # ── 등업 신청(Upgrade Requests) 상태 관리 ──
-    _upgrade_requests: List[Dict[str, Any]] = []
-
+    # ── 등업 신청(Upgrade Requests) DB 영속화 및 상태 관리 ──
     @classmethod
-    def create_upgrade_request(cls, payload) -> Dict[str, Any]:
-        req_id = f"req_{len(cls._upgrade_requests) + 1}"
-        req_item = {
+    def create_upgrade_request(cls, db: Optional[Session], payload) -> Dict[str, Any]:
+        req_id = f"req_{uuid.uuid4().hex[:8]}"
+        created_at_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+        if db:
+            db_item = AppUpgradeRequest(
+                id=req_id,
+                user_name=payload.user_name,
+                contact=payload.contact,
+                target_branch_id=payload.target_branch_id,
+                reason=payload.reason,
+                status="PENDING"
+            )
+            db.add(db_item)
+            try:
+                db.commit()
+                db.refresh(db_item)
+                created_at_str = db_item.created_at.strftime("%Y-%m-%d %H:%M") if db_item.created_at else created_at_str
+            except Exception:
+                db.rollback()
+
+        return {
             "id": req_id,
             "user_name": payload.user_name,
             "contact": payload.contact,
             "target_branch_id": payload.target_branch_id,
             "reason": payload.reason,
             "status": "PENDING",
-            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M")
+            "created_at": created_at_str
         }
-        cls._upgrade_requests.append(req_item)
-        return req_item
 
     @classmethod
-    def list_upgrade_requests(cls) -> List[Dict[str, Any]]:
-        return cls._upgrade_requests
+    def list_upgrade_requests(cls, db: Optional[Session]) -> List[Dict[str, Any]]:
+        if db:
+            items = db.query(AppUpgradeRequest).order_by(AppUpgradeRequest.created_at.desc()).all()
+            return [
+                {
+                    "id": item.id,
+                    "user_name": item.user_name,
+                    "contact": item.contact,
+                    "target_branch_id": item.target_branch_id,
+                    "assigned_branch_id": item.assigned_branch_id,
+                    "reason": item.reason,
+                    "status": item.status,
+                    "created_at": item.created_at.strftime("%Y-%m-%d %H:%M") if item.created_at else ""
+                }
+                for item in items
+            ]
+        return []
 
     @classmethod
-    def approve_upgrade_request(cls, req_id: str, assigned_branch_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
-        for req in cls._upgrade_requests:
-            if req["id"] == req_id:
-                req["status"] = "APPROVED"
-                req["assigned_branch_id"] = assigned_branch_id or req["target_branch_id"]
-                return req
+    def approve_upgrade_request(cls, db: Optional[Session], req_id: str, assigned_branch_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        if db:
+            item = db.query(AppUpgradeRequest).filter(AppUpgradeRequest.id == req_id).first()
+            if item:
+                item.status = "APPROVED"
+                item.assigned_branch_id = assigned_branch_id or item.target_branch_id
+                db.commit()
+                return {
+                    "id": item.id,
+                    "user_name": item.user_name,
+                    "assigned_branch_id": item.assigned_branch_id,
+                    "status": item.status
+                }
         return None
 
     @classmethod
-    def reject_upgrade_request(cls, req_id: str) -> bool:
-        for req in cls._upgrade_requests:
-            if req["id"] == req_id:
-                req["status"] = "REJECTED"
+    def reject_upgrade_request(cls, db: Optional[Session], req_id: str) -> bool:
+        if db:
+            item = db.query(AppUpgradeRequest).filter(AppUpgradeRequest.id == req_id).first()
+            if item:
+                item.status = "REJECTED"
+                db.commit()
                 return True
         return False
 
