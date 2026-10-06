@@ -203,7 +203,7 @@ app.include_router(grammer_router, prefix="/api/grammer", tags=["AI 영문법 �
 app.include_router(files_router, prefix="/api/files", tags=["파일 스토리지 허브"])
 app.include_router(files_router, prefix="/api/filebrowser", include_in_schema=False)
 
-# ── 원본 앱 API 호환 라우팅 ──
+# ── 원본 레거시 앱 API 호환 라우팅 (prefix 생략 호환용) ──
 app.include_router(branch_router, prefix="/api/branches", include_in_schema=False)
 app.include_router(seat_router, prefix="/api/seats", include_in_schema=False)
 app.include_router(study_auth_router, prefix="/api/auth", include_in_schema=False)
@@ -215,6 +215,8 @@ app.include_router(store_situation_router, include_in_schema=False)
 app.include_router(farm_sensor_router, prefix="/api/sensors", include_in_schema=False)
 app.include_router(farm_actuator_router, prefix="/api/actuators", include_in_schema=False)
 app.include_router(farm_growth_router, prefix="/api/growth", include_in_schema=False)
+app.include_router(photos_gallery_router, prefix="/api", include_in_schema=False)
+app.include_router(photos_ai_router, prefix="/api", include_in_schema=False)
 app.include_router(yt_download_router, prefix="/api/download", include_in_schema=False)
 app.include_router(yt_media_router, prefix="/api/media", include_in_schema=False)
 
@@ -222,16 +224,13 @@ app.include_router(yt_media_router, prefix="/api/media", include_in_schema=False
 def get_system_status():
     from apps.store.backend.config import settings
     return {
-        "deployment_mode": "SAAS_PORTAL",
-        "is_standalone": False,
-        "enable_ai_analytics": True,
-        "enable_offline_sync": True,
-        "status": "HEALTHY"
+        "status": "OPERATIONAL",
+        "deployment_mode": getattr(settings, "DEPLOYMENT_MODE", "SAAS_PORTAL"),
+        "is_standalone": getattr(settings, "is_standalone", False),
+        "enable_ai_analytics": getattr(settings, "ENABLE_AI_ANALYTICS", True),
+        "enable_offline_sync": getattr(settings, "ENABLE_OFFLINE_SYNC", True),
+        "database": "SQLite (Local)" if "sqlite" in getattr(settings, "DATABASE_URL", "sqlite") else "PostgreSQL (Cloud)"
     }
-app.include_router(photos_gallery_router, prefix="/api", include_in_schema=False)
-app.include_router(photos_ai_router, prefix="/api", include_in_schema=False)
-app.include_router(yt_download_router, prefix="/api/download", include_in_schema=False)
-app.include_router(yt_media_router, prefix="/api/media", include_in_schema=False)
 
 @app.get("/api/photos/system-status", tags=["미디어 & 사진 갤러리"])
 def get_photos_gateway_system_status():
@@ -259,18 +258,6 @@ def get_ytdownloader_system_status():
         "database": "PostgreSQL (Cloud)" if "postgresql" in getattr(yt_settings, "DATABASE_URL", "") else "SQLite (Local)",
         "downloads_count": downloads_count,
         "status": "HEALTHY"
-    }
-
-
-@app.get("/api/system-status", tags=["시스템 상태 (호환)"])
-def get_system_status_compat():
-    from apps.store.backend.config import settings
-    return {
-        "status": "OPERATIONAL",
-        "deployment_mode": getattr(settings, "DEPLOYMENT_MODE", "LOCAL_STANDALONE"),
-        "enable_ai_analytics": getattr(settings, "ENABLE_AI_ANALYTICS", True),
-        "enable_offline_sync": getattr(settings, "ENABLE_OFFLINE_SYNC", False),
-        "database": "SQLite (N100 Local)" if "sqlite" in getattr(settings, "DATABASE_URL", "sqlite") else "Supabase PostgreSQL (Cloud)"
     }
 
 

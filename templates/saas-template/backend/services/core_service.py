@@ -216,12 +216,50 @@ class CoreService:
         branch_info = f" [지점: {branch_id}]" if branch_id else ""
         return {
             "prompt": prompt,
-            "insights": f"[{{APP_NAME}} AI 코파일럿]{branch_info} 분석 결과: '{prompt}' 관련 운영 전략이 최적화되었습니다.",
             "recommendations": [
                 "선택된 매장의 주요 지표 추이를 실시간 관제하세요.",
                 "지점별 활동량과 리소스 사용량에 맞춰 자동 리밸런싱을 적용하세요."
             ]
         }
+
+    # ── 등업 신청(Upgrade Requests) 상태 관리 ──
+    _upgrade_requests: List[Dict[str, Any]] = []
+
+    @classmethod
+    def create_upgrade_request(cls, payload) -> Dict[str, Any]:
+        req_id = f"req_{len(cls._upgrade_requests) + 1}"
+        req_item = {
+            "id": req_id,
+            "user_name": payload.user_name,
+            "contact": payload.contact,
+            "target_branch_id": payload.target_branch_id,
+            "reason": payload.reason,
+            "status": "PENDING",
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M")
+        }
+        cls._upgrade_requests.append(req_item)
+        return req_item
+
+    @classmethod
+    def list_upgrade_requests(cls) -> List[Dict[str, Any]]:
+        return cls._upgrade_requests
+
+    @classmethod
+    def approve_upgrade_request(cls, req_id: str, assigned_branch_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        for req in cls._upgrade_requests:
+            if req["id"] == req_id:
+                req["status"] = "APPROVED"
+                req["assigned_branch_id"] = assigned_branch_id or req["target_branch_id"]
+                return req
+        return None
+
+    @classmethod
+    def reject_upgrade_request(cls, req_id: str) -> bool:
+        for req in cls._upgrade_requests:
+            if req["id"] == req_id:
+                req["status"] = "REJECTED"
+                return True
+        return False
 
 
 service = CoreService()

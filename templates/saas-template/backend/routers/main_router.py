@@ -160,10 +160,6 @@ async def analyze_with_ai(payload: AiAnalysisRequest, db: Session = Depends(get_
 
 
 # ── 계정 권한별 로그인 & 등업 승인 워크플로우 ──
-# 메모리/DB 기반 모의 등업 신청 저장소
-_upgrade_requests = []
-
-
 @router.post("/auth/login", summary="관리자 ID/PW 로그인 (역할 및 지점별 자동 분기)")
 async def login_admin(payload: AdminLoginRequest):
     """
@@ -213,40 +209,31 @@ async def login_admin(payload: AdminLoginRequest):
 
 @router.post("/auth/upgrade/request", summary="점주/관리자 등업 신청 제출")
 async def request_upgrade(payload: UpgradeRequestPayload):
-    req_id = f"req_{len(_upgrade_requests) + 1}"
-    req_item = {
-        "id": req_id,
-        "user_name": payload.user_name,
-        "contact": payload.contact,
-        "target_branch_id": payload.target_branch_id,
-        "reason": payload.reason,
-        "status": "PENDING",
-        "created_at": "방금 전"
-    }
-    _upgrade_requests.append(req_item)
+    req_item = service.create_upgrade_request(payload)
     return {"success": True, "message": "등업 신청이 접수되었습니다. 본사 승인 대기 중입니다.", "request": req_item}
 
 
 @router.get("/auth/upgrade/requests", summary="등업 신청 목록 조회 (본사용)")
 async def list_upgrade_requests():
-    return {"success": True, "requests": _upgrade_requests}
+    return {"success": True, "requests": service.list_upgrade_requests()}
 
 
 @router.post("/auth/upgrade/requests/{req_id}/approve", summary="등업 신청 승인 (본사용)")
 async def approve_upgrade(req_id: str, payload: Optional[UpgradeApprovePayload] = None):
-    for req in _upgrade_requests:
-        if req["id"] == req_id:
-            req["status"] = "APPROVED"
-            req["assigned_branch_id"] = (payload and payload.assigned_branch_id) or req["target_branch_id"]
-            return {"success": True, "message": f"'{req['user_name']}'님이 '{req['assigned_branch_id']}' 점주로 승인되었습니다."}
-    raise HTTPException(status_code=404, detail="신청을 찾을 수 없습니다.")
+    assigned = payload.assigned_branch_id if payload else None
+    approved_req = service.approve_upgrade_request(req_id, assigned)
+    if not approved_req:
+        raise HTTPException(status_code=404, detail="신청을 찾을 수 없습니다.")
+    return {
+        "success": True,
+        "message": f"'{approved_req['user_name']}'님이 '{approved_req['assigned_branch_id']}' 점주로 승인되었습니다."
+    }
 
 
 @router.post("/auth/upgrade/requests/{req_id}/reject", summary="등업 신청 반려 (본사용)")
 async def reject_upgrade(req_id: str):
-    for req in _upgrade_requests:
-        if req["id"] == req_id:
-            req["status"] = "REJECTED"
-            return {"success": True, "message": "등업 신청이 반려되었습니다."}
-    raise HTTPException(status_code=404, detail="신청을 찾을 수 없습니다.")
+    rejected = service.reject_upgrade_request(req_id)
+    if not rejected:
+        raise HTTPException(status_code=404, detail="신청을 찾을 수 없습니다.")
+    return {"success": True, "message": "등업 신청이 반려되었습니다."}
 

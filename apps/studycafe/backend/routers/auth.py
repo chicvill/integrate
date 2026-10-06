@@ -38,8 +38,15 @@ class UpgradeApprovePayload(BaseModel):
     assigned_branch_id: Optional[str] = None
 
 
-def ensure_default_admins(db: Session):
-    """기본 관리자 계정 시드 (admin, admin01, admin02) 보장"""
+_admins_seeded = False
+
+
+def ensure_default_admins(db: Session, force: bool = False):
+    """기본 관리자 계정 시드 (admin, admin01, admin02) 보장 및 최적화 캐싱"""
+    global _admins_seeded
+    if _admins_seeded and not force:
+        return
+
     defaults = [
         {
             "username": "admin",
@@ -88,7 +95,6 @@ def ensure_default_admins(db: Session):
             )
             db.add(user)
         else:
-            # 기존 계정에 username 및 role 보정
             if not existing.username:
                 existing.username = d["username"]
             if not existing.password:
@@ -97,8 +103,22 @@ def ensure_default_admins(db: Session):
             existing.assigned_branch_id = d["assigned_branch_id"]
     try:
         db.commit()
+        _admins_seeded = True
     except Exception:
         db.rollback()
+
+
+def get_login_redirect_url(user: models.StudyCafeUser) -> str:
+    """사용자 역할 및 소속 지점에 따른 최적의 리다이렉트 URL 판정 (모듈화)"""
+    branch_id = user.assigned_branch_id or "studycafe-main"
+    if user.role == "superadmin":
+        return "/studycafe/branches.html"
+    elif user.role == "branch_admin":
+        return f"/studycafe/admin.html?branch={branch_id}"
+    elif user.role == "parent":
+        phone = user.parent_phone or user.phone
+        return f"/studycafe/parent.html?phone={phone}"
+    return f"/studycafe/?branch={branch_id}"
 
 
 @router.post("/login", summary="관리자 ID/PW 로그인 (역할 및 지점별 자동 분기)")
@@ -122,16 +142,7 @@ def login_admin(payload: AdminLoginRequest, db: Session = Depends(get_db)):
         )
 
     branch_id = user.assigned_branch_id or "studycafe-main"
-
-    # 역할별 자동 분기 페이지 결정
-    if user.role == "superadmin":
-        redirect_url = "/studycafe/branches.html"
-    elif user.role == "branch_admin":
-        redirect_url = f"/studycafe/admin.html?branch={branch_id}"
-    elif user.role == "parent":
-        redirect_url = f"/studycafe/parent.html?phone={user.parent_phone or user.phone}"
-    else:
-        redirect_url = f"/studycafe/?branch={branch_id}"
+    redirect_url = get_login_redirect_url(user)
 
     return {
         "success": True,
@@ -198,10 +209,7 @@ def login_with_pin(phone: str, pin: str, db: Session = Depends(get_db)):
         )
     
     branch_id = user.assigned_branch_id or "studycafe-main"
-    if user.role in ("superadmin", "branch_admin"):
-        redirect_url = f"/studycafe/admin.html?branch={branch_id}"
-    else:
-        redirect_url = f"/studycafe/?branch={branch_id}"
+    redirect_url = get_login_redirect_url(user)
 
     return {
         "id": user.id,
