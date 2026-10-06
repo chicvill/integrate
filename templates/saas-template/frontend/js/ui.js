@@ -1,9 +1,35 @@
 /**
  * templates/saas-template/frontend/js/ui.js
  * DOM rendering and UI presentation logic.
+ * Supports Multi-Branch (다중 매장) selector and badges.
  */
 
-export function renderItems(items, onEdit, onDelete) {
+export function renderBranchOptions(branches, currentBranchId = '') {
+  const branchSelector = document.getElementById('branchSelector');
+  const itemBranchSelect = document.getElementById('itemBranch');
+
+  if (branchSelector) {
+    let optionsHtml = '<option value="">🏢 전체 매장 (통합 관제)</option>';
+    for (const b of branches) {
+      const selected = b.branch_id === currentBranchId ? 'selected' : '';
+      optionsHtml += `<option value="${escapeHtml(b.branch_id)}" ${selected}>🏢 ${escapeHtml(b.name)}</option>`;
+    }
+    branchSelector.innerHTML = optionsHtml;
+  }
+
+  if (itemBranchSelect) {
+    let itemOptionsHtml = '';
+    for (const b of branches) {
+      itemOptionsHtml += `<option value="${escapeHtml(b.branch_id)}">🏢 ${escapeHtml(b.name)}</option>`;
+    }
+    if (branches.length === 0) {
+      itemOptionsHtml = '<option value="main">🏢 MQnet 본점</option>';
+    }
+    itemBranchSelect.innerHTML = itemOptionsHtml;
+  }
+}
+
+export function renderItems(items, onEdit, onDelete, branches = []) {
   const container = document.getElementById('itemsGrid');
   const emptyState = document.getElementById('emptyState');
   if (!container) return;
@@ -17,6 +43,12 @@ export function renderItems(items, onEdit, onDelete) {
 
   if (emptyState) emptyState.style.display = 'none';
 
+  // Branch map for quick name lookup
+  const branchMap = {};
+  for (const b of branches) {
+    branchMap[b.branch_id] = b.name;
+  }
+
   for (const item of items) {
     const card = document.createElement('div');
     card.className = 'item-card';
@@ -26,11 +58,15 @@ export function renderItems(items, onEdit, onDelete) {
       item.status === 'pending' ? 'badge-pending' : 'badge-completed';
 
     const formattedDate = item.created_at ? new Date(item.created_at).toLocaleDateString() : '';
+    const branchName = branchMap[item.branch_id] || item.branch_id || '전체/기본';
 
     card.innerHTML = `
       <div class="item-header">
         <h4 class="item-title">${escapeHtml(item.title)}</h4>
-        <span class="item-badge ${statusBadgeClass}">${escapeHtml(item.status)}</span>
+        <div style="display: flex; gap: 0.35rem; align-items: center;">
+          <span class="brand-badge" style="font-size: 0.65rem;">🏢 ${escapeHtml(branchName)}</span>
+          <span class="item-badge ${statusBadgeClass}">${escapeHtml(item.status)}</span>
+        </div>
       </div>
       <p class="item-detail">${escapeHtml(item.detail || '상세 설명이 없습니다.')}</p>
       <div class="item-meta">
@@ -49,9 +85,10 @@ export function renderItems(items, onEdit, onDelete) {
   }
 }
 
-export function updateKpis(items) {
+export function updateKpis(items, currentBranchName = '전체 매장') {
   const totalElem = document.getElementById('kpiTotalItems');
   const activeElem = document.getElementById('kpiActiveItems');
+  const branchElem = document.getElementById('kpiCurrentBranch');
   if (!items) return;
 
   const total = items.length;
@@ -59,6 +96,7 @@ export function updateKpis(items) {
 
   if (totalElem) totalElem.textContent = total;
   if (activeElem) activeElem.textContent = active;
+  if (branchElem) branchElem.textContent = currentBranchName;
 }
 
 /**

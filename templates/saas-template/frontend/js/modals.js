@@ -1,12 +1,14 @@
 /**
  * templates/saas-template/frontend/js/modals.js
  * Modal open/close and form management logic.
+ * Supports Item modal, AI modal, and Branch create modal.
  */
 
 export function openItemModal(item = null) {
   const modal = document.getElementById('itemModal');
   const titleElem = document.getElementById('modalTitle');
   const idInput = document.getElementById('editItemId');
+  const branchSelect = document.getElementById('itemBranch');
   const titleInput = document.getElementById('itemTitle');
   const categoryInput = document.getElementById('itemCategory');
   const statusInput = document.getElementById('itemStatus');
@@ -15,6 +17,7 @@ export function openItemModal(item = null) {
   if (item) {
     titleElem.textContent = '항목 수정';
     idInput.value = item.id;
+    if (branchSelect) branchSelect.value = item.branch_id || 'main';
     titleInput.value = item.title || '';
     categoryInput.value = item.category || '일반';
     statusInput.value = item.status || 'active';
@@ -33,6 +36,18 @@ export function openItemModal(item = null) {
 
 export function closeItemModal() {
   const modal = document.getElementById('itemModal');
+  if (modal) modal.style.display = 'none';
+}
+
+export function openBranchModal() {
+  const modal = document.getElementById('branchModal');
+  const form = document.getElementById('branchForm');
+  if (form) form.reset();
+  if (modal) modal.style.display = 'flex';
+}
+
+export function closeBranchModal() {
+  const modal = document.getElementById('branchModal');
   if (modal) modal.style.display = 'none';
 }
 

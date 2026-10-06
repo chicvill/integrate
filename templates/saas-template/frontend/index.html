@@ -28,6 +28,17 @@
       </div>
     </div>
 
+    <!-- 다중 매장(Multi-Branch) 관제 셀렉터 -->
+    <div class="header-center">
+      <div class="branch-selector-wrapper">
+        <span class="branch-icon">🏢</span>
+        <select id="branchSelector" class="form-select branch-select">
+          <option value="">전체 매장 (통합 관제)</option>
+        </select>
+        <button id="openBranchModalBtn" class="btn btn-secondary btn-xs" title="신규 매장 등록">➕ 매장 등록</button>
+      </div>
+    </div>
+
     <div class="header-right">
       <div class="system-status-indicator" id="systemStatusBeacon">
         <span class="status-dot online"></span>
@@ -51,8 +62,8 @@
         <span class="kpi-value highlight" id="kpiActiveItems">0</span>
       </div>
       <div class="kpi-card">
-        <span class="kpi-label">시스템 상태</span>
-        <span class="kpi-value healthy">정상 운영</span>
+        <span class="kpi-label">현재 매장</span>
+        <span class="kpi-value healthy" id="kpiCurrentBranch">전체 매장</span>
       </div>
     </section>
 
@@ -101,6 +112,12 @@
       <form id="itemForm" class="modal-body">
         <input type="hidden" id="editItemId">
         <div class="form-group">
+          <label for="itemBranch" class="form-label">소속 매장 (지점)</label>
+          <select id="itemBranch" class="form-select">
+            <option value="main">MQnet 본점</option>
+          </select>
+        </div>
+        <div class="form-group">
           <label for="itemTitle" class="form-label">명칭 / 제목</label>
           <input type="text" id="itemTitle" class="form-input" required placeholder="항목 명칭을 입력하세요">
         </div>
@@ -125,6 +142,40 @@
         <div class="modal-footer">
           <button type="button" id="cancelItemModalBtn" class="btn btn-secondary">취소</button>
           <button type="submit" class="btn btn-primary">저장하기</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Branch Create (신규 매장 등록) -->
+  <div id="branchModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">🏢 신규 매장(지점) 등록</h3>
+        <button id="closeBranchModalBtn" class="modal-close">&times;</button>
+      </div>
+      <form id="branchForm" class="modal-body">
+        <div class="form-group">
+          <label for="branchCode" class="form-label">매장 코드 (branch_id)</label>
+          <input type="text" id="branchCode" class="form-input" required placeholder="예: branch-sinchon, branch-pangyo">
+        </div>
+        <div class="form-group">
+          <label for="branchName" class="form-label">매장명</label>
+          <input type="text" id="branchName" class="form-input" required placeholder="예: MQnet 신촌점">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="branchPhone" class="form-label">매장 연락처</label>
+            <input type="text" id="branchPhone" class="form-input" placeholder="02-123-4567">
+          </div>
+          <div class="form-group">
+            <label for="branchAddress" class="form-label">매장 주소</label>
+            <input type="text" id="branchAddress" class="form-input" placeholder="매장 소재지 주소">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="cancelBranchModalBtn" class="btn btn-secondary">취소</button>
+          <button type="submit" class="btn btn-primary">매장 등록하기</button>
         </div>
       </form>
     </div>

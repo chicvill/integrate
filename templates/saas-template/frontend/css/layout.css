@@ -72,6 +72,12 @@ body {
   border: 1px solid rgba(6, 182, 212, 0.3);
 }
 
+.header-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .header-right {
   display: flex;
   align-items: center;

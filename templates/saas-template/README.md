@@ -22,6 +22,11 @@ MQnet 통합 플랫폼의 표준 풀스택 SaaS 골격 템플릿입니다.
    - 단독 실행(`http://localhost:{PORT}`), 서브패스(`http://domain/{APP_ID}`), 서브도메인(`{APP_ID}.domain`) 모두 소스 수정 없이 자동 적응.
 5. **통합 인증 (`MQnetAuth v2.0`) 연동**:
    - `/shared/ui/auth.js` 모듈과 연동하여 로그인/회원가입 모달 및 JWT 로컬스토리지 자동 주입.
+6. **다중 매장 / 멀티 테넌트 (Multi-Branch) 기본 지원**:
+   - 상단 헤더의 지점 셀렉터(`branchSelector`)를 통해 실시간 매장별 데이터 분리 및 즉시 전환.
+   - `AppBranch` 모델 및 `GET /branches`, `POST /branches`를 통한 신규 가맹점/지점 1-클릭 등록.
+   - 모든 항목은 `branch_id` 기반으로 지점별 독립 관리 또는 본사 통합 관제 지원.
+
 
 ---
 

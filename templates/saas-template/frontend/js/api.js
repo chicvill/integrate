@@ -68,3 +68,18 @@ export async function fetchWithAuth(url, options = {}) {
 
   return await res.json();
 }
+
+/**
+ * 지점(매장) 목록 및 등록 API
+ */
+export async function fetchBranches(apiBase) {
+  return await fetchWithAuth(`${apiBase}/branches`);
+}
+
+export async function createBranch(apiBase, payload) {
+  return await fetchWithAuth(`${apiBase}/branches`, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+

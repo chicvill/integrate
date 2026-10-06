@@ -392,3 +392,53 @@ select:focus {
   from { transform: translateY(12px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
+
+/* Extra Small Button */
+.btn-xs {
+  padding: 0.25rem 0.55rem;
+  font-size: 0.75rem;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+/* Multi-Branch Selector */
+.branch-selector-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(15, 23, 42, 0.65);
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  border: 1px solid var(--border-color);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: all 0.2s ease;
+}
+
+.branch-selector-wrapper:hover {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.2);
+}
+
+.branch-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.branch-select {
+  background: transparent !important;
+  border: none !important;
+  color: var(--text-main) !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  padding: 0.2rem 0.5rem !important;
+  outline: none !important;
+  cursor: pointer;
+  max-width: 180px;
+}
+
+.branch-select option {
+  background: #0f172a;
+  color: #f1f5f9;
+}
+
