@@ -1,4 +1,4 @@
-﻿"""apps/ai_gwansang/backend/routers/analysis_router.py - 관상 분석 라우터"""
+"""apps/ai_gwansang/backend/routers/analysis_router.py - 관상 분석 라우터"""
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -12,6 +12,22 @@ from apps.ai_gwansang.backend.db.gwansang_ai_service import GwansangAIService
 import datetime
 
 router = APIRouter()
+
+# 비로그인(게스트) 사용자 IP별 일일 사용량 (API 비용 보호용, 메모리 캐시)
+_guest_usage: dict = {}
+
+
+def _check_guest_limit(ip: str, limit: int):
+    today = datetime.date.today().isoformat()
+    for key in [k for k in _guest_usage if k[1] != today]:
+        _guest_usage.pop(key, None)
+    count = _guest_usage.get((ip, today), 0)
+    if count >= limit:
+        raise HTTPException(
+            status_code=429,
+            detail=f"오늘 무료 관상 횟수({limit}회)를 모두 사용했습니다. 내일 다시 이용해주세요!"
+        )
+    _guest_usage[(ip, today)] = count + 1
 
 
 class AnalyzeRequest(BaseModel):
@@ -50,6 +66,12 @@ async def analyze_face(
                 status_code=429,
                 detail=f"일일 무료 분석 한도({settings.DAILY_FREE_COUNT}회)를 초과했습니다. 프리미엄으로 업그레이드하세요."
             )
+
+    # 게스트 IP별 일일 한도 체크
+    if not current_user:
+        fwd = request.headers.get("x-forwarded-for", "")
+        client_ip = fwd.split(",")[0].strip() or (request.client.host if request.client else "unknown")
+        _check_guest_limit(client_ip, max(int(settings.DAILY_FREE_COUNT), 5))
 
     # AI 분석 수행
     ai_service = GwansangAIService(api_key=settings.GEMINI_API_KEY)
