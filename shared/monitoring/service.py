@@ -14,8 +14,11 @@ import logging
 import threading
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from typing import Dict, Any, List, Optional
-import psutil  # type: ignore[import-untyped]
+try:
+    import psutil  # type: ignore[import-untyped]
+except ImportError:
+    psutil = None
+import shutil
 
 logger = logging.getLogger("mqnet.monitoring")
 
@@ -132,21 +135,31 @@ class StorageMonitorService:
             cwd_root = os.path.splitdrive(os.getcwd())[0] or "/"
             if os.name == "nt" and not cwd_root.endswith("\\"):
                 cwd_root += "\\"
-            disk = psutil.disk_usage(cwd_root)
-            disk_total_gb = round(disk.total / (1024 ** 3), 2)
-            disk_used_gb = round(disk.used / (1024 ** 3), 2)
-            disk_free_gb = round(disk.free / (1024 ** 3), 2)
-            disk_percent = disk.percent
+            if psutil:
+                disk = psutil.disk_usage(cwd_root)
+                disk_total_gb = round(disk.total / (1024 ** 3), 2)
+                disk_used_gb = round(disk.used / (1024 ** 3), 2)
+                disk_free_gb = round(disk.free / (1024 ** 3), 2)
+                disk_percent = disk.percent
+            else:
+                total, used, free = shutil.disk_usage(cwd_root)
+                disk_total_gb = round(total / (1024 ** 3), 2)
+                disk_used_gb = round(used / (1024 ** 3), 2)
+                disk_free_gb = round(free / (1024 ** 3), 2)
+                disk_percent = round((used / total) * 100, 1) if total else 0.0
         except Exception:
             disk_total_gb = disk_used_gb = disk_free_gb = disk_percent = 0.0
 
         # 메모리
         try:
-            mem = psutil.virtual_memory()
-            mem_total_gb = round(mem.total / (1024 ** 3), 2)
-            mem_used_gb = round(mem.used / (1024 ** 3), 2)
-            mem_free_gb = round(mem.available / (1024 ** 3), 2)
-            mem_percent = mem.percent
+            if psutil:
+                mem = psutil.virtual_memory()
+                mem_total_gb = round(mem.total / (1024 ** 3), 2)
+                mem_used_gb = round(mem.used / (1024 ** 3), 2)
+                mem_free_gb = round(mem.available / (1024 ** 3), 2)
+                mem_percent = mem.percent
+            else:
+                mem_total_gb = mem_used_gb = mem_free_gb = mem_percent = 0.0
         except Exception:
             mem_total_gb = mem_used_gb = mem_free_gb = mem_percent = 0.0
 
