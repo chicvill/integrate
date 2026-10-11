@@ -1,6 +1,16 @@
+import { renderStyledHair, HAIRSTYLE_PRESETS, HairStyleOption } from './hairStyler';
+
+export interface HairOption {
+  id: string;
+  name: string;
+  desc: string;
+}
+
 export interface AnalysisResult {
   type: 'TETO' | 'EGEN';
   confidence: number;
+  tetoScore?: number;
+  egenScore?: number;
   description: string;
   traits: {
     label: string;
@@ -12,6 +22,7 @@ export interface AnalysisResult {
     hair: string;
     vibe: string;
   };
+  hairOptions?: HairOption[];
 }
 
 export async function analyzeFace(base64Image: string): Promise<AnalysisResult> {
@@ -32,23 +43,34 @@ export async function analyzeFace(base64Image: string): Promise<AnalysisResult> 
   // Fallback realistic response
   return {
     type: 'TETO',
-    confidence: 88,
-    description: "시크하고 또렷한 눈매와 세련된 턱선 라인이 돋보이는 매력적인 테토상입니다. 도시적인 감각과 당당한 매력이 느껴집니다.",
+    confidence: 85,
+    tetoScore: 68,
+    egenScore: 32,
+    description: "시크하고 또렷한 눈매와 세련된 턱선 라인이 돋보이는 매력적인 테토상입니다. 도시적인 감각과 당당한 카리스마가 강렬하게 느껴집니다.",
     traits: [
-      { label: '눈매', value: '시크하고 날렵한 고양이상 눈매' },
-      { label: '얼굴선', value: '또렷하고 세련된 페이스 라인' },
-      { label: '전체 무드', value: '트렌디하고 자신감 있는 아우라' }
+      { label: 'T존 입체감', value: '또렷하고 세련된 콧대와 눈썹뼈 라인' },
+      { label: '눈매 & 눈빛', value: '시크하고 날렵한 고양이상 눈매' },
+      { label: '턱선 & 페이스라인', value: '샤프하고 입체적인 페이스 윤곽' },
+      { label: '전체적인 무드', value: '트렌디하고 자신감 넘치는 도회적 아우라' }
     ],
     stylingAdvice: {
       fashion: '모던 미니멀룩 또는 시크 스트릿웨어',
       makeup: '또렷한 음영 메이크업과 포인트 립 연출',
-      hair: '슬릭 댄디컷 또는 깔끔한 스트레이트 헤어',
+      hair: '슬릭 댄디컷 또는 가일 스타일',
       vibe: '자신감 넘치는 세련된 도시적 무드'
-    }
+    },
+    hairOptions: [
+      { id: 'slick_dandy', name: '슬릭 댄디컷', desc: '이마를 살짝 드러내 시크하고 정갈한 도시적 무드를 연출합니다.' },
+      { id: 'guile_cut', name: '가일컷', desc: '한쪽 앞머리를 넘겨 T존의 입체감과 카리스마를 강조합니다.' },
+      { id: 'soft_asche', name: '소프트 애즈펌', desc: '자연스러운 C컬 볼륨으로 부드러운 밸런스를 부여합니다.' },
+      { id: 'tassel_cut', name: '테슬컷', desc: '직선적인 칼단발 라인으로 날렵한 턱선을 강조합니다.' }
+    ]
   };
 }
 
-export async function generateHairPreview(base64Image: string, hairDescription: string): Promise<string> {
-  // Return base64 or placeholder preview
-  return base64Image;
+export async function generateHairPreview(base64Image: string, styleId: string): Promise<string> {
+  return renderStyledHair(base64Image, styleId);
 }
+
+export { HAIRSTYLE_PRESETS };
+export type { HairStyleOption };
