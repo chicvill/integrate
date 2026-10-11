@@ -8,7 +8,8 @@ apps/studycafe/backend/routers/seat_router.py
 from fastapi import APIRouter, Depends, HTTPException, Response, Query
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
+from contextlib import nullcontext
 import uuid
 import datetime
 
@@ -35,7 +36,10 @@ def _ensure_sqlite_columns(db: Session):
     try:
         bind = db.get_bind()
         if bind.dialect.name == "sqlite":
-            with bind.connect() as conn:
+            engine = getattr(bind, "engine", bind)
+            connect_fn = getattr(engine, "connect", None)
+            conn_ctx = connect_fn() if callable(connect_fn) else nullcontext(bind)
+            with conn_ctx as conn:
                 u_cols = [r[1] for r in conn.execute(text("PRAGMA table_info(studycafe_users)")).fetchall()]
                 if "fixed_seat_number" not in u_cols:
                     conn.execute(text("ALTER TABLE studycafe_users ADD COLUMN fixed_seat_number TEXT"))
@@ -60,7 +64,8 @@ def _ensure_original_20_seats(db: Session, tenant_id: str = "studycafe-main"):
     ensure_default_branches_seed(db)
 
     branch = db.query(StudyCafeBranch).filter(StudyCafeBranch.branch_id == tenant_id).first()
-    target_count = (branch.total_seats if branch and branch.total_seats else 20)
+    raw_seats = getattr(branch, "total_seats", 20) if branch else 20
+    target_count = int(raw_seats) if raw_seats is not None else 20
 
     existing_seats = db.query(Seat).filter(Seat.tenant_id == tenant_id).all()
     existing_map = {s.seat_number: s for s in existing_seats}
@@ -961,12 +966,14 @@ async def get_admin_sales_details(
     }
 
 
-def _to_utc_dt(dt: Optional[datetime.datetime]) -> Optional[datetime.datetime]:
+def _to_utc_dt(dt: Any) -> Optional[datetime.datetime]:
     if dt is None:
         return None
-    if dt.tzinfo is None:
-        return dt.replace(tzinfo=datetime.timezone.utc)
-    return dt
+    if isinstance(dt, datetime.datetime):
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=datetime.timezone.utc)
+        return dt
+    return None
 
 
 @router.get("/admin/sales/monthly", summary="소득신고 및 세무 정산용 월별 매출 집계")
@@ -1076,15 +1083,15 @@ async def get_sales_by_range(
         (Ticket.tenant_id == tenant_id) | (Ticket.tenant_id == None)
     ).order_by(Ticket.created_at.desc()).all()
 
-    filtered = []
-    daily_map = {}
+    filtered: List[Dict[str, Any]] = []
+    daily_map: Dict[str, Dict[str, Any]] = {}
 
     for t in all_tickets:
         if not t.created_at:
             continue
         c_utc = _to_utc_dt(t.created_at)
         if c_utc and s_dt <= c_utc <= e_dt:
-            p = getattr(t, "price", 0) or 0
+            p = int(getattr(t, "price", 0) or 0)
             is_managed = "관리형" in (t.ticket_type or "") or "managed" in (t.ticket_type or "").lower()
             sup = round(p / 1.1)
             vat = p - sup
@@ -1105,15 +1112,15 @@ async def get_sales_by_range(
 
             if day_str not in daily_map:
                 daily_map[day_str] = {"date": day_str, "count": 0, "total_amount": 0, "supply_value": 0, "vat": 0}
-            daily_map[day_str]["count"] += 1
-            daily_map[day_str]["total_amount"] += p
-            daily_map[day_str]["supply_value"] += sup
-            daily_map[day_str]["vat"] += vat
+            daily_map[day_str]["count"] = int(daily_map[day_str]["count"]) + 1
+            daily_map[day_str]["total_amount"] = int(daily_map[day_str]["total_amount"]) + p
+            daily_map[day_str]["supply_value"] = int(daily_map[day_str]["supply_value"]) + sup
+            daily_map[day_str]["vat"] = int(daily_map[day_str]["vat"]) + vat
 
-    total_amount = sum(x["amount"] for x in filtered)
+    total_amount = sum(int(x["amount"]) for x in filtered)
     supply_value = round(total_amount / 1.1)
     vat = total_amount - supply_value
-    managed_amount = sum(x["amount"] for x in filtered if x["is_managed"])
+    managed_amount = sum(int(x["amount"]) for x in filtered if x["is_managed"])
     general_amount = total_amount - managed_amount
 
     daily_list = [daily_map[k] for k in sorted(daily_map.keys(), reverse=True)]

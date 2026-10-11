@@ -26,8 +26,8 @@ COPY . .
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 
-# 통합 포털 및 개별 서비스 포트 노출
-EXPOSE 9000 10000 8000 80
+# 통합 포털 및 게이트웨이 서비스 포트 노출 (Traefik 502 방지)
+EXPOSE 9000
 
 # 기본 실행: 통합 게이트웨이 및 포털 (Port 9000)
 CMD ["python", "-m", "uvicorn", "gateway.main:app", "--host", "0.0.0.0", "--port", "9000"]

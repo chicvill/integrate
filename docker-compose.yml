@@ -34,7 +34,8 @@ services:
       - "coolify.managed=true"
       - "traefik.enable=true"
       - "traefik.docker.network=coolify"
-      - "traefik.http.routers.gateway.rule=Host(`34.31.10.12`) || PathPrefix(`/`)"
+      - "traefik.http.routers.gateway.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.gateway.service=gateway"
       - "traefik.http.services.gateway.loadbalancer.server.port=9000"
     networks:
       - default

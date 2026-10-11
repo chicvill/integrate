@@ -4,6 +4,7 @@ gateway/main.py
 """
 import os
 import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -78,6 +79,12 @@ try:
 except Exception as e:
     logger.warning(f"Gateway DB 초기화 알림: {e}")
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    monitor_service.start()
+    yield
+    monitor_service.stop()
+
 app = FastAPI(
     title="MQnet 통합 SaaS 플랫폼 Gateway",
     description=(
@@ -88,6 +95,7 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # CORS
@@ -145,15 +153,6 @@ async def subdomain_host_router_middleware(request: Request, call_next):
 
 # 미들웨어
 app.middleware("http")(app_context_middleware)
-
-# ── 💾 서버 저장 메모리 한계 사전 감지 & 경보 데몬 라이프사이클 ──
-@app.on_event("startup")
-async def startup_monitoring_daemon():
-    monitor_service.start()
-
-@app.on_event("shutdown")
-async def shutdown_monitoring_daemon():
-    monitor_service.stop()
 
 # 서버 모니터링 & 관리자 이메일 경보 라우터
 app.include_router(monitoring_router)
