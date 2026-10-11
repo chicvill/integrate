@@ -14,12 +14,18 @@ from pydantic_settings import BaseSettings
 from functools import lru_cache
 from dotenv import load_dotenv
 
-# 루트 기준 환경변수 자동 로드 (.env, .env.shared, env.shared)
+# 루트 기준 환경변수 자동 로드 (.env, .env.shared, env.shared, .env.encrypted)
 _root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 for _env_name in [".env", ".env.shared", "env.shared"]:
     _env_path = os.path.join(_root_dir, _env_name)
     if os.path.exists(_env_path):
         load_dotenv(_env_path, override=False)
+
+try:
+    from shared.core.vault import load_encrypted_env
+    load_encrypted_env(os.path.join(_root_dir, ".env.encrypted"))
+except Exception:
+    pass
 
 
 class BaseConfig(BaseSettings):

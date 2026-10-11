@@ -10,6 +10,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
+# ── 🔐 암호화된 시크릿 환경변수 자동 복호화 로드 ──
+try:
+    from shared.core.vault import load_encrypted_env
+    load_encrypted_env()
+except Exception as _vault_err:
+    logging.getLogger("mqnet.gateway").warning(f"Vault 복호화 로더 초기화 알림: {_vault_err}")
+
 
 from shared.auth.router import auth_router
 from shared.tenant.registry import list_apps, get_app_config

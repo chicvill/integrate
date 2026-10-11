@@ -38,6 +38,7 @@ env.shared
 !.env.template
 !.env.example
 !.env.shared.template
+!.env.encrypted
 !.env.sandbox.template
 !.env.coolify.example
 *.pem
