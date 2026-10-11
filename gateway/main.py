@@ -319,8 +319,9 @@ if not os.path.exists(gwansang_dist):
 if not os.path.exists(gwansang_dist):
     gwansang_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "ai-gwansang-saas", "dist"))
 if os.path.exists(gwansang_dist):
-    app.mount("/gwansang", StaticFiles(directory=gwansang_dist, html=True), name="gwansang_react_app")
-    app.mount("/ai_gwansang", StaticFiles(directory=gwansang_dist, html=True), name="ai_gwansang_app")
+    app.mount("/gwansang", NoCacheStaticFiles(directory=gwansang_dist, html=True), name="gwansang_react_app")
+    app.mount("/ai_gwansang", NoCacheStaticFiles(directory=gwansang_dist, html=True), name="ai_gwansang_app")
+
 
 # ── 유튜브 미디어 다운로더 (YTDownloader) 앱 정적 서빙 (NoCacheStaticFiles) ──
 ytdownloader_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "YTDownloader", "frontend", "dist"))
