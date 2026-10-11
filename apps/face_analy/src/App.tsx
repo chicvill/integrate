@@ -82,13 +82,8 @@ export default function App() {
   const [showOriginal, setShowOriginal] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
 
-  // 두상 맞춤 피팅 파라미터
-  const [fittingParams, setFittingParams] = useState<HairFittingParams>({
-    offsetY: -10,
-    scaleX: 0.76,
-    scaleY: 0.76,
-    opacity: 0.88,
-  });
+  // 두상 맞춤 피팅 파라미터 (기본값: AI 자동정렬 0 오프셋, 1.0 스케일)
+  const [fittingParams, setFittingParams] = useState<HairFittingParams>(DEFAULT_FITTING_PARAMS);
   const [showFittingSliders, setShowFittingSliders] = useState(false);
 
   // 가상 메이크업 파라미터 (립, 치크, 피부톤, 눈매 음영)
@@ -349,12 +344,7 @@ export default function App() {
     if (!image || !result) return;
     const recStyle = result.type === 'TETO' ? 'slick_dandy' : 'soft_asche';
     const recMakeup = result.type === 'TETO' ? DEFAULT_MAKEUP_TETO : DEFAULT_MAKEUP_EGEN;
-    const recFitting: HairFittingParams = {
-      offsetY: -10,
-      scaleX: 0.76,
-      scaleY: 0.76,
-      opacity: 0.88,
-    };
+    const recFitting: HairFittingParams = { ...DEFAULT_FITTING_PARAMS };
     setSelectedStyleId(recStyle);
     setMakeupParams(recMakeup);
     setFittingParams(recFitting);

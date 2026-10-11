@@ -12,10 +12,10 @@ export interface HairFittingParams {
 }
 
 export const DEFAULT_FITTING_PARAMS: HairFittingParams = {
-  offsetY: -10,
-  scaleX: 0.76,
-  scaleY: 0.76,
-  opacity: 0.88,
+  offsetY: 0,
+  scaleX: 1.0,
+  scaleY: 1.0,
+  opacity: 0.85,
 };
 
 export interface MakeupParams {
@@ -539,32 +539,54 @@ function drawNaturalHairstyle(
   const halfWidth = (faceW * 0.54) * scaleX;
   const cx = detectedCx;
 
+  ctx.save();
   ctx.globalAlpha = Math.min(1, Math.max(0.3, opacity));
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
-  // 1. 정수리 & 사이드 볼륨 베이스 (소프트 그라데이션)
-  ctx.save();
-  const baseGrad = ctx.createRadialGradient(
-    cx,
-    crownY + (baseHairlineY - crownY) * 0.4,
-    halfWidth * 0.2,
-    cx,
-    crownY + (baseHairlineY - crownY) * 0.4,
-    halfWidth * 1.15
-  );
-  baseGrad.addColorStop(0, hairColor);
-  baseGrad.addColorStop(0.7, hexToRgba(hairColor, 0.82));
-  baseGrad.addColorStop(0.95, hexToRgba(hairColor, 0.3));
-  baseGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  const eyeY = landmarks?.leftEye?.y != null 
+    ? (landmarks.leftEye.y / 100) * h 
+    : baseHairlineY + faceH * 0.28;
+  const browY = baseHairlineY + (eyeY - baseHairlineY) * 0.58;
 
-  ctx.fillStyle = baseGrad;
+  // 1. [살롱 헤어 컬러 & 톤 틴팅]
+  // 모자 형태의 평면 도형을 덮는 대신, 인물의 실제 모발 영역을 'soft-light'와 'color' 블렌딩으로 자연스럽게 염색
+  ctx.save();
+  ctx.globalCompositeOperation = 'soft-light';
+  const hairToneGrad = ctx.createRadialGradient(
+    cx,
+    (crownY + baseHairlineY) * 0.5,
+    halfWidth * 0.15,
+    cx,
+    baseHairlineY + faceH * 0.2,
+    halfWidth * 1.4
+  );
+  hairToneGrad.addColorStop(0, hexToRgba(hairColor, 0.95));
+  hairToneGrad.addColorStop(0.6, hexToRgba(hairColor, 0.75));
+  hairToneGrad.addColorStop(0.9, hexToRgba(hairColor, 0.35));
+  hairToneGrad.addColorStop(1, 'rgba(0,0,0,0)');
+
+  ctx.fillStyle = hairToneGrad;
   ctx.beginPath();
   ctx.ellipse(
     cx,
-    (crownY + baseHairlineY) * 0.5,
-    halfWidth * 1.05,
-    (baseHairlineY - crownY) * 0.75,
+    (crownY + baseHairlineY) * 0.5 + faceH * 0.12,
+    halfWidth * 1.3,
+    Math.max(40, (faceH * 0.6) * scaleY),
+    0,
+    0,
+    Math.PI * 2
+  );
+  ctx.fill();
+
+  ctx.globalCompositeOperation = 'color';
+  ctx.fillStyle = hexToRgba(hairColor, 0.42);
+  ctx.beginPath();
+  ctx.ellipse(
+    cx,
+    (crownY + baseHairlineY) * 0.5 + faceH * 0.12,
+    halfWidth * 1.25,
+    Math.max(40, (faceH * 0.55) * scaleY),
     0,
     0,
     Math.PI * 2
@@ -572,195 +594,241 @@ function drawNaturalHairstyle(
   ctx.fill();
   ctx.restore();
 
-  // 2. 스타일별 정교한 앞머리 텍스처
+  // 2. [헤어라인 뿌리 볼륨 음영]
+  // 이마와 모발 경계에 자연스럽고 부드러운 뿌리 볼륨 음영 형성 (외곽선 없는 소프트 페더링)
+  ctx.save();
+  ctx.globalCompositeOperation = 'multiply';
+  const rootGrad = ctx.createRadialGradient(
+    cx,
+    baseHairlineY - (baseHairlineY - crownY) * 0.25,
+    halfWidth * 0.1,
+    cx,
+    baseHairlineY,
+    halfWidth * 0.75
+  );
+  rootGrad.addColorStop(0, hexToRgba(hairColor, 0.35));
+  rootGrad.addColorStop(0.7, hexToRgba(hairColor, 0.12));
+  rootGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = rootGrad;
+  ctx.beginPath();
+  ctx.ellipse(
+    cx,
+    baseHairlineY - (baseHairlineY - crownY) * 0.1,
+    halfWidth * 0.8,
+    Math.max(12, (baseHairlineY - crownY) * 0.4),
+    0,
+    0,
+    Math.PI * 2
+  );
+  ctx.fill();
+  ctx.restore();
+
+  // 3. [스타일별 정교한 앞머리 & 페이스라인 결감 렌더링]
+  // 헤어라인 뿌리에서 이마로 부드럽게 흐르는 1.2~1.8px 초미세 모발 텍스처
   ctx.save();
   if (style.id === 'slick_dandy') {
-    renderSlickDandyBangs(ctx, cx, baseHairlineY, crownY, halfWidth, hairColor, scaleY);
+    renderSlickDandyBangs(ctx, cx, baseHairlineY, browY, halfWidth, hairColor, scaleY);
   } else if (style.id === 'guile_cut') {
-    renderGuileBangs(ctx, cx, baseHairlineY, crownY, halfWidth, hairColor, scaleY);
+    renderGuileBangs(ctx, cx, baseHairlineY, browY, halfWidth, hairColor, scaleY);
   } else if (style.id === 'soft_asche') {
-    renderSoftAscheBangs(ctx, cx, baseHairlineY, crownY, halfWidth, hairColor, scaleY);
+    renderSoftAscheBangs(ctx, cx, baseHairlineY, browY, halfWidth, hairColor, scaleY);
   } else if (style.id === 'shadow_volume') {
-    renderShadowVolumeBangs(ctx, cx, baseHairlineY, crownY, halfWidth, hairColor, scaleY);
+    renderShadowVolumeBangs(ctx, cx, baseHairlineY, browY, halfWidth, hairColor, scaleY);
   } else if (style.id === 'tassel_cut') {
-    renderTasselCutBangs(ctx, cx, baseHairlineY, crownY, halfWidth, hairColor, scaleY);
+    renderTasselCutBangs(ctx, cx, baseHairlineY, browY, eyeY, faceH, halfWidth, hairColor, scaleY);
   } else {
-    renderRomanticWaveBangs(ctx, cx, baseHairlineY, crownY, halfWidth, hairColor, scaleY);
+    renderRomanticWaveBangs(ctx, cx, baseHairlineY, browY, faceH, halfWidth, hairColor, scaleY);
   }
   ctx.restore();
 
-  // 3. 은은한 모발 스트랜드 하이라이트
-  renderHairHighlights(ctx, cx, crownY, baseHairlineY, halfWidth, hairColor);
+  // 4. [모발 엔젤링 윤기 하이라이트]
+  renderHairHighlights(ctx, cx, crownY, baseHairlineY, halfWidth);
+  ctx.restore();
 }
 
+/**
+ * 1. 슬릭 댄디컷: 눈썹 선을 가볍게 스치는 시스루 슬릭 텍스처
+ */
 function renderSlickDandyBangs(
   ctx: CanvasRenderingContext2D,
   cx: number,
-  baseY: number,
-  crownY: number,
+  hairlineY: number,
+  browY: number,
   hw: number,
   color: string,
   scaleY: number
 ) {
-  const bangLength = (baseY - crownY) * 0.38 * scaleY;
-  const numStrands = 28;
-
-  ctx.fillStyle = hexToRgba(color, 0.65);
-  ctx.beginPath();
-  ctx.ellipse(cx - hw * 0.85, baseY, hw * 0.22, bangLength * 1.1, 0.15, 0, Math.PI * 2);
-  ctx.ellipse(cx + hw * 0.85, baseY, hw * 0.22, bangLength * 1.1, -0.15, 0, Math.PI * 2);
-  ctx.fill();
+  const strandSpan = (browY - hairlineY) * scaleY;
+  const numStrands = 36;
 
   for (let i = 0; i < numStrands; i++) {
-    const t = (i / numStrands) * 2 - 1;
-    const sx = cx + t * hw * 0.72;
-    const sy = baseY - bangLength * 0.25;
-    const endX = sx + hw * 0.08 * (t > 0 ? 1 : 0.6);
-    const endY = baseY + bangLength * (0.8 + 0.2 * Math.sin(i));
+    const t = (i / numStrands) * 2 - 1; // -1 ~ +1
+    const sx = cx + t * hw * 0.62;
+    const sy = hairlineY + (Math.abs(t) * 4);
+    const ex = sx + (t * hw * 0.06);
+    const ey = hairlineY + strandSpan * (0.85 + 0.18 * Math.sin(i * 1.4));
 
-    const grad = ctx.createLinearGradient(sx, sy, endX, endY);
-    grad.addColorStop(0, hexToRgba(color, 0.85));
-    grad.addColorStop(0.75, hexToRgba(color, 0.6));
-    grad.addColorStop(1, hexToRgba(color, 0));
+    const cpX = sx + (t * hw * 0.03);
+    const cpY = sy + strandSpan * 0.5;
+
+    const grad = ctx.createLinearGradient(sx, sy, ex, ey);
+    grad.addColorStop(0, hexToRgba(color, 0.75));
+    grad.addColorStop(0.7, hexToRgba(color, 0.65));
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
 
     ctx.strokeStyle = grad;
-    ctx.lineWidth = 3 + (i % 3);
+    ctx.lineWidth = 1.3 + (i % 2) * 0.5;
     ctx.beginPath();
     ctx.moveTo(sx, sy);
-    ctx.quadraticCurveTo(sx + hw * 0.04, sy + bangLength * 0.5, endX, endY);
+    ctx.quadraticCurveTo(cpX, cpY, ex, ey);
     ctx.stroke();
   }
 }
 
+/**
+ * 2. 가일컷: 한쪽은 시원하게 오픈되고 반대편은 차분한 C컬로 떨어짐
+ */
 function renderGuileBangs(
   ctx: CanvasRenderingContext2D,
   cx: number,
-  baseY: number,
-  crownY: number,
+  hairlineY: number,
+  browY: number,
   hw: number,
   color: string,
   scaleY: number
 ) {
-  const bangLength = (baseY - crownY) * 0.35 * scaleY;
+  const strandSpan = (browY - hairlineY) * scaleY;
 
+  // 오픈되는 쪽 (오른쪽 리프팅 텍스처)
   for (let i = 0; i < 18; i++) {
-    const sx = cx + (i / 18) * hw * 0.75;
-    const sy = baseY - bangLength * 0.2;
-    const ex = sx + hw * 0.12;
-    const ey = baseY - bangLength * 0.1 + (i % 3) * 2;
+    const t = i / 18;
+    const sx = cx + t * hw * 0.55;
+    const sy = hairlineY;
+    const ex = sx + hw * 0.08;
+    const ey = hairlineY - strandSpan * 0.15 + t * 6;
 
-    ctx.strokeStyle = hexToRgba(color, 0.75);
-    ctx.lineWidth = 3.5;
+    ctx.strokeStyle = hexToRgba(color, 0.5);
+    ctx.lineWidth = 1.4;
     ctx.beginPath();
     ctx.moveTo(sx, sy);
-    ctx.quadraticCurveTo(sx + hw * 0.06, sy - 10, ex, ey);
+    ctx.quadraticCurveTo(sx + hw * 0.04, sy - 8, ex, ey);
     ctx.stroke();
   }
 
-  for (let i = 0; i < 16; i++) {
-    const sx = cx - (i / 16) * hw * 0.65;
-    const sy = baseY - bangLength * 0.1;
-    const ex = sx + hw * 0.06;
-    const ey = baseY + bangLength * 0.85;
+  // 떨어지는 쪽 (왼쪽 시크 C컬 앞머리)
+  for (let i = 0; i < 24; i++) {
+    const t = i / 24;
+    const sx = cx - t * hw * 0.58;
+    const sy = hairlineY;
+    const ex = sx - hw * 0.04;
+    const ey = hairlineY + strandSpan * (0.85 + 0.15 * Math.cos(i));
 
     const grad = ctx.createLinearGradient(sx, sy, ex, ey);
-    grad.addColorStop(0, hexToRgba(color, 0.85));
-    grad.addColorStop(0.8, hexToRgba(color, 0.5));
+    grad.addColorStop(0, hexToRgba(color, 0.8));
+    grad.addColorStop(0.75, hexToRgba(color, 0.6));
     grad.addColorStop(1, 'rgba(0,0,0,0)');
 
     ctx.strokeStyle = grad;
-    ctx.lineWidth = 3 + (i % 2);
+    ctx.lineWidth = 1.4 + (i % 2) * 0.4;
     ctx.beginPath();
     ctx.moveTo(sx, sy);
-    ctx.quadraticCurveTo(sx - hw * 0.05, sy + bangLength * 0.5, ex, ey);
+    ctx.quadraticCurveTo(sx - hw * 0.06, sy + strandSpan * 0.5, ex, ey);
     ctx.stroke();
   }
 }
 
+/**
+ * 3. 소프트 애즈펌: 미간 중앙이 살짝 열린 부드러운 C컬 애즈 앞머리
+ */
 function renderSoftAscheBangs(
   ctx: CanvasRenderingContext2D,
   cx: number,
-  baseY: number,
-  crownY: number,
+  hairlineY: number,
+  browY: number,
   hw: number,
   color: string,
   scaleY: number
 ) {
-  const bangLength = (baseY - crownY) * 0.42 * scaleY;
-  const numStrands = 24;
+  const strandSpan = (browY - hairlineY) * scaleY;
+  const numPerSide = 20;
 
-  for (let i = 2; i < numStrands / 2; i++) {
-    const t = i / (numStrands / 2);
-    const sx = cx - t * hw * 0.65;
-    const sy = baseY - bangLength * 0.2;
-    const ex = sx - hw * 0.06;
-    const ey = baseY + bangLength * (0.8 + 0.15 * Math.sin(i));
+  // 좌측 C컬 앞머리 (바깥쪽으로 둥글게 감싸며 눈썹 위로)
+  for (let i = 3; i < numPerSide; i++) {
+    const t = i / numPerSide;
+    const sx = cx - t * hw * 0.58;
+    const sy = hairlineY + (t * 5);
+    const ex = sx - hw * 0.07;
+    const ey = hairlineY + strandSpan * (0.88 + 0.12 * Math.sin(i * 1.3));
 
     const grad = ctx.createLinearGradient(sx, sy, ex, ey);
-    grad.addColorStop(0, hexToRgba(color, 0.85));
+    grad.addColorStop(0, hexToRgba(color, 0.78));
     grad.addColorStop(0.7, hexToRgba(color, 0.6));
     grad.addColorStop(1, 'rgba(0,0,0,0)');
 
     ctx.strokeStyle = grad;
-    ctx.lineWidth = 3.5 + (i % 2);
+    ctx.lineWidth = 1.4 + (i % 2) * 0.4;
     ctx.beginPath();
     ctx.moveTo(sx, sy);
-    ctx.quadraticCurveTo(sx + hw * 0.05, sy + bangLength * 0.5, ex, ey);
+    ctx.quadraticCurveTo(sx + hw * 0.03, sy + strandSpan * 0.5, ex, ey);
     ctx.stroke();
   }
 
-  for (let i = 2; i < numStrands / 2; i++) {
-    const t = i / (numStrands / 2);
-    const sx = cx + t * hw * 0.65;
-    const sy = baseY - bangLength * 0.2;
-    const ex = sx + hw * 0.06;
-    const ey = baseY + bangLength * (0.8 + 0.15 * Math.cos(i));
+  // 우측 C컬 앞머리
+  for (let i = 3; i < numPerSide; i++) {
+    const t = i / numPerSide;
+    const sx = cx + t * hw * 0.58;
+    const sy = hairlineY + (t * 5);
+    const ex = sx + hw * 0.07;
+    const ey = hairlineY + strandSpan * (0.88 + 0.12 * Math.cos(i * 1.3));
 
     const grad = ctx.createLinearGradient(sx, sy, ex, ey);
-    grad.addColorStop(0, hexToRgba(color, 0.85));
+    grad.addColorStop(0, hexToRgba(color, 0.78));
     grad.addColorStop(0.7, hexToRgba(color, 0.6));
     grad.addColorStop(1, 'rgba(0,0,0,0)');
 
     ctx.strokeStyle = grad;
-    ctx.lineWidth = 3.5 + (i % 2);
+    ctx.lineWidth = 1.4 + (i % 2) * 0.4;
     ctx.beginPath();
     ctx.moveTo(sx, sy);
-    ctx.quadraticCurveTo(sx - hw * 0.05, sy + bangLength * 0.5, ex, ey);
+    ctx.quadraticCurveTo(sx - hw * 0.03, sy + strandSpan * 0.5, ex, ey);
     ctx.stroke();
   }
 }
 
+/**
+ * 4. 쉐도우 볼륨펌: 풍성하고 포근한 S컬 웨이브 텍스처
+ */
 function renderShadowVolumeBangs(
   ctx: CanvasRenderingContext2D,
   cx: number,
-  baseY: number,
-  crownY: number,
+  hairlineY: number,
+  browY: number,
   hw: number,
   color: string,
   scaleY: number
 ) {
-  const bangLength = (baseY - crownY) * 0.44 * scaleY;
-  const numStrands = 32;
+  const strandSpan = (browY - hairlineY) * scaleY;
+  const numStrands = 38;
 
   for (let i = 0; i < numStrands; i++) {
     const t = (i / numStrands) * 2 - 1;
-    const sx = cx + t * hw * 0.75;
-    const sy = baseY - bangLength * 0.3;
+    const sx = cx + t * hw * 0.65;
+    const sy = hairlineY + (Math.abs(t) * 6);
 
-    const cp1x = sx + (i % 2 === 0 ? 8 : -8);
-    const cp1y = sy + bangLength * 0.35;
-    const cp2x = sx - (i % 2 === 0 ? 8 : -8);
-    const cp2y = sy + bangLength * 0.7;
-    const ex = sx + (i % 3 === 0 ? 6 : -6);
-    const ey = baseY + bangLength * (0.8 + 0.18 * Math.sin(i * 1.5));
+    const cp1x = sx + (i % 2 === 0 ? 6 : -6);
+    const cp1y = sy + strandSpan * 0.35;
+    const cp2x = sx - (i % 2 === 0 ? 6 : -6);
+    const cp2y = sy + strandSpan * 0.7;
+    const ex = sx + (t * 4);
+    const ey = hairlineY + strandSpan * (0.85 + 0.16 * Math.sin(i * 1.5));
 
     const grad = ctx.createLinearGradient(sx, sy, ex, ey);
-    grad.addColorStop(0, hexToRgba(color, 0.82));
-    grad.addColorStop(0.75, hexToRgba(color, 0.55));
+    grad.addColorStop(0, hexToRgba(color, 0.75));
+    grad.addColorStop(0.7, hexToRgba(color, 0.55));
     grad.addColorStop(1, 'rgba(0,0,0,0)');
 
     ctx.strokeStyle = grad;
-    ctx.lineWidth = 3.2;
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(sx, sy);
     ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, ex, ey);
@@ -768,103 +836,142 @@ function renderShadowVolumeBangs(
   }
 }
 
+/**
+ * 5. 시크 테슬컷: 빗 모양 comb가 아닌, 볼/턱선 라인을 자연스럽게 감싸며 흐르는 슬릭 페이스라인
+ */
 function renderTasselCutBangs(
   ctx: CanvasRenderingContext2D,
   cx: number,
-  baseY: number,
-  crownY: number,
+  hairlineY: number,
+  browY: number,
+  eyeY: number,
+  faceH: number,
   hw: number,
   color: string,
   scaleY: number
 ) {
-  const sideLength = (baseY - crownY) * 0.95 * scaleY;
+  const browSpan = (browY - hairlineY) * scaleY;
+  const jawSpan = (eyeY - hairlineY + faceH * 0.4) * scaleY;
 
+  // 가벼운 시스루 이마 스트레이트
+  for (let i = 0; i < 20; i++) {
+    const t = (i / 20) * 2 - 1;
+    const sx = cx + t * hw * 0.45;
+    const sy = hairlineY;
+    const ex = sx;
+    const ey = hairlineY + browSpan * (0.8 + 0.15 * (i % 2));
+
+    const grad = ctx.createLinearGradient(sx, sy, ex, ey);
+    grad.addColorStop(0, hexToRgba(color, 0.7));
+    grad.addColorStop(0.8, hexToRgba(color, 0.5));
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.moveTo(sx, sy);
+    ctx.lineTo(ex, ey);
+    ctx.stroke();
+  }
+
+  // 양 볼/페이스라인을 따라 부드럽게 떨어지는 슬릭 사이드 태슬 라인
   for (let s = -1; s <= 1; s += 2) {
-    for (let i = 0; i < 12; i++) {
-      const sx = cx + s * (hw * 0.72 + i * 2.5);
-      const sy = baseY - (baseY - crownY) * 0.1;
-      const ex = sx;
-      const ey = baseY + sideLength * (0.85 + 0.1 * (i % 3));
+    for (let i = 0; i < 14; i++) {
+      const sx = cx + s * (hw * 0.58 + i * 2.2);
+      const sy = hairlineY + i * 2;
+      const ex = sx + s * 8;
+      const ey = hairlineY + jawSpan * (0.85 + 0.1 * (i % 3));
 
       const grad = ctx.createLinearGradient(sx, sy, ex, ey);
-      grad.addColorStop(0, hexToRgba(color, 0.85));
-      grad.addColorStop(0.85, hexToRgba(color, 0.6));
+      grad.addColorStop(0, hexToRgba(color, 0.75));
+      grad.addColorStop(0.85, hexToRgba(color, 0.55));
       grad.addColorStop(1, 'rgba(0,0,0,0)');
 
       ctx.strokeStyle = grad;
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 1.6;
       ctx.beginPath();
       ctx.moveTo(sx, sy);
-      ctx.lineTo(ex, ey);
+      ctx.quadraticCurveTo(sx + s * 4, sy + jawSpan * 0.5, ex, ey);
       ctx.stroke();
     }
   }
 }
 
+/**
+ * 6. 로맨틱 웨이브 & 시스루 뱅: 가벼운 시스루 뱅과 페이스라인 S컬 웨이브
+ */
 function renderRomanticWaveBangs(
   ctx: CanvasRenderingContext2D,
   cx: number,
-  baseY: number,
-  crownY: number,
+  hairlineY: number,
+  browY: number,
+  faceH: number,
   hw: number,
   color: string,
   scaleY: number
 ) {
-  const bangLength = (baseY - crownY) * 0.36 * scaleY;
+  const browSpan = (browY - hairlineY) * scaleY;
+  const sideSpan = (faceH * 0.55) * scaleY;
 
-  for (let i = 0; i < 14; i++) {
-    const t = (i / 14) * 2 - 1;
-    const sx = cx + t * hw * 0.45;
-    const sy = baseY - bangLength * 0.2;
-    const ex = sx + (t * 6);
-    const ey = baseY + bangLength * (0.85 + 0.1 * (i % 2));
+  // 가벼운 시스루 뱅
+  for (let i = 0; i < 22; i++) {
+    const t = (i / 22) * 2 - 1;
+    const sx = cx + t * hw * 0.48;
+    const sy = hairlineY;
+    const ex = sx + (t * 5);
+    const ey = hairlineY + browSpan * (0.85 + 0.12 * (i % 2));
 
     const grad = ctx.createLinearGradient(sx, sy, ex, ey);
-    grad.addColorStop(0, hexToRgba(color, 0.75));
+    grad.addColorStop(0, hexToRgba(color, 0.65));
     grad.addColorStop(0.8, hexToRgba(color, 0.45));
     grad.addColorStop(1, 'rgba(0,0,0,0)');
 
     ctx.strokeStyle = grad;
-    ctx.lineWidth = 2.2;
+    ctx.lineWidth = 1.3;
     ctx.beginPath();
     ctx.moveTo(sx, sy);
-    ctx.quadraticCurveTo(sx, sy + bangLength * 0.5, ex, ey);
+    ctx.quadraticCurveTo(sx, sy + browSpan * 0.5, ex, ey);
     ctx.stroke();
   }
 
+  // 페이스라인 감싸는 소프트 S컬 웨이브
   for (let s = -1; s <= 1; s += 2) {
-    for (let i = 0; i < 10; i++) {
-      const sx = cx + s * (hw * 0.75 + i * 3);
-      const sy = baseY;
-      const ex = sx + s * 14;
-      const ey = baseY + (baseY - crownY) * 0.8 * scaleY;
+    for (let i = 0; i < 12; i++) {
+      const sx = cx + s * (hw * 0.56 + i * 2.8);
+      const sy = hairlineY + i * 3;
+      const ex = sx + s * 10;
+      const ey = hairlineY + sideSpan * (0.8 + 0.15 * (i % 2));
 
-      ctx.strokeStyle = hexToRgba(color, 0.55);
-      ctx.lineWidth = 3.5;
+      ctx.strokeStyle = hexToRgba(color, 0.48);
+      ctx.lineWidth = 1.6;
       ctx.beginPath();
       ctx.moveTo(sx, sy);
-      ctx.bezierCurveTo(sx + s * 18, sy + 30, sx - s * 10, ey - 30, ex, ey);
+      ctx.bezierCurveTo(sx + s * 12, sy + 30, sx - s * 8, ey - 30, ex, ey);
       ctx.stroke();
     }
   }
 }
 
+/**
+ * 모발 엔젤링 윤기 하이라이트
+ */
 function renderHairHighlights(
   ctx: CanvasRenderingContext2D,
   cx: number,
   crownY: number,
-  baseY: number,
-  hw: number,
-  color: string
+  baseHairlineY: number,
+  hw: number
 ) {
   ctx.save();
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
-  ctx.lineWidth = 2;
+  ctx.globalCompositeOperation = 'screen';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+  ctx.lineWidth = 1.5;
 
+  const midY = crownY + (baseHairlineY - crownY) * 0.45;
   for (let i = -2; i <= 2; i++) {
-    const yOffset = crownY + (baseY - crownY) * 0.35 + i * 6;
+    const yOffset = midY + i * 5;
     ctx.beginPath();
-    ctx.arc(cx, yOffset, hw * 0.65, 1.15 * Math.PI, 1.85 * Math.PI);
+    ctx.ellipse(cx, yOffset, hw * 0.58, Math.max(10, (baseHairlineY - crownY) * 0.35), 0, Math.PI * 1.1, Math.PI * 1.9);
     ctx.stroke();
   }
   ctx.restore();
