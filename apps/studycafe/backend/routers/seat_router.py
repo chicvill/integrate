@@ -9,7 +9,6 @@ from fastapi import APIRouter, Depends, HTTPException, Response, Query
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
-from contextlib import nullcontext
 import uuid
 import datetime
 
@@ -35,22 +34,18 @@ def _ensure_sqlite_columns(db: Session):
     """SQLite 동적 컬럼 마이그레이션 (고정석 컬럼 등)"""
     try:
         bind = db.get_bind()
-        if bind.dialect.name == "sqlite":
-            engine = getattr(bind, "engine", bind)
-            connect_fn = getattr(engine, "connect", None)
-            conn_ctx = connect_fn() if callable(connect_fn) else nullcontext(bind)
-            with conn_ctx as conn:
-                u_cols = [r[1] for r in conn.execute(text("PRAGMA table_info(studycafe_users)")).fetchall()]
-                if "fixed_seat_number" not in u_cols:
-                    conn.execute(text("ALTER TABLE studycafe_users ADD COLUMN fixed_seat_number TEXT"))
-                s_cols = [r[1] for r in conn.execute(text("PRAGMA table_info(studycafe_seats)")).fetchall()]
-                if "is_fixed" not in s_cols:
-                    conn.execute(text("ALTER TABLE studycafe_seats ADD COLUMN is_fixed INTEGER DEFAULT 0"))
-                if "fixed_user_name" not in s_cols:
-                    conn.execute(text("ALTER TABLE studycafe_seats ADD COLUMN fixed_user_name TEXT"))
-                if "fixed_user_phone" not in s_cols:
-                    conn.execute(text("ALTER TABLE studycafe_seats ADD COLUMN fixed_user_phone TEXT"))
-                conn.commit()
+        if bind and getattr(bind.dialect, "name", "") == "sqlite":
+            u_cols = [r[1] for r in db.execute(text("PRAGMA table_info(studycafe_users)")).fetchall()]
+            if "fixed_seat_number" not in u_cols:
+                db.execute(text("ALTER TABLE studycafe_users ADD COLUMN fixed_seat_number TEXT"))
+            s_cols = [r[1] for r in db.execute(text("PRAGMA table_info(studycafe_seats)")).fetchall()]
+            if "is_fixed" not in s_cols:
+                db.execute(text("ALTER TABLE studycafe_seats ADD COLUMN is_fixed INTEGER DEFAULT 0"))
+            if "fixed_user_name" not in s_cols:
+                db.execute(text("ALTER TABLE studycafe_seats ADD COLUMN fixed_user_name TEXT"))
+            if "fixed_user_phone" not in s_cols:
+                db.execute(text("ALTER TABLE studycafe_seats ADD COLUMN fixed_user_phone TEXT"))
+            db.commit()
     except Exception:
         pass
 
