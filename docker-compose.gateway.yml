@@ -23,9 +23,12 @@ services:
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
-      - "traefik.http.routers.gateway.rule=PathPrefix(`/`)"
-      - "traefik.http.routers.gateway.entrypoints=web,websecure"
+      - "traefik.docker.network=coolify"
+      - "traefik.http.routers.gateway.rule=Host(`34.31.10.12`) || PathPrefix(`/`)"
       - "traefik.http.services.gateway.loadbalancer.server.port=9000"
+    networks:
+      - default
+      - coolify
     restart: unless-stopped
 
   bgutil-provider:
@@ -52,3 +55,10 @@ services:
       - TUNNEL_TOKEN=${TUNNEL_TOKEN:-eyJhIjoiODY2NmZlODI1Mzg2NTVjZjY2ZjJmZGE5NGVmMDE2OTMiLCJ0IjoiNTRiYWU5YWEtMmNmNS00NWE5LWJlZWMtNmIwODFhM2I5YzczIiwicyI6Ik1qVm1ZMkppTW1FdE9EUTRNQzAwWWpkbUxUZ3lNbUV0TVRKbE9UUmpPR05rT1RRNSJ9}
     depends_on:
       - gateway
+
+networks:
+  default:
+    name: integrate_default
+  coolify:
+    name: coolify
+    external: true

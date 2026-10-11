@@ -33,14 +33,12 @@ services:
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
-      - "traefik.http.routers.gateway.rule=PathPrefix(`/`)"
-      - "traefik.http.routers.gateway.entrypoints=web,websecure"
+      - "traefik.docker.network=coolify"
+      - "traefik.http.routers.gateway.rule=Host(`34.31.10.12`) || PathPrefix(`/`)"
       - "traefik.http.services.gateway.loadbalancer.server.port=9000"
     networks:
-      default:
-        aliases:
-          - mqnet-gateway
-          - mqnet-ytdownloader
+      - default
+      - coolify
     restart: unless-stopped
 
   bgutil-provider:
@@ -110,6 +108,9 @@ services:
 networks:
   default:
     name: integrate_default
+  coolify:
+    name: coolify
+    external: true
 
 volumes:
   n8n_data:
