@@ -14,6 +14,7 @@ services:
     environment:
       - DEPLOYMENT_MODE=DOCKER
       - PYTHONPATH=/app
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-AQ.Ab8RN6JLOd_z-uU2OKFAFs29Gyim-1lATfIkQIw09ppM4VTsFg}
     volumes:
       - "${MEDIA_PATH:-./media}:/media"
     env_file:
