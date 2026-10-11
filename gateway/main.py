@@ -354,7 +354,7 @@ if os.path.exists(clock_dir):
 
 face_analy_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "face_analy", "dist"))
 if os.path.exists(face_analy_dist):
-    app.mount("/face_analy", StaticFiles(directory=face_analy_dist, html=True), name="face_analy_app")
+    app.mount("/face_analy", NoCacheStaticFiles(directory=face_analy_dist, html=True), name="face_analy_app")
 
 videobooth_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "videoBooth"))
 if os.path.exists(videobooth_dir):
