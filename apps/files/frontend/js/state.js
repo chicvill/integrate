@@ -15,6 +15,14 @@ export const state = {
 
   // 선택 항목 (다중 선택)
   selectedPaths: new Set(),
+  lastSelectedPath: null, // Shift 범위 선택용 앵커
+
+  // 클립보드 (복사 / 잘라내기)
+  clipboard: {
+    action: null, // 'copy' | 'cut' | null
+    paths: [],
+    scope: ''
+  },
 
   // 현재 스토리지 범위: 'files' (기본 /media/files), 'all' (전체 /media), 'photos' (/media/photos), 'downloads' (/media/downloads)
   scope: 'files',
@@ -50,6 +58,7 @@ export const state = {
 
   reset() {
     this.selectedPaths.clear();
+    this.lastSelectedPath = null;
     this.errorMessage = null;
   },
 
@@ -63,8 +72,10 @@ export const state = {
     this.totalSizeText = data.total_size_formatted || '';
     this.storageRoot = data.storage_root || '';
     this.selectedPaths.clear();
+    this.lastSelectedPath = null;
     this.applyFilterAndSort();
   },
+
 
   applyFilterAndSort() {
     let filtered = [...this.files];
@@ -93,27 +104,87 @@ export const state = {
     this.filteredFiles = filtered;
   },
 
+  getAllVisiblePaths() {
+    return [
+      ...this.folders.map(f => f.path),
+      ...this.filteredFiles.map(f => f.path)
+    ];
+  },
+
+  setSingleSelect(path) {
+    this.selectedPaths = new Set([path]);
+    this.lastSelectedPath = path;
+  },
+
   toggleSelect(path) {
     if (this.selectedPaths.has(path)) {
       this.selectedPaths.delete(path);
+      if (this.lastSelectedPath === path) {
+        this.lastSelectedPath = this.selectedPaths.size > 0 ? Array.from(this.selectedPaths)[this.selectedPaths.size - 1] : null;
+      }
     } else {
       this.selectedPaths.add(path);
+      this.lastSelectedPath = path;
+    }
+  },
+
+  selectRange(targetPath) {
+    const allPaths = this.getAllVisiblePaths();
+    if (!this.lastSelectedPath || !allPaths.includes(this.lastSelectedPath)) {
+      this.setSingleSelect(targetPath);
+      return;
+    }
+
+    const startIdx = allPaths.indexOf(this.lastSelectedPath);
+    const endIdx = allPaths.indexOf(targetPath);
+    if (startIdx === -1 || endIdx === -1) {
+      this.setSingleSelect(targetPath);
+      return;
+    }
+
+    const [minIdx, maxIdx] = startIdx <= endIdx ? [startIdx, endIdx] : [endIdx, startIdx];
+    for (let i = minIdx; i <= maxIdx; i++) {
+      this.selectedPaths.add(allPaths[i]);
+    }
+  },
+
+  setSelection(paths) {
+    this.selectedPaths = new Set(paths);
+    if (paths.length > 0) {
+      this.lastSelectedPath = paths[paths.length - 1];
     }
   },
 
   selectAll() {
-    const all = [
-      ...this.folders.map(f => f.path),
-      ...this.filteredFiles.map(f => f.path)
-    ];
-    if (this.selectedPaths.size === all.length) {
+    const all = this.getAllVisiblePaths();
+    if (this.selectedPaths.size === all.length && all.length > 0) {
       this.selectedPaths.clear();
+      this.lastSelectedPath = null;
     } else {
       this.selectedPaths = new Set(all);
+      this.lastSelectedPath = all[all.length - 1] || null;
     }
   },
 
   clearSelection() {
     this.selectedPaths.clear();
+    this.lastSelectedPath = null;
+  },
+
+  setClipboard(action, paths, scope) {
+    this.clipboard = {
+      action,
+      paths: [...paths],
+      scope: scope || this.scope
+    };
+  },
+
+  clearClipboard() {
+    this.clipboard = {
+      action: null,
+      paths: [],
+      scope: ''
+    };
   }
 };
+

@@ -1,14 +1,15 @@
-import { state } from './js/state.js?v=1.3';
+import { state } from './js/state.js?v=1.4';
 import { MQnetAuth } from '/shared/ui/auth.js?v=2.0';
 import {
-  fetchList, searchFiles, uploadFiles, deleteItems,
+  fetchList, searchFiles, uploadFiles, deleteItems, copyItems, moveItems,
   getDownloadUrl, fetchSystemStatus, fetchQuota, upgradePlan
-} from './js/api.js?v=1.3';
+} from './js/api.js?v=1.4';
 import {
   renderBreadcrumbs, renderFolderGrid, renderFileGrid, renderFileList,
   showLoading, showEmpty, showToast, updateStatusBar, updateSelectionToolbar,
-  renderStorageQuotaWidget, setupDragDropOverlay, escHtml
-} from './js/ui.js?v=1.3';
+  renderStorageQuotaWidget, setupDragDropOverlay, escHtml,
+  syncSelectionUI, setupMarqueeSelection
+} from './js/ui.js?v=1.4';
 import {
   openPreviewModal, closePreviewModal,
   openTextEditModal, submitTextEditModal,
@@ -18,7 +19,8 @@ import {
   openUploadModal, closeUploadModal,
   openUpgradeModal, closeModal,
   showContextMenu
-} from './js/modals.js?v=1.3';
+} from './js/modals.js?v=1.4';
+
 
 // ── DOM 요소 참조 ─────────────────────────────────────────
 const breadcrumbEl      = document.getElementById('breadcrumbsNav');
@@ -26,6 +28,7 @@ const folderContainer   = document.getElementById('folderGridContainer');
 const fileContainer     = document.getElementById('fileGridContainer');
 const folderSection     = document.getElementById('folderSection');
 const fileSection       = document.getElementById('fileSection');
+const mainViewport      = document.getElementById('mainViewport');
 const searchInput       = document.getElementById('globalSearchInput');
 const storageBadgeEl    = document.getElementById('storageInfoBadge');
 const scopeSelect       = document.getElementById('scopeSelect');
@@ -42,7 +45,12 @@ const selDeleteBtn      = document.getElementById('selDeleteBtn');
 const selDownloadBtn    = document.getElementById('selDownloadBtn');
 const selPreviewBtn     = document.getElementById('selPreviewBtn');
 const selClearBtn       = document.getElementById('selClearBtn');
+const selCopyBtn        = document.getElementById('selCopyBtn');
+const selCutBtn         = document.getElementById('selCutBtn');
+const selPasteBtn       = document.getElementById('selPasteBtn');
 const selectAllBtn      = document.getElementById('selectAllBtn');
+const toolbarPasteBtn   = document.getElementById('toolbarPasteBtn');
+
 
 // 유료 전환 모달 버튼들
 const confirmUpgradeBtn = document.getElementById('confirmUpgradeBtn');
@@ -176,10 +184,62 @@ async function onFileClick(file) {
   a.click();
 }
 
+// ── 복사 / 잘라내기 / 붙여넣기 핸들러 ──────────────────────
+function handleCopy() {
+  if (!state.selectedPaths.size) return;
+  const paths = Array.from(state.selectedPaths);
+  state.setClipboard('copy', paths, state.scope);
+  showToast(`${paths.length}개 항목이 복사되었습니다. (붙여넣기: Ctrl+V)`, 'info');
+  syncSelectionUI();
+}
+
+function handleCut() {
+  if (!state.selectedPaths.size) return;
+  const paths = Array.from(state.selectedPaths);
+  state.setClipboard('cut', paths, state.scope);
+  showToast(`${paths.length}개 항목이 잘라내기되었습니다. 이동할 대상 위치에서 붙여넣기(Ctrl+V)하세요.`, 'info');
+  syncSelectionUI();
+}
+
+async function handlePaste() {
+  if (!state.clipboard?.paths?.length) {
+    showToast('클립보드에 붙여넣을 항목이 없습니다.', 'info');
+    return;
+  }
+
+  const { action, paths, scope } = state.clipboard;
+  const destFolder = state.currentPath;
+
+  showToast(`${paths.length}개 항목 ${action === 'cut' ? '이동' : '복사'} 처리 중...`, 'info');
+
+  try {
+    if (action === 'cut') {
+      await moveItems(paths, destFolder, scope);
+      state.clearClipboard();
+      showToast(`${paths.length}개 항목이 성공적으로 이동되었습니다.`, 'success');
+    } else {
+      await copyItems(paths, destFolder, scope);
+      showToast(`${paths.length}개 항목이 성공적으로 복사되었습니다.`, 'success');
+    }
+    await navigate(state.currentPath);
+    await refreshQuota();
+  } catch (err) {
+    if (err.message && err.message.includes('QUOTA_EXCEEDED')) {
+      openUpgradeModal(state.quota, '저장 용량 쿼터 한도를 초과하여 복사할 수 없습니다.');
+    } else {
+      showToast(err.message, 'error');
+    }
+  } finally {
+    syncSelectionUI();
+  }
+}
+
 // ── 컨텍스트 메뉴 액션 정의 ──────────────────────────────
 function buildContextMenuActions(item) {
   const actions = [];
-  if (!item.is_dir) {
+  const selectedCount = state.selectedPaths.size;
+
+  if (item && !item.is_dir) {
     actions.push({ icon: '👁', label: '미리보기', action: onFileClick });
     
     // 텍스트/코드 파일인 경우 직접 편집 액션 제공
@@ -197,12 +257,34 @@ function buildContextMenuActions(item) {
     actions.push({ divider: true });
   }
 
-  actions.push({ icon: '✏️', label: '이름 변경', action: (f) => {
-    openRenameModal(f);
-  }});
-  actions.push({ icon: '🗑', label: '삭제', danger: true, action: (f) => {
-    openDeleteModal([f]);
-  }});
+  // 복사 / 이동 액션 (선택 항목 기준)
+  if (selectedCount > 0) {
+    actions.push({ icon: '📋', label: selectedCount > 1 ? `복사 (${selectedCount}개)` : '복사', action: handleCopy });
+    actions.push({ icon: '✂️', label: selectedCount > 1 ? `이동 (${selectedCount}개)` : '이동', action: handleCut });
+  }
+
+  // 클립보드에 붙여넣을 항목이 있을 때
+  if (state.clipboard?.paths?.length) {
+    const actLabel = state.clipboard.action === 'cut' ? '이동' : '복사';
+    actions.push({ icon: '📥', label: `붙여넣기 (${state.clipboard.paths.length}개 ${actLabel})`, action: handlePaste });
+  }
+
+  actions.push({ divider: true });
+
+  if (item && selectedCount <= 1) {
+    actions.push({ icon: '✏️', label: '이름 변경', action: (f) => openRenameModal(f) });
+  }
+
+  if (selectedCount > 0) {
+    actions.push({ icon: '🗑', label: selectedCount > 1 ? `삭제 (${selectedCount}개)` : '삭제', danger: true, action: (f) => {
+      const selected = Array.from(state.selectedPaths).map(p => {
+        const it = state.folders.find(fd => fd.path === p) || state.files.find(fl => fl.path === p);
+        return it || { path: p, name: p.split('/').pop() };
+      });
+      openDeleteModal(selected.length ? selected : [f]);
+    }});
+  }
+
   return actions;
 }
 
@@ -214,6 +296,11 @@ scopeSelect?.addEventListener('change', (e) => {
 });
 
 // ── 선택 툴바 액션 바인딩 ────────────────────────────────
+selCopyBtn?.addEventListener('click', handleCopy);
+selCutBtn?.addEventListener('click', handleCut);
+selPasteBtn?.addEventListener('click', handlePaste);
+toolbarPasteBtn?.addEventListener('click', handlePaste);
+
 selRenameBtn?.addEventListener('click', () => {
   if (state.selectedPaths.size !== 1) return;
   const path = Array.from(state.selectedPaths)[0];
@@ -257,13 +344,14 @@ selDeleteBtn?.addEventListener('click', () => {
 
 selClearBtn?.addEventListener('click', () => {
   state.clearSelection();
-  renderView();
+  syncSelectionUI();
 });
 
 selectAllBtn?.addEventListener('click', () => {
   state.selectAll();
-  renderView();
+  syncSelectionUI();
 });
+
 
 // ── 텍스트 에디터 모달 저장 버튼 ──────────────────────────
 document.getElementById('textEditSaveBtn')?.addEventListener('click', () => {
@@ -449,19 +537,101 @@ document.querySelectorAll('[data-close-modal]').forEach(btn => {
   });
 });
 
-// ── 검색 단축키 (/) ──────────────────────────────────────
+// ── Windows 파일 탐색기 단축키 및 전역 단축키 ─────────────
 document.addEventListener('keydown', (e) => {
-  if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
-    e.preventDefault();
-    searchInput?.focus();
-  }
-  if (e.key === 'Escape') {
-    if (state.searchQuery) {
+  const isInputActive = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
+  const isModalOpen = document.querySelector('.modal-backdrop.open');
+
+  // 입력창 포커스 중이거나 모달이 열려있으면 탐색기 단축키 비활성화
+  if (isInputActive || isModalOpen) {
+    if (e.key === 'Escape' && state.searchQuery && !isModalOpen) {
       searchInput.value = '';
       searchInput.dispatchEvent(new Event('input'));
     }
+    return;
+  }
+
+  // Ctrl / Cmd 조합 키
+  if (e.ctrlKey || e.metaKey) {
+    const key = e.key.toLowerCase();
+    if (key === 'a') {
+      // Ctrl + A: 전체 선택
+      e.preventDefault();
+      state.selectAll();
+      syncSelectionUI();
+    } else if (key === 'c') {
+      // Ctrl + C: 복사
+      e.preventDefault();
+      handleCopy();
+    } else if (key === 'x') {
+      // Ctrl + X: 잘라내기 / 이동
+      e.preventDefault();
+      handleCut();
+    } else if (key === 'v') {
+      // Ctrl + V: 붙여넣기
+      e.preventDefault();
+      handlePaste();
+    }
+    return;
+  }
+
+  // Delete 키: 선택 항목 일괄 삭제
+  if (e.key === 'Delete') {
+    if (state.selectedPaths.size > 0) {
+      e.preventDefault();
+      selDeleteBtn?.click();
+    }
+    return;
+  }
+
+  // Escape 키: 선택 해제
+  if (e.key === 'Escape') {
+    if (state.selectedPaths.size > 0) {
+      e.preventDefault();
+      state.clearSelection();
+      syncSelectionUI();
+    }
+    return;
+  }
+
+  // 검색창 포커스 단축키 (/)
+  if (e.key === '/') {
+    e.preventDefault();
+    searchInput?.focus();
   }
 });
+
+// ── 뷰포트 빈 영역 우클릭 컨텍스트 메뉴 ───────────────────
+mainViewport?.addEventListener('contextmenu', (e) => {
+  if (e.target.closest('.folder-card, .file-icon-card, .file-table-row, button, input, select, textarea, a, .breadcrumbs')) {
+    return;
+  }
+  e.preventDefault();
+  const bgActions = [
+    { icon: '📁', label: '새 폴더 만들기', action: openMkdirModal },
+    { icon: '⬆', label: '파일 업로드', action: () => uploadFileInput?.click() },
+    { icon: '📂', label: '폴더 업로드', action: () => uploadFolderInput?.click() }
+  ];
+  if (state.clipboard?.paths?.length) {
+    const actLabel = state.clipboard.action === 'cut' ? '이동' : '복사';
+    bgActions.unshift({
+      icon: '📥',
+      label: `붙여넣기 (${state.clipboard.paths.length}개 ${actLabel})`,
+      action: handlePaste
+    });
+  }
+  bgActions.push({ divider: true });
+  bgActions.push({ icon: '✓', label: '전체 선택 (Ctrl+A)', action: () => { state.selectAll(); syncSelectionUI(); } });
+  showContextMenu(e, null, bgActions);
+});
+
+// ── 마우스 드래그 선택 (Marquee) 초기화 ───────────────────
+if (mainViewport) {
+  setupMarqueeSelection(mainViewport, () => {
+    updateSelectionToolbar();
+  });
+}
+
 
 // ── 앱 초기화 ─────────────────────────────────────────────
 async function init() {

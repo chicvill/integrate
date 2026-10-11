@@ -164,6 +164,29 @@ export async function deleteItems(paths, scope = '') {
   return res.json();
 }
 
+// ── 복사 ──────────────────────────────────────────────────
+export async function copyItems(paths, destFolder = '', scope = '') {
+  const url = scope ? `/copy?scope=${encodeURIComponent(scope)}` : '/copy';
+  const res = await request(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ paths, dest_folder: destFolder })
+  });
+  return res.json();
+}
+
+// ── 이동 ──────────────────────────────────────────────────
+export async function moveItems(paths, destFolder = '', scope = '') {
+  const url = scope ? `/move?scope=${encodeURIComponent(scope)}` : '/move';
+  const res = await request(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ paths, dest_folder: destFolder })
+  });
+  return res.json();
+}
+
+
 // ── 파일 다운로드 URL 생성 ────────────────────────────────
 export function getDownloadUrl(path, scope = '') {
   const p = new URLSearchParams({ path });

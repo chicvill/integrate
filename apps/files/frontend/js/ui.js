@@ -87,16 +87,59 @@ export function renderBreadcrumbs(container, breadcrumbs, onNavigate) {
 }
 
 // ── 폴더 그리드 렌더링 ────────────────────────────────────
+// ── 선택 UI 동기화 (클립보드 Cut 상태 및 체크박스 반영) ──────────
+export function syncSelectionUI() {
+  const cutPaths = new Set(state.clipboard.action === 'cut' ? state.clipboard.paths : []);
+
+  document.querySelectorAll('.folder-card, .file-icon-card, .file-table-row').forEach(el => {
+    const path = el.dataset.path;
+    if (!path) return;
+    const isSelected = state.selectedPaths.has(path);
+    const isCut = cutPaths.has(path);
+
+    el.classList.toggle('selected', isSelected);
+    el.classList.toggle('item-cut', isCut);
+
+    const chk = el.querySelector('.item-checkbox');
+    if (chk) {
+      chk.classList.toggle('checked', isSelected);
+      chk.textContent = isSelected ? '✓' : '';
+    }
+  });
+
+  updateSelectionToolbar();
+}
+
+// ── Windows 탐색기 방식 클릭 핸들러 ─────────────────────────
+export function handleItemSelection(e, path, callback) {
+  if (e.shiftKey) {
+    // Shift + 클릭: 범위 선택
+    state.selectRange(path);
+  } else if (e.ctrlKey || e.metaKey) {
+    // Ctrl + 클릭: 토글 추가
+    state.toggleSelect(path);
+  } else {
+    // 일반 클릭: 단일 선택
+    state.setSingleSelect(path);
+  }
+  syncSelectionUI();
+  if (callback) callback(path);
+}
+
+// ── 폴더 그리드 렌더링 ────────────────────────────────────
 export function renderFolderGrid(container, folders, onNavigate, onToggleSelect, onContextMenu) {
   if (!folders.length) {
     container.innerHTML = '';
     return;
   }
 
+  const cutPaths = new Set(state.clipboard.action === 'cut' ? state.clipboard.paths : []);
+
   container.innerHTML = folders.map(f => {
     const isSelected = state.selectedPaths.has(f.path);
+    const isCut = cutPaths.has(f.path);
     return `
-      <div class="folder-card fade-in ${isSelected ? 'selected' : ''}" data-path="${escHtml(f.path)}" role="button" tabindex="0">
+      <div class="folder-card fade-in ${isSelected ? 'selected' : ''} ${isCut ? 'item-cut' : ''}" data-path="${escHtml(f.path)}" role="button" tabindex="0">
         <button class="item-checkbox ${isSelected ? 'checked' : ''}" data-path="${escHtml(f.path)}" title="선택">
           ${isSelected ? '✓' : ''}
         </button>
@@ -112,10 +155,17 @@ export function renderFolderGrid(container, folders, onNavigate, onToggleSelect,
     const path = el.dataset.path;
     const chk = el.querySelector('.item-checkbox');
 
-    // 체크박스 클릭
+    // 체크박스 클릭 (단순 토글)
     chk.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (onToggleSelect) onToggleSelect(path);
+      state.toggleSelect(path);
+      syncSelectionUI();
+    });
+
+    // 한 번 클릭: Windows 파일 탐색기 방식 (일반/Ctrl/Shift)
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('.item-checkbox')) return;
+      handleItemSelection(e, path);
     });
 
     // 더블클릭/엔터: 폴더 진입
@@ -124,19 +174,13 @@ export function renderFolderGrid(container, folders, onNavigate, onToggleSelect,
       if (e.key === 'Enter') onNavigate(path);
     });
 
-    // 한 번 클릭: Ctrl/Shift 누르면 선택, 아니면 진입
-    el.addEventListener('click', (e) => {
-      if (e.target.closest('.item-checkbox')) return;
-      if (e.ctrlKey || e.metaKey || e.shiftKey) {
-        if (onToggleSelect) onToggleSelect(path);
-      } else {
-        onNavigate(path);
-      }
-    });
-
     if (onContextMenu) {
       el.addEventListener('contextmenu', (e) => {
         e.preventDefault();
+        if (!state.selectedPaths.has(path)) {
+          state.setSingleSelect(path);
+          syncSelectionUI();
+        }
         onContextMenu(e, { path, name: el.querySelector('.folder-name')?.textContent, is_dir: true });
       });
     }
@@ -150,16 +194,19 @@ export function renderFileGrid(container, files, onFileClick, onToggleSelect, on
     return;
   }
 
+  const cutPaths = new Set(state.clipboard.action === 'cut' ? state.clipboard.paths : []);
+
   container.innerHTML = `
     <div class="file-icon-grid fade-in">
       ${files.map(f => {
         const isSelected = state.selectedPaths.has(f.path);
+        const isCut = cutPaths.has(f.path);
         const isImage = f.category === 'image';
         const icon = getCategoryIcon(f.category);
         const thumbUrl = isImage ? getRawUrl(f.path, state.scope) : null;
 
         return `
-          <div class="file-icon-card ${isSelected ? 'selected' : ''}" data-path="${escHtml(f.path)}" data-category="${f.category}" tabindex="0">
+          <div class="file-icon-card ${isSelected ? 'selected' : ''} ${isCut ? 'item-cut' : ''}" data-path="${escHtml(f.path)}" data-category="${f.category}" tabindex="0">
             <button class="item-checkbox ${isSelected ? 'checked' : ''}" data-path="${escHtml(f.path)}" title="선택">
               ${isSelected ? '✓' : ''}
             </button>
@@ -183,13 +230,14 @@ export function renderFileGrid(container, files, onFileClick, onToggleSelect, on
     // 체크박스 클릭
     chk.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (onToggleSelect) onToggleSelect(path);
+      state.toggleSelect(path);
+      syncSelectionUI();
     });
 
-    // 한 번 클릭: 선택 토글
+    // 한 번 클릭: Windows 파일 탐색기 방식 선택
     el.addEventListener('click', (e) => {
       if (e.target.closest('.item-checkbox')) return;
-      if (onToggleSelect) onToggleSelect(path);
+      handleItemSelection(e, path);
     });
 
     // 더블 클릭: 미리보기 또는 열기
@@ -208,6 +256,10 @@ export function renderFileGrid(container, files, onFileClick, onToggleSelect, on
     if (onContextMenu) {
       el.addEventListener('contextmenu', (e) => {
         e.preventDefault();
+        if (!state.selectedPaths.has(path)) {
+          state.setSingleSelect(path);
+          syncSelectionUI();
+        }
         onContextMenu(e, file);
       });
     }
@@ -220,6 +272,8 @@ export function renderFileList(container, files, onFileClick, onToggleSelect, on
     container.innerHTML = '';
     return;
   }
+
+  const cutPaths = new Set(state.clipboard.action === 'cut' ? state.clipboard.paths : []);
 
   container.innerHTML = `
     <div class="file-table-container fade-in">
@@ -239,9 +293,10 @@ export function renderFileList(container, files, onFileClick, onToggleSelect, on
         <tbody>
           ${files.map(f => {
             const isSelected = state.selectedPaths.has(f.path);
+            const isCut = cutPaths.has(f.path);
             const icon = getCategoryIcon(f.category);
             return `
-              <tr class="file-table-row ${isSelected ? 'selected' : ''}" data-path="${escHtml(f.path)}">
+              <tr class="file-table-row ${isSelected ? 'selected' : ''} ${isCut ? 'item-cut' : ''}" data-path="${escHtml(f.path)}">
                 <td style="text-align:center">
                   <button class="item-checkbox ${isSelected ? 'checked' : ''}" data-path="${escHtml(f.path)}">
                     ${isSelected ? '✓' : ''}
@@ -275,12 +330,13 @@ export function renderFileList(container, files, onFileClick, onToggleSelect, on
 
     chk.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (onToggleSelect) onToggleSelect(path);
+      state.toggleSelect(path);
+      syncSelectionUI();
     });
 
     el.addEventListener('click', (e) => {
       if (e.target.closest('.card-actions') || e.target.closest('.item-checkbox')) return;
-      if (onToggleSelect) onToggleSelect(path);
+      handleItemSelection(e, path);
     });
 
     el.addEventListener('dblclick', (e) => {
@@ -291,6 +347,10 @@ export function renderFileList(container, files, onFileClick, onToggleSelect, on
     if (onContextMenu) {
       el.addEventListener('contextmenu', (e) => {
         e.preventDefault();
+        if (!state.selectedPaths.has(path)) {
+          state.setSingleSelect(path);
+          syncSelectionUI();
+        }
         onContextMenu(e, file);
       });
     }
@@ -304,9 +364,136 @@ export function renderFileList(container, files, onFileClick, onToggleSelect, on
       if (file && onFileClick) onFileClick(file);
     });
   });
+
+  // 테이블 전체 선택 버튼
+  const tableSelectAll = container.querySelector('#selectAllTableBtn');
+  if (tableSelectAll) {
+    const all = files.map(f => f.path);
+    const allSelected = all.length > 0 && all.every(p => state.selectedPaths.has(p));
+    tableSelectAll.classList.toggle('checked', allSelected);
+    tableSelectAll.textContent = allSelected ? '✓' : '';
+    tableSelectAll.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (allSelected) {
+        all.forEach(p => state.selectedPaths.delete(p));
+      } else {
+        all.forEach(p => state.selectedPaths.add(p));
+      }
+      syncSelectionUI();
+    });
+  }
 }
 
-// ── 선택 툴바 UI 업데이트 (★ 편집, 삭제 버튼 포함) ─────────
+// ── 마우스 드래그 선택 (Windows Explorer Marquee Selection) ──
+export function setupMarqueeSelection(viewportEl, onSelectionChange) {
+  let isMouseDown = false;
+  let isDragging = false;
+  let startX = 0;
+  let startY = 0;
+  let marqueeEl = null;
+  let baseSelection = new Set();
+  let isCtrl = false;
+
+  viewportEl.addEventListener('mousedown', (e) => {
+    // 마우스 왼쪽 버튼(0)만 처리
+    if (e.button !== 0) return;
+
+    // 아이템 카드나 버튼/입력/대화형 요소 클릭 시에는 드래그 상자 시작하지 않음
+    if (e.target.closest('.folder-card, .file-icon-card, .file-table-row, button, input, select, textarea, a, .breadcrumbs, .section-header')) {
+      return;
+    }
+
+    isMouseDown = true;
+    isDragging = false;
+    startX = e.clientX;
+    startY = e.clientY;
+    isCtrl = e.ctrlKey || e.metaKey;
+
+    if (isCtrl) {
+      baseSelection = new Set(state.selectedPaths);
+    } else {
+      baseSelection = new Set();
+      state.clearSelection();
+      syncSelectionUI();
+    }
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isMouseDown) return;
+
+    const currentX = e.clientX;
+    const currentY = e.clientY;
+    const deltaX = Math.abs(currentX - startX);
+    const deltaY = Math.abs(currentY - startY);
+
+    if (!isDragging && (deltaX > 4 || deltaY > 4)) {
+      isDragging = true;
+      document.body.classList.add('no-user-select');
+      if (!marqueeEl) {
+        marqueeEl = document.createElement('div');
+        marqueeEl.className = 'drag-selection-box';
+        document.body.appendChild(marqueeEl);
+      }
+    }
+
+    if (!isDragging || !marqueeEl) return;
+
+    const left = Math.min(startX, currentX);
+    const top = Math.min(startY, currentY);
+    const width = Math.abs(currentX - startX);
+    const height = Math.abs(currentY - startY);
+
+    marqueeEl.style.left = `${left}px`;
+    marqueeEl.style.top = `${top}px`;
+    marqueeEl.style.width = `${width}px`;
+    marqueeEl.style.height = `${height}px`;
+
+    const marqueeRect = { left, top, right: left + width, bottom: top + height };
+
+    const cards = viewportEl.querySelectorAll('.folder-card, .file-icon-card, .file-table-row');
+    const newlySelected = new Set(baseSelection);
+
+    cards.forEach(card => {
+      const p = card.dataset.path;
+      if (!p) return;
+      const rect = card.getBoundingClientRect();
+      const intersects = !(
+        rect.right < marqueeRect.left ||
+        rect.left > marqueeRect.right ||
+        rect.bottom < marqueeRect.top ||
+        rect.top > marqueeRect.bottom
+      );
+
+      if (intersects) {
+        newlySelected.add(p);
+      } else if (!isCtrl && newlySelected.has(p)) {
+        newlySelected.delete(p);
+      }
+    });
+
+    state.selectedPaths = newlySelected;
+    syncSelectionUI();
+  });
+
+  const finishDrag = () => {
+    if (isMouseDown) {
+      isMouseDown = false;
+      if (isDragging) {
+        isDragging = false;
+        document.body.classList.remove('no-user-select');
+        if (marqueeEl) {
+          marqueeEl.remove();
+          marqueeEl = null;
+        }
+        if (onSelectionChange) onSelectionChange();
+      }
+    }
+  };
+
+  document.addEventListener('mouseup', finishDrag);
+}
+
+// ── 선택 툴바 UI 업데이트 (★ 복사, 이동, 붙여넣기, 삭제 포함) ─────
 export function updateSelectionToolbar(handlers = {}) {
   const count = state.selectedPaths.size;
   const toolbar = document.getElementById('selectionToolbar');
@@ -314,8 +501,34 @@ export function updateSelectionToolbar(handlers = {}) {
   const editBtn = document.getElementById('selEditBtn');
   const renameBtn = document.getElementById('selRenameBtn');
   const deleteBtn = document.getElementById('selDeleteBtn');
-  const downloadBtn = document.getElementById('selDownloadBtn');
+  const selCopyBtn = document.getElementById('selCopyBtn');
+  const selCutBtn = document.getElementById('selCutBtn');
+  const selPasteBtn = document.getElementById('selPasteBtn');
+  const toolbarPasteBtn = document.getElementById('toolbarPasteBtn');
   const previewBtn = document.getElementById('selPreviewBtn');
+
+  // 클립보드에 붙여넣을 항목이 있는지 확인
+  const hasClipboard = state.clipboard && state.clipboard.paths && state.clipboard.paths.length > 0;
+  const clipActionText = state.clipboard.action === 'cut' ? '이동' : '복사';
+  const pasteBtnLabel = hasClipboard ? `📥 붙여넣기 (${state.clipboard.paths.length}개 ${clipActionText})` : '📥 붙여넣기';
+
+  if (toolbarPasteBtn) {
+    if (hasClipboard) {
+      toolbarPasteBtn.classList.remove('hidden');
+      toolbarPasteBtn.textContent = pasteBtnLabel;
+    } else {
+      toolbarPasteBtn.classList.add('hidden');
+    }
+  }
+
+  if (selPasteBtn) {
+    if (hasClipboard) {
+      selPasteBtn.classList.remove('hidden');
+      selPasteBtn.textContent = pasteBtnLabel;
+    } else {
+      selPasteBtn.classList.add('hidden');
+    }
+  }
 
   if (!toolbar) return;
 
@@ -342,10 +555,17 @@ export function updateSelectionToolbar(handlers = {}) {
     if (deleteBtn) {
       deleteBtn.textContent = `🗑 삭제 (${count})`;
     }
+    if (selCopyBtn) {
+      selCopyBtn.textContent = `📋 복사 (${count})`;
+    }
+    if (selCutBtn) {
+      selCutBtn.textContent = `✂️ 이동 (${count})`;
+    }
   } else {
     toolbar.classList.add('hidden');
   }
 }
+
 
 // ── 상태바 업데이트 ───────────────────────────────────────
 export function updateStatusBar(data) {

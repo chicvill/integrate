@@ -19,6 +19,7 @@ from apps.files.backend.schemas import (
     MkdirRequest,
     RenameRequest,
     DeleteRequest,
+    BatchTransferRequest,
     SearchResponse,
     OperationResponse,
     SaveTextRequest,
@@ -318,6 +319,151 @@ async def delete_items(req: DeleteRequest, request: Request, scope: str = Query(
         message=f"{len(deleted)}개 항목이 성공적으로 삭제되었습니다." + (f" (실패: {len(errors)})" if errors else ""),
         data={"deleted": deleted, "errors": errors}
     )
+
+
+def _get_unique_dest_path(dest_dir: Path, original_name: str, is_dir: bool) -> Path:
+    dest = dest_dir / original_name
+    if not dest.exists():
+        return dest
+    
+    p = Path(original_name)
+    stem = p.stem if not is_dir else original_name
+    suffix = p.suffix if not is_dir else ""
+    counter = 1
+    while dest.exists():
+        new_name = f"{stem}_copy{f'({counter})' if counter > 1 else ''}{suffix}"
+        dest = dest_dir / new_name
+        counter += 1
+    return dest
+
+
+def _calc_path_size(p: Path) -> int:
+    if p.is_file():
+        return p.stat().st_size
+    elif p.is_dir():
+        total = 0
+        for entry in p.rglob('*'):
+            if entry.is_file():
+                total += entry.stat().st_size
+        return total
+    return 0
+
+
+# ─── 복사 (다중 항목 복사 지원 & 쿼터 검증) ───
+@router.post("/copy", response_model=OperationResponse)
+async def copy_items(req: BatchTransferRequest, request: Request, scope: str = Query("")):
+    if not req.paths:
+        raise HTTPException(status_code=400, detail="복사할 항목이 지정되지 않았습니다.")
+
+    uid = _extract_user_id(request)
+    dest_dir = safe_resolve_path(req.dest_folder, scope, uid)
+    if not dest_dir.is_dir():
+        raise HTTPException(status_code=400, detail="대상 폴더가 존재하지 않거나 유효하지 않습니다.")
+
+    # 1. 원본 파일 크기 합산 및 쿼터 사전 검증
+    total_copy_bytes = 0
+    src_paths = []
+    for rel_p in req.paths:
+        try:
+            target = safe_resolve_path(rel_p, scope, uid)
+            if target.exists():
+                src_paths.append(target)
+                total_copy_bytes += _calc_path_size(target)
+        except Exception:
+            pass
+
+    if not src_paths:
+        raise HTTPException(status_code=404, detail="복사할 유효한 원본 항목을 찾을 수 없습니다.")
+
+    root = get_storage_root(scope, uid)
+    quota_check = check_upload_quota(root, total_copy_bytes, uid)
+    if quota_check["exceeded"]:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "QUOTA_EXCEEDED",
+                "message": quota_check["message"],
+                "quota_info": quota_check
+            }
+        )
+
+    # 2. 복사 수행
+    copied = []
+    errors = []
+    for src in src_paths:
+        try:
+            is_dir = src.is_dir()
+            dest_target = _get_unique_dest_path(dest_dir, src.name, is_dir)
+            if is_dir:
+                shutil.copytree(src, dest_target)
+            else:
+                shutil.copy2(src, dest_target)
+            copied.append(dest_target.name)
+        except Exception as e:
+            errors.append(f"{src.name}: {str(e)}")
+
+    if not copied and errors:
+        raise HTTPException(status_code=500, detail=", ".join(errors))
+
+    return OperationResponse(
+        success=True,
+        message=f"{len(copied)}개 항목이 성공적으로 복사되었습니다." + (f" (실패: {len(errors)})" if errors else ""),
+        data={"copied": copied, "errors": errors}
+    )
+
+
+# ─── 이동 (다중 항목 이동 지원 & 순환 참조 방지) ───
+@router.post("/move", response_model=OperationResponse)
+async def move_items(req: BatchTransferRequest, request: Request, scope: str = Query("")):
+    if not req.paths:
+        raise HTTPException(status_code=400, detail="이동할 항목이 지정되지 않았습니다.")
+
+    uid = _extract_user_id(request)
+    dest_dir = safe_resolve_path(req.dest_folder, scope, uid)
+    if not dest_dir.is_dir():
+        raise HTTPException(status_code=400, detail="대상 폴더가 존재하지 않거나 유효하지 않습니다.")
+
+    moved = []
+    errors = []
+
+    for rel_p in req.paths:
+        try:
+            src = safe_resolve_path(rel_p, scope, uid)
+            if not src.exists():
+                errors.append(f"{rel_p}: 항목이 존재하지 않습니다.")
+                continue
+
+            # 동일 위치 이동이면 스킵
+            if src.parent == dest_dir:
+                continue
+
+            # 자기 자신 또는 하위 폴더로 이동 방지
+            if src.is_dir():
+                try:
+                    if dest_dir == src or dest_dir.is_relative_to(src):
+                        errors.append(f"{src.name}: 폴더를 자기 자신 또는 하위 폴더 내부로 이동할 수 없습니다.")
+                        continue
+                except AttributeError:
+                    # Python 3.8 호환 fallback
+                    if str(dest_dir).startswith(str(src)):
+                        errors.append(f"{src.name}: 폴더를 자기 자신 또는 하위 폴더 내부로 이동할 수 없습니다.")
+                        continue
+
+            dest_target = _get_unique_dest_path(dest_dir, src.name, src.is_dir())
+            shutil.move(str(src), str(dest_target))
+            moved.append(dest_target.name)
+        except Exception as e:
+            errors.append(f"{rel_p}: {str(e)}")
+
+    if not moved and errors:
+        raise HTTPException(status_code=500, detail=", ".join(errors))
+
+    return OperationResponse(
+        success=True,
+        message=f"{len(moved)}개 항목이 성공적으로 이동되었습니다." + (f" (실패: {len(errors)})" if errors else ""),
+        data={"moved": moved, "errors": errors}
+    )
+
 
 
 # ─── 시스템 상태 헬스체크 ───

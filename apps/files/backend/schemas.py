@@ -51,6 +51,12 @@ class DeleteRequest(BaseModel):
     paths: List[str]
 
 
+class BatchTransferRequest(BaseModel):
+    paths: List[str]
+    dest_folder: str = ""
+
+
+
 class SearchResponse(BaseModel):
     query: str
     results: List[FileItem] = []
