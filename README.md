@@ -46,11 +46,21 @@ AuthService (shared/auth/service.py)
 
 ## 🚀 빠른 시작
 
-### 1. 환경 설정
-```bash
-cp .env.shared.template .env.shared
-# .env.shared 파일을 열어 실제 값 입력
-```
+### 1. 환경 설정 (암호화 볼트 기본 내장)
+저장소에 암호화된 시크릿(` .env.encrypted `)이 코드와 함께 포함되어 있어 **추가 설정 없이 즉시 구동 가능**합니다. (부팅 시 메모리에 자동 복호화)
+
+- **신규 키 추가 또는 변경 시:**
+  ```bash
+  # 1. .env.shared 파일 수정 후 볼트 암호화 실행
+  python shared/core/vault.py
+  
+  # 2. 갱신된 암호화 파일 커밋 및 푸시
+  git add .env.encrypted && git commit -m "chore: update encrypted secrets"
+  ```
+- **현재 암호화된 환경변수 확인 (복호화):**
+  ```bash
+  python shared/core/vault.py decrypt
+  ```
 
 ### 2. 의존성 설치
 ```bash

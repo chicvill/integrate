@@ -194,6 +194,14 @@ class NewAppRecord(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 ```
 
+### 3.5. 암호화된 시크릿 및 환경변수 전달 (`.env.encrypted` 볼트 파이프라인)
+신규 앱에서 새로운 외부 API Key(예: Gemini, 결제, SMS 등)나 접속 정보가 필요할 때, 절대 평문 키를 코드에 하드코딩하거나 Git에 푸시하지 않습니다.
+
+1. **로컬 평문 작성**: 워크스페이스 루트의 `.env.shared`에 새 키 추가 (Git 추적 제외)
+2. **볼트 암호화 실행**: `python shared/core/vault.py` 실행하여 `.env.encrypted` 생성/갱신
+3. **코드와 함께 안전한 전달**: `.env.encrypted`를 Git에 커밋 & 푸시하여 배포 서버로 안전하게 전달
+4. **런타임 메모리 자동 복호화**: `BaseConfig`가 부팅 시 `load_encrypted_env()`를 호출하여 `os.environ`에 메모리 복호화 주입 (디스크 쓰기 없음)
+
 ---
 
 ## 4. 프론트엔드 (Vanilla JS/CSS) 개발 기준

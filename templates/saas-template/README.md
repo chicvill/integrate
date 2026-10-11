@@ -95,3 +95,110 @@ py -3.14 -m uvicorn templates.saas-template.backend.main:app --port 8015 --reloa
 py -3.14 scripts/create_app.py --id petcare --name "스마트 펫케어" --icon "🐾" --category "iot" --port 8016
 ```
 - 생성 완료 즉시 `apps/petcare/` 디렉토리가 구성되며, 별도의 빌드 과정 없이 바로 게이트웨이 또는 단독으로 실행 가능합니다.
+
+---
+
+## 🔐 암호화된 시크릿 관리 (In-Repo Encrypted Secrets)
+
+MQnet 통합 플랫폼은 민감한 환경변수(DB 접속 주소, 결제 비밀키, Gemini API Key 등)가 Git 저장소나 클라우드 배포 시 누락되거나 평문으로 유출되는 문제를 원천 차단하기 위해 **암호화된 볼트(Vault) 파이프라인**을 표준 내장하고 있습니다.
+
+### 1. 도입 배경 및 해결 과제
+
+- **기존 방식의 한계**:
+  - 일반적인 `.env`는 보안을 위해 `.gitignore`로 제외되므로, 신규 배포나 서버 이전 시 매번 수동으로 키를 복사/전달해야 했습니다.
+  - 키가 누락되면 런타임에 500/502 오류가 발생하거나, AI 서비스가 모의 응답(mock fallback)으로만 동작하는 원인 규명이 어려운 장애가 빈번히 발생했습니다.
+  - 반대로 `.env`를 그대로 Git에 올리면 외부 노출로 인한 심각한 보안 사고가 발생합니다.
+- **해결책 (In-Repo Encrypted Secrets)**:
+  - 비밀키를 표준 암호화(HMAC-SHA256 CTR / AES)하여 **`.env.encrypted` 파일 형태로 코드와 항상 함께 Git으로 안전하게 전달**합니다.
+  - 서버나 다른 개발 환경은 별도의 수동 복사 없이 `git pull`만으로 모든 최신 시크릿을 안전하게 수신합니다.
+  - 앱 기동 시 **디스크에 평문 파일을 남기지 않고 프로세스 메모리(`os.environ`)에만 즉시 복호화 주입**하므로 디스크 유출 위험이 없습니다.
+
+---
+
+### 2. 전체 전달 및 배포 파이프라인 (End-to-End Pipeline)
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 1. 개발자 로컬 환경 (Local Developer)                                                       │
+│    .env.shared (평문 키 작성 / .gitignore로 Git 추적 차단)                                   │
+│         │                                                                                   │
+│         ▼ `python shared/core/vault.py` 실행                                                │
+│    .env.encrypted (암호문 생성)                                                             │
+└─────────┬───────────────────────────────────────────────────────────────────────────────────┘
+          │
+          ▼ 2. 코드와 함께 전달 (Git Commit & Push)
+┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+│ GitHub / 원격 리포지토리 (Secure Transport)                                                  │
+│    - .env.encrypted (안전하게 암호화된 상태로 코드와 함께 보관 & 동행)                         │
+└─────────┬───────────────────────────────────────────────────────────────────────────────────┘
+          │
+          ▼ 3. 배포 서버 / 협업 환경 (Deployment Server / Coolify / Docker)
+┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+│ `git pull`로 .env.encrypted 수신                                                             │
+│         │                                                                                   │
+│         ▼ FastAPI 부팅 단계 (`BaseConfig` / `gateway/main.py`)                               │
+│    `load_encrypted_env()`가 .env.encrypted를 메모리 복호화                                  │
+│         │                                                                                   │
+│         ▼ (디스크 쓰기 없음 / In-Memory Injection)                                           │
+│    `os.environ`에 실시간 환경변수 자동 주입 완료! (GEMINI_API_KEY, DATABASE_URL 등)         │
+└─────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 3. 단계별 환경변수 암호화 및 전달 절차 (Step-by-Step)
+
+#### [1단계] 로컬에서 환경변수 정의 (`.env.shared`)
+- 워크스페이스 루트의 `.env.shared` 파일에 신규 API Key나 환경변수를 평문으로 작성합니다.
+- *(이 파일은 `.gitignore`에 등록되어 있어 원격 저장소에 절대 평문으로 커밋되지 않습니다.)*
+```ini
+# 예시: 워크스페이스 루트의 .env.shared
+GEMINI_API_KEY=AIzaSyD...실제_비밀키...
+DATABASE_URL=sqlite:///./integrat.db
+JWT_SECRET=Fz8vH6_Y_9V7lDZb9uJc7mR2nL1pT4aQ5sX3k6M1z4Y=
+STRIPE_SECRET_KEY=sk_test_51...
+```
+
+#### [2단계] 볼트 암호화 실행 (`vault.py`)
+- Python 표준 라이브러리(`hashlib`, `hmac`, `os.urandom`) 기반으로 동작하므로 별도의 외부 암호화 패키지 설치 없이 즉시 실행됩니다:
+```bash
+# 워크스페이스 루트에서 실행
+python shared/core/vault.py
+```
+- **성공 메시지 출력 예시:**
+  ```text
+  [SUCCESS] Encryption complete: .../.env.shared -> .../.env.encrypted
+  [INFO] Ciphertext size: 5344 bytes
+  ```
+- 이 명령을 실행하면 `.env.shared`의 모든 내용이 암호화되어 `.env.encrypted` 파일이 생성/갱신됩니다.
+
+#### [3단계] 코드와 함께 Git 커밋 및 전달 (Push)
+- 생성된 `.env.encrypted`를 Git에 추가하고 원격 저장소로 푸시합니다:
+```bash
+git add .env.encrypted
+git commit -m "chore(vault): update encrypted secrets with new api keys"
+git push origin main
+```
+
+#### [4단계] 수신 서버에서의 자동 복호화 (Zero-Config Run)
+- 배포 서버(GCP VM, Coolify, Docker 컨테이너 등)에서는 코드를 `git pull`하는 순간 최신 `.env.encrypted`가 함께 들어옵니다.
+- `shared.core.base_config.BaseConfig` 또는 `gateway/main.py` 기동 시 자동으로 `load_encrypted_env()`가 실행되어 메모리(`os.environ`)에 주입됩니다.
+- 개발자나 운영자가 서버 콘솔에 접속하여 수동으로 환경변수를 복사/붙여넣기할 필요가 전혀 없습니다.
+
+---
+
+### 4. 개발 및 디버깅 유틸리티 (Verification)
+
+#### 암호화 내용 확인 (복호화 검증)
+로컬에서 현재 `.env.encrypted`에 정상적으로 모든 키가 포함되어 있는지 복호화하여 확인하고 싶을 때:
+```bash
+python shared/core/vault.py decrypt
+```
+
+#### 환경변수 우선순위 계층 (Precedence)
+1. **호스트 시스템 환경변수** (Docker `-e` 또는 OS 환경변수): 최우선 적용
+2. **로컬 평문 `.env` / `.env.shared`** (로컬 개발 시): 우선 적용
+3. **`.env.encrypted` (볼트 암호문)**: 기존 변수가 비어있는 경우에만 자동 주입 (`override=False` 원칙)
+
+#### 마스터 키 커스텀
+기본 마스터 키 외에 별도의 격리된 마스터 키를 사용하려면 시스템 환경변수에 `MASTER_CRYPTO_KEY`를 지정하여 운용할 수 있습니다.
