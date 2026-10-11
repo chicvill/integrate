@@ -138,13 +138,87 @@ def load_encrypted_env(file_path: Optional[str] = None, master_key: Optional[str
         return False
 
 
+def auto_sync_vault(base_dir: Optional[str] = None, force: bool = False) -> bool:
+    """
+    로컬 환경에서 .env.shared의 변경을 감지하여 .env.encrypted를 자동 갱신합니다.
+    - .env.shared가 존재하고 .env.encrypted보다 최신 수정 시간이면 자동 암호화 실행.
+    - Git 저장소인 경우 .git/hooks/pre-commit 훅도 자동 설치하여 커밋 시 누락을 원천 차단합니다.
+    """
+    if base_dir is None:
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+    src_file = os.path.join(base_dir, ".env.shared")
+    enc_file = os.path.join(base_dir, ".env.encrypted")
+
+    if not os.path.exists(src_file):
+        return False
+
+    needs_sync = False
+    if not os.path.exists(enc_file):
+        needs_sync = True
+    else:
+        src_mtime = os.path.getmtime(src_file)
+        enc_mtime = os.path.getmtime(enc_file)
+        if src_mtime > enc_mtime or force:
+            needs_sync = True
+
+    if needs_sync:
+        try:
+            with open(src_file, "r", encoding="utf-8") as f:
+                src_data = f.read()
+            encrypted = encrypt_text(src_data, DEFAULT_MASTER_KEY)
+            with open(enc_file, "w", encoding="utf-8") as f:
+                f.write(encrypted)
+            logger.info(f"🔄 Vault: .env.shared 변경 감지 -> .env.encrypted 자동 암호화 갱신 완료 ({len(encrypted)} bytes)")
+            # Git 훅 자동 점검 및 설치
+            ensure_git_hook(base_dir)
+            return True
+        except Exception as e:
+            logger.warning(f"⚠️ Vault: 자동 암호화 동기화 중 오류: {e}")
+            return False
+
+    return False
+
+
+def ensure_git_hook(base_dir: Optional[str] = None) -> bool:
+    """Git pre-commit 훅을 확인하고 없으면 자동 설치합니다."""
+    if base_dir is None:
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+    hooks_dir = os.path.join(base_dir, ".git", "hooks")
+    if not os.path.isdir(hooks_dir):
+        return False
+
+    hook_file = os.path.join(hooks_dir, "pre-commit")
+    hook_script = (
+        "#!/bin/sh\n"
+        "# MQnet Vault Pre-Commit Hook: .env.shared 변경 시 자동 암호화 및 스테이징\n"
+        "python shared/core/vault.py sync\n"
+        "if git status --porcelain | grep -q \"\\.env\\.encrypted\"; then\n"
+        "    git add .env.encrypted\n"
+        "    echo \"🔒 [Vault Hook] .env.shared 변경 감지 -> .env.encrypted가 자동 암호화되어 커밋에 포함되었습니다.\"\n"
+        "fi\n"
+    )
+
+    if not os.path.exists(hook_file):
+        try:
+            with open(hook_file, "w", encoding="utf-8", newline="\n") as f:
+                f.write(hook_script)
+            return True
+        except Exception:
+            return False
+    return False
+
+
 if __name__ == "__main__":
-    # CLI 모드: python -m shared.core.vault [encrypt/decrypt]
+    # CLI 모드: python shared/core/vault.py [encrypt/decrypt/sync/hook]
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     src_file = os.path.join(base_dir, ".env.shared")
     enc_file = os.path.join(base_dir, ".env.encrypted")
 
-    if len(sys.argv) > 1 and sys.argv[1] == "decrypt":
+    mode = sys.argv[1] if len(sys.argv) > 1 else "encrypt"
+
+    if mode == "decrypt":
         if not os.path.exists(enc_file):
             print(f"Error: {enc_file} does not exist.")
             sys.exit(1)
@@ -152,6 +226,18 @@ if __name__ == "__main__":
             enc_data = f.read().strip()
         dec = decrypt_text(enc_data, DEFAULT_MASTER_KEY)
         print("Decrypted Content:\n" + dec)
+    elif mode == "sync":
+        synced = auto_sync_vault(base_dir)
+        if synced:
+            print(f"[SUCCESS] Synced .env.shared -> {enc_file}")
+        else:
+            print("[INFO] .env.encrypted is already up to date.")
+    elif mode == "hook":
+        installed = ensure_git_hook(base_dir)
+        if installed:
+            print("[SUCCESS] Installed Git pre-commit vault hook.")
+        else:
+            print("[INFO] Git pre-commit hook is already present or not a git repo.")
     else:
         if not os.path.exists(src_file):
             print(f"Error: {src_file} does not exist.")
@@ -161,5 +247,7 @@ if __name__ == "__main__":
         encrypted = encrypt_text(src_data, DEFAULT_MASTER_KEY)
         with open(enc_file, "w", encoding="utf-8") as f:
             f.write(encrypted)
+        ensure_git_hook(base_dir)
         print(f"[SUCCESS] Encryption complete: {src_file} -> {enc_file}")
         print(f"[INFO] Ciphertext size: {len(encrypted)} bytes")
+

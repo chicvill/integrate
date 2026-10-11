@@ -159,24 +159,26 @@ JWT_SECRET=Fz8vH6_Y_9V7lDZb9uJc7mR2nL1pT4aQ5sX3k6M1z4Y=
 STRIPE_SECRET_KEY=sk_test_51...
 ```
 
-#### [2단계] 볼트 암호화 실행 (`vault.py`)
-- Python 표준 라이브러리(`hashlib`, `hmac`, `os.urandom`) 기반으로 동작하므로 별도의 외부 암호화 패키지 설치 없이 즉시 실행됩니다:
-```bash
-# 워크스페이스 루트에서 실행
-python shared/core/vault.py
-```
+#### [2단계] 볼트 암호화 및 자동 동기화 (`auto_sync_vault` & Git Hook)
+> **💡 자동 암호화 지원 (수동 실행 불필요):**  
+> 개발자가 암호화 명령을 매번 기억하지 않아도 누락되지 않도록 **2중 자동 동기화 방어선**이 구축되어 있습니다.
+> 1. **서버 기동 및 핫리로드 시 자동 감지:** 앱 실행 또는 소스 변경 감지 시 `BaseConfig`가 `.env.shared`의 수정 시간을 확인하여 변경되었으면 `.env.encrypted`를 백그라운드에서 자동 재암호화합니다.
+> 2. **Git 커밋 시 자동 암호화 및 스테이징 (`Git Pre-Commit Hook`):** `git commit` 실행 시 훅이 자동으로 `.env.shared` 변경 사항을 `.env.encrypted`로 암호화하고 커밋 대상(`git add`)에 자동 포함시킵니다.
+
+- **수동 동기화/재암호화 필요 시:**
+  ```bash
+  python shared/core/vault.py sync    # 변경 감지 시에만 동기화
+  python shared/core/vault.py         # 강제 즉시 암호화
+  ```
 - **성공 메시지 출력 예시:**
   ```text
-  [SUCCESS] Encryption complete: .../.env.shared -> .../.env.encrypted
+  [SUCCESS] Synced .env.shared -> .../.env.encrypted
   [INFO] Ciphertext size: 5344 bytes
   ```
-- 이 명령을 실행하면 `.env.shared`의 모든 내용이 암호화되어 `.env.encrypted` 파일이 생성/갱신됩니다.
 
 #### [3단계] 코드와 함께 Git 커밋 및 전달 (Push)
-- 생성된 `.env.encrypted`를 Git에 추가하고 원격 저장소로 푸시합니다:
+- `.env.encrypted`는 안전한 암호문이므로 Git 저장소를 통해 항상 코드와 함께 전달됩니다. (Git 훅에 의해 커밋 시 자동 포함됨)
 ```bash
-git add .env.encrypted
-git commit -m "chore(vault): update encrypted secrets with new api keys"
 git push origin main
 ```
 

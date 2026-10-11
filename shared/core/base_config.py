@@ -22,7 +22,9 @@ for _env_name in [".env", ".env.shared", "env.shared"]:
         load_dotenv(_env_path, override=False)
 
 try:
-    from shared.core.vault import load_encrypted_env
+    from shared.core.vault import auto_sync_vault, load_encrypted_env
+    # 로컬에서 .env.shared가 수정되었으면 .env.encrypted를 자동 암호화 갱신
+    auto_sync_vault(_root_dir)
     load_encrypted_env(os.path.join(_root_dir, ".env.encrypted"))
 except Exception:
     pass
