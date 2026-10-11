@@ -14,12 +14,21 @@ export default function App() {
   const imgRef = useRef(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
-  // 실시간 웹캠 상태
+  // 실시간 웹캠 상태 (HTTPS 또는 localhost 보안 환경에서만 동작)
+  const isSecureOrigin =
+    typeof window !== 'undefined' &&
+    (window.location.protocol === 'https:' ||
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1');
+
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState('');
   const videoRef = useRef(null);
   const streamRef = useRef(null);
-  const fileInputRef = useRef(null);
+
+  // input ref 분리 (1: 즉석 카메라 촬영, 2: 앨범/파일 탐색기)
+  const cameraInputRef = useRef(null);
+  const albumInputRef = useRef(null);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -27,7 +36,7 @@ export default function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 카메라 정리
+  // 웹캠 스트림 정지
   const stopCamera = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
@@ -42,17 +51,25 @@ export default function App() {
     };
   }, []);
 
-  // 실시간 웹캠 켜기
-  const startCamera = async () => {
+  // 1. 모바일 또는 HTTPS/localhost용 카메라 트리거
+  const handleCameraClick = () => {
     setCameraError('');
+    // HTTPS 환경에서는 브라우저 실시간 뷰파인더 웹캠 시도
+    if (isSecureOrigin && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      startWebcam();
+    } else {
+      // 일반 HTTP(IP 접속 등)이거나 모바일인 경우: OS 표준 카메라 촬영 앱 즉시 실행
+      if (cameraInputRef.current) {
+        cameraInputRef.current.click();
+      }
+    }
+  };
+
+  // 실시간 웹캠 실행 (HTTPS 전용)
+  const startWebcam = async () => {
     setImageBase64('');
     setCropSrc('');
     setResult(null);
-
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setCameraError('이 브라우저 환경에서는 직접 카메라 접근을 지원하지 않습니다. 아래 [사진 파일 업로드] 버튼을 이용해주세요.');
-      return;
-    }
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -74,20 +91,16 @@ export default function App() {
         }
       }, 100);
     } catch (err) {
-      console.warn('카메라 접근 에러:', err);
-      let msg = '카메라를 열 수 없습니다. 카메라 접근 권한을 확인해주세요.';
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        msg = '카메라 권한이 차단되었습니다. 브라우저 주소창 좌측 자물쇠 아이콘에서 카메라 권한을 허용해주세요.';
-      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        msg = '사용 가능한 카메라/웹캠 장치를 찾을 수 없습니다.';
+      console.warn('웹캠 열기 실패:', err);
+      // 웹캠 실패 시 모바일/표준 파일 카메라로 자동 폴백 안내
+      if (cameraInputRef.current) {
+        cameraInputRef.current.click();
       }
-      setCameraError(msg);
-      setIsCameraActive(false);
     }
   };
 
-  // 실시간 웹캠에서 한 컷 캡처
-  const captureFromCamera = () => {
+  // 웹캠 캡처
+  const captureFromWebcam = () => {
     if (!videoRef.current) return;
     const video = videoRef.current;
     const canvas = document.createElement('canvas');
@@ -99,6 +112,18 @@ export default function App() {
     const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
     stopCamera();
     setCropSrc(dataUrl);
+  };
+
+  // 파일 선택 공통 핸들러
+  const handleFileChange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    reset();
+    const reader = new FileReader();
+    reader.onload = (event) => setCropSrc(event.target.result);
+    reader.readAsDataURL(file);
+    // input 리셋 (동일 사진 재선택 가능하게)
+    e.target.value = '';
   };
 
   const analyze = async () => {
@@ -184,7 +209,7 @@ export default function App() {
         <div style={{ maxWidth: 640, margin: '0 auto' }}>
           <h1 style={{ fontSize: isMobile ? '1.8rem' : '2.5rem', margin: 0 }}>🔮 AI 관상</h1>
           <p style={{ color: '#cbd5e1', marginTop: 8, fontSize: isMobile ? '0.9rem' : '1rem' }}>
-            로그인 없이 사진 한 장으로 재미로 보는 관상! 실시간 웹캠 촬영 또는 갤러리 사진을 지원합니다.
+            로그인 없이 사진 한 장으로 재미로 보는 관상! 즉석 카메라 촬영 또는 앨범 사진을 모두 지원합니다.
           </p>
 
           <div style={{ background: '#111827', borderRadius: 16, padding: isMobile ? 16 : 24, border: '1px solid #334155', marginTop: 24, display: 'grid', gap: 14 }}>
@@ -198,38 +223,44 @@ export default function App() {
               />
             </label>
 
-            {/* 촬영 및 업로드 버튼 영역 */}
+            {/* 촬영 및 업로드 버튼 영역 (상시 명확한 2개 버튼 제공) */}
             {!isCameraActive && !cropSrc && !imageBase64 && (
               <div>
-                <div style={{ marginBottom: 8, fontWeight: 'bold', color: '#e2e8f0' }}>사진 등록 방법 선택 📸</div>
+                <div style={{ marginBottom: 10, fontWeight: 'bold', color: '#e2e8f0' }}>사진 등록 방법 선택 📸</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <button
-                    onClick={startCamera}
+                    type="button"
+                    onClick={handleCameraClick}
                     style={{ ...actionButton, background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }}
                   >
-                    📷 실시간 카메라 촬영
+                    📷 카메라로 즉석 촬영
                   </button>
                   <button
-                    onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                    type="button"
+                    onClick={() => albumInputRef.current && albumInputRef.current.click()}
                     style={{ ...actionButton, background: 'linear-gradient(135deg, #475569, #334155)' }}
                   >
-                    📁 사진 파일 업로드
+                    🖼️ 사진 앨범/파일 찾기
                   </button>
                 </div>
+
+                {/* 1. 즉석 촬영 전용 (모바일 OS 카메라 실행) */}
                 <input
-                  ref={fileInputRef}
+                  ref={cameraInputRef}
                   type="file"
                   accept="image/*"
                   capture="user"
                   style={{ display: 'none' }}
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    reset();
-                    const reader = new FileReader();
-                    reader.onload = (event) => setCropSrc(event.target.result);
-                    reader.readAsDataURL(file);
-                  }}
+                  onChange={handleFileChange}
+                />
+
+                {/* 2. 갤러리/파일 찾기 전용 (capture 속성 없이 앨범/탐색기 팝업) */}
+                <input
+                  ref={albumInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={handleFileChange}
                 />
               </div>
             )}
@@ -241,7 +272,7 @@ export default function App() {
               </div>
             )}
 
-            {/* 1. 실시간 웹캠 뷰파인더 화면 */}
+            {/* 실시간 웹캠 뷰파인더 (HTTPS 환경 지원 시) */}
             {isCameraActive && (
               <div style={{ textAlign: 'center', background: '#0f172a', padding: 12, borderRadius: 14, border: '1px solid #334155' }}>
                 <div style={{ color: '#38bdf8', marginBottom: 10, fontWeight: 'bold' }}>
@@ -255,7 +286,6 @@ export default function App() {
                     autoPlay
                     style={{ width: '100%', maxHeight: '55vh', transform: 'scaleX(-1)', background: '#000', display: 'block', borderRadius: 12 }}
                   />
-                  {/* 가이드 타원형 테두리 */}
                   <div style={{
                     position: 'absolute',
                     top: '15%',
@@ -268,7 +298,7 @@ export default function App() {
                   }} />
                 </div>
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 14 }}>
-                  <button onClick={captureFromCamera} style={{ ...primaryButton, flex: 1, padding: '14px' }}>
+                  <button onClick={captureFromWebcam} style={{ ...primaryButton, flex: 1, padding: '14px' }}>
                     📸 찰칵! 촬영하기
                   </button>
                   <button onClick={stopCamera} style={{ ...secondaryButton, minWidth: 90 }}>
@@ -278,7 +308,7 @@ export default function App() {
               </div>
             )}
 
-            {/* 2. 크롭 선택 화면 */}
+            {/* 크롭(얼굴 맞추기) 선택 화면 */}
             {cropSrc && !imageBase64 && (
               <div style={{ textAlign: 'center', background: '#0f172a', padding: 12, borderRadius: 12, border: '1px solid #334155' }}>
                 <div style={{ color: '#fbbf24', marginBottom: 12, fontWeight: 'bold' }}>
@@ -303,7 +333,7 @@ export default function App() {
               </div>
             )}
 
-            {/* 3. 선택 완료 미리보기 */}
+            {/* 선택 완료 미리보기 */}
             {imageBase64 && !cropSrc && (
               <div style={{ textAlign: 'center', background: '#0f172a', padding: 14, borderRadius: 12, border: '1px solid #334155' }}>
                 <img src={imageBase64} alt="미리보기" style={{ maxWidth: '100%', maxHeight: 220, borderRadius: 12, border: '2px solid #10b981' }} />
@@ -312,7 +342,7 @@ export default function App() {
               </div>
             )}
 
-            {/* 분석 버튼 */}
+            {/* 분석 실행 버튼 */}
             {imageBase64 && (
               <button
                 onClick={analyze}
