@@ -1,0 +1,54 @@
+# MQnet 초경량 단일 통합 게이트웨이 전용 Compose
+# 16대 SaaS 앱 및 포털을 단일 컨테이너(2분 이내 초고속 빌드)로 서비스
+
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mqnet-gateway:latest
+    container_name: mqnet-gateway
+    ports:
+      - "9000:9000"
+      - "10000:9000"
+    environment:
+      - DEPLOYMENT_MODE=DOCKER
+      - PYTHONPATH=/app
+    volumes:
+      - "${MEDIA_PATH:-./media}:/media"
+    env_file:
+      - path: .env.shared
+        required: false
+    command: python -m uvicorn gateway.main:app --host 0.0.0.0 --port 9000 --proxy-headers --forwarded-allow-ips="*"
+    labels:
+      - "coolify.managed=true"
+      - "traefik.enable=true"
+      - "traefik.http.routers.gateway.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.gateway.entrypoints=web,websecure"
+      - "traefik.http.services.gateway.loadbalancer.server.port=9000"
+    restart: unless-stopped
+
+  bgutil-provider:
+    image: brainicism/bgutil-ytdlp-pot-provider:latest
+    container_name: mqnet-bgutil-provider
+    restart: unless-stopped
+    init: true
+
+  filebrowser:
+    image: filebrowser/filebrowser:latest
+    container_name: mqnet-filebrowser
+    ports:
+      - "9007:80"
+    volumes:
+      - "${MEDIA_PATH:-./media}:/srv"
+    restart: unless-stopped
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: mqnet-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN:-eyJhIjoiODY2NmZlODI1Mzg2NTVjZjY2ZjJmZGE5NGVmMDE2OTMiLCJ0IjoiNTRiYWU5YWEtMmNmNS00NWE5LWJlZWMtNmIwODFhM2I5YzczIiwicyI6Ik1qVm1ZMkppTW1FdE9EUTRNQzAwWWpkbUxUZ3lNbUV0TVRKbE9UUmpPR05rT1RRNSJ9}
+    depends_on:
+      - gateway

@@ -27,7 +27,7 @@ ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 
 # 통합 포털 및 개별 서비스 포트 노출
-EXPOSE 10000 8000 8001 8002 8003 8004 8005
+EXPOSE 9000 10000 8000 80
 
-# 기본 실행: 통합 게이트웨이 및 포털 (Port 10000)
-CMD ["python", "-m", "uvicorn", "gateway.main:app", "--host", "0.0.0.0", "--port", "10000"]
+# 기본 실행: 통합 게이트웨이 및 포털 (Port 9000)
+CMD ["python", "-m", "uvicorn", "gateway.main:app", "--host", "0.0.0.0", "--port", "9000"]
