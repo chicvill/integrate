@@ -11,6 +11,7 @@ import hmac
 import base64
 import hashlib
 import logging
+from typing import Optional
 
 logger = logging.getLogger("mqnet.vault")
 
@@ -98,7 +99,7 @@ def decrypt_text(encrypted_b64: str, master_key: str = DEFAULT_MASTER_KEY) -> st
         raise ValueError("알 수 없는 암호화 포맷입니다.")
 
 
-def load_encrypted_env(file_path: str = None, master_key: str = None):
+def load_encrypted_env(file_path: Optional[str] = None, master_key: Optional[str] = None) -> bool:
     """
     .env.encrypted 파일을 복호화하여 현재 프로세스의 os.environ에 주입합니다.
     기존에 이미 주입된 환경변수가 있다면 덮어쓰지 않습니다.
