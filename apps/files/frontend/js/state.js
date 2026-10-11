@@ -130,12 +130,28 @@ export const state = {
 
   selectRange(targetPath) {
     const allPaths = this.getAllVisiblePaths();
-    if (!this.lastSelectedPath || !allPaths.includes(this.lastSelectedPath)) {
+    if (!allPaths.includes(targetPath)) return;
+
+    // 1. 기준이 될 마지막 선택 파일(anchor) 결정
+    let anchor = this.lastSelectedPath;
+
+    // 만약 lastSelectedPath가 없거나 현재 선택에 포함되어 있지 않다면,
+    // 현재 선택된 파일들 중 화면 순서상 마지막 항목을 anchor로 자동 채택
+    if (!anchor || !this.selectedPaths.has(anchor) || !allPaths.includes(anchor)) {
+      if (this.selectedPaths.size > 0) {
+        const selectedInOrder = allPaths.filter(p => this.selectedPaths.has(p));
+        anchor = selectedInOrder[selectedInOrder.length - 1];
+      }
+    }
+
+    // 여전히 anchor가 없다면 targetPath 단일 선택
+    if (!anchor || !allPaths.includes(anchor)) {
       this.setSingleSelect(targetPath);
       return;
     }
 
-    const startIdx = allPaths.indexOf(this.lastSelectedPath);
+    // 2. anchor와 targetPath 사이의 인덱스 범위 계산
+    const startIdx = allPaths.indexOf(anchor);
     const endIdx = allPaths.indexOf(targetPath);
     if (startIdx === -1 || endIdx === -1) {
       this.setSingleSelect(targetPath);
@@ -146,7 +162,12 @@ export const state = {
     for (let i = minIdx; i <= maxIdx; i++) {
       this.selectedPaths.add(allPaths[i]);
     }
+
+    // 3. 마지막 선택된 파일(포커스/앵커)을 이번에 Shift 클릭한 targetPath로 갱신하여,
+    // 다음 번 Shift+클릭 시에도 마지막 선택된 파일부터 연속 범위 선택이 가능하도록 설정
+    this.lastSelectedPath = targetPath;
   },
+
 
   setSelection(paths) {
     this.selectedPaths = new Set(paths);

@@ -1,15 +1,15 @@
-import { state } from './js/state.js?v=1.4';
+import { state } from './js/state.js?v=1.5';
 import { MQnetAuth } from '/shared/ui/auth.js?v=2.0';
 import {
   fetchList, searchFiles, uploadFiles, deleteItems, copyItems, moveItems,
   getDownloadUrl, fetchSystemStatus, fetchQuota, upgradePlan
-} from './js/api.js?v=1.4';
+} from './js/api.js?v=1.5';
 import {
   renderBreadcrumbs, renderFolderGrid, renderFileGrid, renderFileList,
   showLoading, showEmpty, showToast, updateStatusBar, updateSelectionToolbar,
   renderStorageQuotaWidget, setupDragDropOverlay, escHtml,
   syncSelectionUI, setupMarqueeSelection
-} from './js/ui.js?v=1.4';
+} from './js/ui.js?v=1.5';
 import {
   openPreviewModal, closePreviewModal,
   openTextEditModal, submitTextEditModal,
@@ -19,7 +19,8 @@ import {
   openUploadModal, closeUploadModal,
   openUpgradeModal, closeModal,
   showContextMenu
-} from './js/modals.js?v=1.4';
+} from './js/modals.js?v=1.5';
+
 
 
 // ── DOM 요소 참조 ─────────────────────────────────────────

@@ -155,12 +155,17 @@ export function renderFolderGrid(container, folders, onNavigate, onToggleSelect,
     const path = el.dataset.path;
     const chk = el.querySelector('.item-checkbox');
 
-    // 체크박스 클릭 (단순 토글)
+    // 체크박스 클릭 (Shift 누르면 범위 선택, 아니면 토글)
     chk.addEventListener('click', (e) => {
       e.stopPropagation();
-      state.toggleSelect(path);
+      if (e.shiftKey) {
+        state.selectRange(path);
+      } else {
+        state.toggleSelect(path);
+      }
       syncSelectionUI();
     });
+
 
     // 한 번 클릭: Windows 파일 탐색기 방식 (일반/Ctrl/Shift)
     el.addEventListener('click', (e) => {
@@ -227,12 +232,17 @@ export function renderFileGrid(container, files, onFileClick, onToggleSelect, on
     const file = files.find(f => f.path === path);
     const chk = el.querySelector('.item-checkbox');
 
-    // 체크박스 클릭
+    // 체크박스 클릭 (Shift 누르면 범위 선택, 아니면 토글)
     chk.addEventListener('click', (e) => {
       e.stopPropagation();
-      state.toggleSelect(path);
+      if (e.shiftKey) {
+        state.selectRange(path);
+      } else {
+        state.toggleSelect(path);
+      }
       syncSelectionUI();
     });
+
 
     // 한 번 클릭: Windows 파일 탐색기 방식 선택
     el.addEventListener('click', (e) => {
@@ -330,9 +340,14 @@ export function renderFileList(container, files, onFileClick, onToggleSelect, on
 
     chk.addEventListener('click', (e) => {
       e.stopPropagation();
-      state.toggleSelect(path);
+      if (e.shiftKey) {
+        state.selectRange(path);
+      } else {
+        state.toggleSelect(path);
+      }
       syncSelectionUI();
     });
+
 
     el.addEventListener('click', (e) => {
       if (e.target.closest('.card-actions') || e.target.closest('.item-checkbox')) return;
@@ -485,10 +500,19 @@ export function setupMarqueeSelection(viewportEl, onSelectionChange) {
           marqueeEl.remove();
           marqueeEl = null;
         }
+        // 드래그로 선택된 파일이 있을 경우 화면 순서상 마지막 항목을 lastSelectedPath로 지정
+        if (state.selectedPaths.size > 0) {
+          const allPaths = state.getAllVisiblePaths();
+          const selectedInOrder = allPaths.filter(p => state.selectedPaths.has(p));
+          if (selectedInOrder.length > 0) {
+            state.lastSelectedPath = selectedInOrder[selectedInOrder.length - 1];
+          }
+        }
         if (onSelectionChange) onSelectionChange();
       }
     }
   };
+
 
   document.addEventListener('mouseup', finishDrag);
 }
