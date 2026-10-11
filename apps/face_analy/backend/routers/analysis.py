@@ -50,6 +50,18 @@ def get_dynamic_fallback(image_str: str) -> Dict[str, Any]:
                 {"id": "tassel_cut", "name": "테슬컷 / 스트레이트", "desc": "직선적인 라인감으로 날렵한 턱선과 모던함을 극대화합니다."},
                 {"id": "ash_tone", "name": "애쉬 쿨톤 브라운", "desc": "차분한 쿨톤 컬러로 시크하고 세련된 인상을 완성합니다."},
             ],
+            "faceBox": {"top": 18, "bottom": 82, "left": 26, "right": 74},
+            "landmarks": {
+                "crown": {"x": 50, "y": 12},
+                "hairline": {"x": 50, "y": 26},
+                "leftEye": {"x": 39, "y": 44},
+                "rightEye": {"x": 61, "y": 44},
+                "noseTip": {"x": 50, "y": 55},
+                "mouthCenter": {"x": 50, "y": 67},
+                "chin": {"x": 50, "y": 80},
+                "leftCheek": {"x": 34, "y": 53},
+                "rightCheek": {"x": 66, "y": 53},
+            },
         }
     else:
         return {
@@ -76,6 +88,18 @@ def get_dynamic_fallback(image_str: str) -> Dict[str, Any]:
                 {"id": "romantic_wave", "name": "로맨틱 C컬 / 웨이브", "desc": "부드러운 곡선 라인으로 온화하고 사랑스러운 분위기 연출."},
                 {"id": "milk_brown", "name": "밀크 브라운 웜톤", "desc": "따뜻한 웜톤 컬러로 부드러운 인상을 더욱 화사하게 밝혀줍니다."},
             ],
+            "faceBox": {"top": 18, "bottom": 82, "left": 26, "right": 74},
+            "landmarks": {
+                "crown": {"x": 50, "y": 12},
+                "hairline": {"x": 50, "y": 26},
+                "leftEye": {"x": 39, "y": 44},
+                "rightEye": {"x": 61, "y": 44},
+                "noseTip": {"x": 50, "y": 55},
+                "mouthCenter": {"x": 50, "y": 67},
+                "chin": {"x": 50, "y": 80},
+                "leftCheek": {"x": 34, "y": 53},
+                "rightCheek": {"x": 66, "y": 53},
+            },
         }
 
 
@@ -144,11 +168,28 @@ async def analyze_face_type(request: Request, payload: AnalyzeRequest):
         '    {"id": "style_2", "name": "헤어스타일명2", "desc": "스타일링 설명 및 드라이 팁"},\n'
         '    {"id": "style_3", "name": "헤어스타일명3", "desc": "스타일링 설명 및 드라이 팁"},\n'
         '    {"id": "style_4", "name": "헤어스타일명4", "desc": "스타일링 설명 및 드라이 팁"}\n'
-        "  ]\n"
+        "  ],\n"
+        '  "faceBox": {\n'
+        '    "top": 0~100 정수 (얼굴 상단/이마 Y% 좌표),\n'
+        '    "bottom": 0~100 정수 (턱끝 하단 Y% 좌표),\n'
+        '    "left": 0~100 정수 (얼굴 좌측 가장자리 X% 좌표),\n'
+        '    "right": 0~100 정수 (얼굴 우측 가장자리 X% 좌표)\n'
+        '  },\n'
+        '  "landmarks": {\n'
+        '    "crown": {"x": 0~100, "y": 0~100 정수 (정수리/머리 꼭대기 위치)},\n'
+        '    "hairline": {"x": 0~100, "y": 0~100 정수 (이마 헤어라인 시작 위치)},\n'
+        '    "leftEye": {"x": 0~100, "y": 0~100 정수 (사진 기준 왼쪽 눈 중심)},\n'
+        '    "rightEye": {"x": 0~100, "y": 0~100 정수 (사진 기준 오른쪽 눈 중심)},\n'
+        '    "noseTip": {"x": 0~100, "y": 0~100 정수 (코끝 중심)},\n'
+        '    "mouthCenter": {"x": 0~100, "y": 0~100 정수 (입술 중앙 맞닿는 선)},\n'
+        '    "chin": {"x": 0~100, "y": 0~100 정수 (턱끝 중심)},\n'
+        '    "leftCheek": {"x": 0~100, "y": 0~100 정수 (사진 기준 왼쪽 볼 중심)},\n'
+        '    "rightCheek": {"x": 0~100, "y": 0~100 정수 (사진 기준 오른쪽 볼 중심)}\n'
+        '  }\n'
         "}"
     )
 
-    prompt = f"{system_instruction}\n\n이 사진 속 인물의 얼굴을 정밀 분석하여 지정된 JSON으로 반환해주세요."
+    prompt = f"{system_instruction}\n\n이 사진 속 인물의 얼굴을 정밀 분석하고 얼굴 랜드마크 좌표를 측정하여 지정된 JSON으로 반환해주세요."
     fallback = get_dynamic_fallback(payload.image)
 
     result = await client.generate_structured_with_image(
@@ -171,5 +212,11 @@ async def analyze_face_type(request: Request, payload: AnalyzeRequest):
         else:
             result["egenScore"] = conf
             result["tetoScore"] = 100 - conf
+
+    # 랜드마크 필드 보장
+    if "faceBox" not in result or not isinstance(result.get("faceBox"), dict):
+        result["faceBox"] = fallback["faceBox"]
+    if "landmarks" not in result or not isinstance(result.get("landmarks"), dict):
+        result["landmarks"] = fallback["landmarks"]
 
     return result

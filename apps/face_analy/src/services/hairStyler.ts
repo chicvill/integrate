@@ -45,11 +45,37 @@ export const DEFAULT_MAKEUP_EGEN: MakeupParams = {
   eyeShading: 30,
 };
 
+export interface FaceBox {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+}
+
+export interface LandmarkPoint {
+  x: number;
+  y: number;
+}
+
+export interface FaceLandmarks {
+  crown: LandmarkPoint;
+  hairline: LandmarkPoint;
+  leftEye: LandmarkPoint;
+  rightEye: LandmarkPoint;
+  noseTip?: LandmarkPoint;
+  mouthCenter: LandmarkPoint;
+  chin?: LandmarkPoint;
+  leftCheek?: LandmarkPoint;
+  rightCheek?: LandmarkPoint;
+}
+
 export interface MakeoverConfig {
   styleId: string;
   customHairColor?: string;
   fittingParams?: HairFittingParams;
   makeupParams?: MakeupParams;
+  faceBox?: FaceBox;
+  landmarks?: FaceLandmarks;
 }
 
 export interface HairStyleOption {
@@ -185,28 +211,28 @@ export async function renderTotalMakeover(
       // 2. 가상 메이크업 1단계: 피부 톤업 및 결 정돈
       if (makeup.skinTone > 0) {
         ctx.save();
-        applySkinToneFilter(ctx, width, height, makeup.skinTone, selectedStyle.category);
+        applySkinToneFilter(ctx, width, height, makeup.skinTone, selectedStyle.category, config.faceBox);
         ctx.restore();
       }
 
       // 3. 가상 메이크업 2단계: 아이섀도우 / 눈매 음영
       if (makeup.eyeShading > 0) {
         ctx.save();
-        applyEyeContour(ctx, width, height, makeup.eyeShading, selectedStyle.category);
+        applyEyeContour(ctx, width, height, makeup.eyeShading, selectedStyle.category, config.landmarks);
         ctx.restore();
       }
 
       // 4. 가상 메이크업 3단계: 치크 블러셔
       if (makeup.blusherColor !== 'none' && makeup.blusherIntensity > 0) {
         ctx.save();
-        applyBlusher(ctx, width, height, makeup.blusherColor, makeup.blusherIntensity);
+        applyBlusher(ctx, width, height, makeup.blusherColor, makeup.blusherIntensity, config.landmarks, config.faceBox);
         ctx.restore();
       }
 
       // 5. 가상 메이크업 4단계: 립 틴트 메이크업
       if (makeup.lipColor !== 'none' && makeup.lipIntensity > 0) {
         ctx.save();
-        applyLipTint(ctx, width, height, makeup.lipColor, makeup.lipIntensity);
+        applyLipTint(ctx, width, height, makeup.lipColor, makeup.lipIntensity, config.landmarks, config.faceBox);
         ctx.restore();
       }
 
@@ -218,7 +244,7 @@ export async function renderTotalMakeover(
       // 7. 모발 텍스처 렌더링 (파라미터 기반 크기, 위치, 소프트 페더링 적용)
       ctx.save();
       const hairColor = config.customHairColor || selectedStyle.colorHex;
-      drawNaturalHairstyle(ctx, width, height, selectedStyle, fitParams, hairColor);
+      drawNaturalHairstyle(ctx, width, height, selectedStyle, fitParams, hairColor, config.landmarks, config.faceBox);
       ctx.restore();
 
       // 8. 프리미엄 살롱 엠블럼 & 워터마크 카드 (하단)
@@ -260,16 +286,19 @@ function applySkinToneFilter(
   w: number,
   h: number,
   intensity: number,
-  category: 'TETO' | 'EGEN' | 'ALL'
+  category: 'TETO' | 'EGEN' | 'ALL',
+  faceBox?: FaceBox
 ) {
   const alpha = (intensity / 100) * 0.35;
-  const cx = w * 0.5;
-  const cy = h * 0.52;
+  const cx = faceBox ? ((faceBox.left + faceBox.right) / 200) * w : w * 0.5;
+  const cy = faceBox ? ((faceBox.top + faceBox.bottom) / 200) * h : h * 0.52;
+  const rx = faceBox ? Math.max(30, ((faceBox.right - faceBox.left) / 200) * w * 1.05) : w * 0.38;
+  const ry = faceBox ? Math.max(30, ((faceBox.bottom - faceBox.top) / 200) * h * 1.05) : h * 0.38;
 
   // 얼굴 중심 타원형 화사한 톤업 글로우
   ctx.save();
   ctx.globalCompositeOperation = 'soft-light';
-  const glow = ctx.createRadialGradient(cx, cy, w * 0.15, cx, cy, w * 0.45);
+  const glow = ctx.createRadialGradient(cx, cy, rx * 0.3, cx, cy, rx * 1.15);
   if (category === 'TETO') {
     glow.addColorStop(0, `rgba(255, 250, 245, ${alpha * 1.2})`);
     glow.addColorStop(1, 'rgba(230, 235, 245, 0)');
@@ -279,12 +308,12 @@ function applySkinToneFilter(
   }
   ctx.fillStyle = glow;
   ctx.beginPath();
-  ctx.ellipse(cx, cy, w * 0.38, h * 0.38, 0, 0, Math.PI * 2);
+  ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
   ctx.fill();
 
   // 매끄러운 피부결을 위한 미세 소프트 블러 오버레이
   ctx.globalCompositeOperation = 'lighter';
-  const softGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, w * 0.35);
+  const softGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, rx);
   softGrad.addColorStop(0, `rgba(255, 255, 255, ${alpha * 0.22})`);
   softGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
   ctx.fillStyle = softGrad;
@@ -293,20 +322,24 @@ function applySkinToneFilter(
 }
 
 /**
- * 2. 아이섀도우 & 눈매 음영 컨투어링
+ * 2. 아이섀도우 & 눈매 음영 컨투어링 (검출된 눈 좌표 기반)
  */
 function applyEyeContour(
   ctx: CanvasRenderingContext2D,
   w: number,
   h: number,
   intensity: number,
-  category: 'TETO' | 'EGEN' | 'ALL'
+  category: 'TETO' | 'EGEN' | 'ALL',
+  landmarks?: FaceLandmarks
 ) {
   const alpha = (intensity / 100) * 0.32;
-  const leftEyeX = w * 0.37;
-  const rightEyeX = w * 0.63;
-  const eyeY = h * 0.44;
-  const eyeRadius = w * 0.11;
+  const leftEyeX = landmarks?.leftEye?.x != null ? (landmarks.leftEye.x / 100) * w : w * 0.37;
+  const leftEyeY = landmarks?.leftEye?.y != null ? (landmarks.leftEye.y / 100) * h : h * 0.44;
+  const rightEyeX = landmarks?.rightEye?.x != null ? (landmarks.rightEye.x / 100) * w : w * 0.63;
+  const rightEyeY = landmarks?.rightEye?.y != null ? (landmarks.rightEye.y / 100) * h : h * 0.44;
+
+  const eyeDist = Math.hypot(rightEyeX - leftEyeX, rightEyeY - leftEyeY);
+  const eyeRadius = Math.max(12, eyeDist * 0.36);
 
   ctx.save();
   ctx.globalCompositeOperation = 'multiply';
@@ -314,43 +347,48 @@ function applyEyeContour(
   const shadeColor = category === 'TETO' ? 'rgba(75, 55, 50, ' : 'rgba(100, 65, 55, ';
 
   // 좌측 눈매 음영
-  const leftGrad = ctx.createRadialGradient(leftEyeX, eyeY, eyeRadius * 0.2, leftEyeX, eyeY, eyeRadius);
+  const leftGrad = ctx.createRadialGradient(leftEyeX, leftEyeY, eyeRadius * 0.2, leftEyeX, leftEyeY, eyeRadius);
   leftGrad.addColorStop(0, `${shadeColor}${alpha})`);
   leftGrad.addColorStop(0.7, `${shadeColor}${alpha * 0.4})`);
   leftGrad.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = leftGrad;
   ctx.beginPath();
-  ctx.ellipse(leftEyeX, eyeY, eyeRadius, eyeRadius * 0.55, -0.05, 0, Math.PI * 2);
+  ctx.ellipse(leftEyeX, leftEyeY, eyeRadius, eyeRadius * 0.55, -0.05, 0, Math.PI * 2);
   ctx.fill();
 
   // 우측 눈매 음영
-  const rightGrad = ctx.createRadialGradient(rightEyeX, eyeY, eyeRadius * 0.2, rightEyeX, eyeY, eyeRadius);
+  const rightGrad = ctx.createRadialGradient(rightEyeX, rightEyeY, eyeRadius * 0.2, rightEyeX, rightEyeY, eyeRadius);
   rightGrad.addColorStop(0, `${shadeColor}${alpha})`);
   rightGrad.addColorStop(0.7, `${shadeColor}${alpha * 0.4})`);
   rightGrad.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = rightGrad;
   ctx.beginPath();
-  ctx.ellipse(rightEyeX, eyeY, eyeRadius, eyeRadius * 0.55, 0.05, 0, Math.PI * 2);
+  ctx.ellipse(rightEyeX, rightEyeY, eyeRadius, eyeRadius * 0.55, 0.05, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.restore();
 }
 
 /**
- * 3. 양 볼 치크 블러셔 (생기 & 컨투어링)
+ * 3. 양 볼 치크 블러셔 (검출된 양 볼 좌표 기반)
  */
 function applyBlusher(
   ctx: CanvasRenderingContext2D,
   w: number,
   h: number,
   colorType: 'peach' | 'pink' | 'contour' | 'none',
-  intensity: number
+  intensity: number,
+  landmarks?: FaceLandmarks,
+  faceBox?: FaceBox
 ) {
   const alpha = (intensity / 100) * 0.42;
-  const leftCheekX = w * 0.33;
-  const rightCheekX = w * 0.67;
-  const cheekY = h * 0.54;
-  const cheekRadius = w * 0.14;
+  const leftCheekX = landmarks?.leftCheek?.x != null ? (landmarks.leftCheek.x / 100) * w : w * 0.33;
+  const leftCheekY = landmarks?.leftCheek?.y != null ? (landmarks.leftCheek.y / 100) * h : h * 0.54;
+  const rightCheekX = landmarks?.rightCheek?.x != null ? (landmarks.rightCheek.x / 100) * w : w * 0.67;
+  const rightCheekY = landmarks?.rightCheek?.y != null ? (landmarks.rightCheek.y / 100) * h : h * 0.54;
+
+  const faceW = faceBox ? ((faceBox.right - faceBox.left) / 100) * w : w * 0.68;
+  const cheekRadius = Math.max(20, faceW * 0.21);
 
   let rgb = '255, 145, 115'; // peach
   if (colorType === 'pink') rgb = '255, 120, 160';
@@ -360,43 +398,47 @@ function applyBlusher(
   ctx.globalCompositeOperation = 'soft-light';
 
   // 좌측 볼 치크
-  const leftGrad = ctx.createRadialGradient(leftCheekX, cheekY, cheekRadius * 0.1, leftCheekX, cheekY, cheekRadius);
+  const leftGrad = ctx.createRadialGradient(leftCheekX, leftCheekY, cheekRadius * 0.1, leftCheekX, leftCheekY, cheekRadius);
   leftGrad.addColorStop(0, `rgba(${rgb}, ${alpha * 1.2})`);
   leftGrad.addColorStop(0.7, `rgba(${rgb}, ${alpha * 0.4})`);
   leftGrad.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = leftGrad;
   ctx.beginPath();
-  ctx.ellipse(leftCheekX, cheekY, cheekRadius, cheekRadius * 0.68, 0.12, 0, Math.PI * 2);
+  ctx.ellipse(leftCheekX, leftCheekY, cheekRadius, cheekRadius * 0.68, 0.12, 0, Math.PI * 2);
   ctx.fill();
 
   // 우측 볼 치크
-  const rightGrad = ctx.createRadialGradient(rightCheekX, cheekY, cheekRadius * 0.1, rightCheekX, cheekY, cheekRadius);
+  const rightGrad = ctx.createRadialGradient(rightCheekX, rightCheekY, cheekRadius * 0.1, rightCheekX, rightCheekY, cheekRadius);
   rightGrad.addColorStop(0, `rgba(${rgb}, ${alpha * 1.2})`);
   rightGrad.addColorStop(0.7, `rgba(${rgb}, ${alpha * 0.4})`);
   rightGrad.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = rightGrad;
   ctx.beginPath();
-  ctx.ellipse(rightCheekX, cheekY, cheekRadius, cheekRadius * 0.68, -0.12, 0, Math.PI * 2);
+  ctx.ellipse(rightCheekX, rightCheekY, cheekRadius, cheekRadius * 0.68, -0.12, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.restore();
 }
 
 /**
- * 4. 입술 립 틴트 메이크업 (자연스러운 혈색 그라데이션)
+ * 4. 입술 립 틴트 메이크업 (검출된 입술 중심 좌표 기반)
  */
 function applyLipTint(
   ctx: CanvasRenderingContext2D,
   w: number,
   h: number,
   colorType: 'coral' | 'rose' | 'red' | 'nude' | 'none',
-  intensity: number
+  intensity: number,
+  landmarks?: FaceLandmarks,
+  faceBox?: FaceBox
 ) {
   const alpha = (intensity / 100) * 0.55;
-  const mouthX = w * 0.5;
-  const mouthY = h * 0.71;
-  const lipWidth = w * 0.13;
-  const lipHeight = h * 0.048;
+  const mouthX = landmarks?.mouthCenter?.x != null ? (landmarks.mouthCenter.x / 100) * w : w * 0.5;
+  const mouthY = landmarks?.mouthCenter?.y != null ? (landmarks.mouthCenter.y / 100) * h : h * 0.71;
+
+  const faceW = faceBox ? ((faceBox.right - faceBox.left) / 100) * w : w * 0.68;
+  const lipWidth = Math.max(16, faceW * 0.22);
+  const lipHeight = Math.max(8, lipWidth * 0.38);
 
   let rgb = '245, 105, 95'; // coral
   if (colorType === 'rose') rgb = '205, 65, 95';
@@ -456,7 +498,7 @@ function applySalonLighting(
 }
 
 /**
- * 자연스러운 모발 렌더링
+ * 자연스러운 모발 렌더링 (검출된 두상/헤어라인/정수리 좌표 기반)
  */
 function drawNaturalHairstyle(
   ctx: CanvasRenderingContext2D,
@@ -464,15 +506,38 @@ function drawNaturalHairstyle(
   h: number,
   style: HairStyleOption,
   params: HairFittingParams,
-  hairColor: string
+  hairColor: string,
+  landmarks?: FaceLandmarks,
+  faceBox?: FaceBox
 ) {
   const { offsetY, scaleX, scaleY, opacity } = params;
 
-  const cx = w * 0.5;
-  const baseHairlineY = h * 0.22 + (offsetY / 100) * h;
-  const crownY = Math.max(0, baseHairlineY - h * 0.20 * scaleY);
+  const faceW = faceBox ? ((faceBox.right - faceBox.left) / 100) * w : w * 0.68;
+  const faceH = faceBox ? ((faceBox.bottom - faceBox.top) / 100) * h : h * 0.65;
 
-  const halfWidth = w * 0.34 * scaleX;
+  const detectedCx = landmarks?.hairline?.x != null
+    ? (landmarks.hairline.x / 100) * w
+    : faceBox
+    ? ((faceBox.left + faceBox.right) / 200) * w
+    : w * 0.5;
+
+  const detectedHairlineY = landmarks?.hairline?.y != null
+    ? (landmarks.hairline.y / 100) * h
+    : faceBox
+    ? (faceBox.top / 100) * h + faceH * 0.15
+    : h * 0.22;
+
+  const baseHairlineY = detectedHairlineY + (offsetY / 100) * h;
+
+  const detectedCrownY = landmarks?.crown?.y != null
+    ? (landmarks.crown.y / 100) * h
+    : Math.max(0, detectedHairlineY - faceH * 0.32);
+
+  const domeHeight = Math.max(25, (baseHairlineY - detectedCrownY) * scaleY);
+  const crownY = Math.max(0, baseHairlineY - domeHeight);
+
+  const halfWidth = (faceW * 0.54) * scaleX;
+  const cx = detectedCx;
 
   ctx.globalAlpha = Math.min(1, Math.max(0.3, opacity));
   ctx.lineCap = 'round';

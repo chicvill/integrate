@@ -8,7 +8,9 @@ import {
   MakeupParams,
   DEFAULT_MAKEUP_TETO,
   DEFAULT_MAKEUP_EGEN,
-  MakeoverConfig
+  MakeoverConfig,
+  FaceBox,
+  FaceLandmarks
 } from './hairStyler';
 
 export interface HairOption {
@@ -34,6 +36,8 @@ export interface AnalysisResult {
     vibe: string;
   };
   hairOptions?: HairOption[];
+  faceBox?: FaceBox;
+  landmarks?: FaceLandmarks;
 }
 
 export async function analyzeFace(base64Image: string): Promise<AnalysisResult> {
@@ -75,7 +79,19 @@ export async function analyzeFace(base64Image: string): Promise<AnalysisResult> 
       { id: 'guile_cut', name: '가일컷', desc: '한쪽 앞머리를 넘겨 T존의 입체감과 카리스마를 강조합니다.' },
       { id: 'soft_asche', name: '소프트 애즈펌', desc: '자연스러운 C컬 볼륨으로 부드러운 밸런스를 부여합니다.' },
       { id: 'tassel_cut', name: '테슬컷', desc: '직선적인 칼단발 라인으로 날렵한 턱선을 강조합니다.' }
-    ]
+    ],
+    faceBox: { top: 18, bottom: 82, left: 26, right: 74 },
+    landmarks: {
+      crown: { x: 50, y: 12 },
+      hairline: { x: 50, y: 26 },
+      leftEye: { x: 39, y: 44 },
+      rightEye: { x: 61, y: 44 },
+      noseTip: { x: 50, y: 55 },
+      mouthCenter: { x: 50, y: 67 },
+      chin: { x: 50, y: 80 },
+      leftCheek: { x: 34, y: 53 },
+      rightCheek: { x: 66, y: 53 },
+    }
   };
 }
 

@@ -249,11 +249,17 @@ export default function App() {
       setSelectedStyleId(defaultStyle);
       setMakeupParams(defaultMakeup);
 
-      applyMakeover(targetImage, {
-        styleId: defaultStyle,
-        fittingParams,
-        makeupParams: defaultMakeup,
-      });
+      applyMakeover(
+        targetImage,
+        {
+          styleId: defaultStyle,
+          fittingParams,
+          makeupParams: defaultMakeup,
+          faceBox: res.faceBox,
+          landmarks: res.landmarks,
+        },
+        res
+      );
     } catch (err: any) {
       console.error(err);
       setError('분석 중 오류가 발생했습니다. 다시 촬영하여 시도해주세요.');
@@ -263,11 +269,21 @@ export default function App() {
   };
 
   // 토탈 메이크오버 렌더링 호출
-  const applyMakeover = async (faceImg: string, config: MakeoverConfig) => {
+  const applyMakeover = async (
+    faceImg: string, 
+    config: MakeoverConfig, 
+    overrideResult?: AnalysisResult | null
+  ) => {
     setIsRendering(true);
     setRenderError(null);
     try {
-      const preview = await generateMakeoverPreview(faceImg, config);
+      const activeResult = overrideResult !== undefined ? overrideResult : result;
+      const mergedConfig: MakeoverConfig = {
+        ...config,
+        faceBox: config.faceBox || activeResult?.faceBox,
+        landmarks: config.landmarks || activeResult?.landmarks,
+      };
+      const preview = await generateMakeoverPreview(faceImg, mergedConfig);
       setMakeoverPreview(preview);
     } catch (err: any) {
       console.error(err);
@@ -844,6 +860,12 @@ export default function App() {
                   <Sparkles className="w-3 h-3" />
                   <span>AI 추천값 복원</span>
                 </button>
+              </div>
+
+              {/* AI 랜드마크 자동 정렬 안내 바 */}
+              <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-indigo-50/90 to-purple-50/90 border border-indigo-100/80 rounded-2xl text-[11px] text-indigo-800 font-medium shadow-sm">
+                <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
+                <span>AI가 얼굴 크기와 위치(이마·눈·볼·입술)에 맞춰 헤어와 메이크업을 자동 정렬했습니다.</span>
               </div>
 
               {/* 탭 전환기: [헤어 스타일링] vs [메이크업 컨트롤] */}
