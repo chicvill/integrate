@@ -171,6 +171,24 @@ APP_REGISTRY: Dict[str, Dict[str, Any]] = {
         "modules": ["core", "ai", "storage", "utils"],
         "features": ["STEM & AI 어휘 예문", "6단계 정규 교육과정", "5대 인터랙티브 퀘스트", "음성 인식 & 섀도잉", "AI 원어민 발음 코칭"],
     },
+    "ai_guide": {
+        "app_id": "ai_guide",
+        "app_name": "AI 실생활 활용 실전 가이드",
+        "icon": "📘",
+        "category": "education",
+        "description": "일상을 바꾸는 AI 실생활 활용 바이블 (스마트폰 & PC 5단계 실습 교재)",
+        "backend_port": 9000,
+        "route_path": "/ai_guide",
+        "modules": ["core", "ai"],
+        "features": [
+            "스마트폰 카메라 사진 1장 루틴",
+            "제미나이 라이브 음성 코칭",
+            "나만의 전담 비서 Gems 구축",
+            "NotebookLM 개인 지식 베이스",
+            "Canvas 생활 자동화 미니툴",
+            "A4 PDF 인쇄 최적화 매뉴얼",
+        ],
+    },
 }
 
 

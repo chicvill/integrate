@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>일상을 바꾸는 AI 실생활 활용 실전 가이드 (스마트폰 & PC 실습 교재)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #1a73e8;
+    --primary-dark: #1557b0;
+    --primary-light: #e8f0fe;
+    --secondary: #9334e8;
+    --secondary-light: #f3e8ff;
+    --accent: #ea4335;
+    --success: #0d9488;
+    --success-light: #ccfbf1;
+    --warning: #f59e0b;
+    --warning-light: #fef3c7;
+    --bg-main: #f8fafc;
+    --bg-card: #ffffff;
+    --text-main: #0f172a;
+    --text-sub: #475569;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+    --radius-lg: 16px;
+    --radius-md: 10px;
+    --radius-sm: 6px;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 15mm 15mm 15mm 15mm;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    line-height: 1.65;
+    font-size: 14px;
+    padding: 24px;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  /* Cover & Hero Section */
+  .hero-card {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1e1b4b 100%);
+    color: #ffffff;
+    padding: 36px 32px;
+    border-radius: var(--radius-lg);
+    margin-bottom: 28px;
+    box-shadow: var(--shadow-md);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-card::after {
+    content: "";
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 220px;
+    height: 220px;
+    background: radial-gradient(circle, rgba(147, 52, 232, 0.4) 0%, rgba(26, 115, 232, 0) 70%);
+    border-radius: 50%;
+  }
+  .hero-badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #38bdf8;
+    padding: 5px 14px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+  }
+  .hero-title {
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1.35;
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+  }
+  .hero-subtitle {
+    font-size: 14px;
+    color: #cbd5e1;
+    margin-bottom: 18px;
+    line-height: 1.6;
+  }
+  .hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 12px;
+    color: #94a3b8;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    padding-top: 14px;
+  }
+  .hero-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Roadmap Section */
+  .roadmap-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 28px;
+    box-shadow: var(--shadow-sm);
+  }
+  .roadmap-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .level-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+  }
+  .level-chip {
+    padding: 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: #f8fafc;
+    transition: all 0.2s;
+  }
+  .level-chip .star {
+    font-size: 11px;
+    color: var(--warning);
+    font-weight: bold;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .level-chip .chip-title {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text-main);
+    margin-bottom: 4px;
+  }
+  .level-chip .chip-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  /* Level Header */
+  .level-section-header {
+    background: linear-gradient(90deg, #1e293b 0%, #334155 100%);
+    color: #ffffff;
+    padding: 14px 20px;
+    border-radius: var(--radius-md);
+    margin: 32px 0 20px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    page-break-after: avoid;
+  }
+  .level-section-header h2 {
+    font-size: 17px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .level-badge {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  /* Item Cards */
+  .item-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+    page-break-inside: avoid;
+  }
+  .item-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+  }
+  .item-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .item-number {
+    background: var(--primary-light);
+    color: var(--primary);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .item-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-main);
+  }
+  .item-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    background: #f1f5f9;
+    color: #475569;
+  }
+
+  .item-meta-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+  .meta-item {
+    display: flex;
+    gap: 8px;
+    line-height: 1.5;
+  }
+  .meta-label {
+    font-weight: 700;
+    color: var(--primary);
+    min-width: 72px;
+    flex-shrink: 0;
+  }
+  .meta-val {
+    color: var(--text-sub);
+  }
+
+  /* Prompt Box */
+  .prompt-container {
+    background: #0f172a;
+    color: #f1f5f9;
+    border-radius: var(--radius-md);
+    padding: 14px 18px;
+    margin: 14px 0;
+    position: relative;
+    border: 1px solid #1e293b;
+  }
+  .prompt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #38bdf8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #1e293b;
+    padding-bottom: 6px;
+  }
+  .prompt-content {
+    font-family: 'JetBrains Mono', 'Pretendard', monospace;
+    font-size: 12.5px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-all;
+    color: #e2e8f0;
+  }
+
+  /* Tip Box */
+  .tip-box {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-left: 4px solid #16a34a;
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 12.5px;
+    color: #166534;
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+  .tip-box strong {
+    font-weight: 700;
+  }
+
+  /* Warning Box */
+  .warning-box {
+    background: #fffbeb;
+    border: 1px solid #fef3c7;
+    border-left: 4px solid #f59e0b;
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 12.5px;
+    color: #92400e;
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+
+  /* Table Styling */
+  .styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    font-size: 12.5px;
+  }
+  .styled-table th {
+    background: #1e293b;
+    color: #ffffff;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 700;
+  }
+  .styled-table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    color: var(--text-sub);
+  }
+  .styled-table tr:last-child td {
+    border-bottom: none;
+  }
+  .styled-table tr:nth-child(even) {
+    background: #f8fafc;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 24px 0 12px 0;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    margin-top: 36px;
+  }
+
+  @media print {
+    body {
+      background: #ffffff;
+      padding: 0;
+    }
+    .hero-card {
+      box-shadow: none;
+      border: 1px solid #cbd5e1;
+    }
+    .item-card {
+      box-shadow: none;
+      border: 1px solid #cbd5e1;
+      margin-bottom: 16px;
+    }
+    .prompt-container {
+      background: #1e293b !important;
+      border: 1px solid #334155;
+    }
+    .page-break {
+      page-break-before: always;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Cover & Hero -->
+  <div class="hero-card">
+    <div class="hero-badge">📱 실전 학습 & PC 실습 교재</div>
+    <h1 class="hero-title">일상을 바꾸는 AI 실생활 활용 바이블</h1>
+    <p class="hero-subtitle">
+      코딩 도구를 넘어 24시간 나를 밀착 케어하는 퍼스널 라이프 코치로!<br>
+      가장 쉬운 스마트폰 사진 1장 루틴부터 나만을 위한 미니 웹도구 자동화까지 18가지 핵심 실천법
+    </p>
+    <div class="hero-meta">
+      <span>🎯 <strong>학습 목표:</strong> 일상 의사결정 스트레스 해소 및 개인 시간 하루 2시간 확보</span>
+      <span>📱 <strong>실습 환경:</strong> 스마트폰(모바일 제미나이 앱) & PC(웹/데스크톱)</span>
+      <span>⭐ <strong>난이도:</strong> 초급(Level 1) ~ 마스터(Level 5)</span>
+    </div>
+  </div>
+
+  <!-- Roadmap Card -->
+  <div class="roadmap-card">
+    <div class="roadmap-title">
+      <span>🗺️ 5단계 실천 로드맵 (난이도 순)</span>
+    </div>
+    <div class="level-grid">
+      <div class="level-chip">
+        <span class="star">★☆☆☆☆</span>
+        <div class="chip-title">Level 1. 카메라 AI</div>
+        <div class="chip-desc">냉장고 파먹기, 복약 안내, 분리수거, 고지서 절약 분석</div>
+      </div>
+      <div class="level-chip">
+        <span class="star">★★☆☆☆</span>
+        <div class="chip-title">Level 2. 음성 대화</div>
+        <div class="chip-desc">퇴근길 멘탈 케어, 10분 회화 과외, 인터랙티브 맞춤 동화</div>
+      </div>
+      <div class="level-chip">
+        <span class="star">★★★☆☆</span>
+        <div class="chip-title">Level 3. 나만의 봇</div>
+        <div class="chip-desc">소비 감시관 Gem, 주말 여행 코디, 홈트/식단, 경조사 에티켓</div>
+      </div>
+      <div class="level-chip">
+        <span class="star">★★★★☆</span>
+        <div class="chip-title">Level 4. 지식 자산화</div>
+        <div class="chip-desc">건강검진표 분석, 출퇴근 10분 오디오 팟캐스트, 독서 액션플랜</div>
+      </div>
+      <div class="level-chip">
+        <span class="star">★★★★★</span>
+        <div class="chip-title">Level 5. 생활 미니툴</div>
+        <div class="chip-desc">캔버스 기반 가계부 시뮬레이터, 습관 트래커, 단어장 웹 앱</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEVEL 1 -->
+  <div class="level-section-header">
+    <h2>📸 Level 1. 스마트폰 카메라로 끝내는 '사진 1장' 루틴</h2>
+    <span class="level-badge">난이도 ★☆☆☆☆ · 초급</span>
+  </div>
+
+  <!-- Item 01 -->
+  <div class="item-card">
+    <div class="item-header">
+      <div class="item-title-wrap">
+        <div class="item-number">01</div>
+        <div class="item-title">냉장고 파먹기 & 스마트 장보기 코칭</div>
+      </div>
+      <span class="item-tag">식비 절약 / 저녁 고민 해결</span>
+    </div>
+    <div class="item-meta-row">
+      <div class="meta-item">
+        <span class="meta-label">🎯 핵심 효과:</span>
+        <span class="meta-val">퇴근 후 저녁 메뉴 고민 제로화, 유통기한 임박 식재료 소진, 배달비 절약</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">📍 메뉴 경로:</span>
+        <span class="meta-val">스마트폰 제미나이 앱 ➔ 프롬프트 입력창 좌측 <strong>[📷 카메라]</strong> 터치 ➔ 냉장고 내부 1장 촬영 첨부</span>
+      </div>
+    </div>
+    <div class="prompt-container">
+      <div class="prompt-header">
+        <span>💬 스마트폰 실전 복붙 프롬프트</span>
+        <span>COPY & PASTE</span>
+      </div>
+      <div class="prompt-content">첨부한 사진 속 냉장고 식재료들을 정확하게 판독해줘.
+퇴근 후 지쳐있는 상태라 요리 시간 20분 이내로 만들 수 있는 건강한 저녁 식단 2가지를 제안해줘:
+1. 식단별 필수 조리 단계 (초보자용 3단계 요약 레시피)
+2. 맛을 내기 위해 꼭 필요한 소스나 부재료가 빠져있다면, 퇴근길 동네 마트에서 살 장보기 목록(체크리스트)을 3개 이하로 추천해줘.</div>
+    </div>
+    <div class="tip-box">
+      <strong>💡 200% 활용 팁:</strong> 냉장고 문 쪽의 양념류와 신선칸 채소가 함께 보이도록 각도를 넓혀 찍을수록 레시피 실용도가 높아집니다.
+    </div>
+  </div>
+
+  <!-- Item 02 -->
+  <div class="item-card">
+    <div class="item-header">
+      <div class="item-title-wrap">
+        <div class="item-number">02</div>
+        <div class="item-title">복약 안내문·성분표 3초 팩트체크</div>
+      </div>
+      <span class="item-tag">건강 관리 / 오남용 방지</span>
+    </div>
+    <div class="item-meta-row">
+      <div class="meta-item">
+        <span class="meta-label">🎯 핵심 효과:</span>
+        <span class="meta-val">작은 글씨의 약국 봉투 및 영양제 라벨을 초등학생도 이해하는 3줄 요약으로 해설</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">📍 메뉴 경로:</span>
+        <span class="meta-val">스마트폰 제미나이 앱 ➔ <strong>[📷 카메라]</strong> ➔ 처방전/약봉투 복약 안내문 근접 촬영</span>
+      </div>
+    </div>
+    <div class="prompt-container">
+      <div class="prompt-header">
+        <span>💬 스마트폰 실전 복붙 프롬프트</span>
+        <span>COPY & PASTE</span>
+      </div>
+      <div class="prompt-content">첨부한 약봉투(또는 영양제 성분표) 사진을 분석해줘.
+전문 의학 용어 대신 일반인이 이해하기 쉬운 언어로 다음 3가지를 알려줘:
+1. 이 약들의 주된 복용 목적 (각각 어떤 증상을 완화하는가?)
+2. 반드시 지켜야 할 식전/식후 복용 타이밍 및 복용 시간 간격
+3. 절대 함께 먹으면 안 되는 음식/음료(커피, 우유, 술 등) 및 주의해야 할 대표 부작용</div>
+    </div>
+    <div class="warning-box">
+      <strong>⚠️ 주의:</strong> AI의 성분 분석은 참고 보조용이며, 복용량 조절이나 약물 중단은 반드시 전문 의사·약사와 상담하세요.
+    </div>
+  </div>
+
+  <!-- Item 03 -->
+  <div class="item-card">
+    <div class="item-header">
+      <div class="item-title-wrap">
+        <div class="item-number">03</div>
+        <div class="item-title">헷갈리는 분리수거 & 생활 얼룩 청소 꿀팁</div>
+      </div>
+      <span class="item-tag">가정 살림 / 친환경</span>
+    </div>
+    <div class="item-meta-row">
+      <div class="meta-item">
+        <span class="meta-label">🎯 핵심 효과:</span>
+        <span class="meta-val">복합 재질 쓰레기의 정확한 배출법 판별 및 옷에 묻은 커피/기름 얼룩 골든타임 제거</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">📍 메뉴 경로:</span>
+        <span class="meta-val">스마트폰 제미나이 앱 ➔ <strong>[📷 카메라]</strong> ➔ 버릴 물건의 라벨 또는 옷의 얼룩 촬영</span>
+      </div>
+    </div>
+    <div class="prompt-container">
+      <div class="prompt-header">
+        <span>💬 스마트폰 실전 복붙 프롬프트</span>
+        <span>COPY & PASTE</span>
+      </div>
+      <div class="prompt-content">(사진 첨부 후)
+이 물건(또는 옷에 묻은 얼룩)을 확인해줘:
+[선택 A. 분리수거 시]: 대한민국 환경부 최신 기준에 맞춰, 뚜껑/본체/라벨을 어떻게 분리해서 종량제인지 재활용인지 구체적 배출 방법을 알려줘.
+[선택 B. 얼룩 제거 시]: 집에 있는 기본 세제(과탄산소다, 주방세제, 식초 등)로 옷감 손상 없이 지우는 골든타임 세탁 순서를 3단계로 알려줘.</div>
+    </div>
+  </div>
+
+  <!-- Item 04 -->
+  <div class="item-card">
+    <div class="item-header">
+      <div class="item-title-wrap">
+        <div class="item-number">04</div>
+        <div class="item-title">관리비 고지서·보험 안내문 절약 포인트 분석</div>
+      </div>
+      <span class="item-tag">가계 재정 / 고정비 절감</span>
+    </div>
+    <div class="item-meta-row">
+      <div class="meta-item">
+        <span class="meta-label">🎯 핵심 효과:</span>
+        <span class="meta-val">매달 빠져나가는 아파트 관리비나 통신비에서 새는 돈을 찾고 절약 액션플랜 도출</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">📍 메뉴 경로:</span>
+        <span class="meta-val">고지서 내역 표 사진 촬영 ➔ 제미나이에 업로드</span>
+      </div>
+    </div>
+    <div class="prompt-container">
+      <div class="prompt-header">
+        <span>💬 스마트폰 실전 복붙 프롬프트</span>
+        <span>COPY & PASTE</span>
+      </div>
+      <div class="prompt-content">첨부한 이번 달 아파트 관리비(또는 통신 요금) 고지서 내역 표를 판독해줘:
+1. 가장 큰 비중을 차지하는 상위 지출 항목 3가지를 정리해줘.
+2. 일반적인 동급 가구 평균 대비 과다하게 청구된 의심 항목이 있는지 점검해줘.
+3. 다음 달부터 즉시 요금을 10~20% 줄일 수 있는 구체적인 실천 팁 2가지를 제시해줘.</div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- LEVEL 2 -->
+  <div class="level-section-header">
+    <h2>🎙️ Level 2. 손 안 대고 말로 하는 '제미나이 라이브' 음성 코칭</h2>
+    <span class="level-badge">난이도 ★★☆☆☆ · 중급</span>
+  </div>
+
+  <!-- Item 05 -->
+  <div class="item-card">
+    <div class="item-header">
+      <div class="item-title-wrap">
+        <div class="item-number">05</div>
+        <div class="item-title">퇴근길 멘탈 케어 & 복잡한 생각 정리 (Think Partner)</div>
+      </div>
+      <span class="item-tag">멘탈 헬스 / 핸즈프리</span>
+    </div>
+    <div class="item-meta-row">
+      <div class="meta-item">
+        <span class="meta-label">🎯 핵심 효과:</span>
+        <span class="meta-val">화면을 보지 않고 이어폰으로 대화하며 복잡한 감정과 업무 스트레스를 객관화</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">📍 메뉴 경로:</span>
+        <span class="meta-val">제미나이 모바일 앱 ➔ 프롬프트 입력창 우측 <strong>[파형 모양 아이콘(Live)]</strong> 터치</span>
+      </div>
+    </div>
+    <div class="prompt-container">
+      <div class="prompt-header">
+        <span>💬 이어폰 착용 후 실전 음성 대화 멘트</span>
+        <span>VOICE INTERACTION</span>
+      </div>
+      <div class="prompt-content">"안녕, 나 지금 퇴근길 산책 중인데 오늘 여러 일들이 겹쳐서 머릿속이 너무 복잡해.
+내가 오늘 겪은 상황을 두서없이 이야기할 테니까, 내 감정을 먼저 경청해주고,
+생각이 정리될 수 있도록 핵심 이슈를 2가지로 압축해서 좋은 질문을 하나 던져줄래?"</div>
+    </div>
+    <div class="tip-box">
+      <strong>💡 끼어들기(Interrupt) 팁:</strong> 제미나이의 말이 길어지면 "잠깐, 그 부분 말고 다른 이야기 해줘"라고 말하면 즉각 화제를 전환합니다.
+    </div>
+  </div>
+
+  <!-- Item 06 -->
+  <div class="item-card">
+    <div class="item-header">
+      <div class="item-title-wrap">
+        <div class="item-number">06</div>
+        <div class="item-title">10분 1:1 상황별 원어민 회화 과외 (끼어들기 대화)</div>
+      </div>
+      <span class="item-tag">자기계발 / 어학 실습</span>
+    </div>
+    <div class="item-meta-row">
+      <div class="meta-item">
+        <span class="meta-label">🎯 핵심 효과:</span>
+        <span class="meta-val">학원 수강 없이 출퇴근길 10분 동안 실전 상황별 롤플레잉과 실시간 표현 교정</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">📍 메뉴 경로:</span>
+        <span class="meta-val">제미나이 앱 ➔ 우측 파형 아이콘(Live) 터치</span>
+      </div>
+    </div>
+    <div class="prompt-container">
+      <div class="prompt-header">
+        <span>💬 실전 음성 롤플레잉 시작 멘트</span>
+        <span>VOICE INTERACTION</span>
+      </div>
+      <div class="prompt-content">"지금부터 10분 동안 실전 영어 회화 연습을 하자.
+네가 런던 히드로 공항의 입국 심사관 역할을 해줘. 내가 여행객이야.
+까다롭지만 정중하게 3~4가지 입국 심사 질문을 던져줘.
+내가 대답할 때 문법이나 표현이 부자연스러우면, 한국어로 1줄 팁을 주고 다음 질문을 영어로 이어가줘."</div>
+    </div>
+  </div>
+
+  <!-- Item 07 -->
+  <div class="item-card">
+    <div class="item-header">
+      <div class="item-title-wrap">
+        <div class="item-number">07</div>
+        <div class="item-title">아이를 위한 즉석 맞춤 인터랙티브 구연동화</div>
+      </div>
+      <span class="item-tag">육아 지원 / 창의력</span>
+    </div>
+    <div class="item-meta-row">
+      <div class="meta-item">
+        <span class="meta-label">🎯 핵심 효과:</span>
+        <span class="meta-val">아이 이름과 좋아하는 캐릭터가 주인공이 되고, 아이의 선택으로 스토리가 전개되는 잠자리 동화</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">📍 메뉴 경로:</span>
+        <span class="meta-val">스마트폰 제미나이 앱 ➔ Live 음성 모드 실행</span>
+      </div>
+    </div>
+    <div class="prompt-container">
+      <div class="prompt-header">
+        <span>💬 실전 음성 대화 멘트</span>
+        <span>VOICE INTERACTION</span>
+      </div>
+      <div class="prompt-content">"우리 6살 아이(이름: 민준이)에게 잠자리 동화를 들려줄 거야.
+민준이가 좋아하는 공룡 티라노와 우주선이 등장하는 따뜻한 모험 이야기를 만들어줘.
+한 문단씩 부드러운 목소리로 구연동화 톤으로 들려주고, 매 장면마다 '민준아, 티라노가 동굴로 갈까, 우주선으로 갈까?'라고 질문해서 아이가 선택하게 유도해줘."</div>
+    </div>
+  </div>
+
+  <!-- Item 08 -->
+  <div class="item-card">
+    <div class="item-header">
+      <div class="item-title-wrap">
+        <div class="item-number">08</div>
+        <div class="item-title">센스 있는 기념일 선물 & 모임 장소 큐레이션</div>
+      </div>
+      <span class="item-tag">인간관계 / 선물 추천</span>
+    </div>
+    <div class="item-meta-row">
+      <div class="meta-item">
+        <span class="meta-label">🎯 핵심 효과:</span>
+        <span class="meta-val">예산, 취향, 상황에 맞춤화된 센스 있는 선물 후보와 축하 카드 문구 1분 만에 완성</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">📍 메뉴 경로:</span>
+        <span class="meta-val">스마트폰 또는 PC 제미나이 입력창</span>
+      </div>
+    </div>
+    <div class="prompt-container">
+      <div class="prompt-header">
+        <span>💬 실전 복붙 프롬프트</span>
+        <span>COPY & PASTE</span>
+      </div>
+      <div class="prompt-content">[상황]: 50대 중반 어머니 환갑 선물 / 예산 20~30만 원
+[어머니 취향]: 꽃과 차(Tea)를 좋아하시고, 실용적인 물건을 선호하심. 뻔한 건강식품(홍삼)은 제외.
+이 조건에 맞는 감동적이고 실용적인 선물 후보 3가지를 이유와 함께 추천해줘.
+각 선물마다 카드에 적을 수 있는 센스 있는 2줄 축하 문구도 작성해줘.</div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- LEVEL 3 -->
+  <div class="level-section-header">
+    <h2>🤖 Level 3. 나만의 생활 밀착형 전담 비서 (Gems / Skills) 구축</h2>
+    <span class="level-badge">난이도 ★★★☆☆ · 상급</span>
+  </div>
+
+  <!-- Item 09 -->
+  <div class="item-card">
+    <div class="item-header">
+      <div class="item-title-wrap">
+        <div class="item-number">09</div>
+        <div class="item-title">소비 & 쇼핑 합리화 감시관 Gem</div>
+      </div>
+      <span class="item-tag">충동구매 방지 / 스마트 소비</span>
+    </div>
+    <div class="item-meta-row">
+      <div class="meta-item">
+        <span class="meta-label">🎯 핵심 효과:</span>
+        <span class="meta-val">결제 전 링크나 가격만 입력하면 3가지 객관적 질문으로 충동구매를 억제</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">📍 메뉴 경로:</span>
+        <span class="meta-val">제미나이 좌측 사이드바 ➔ <strong>[Gems 관리]</strong> ➔ <strong>[+ 새 Gem 만들기]</strong></span>
+      </div>
+    </div>
+    <div class="prompt-container">
+      <div class="prompt-header">
+        <span>⚙️ Gem 시스템 지침(Instructions) 설정값</span>
+        <span>SYSTEM PROMPT</span>
+      </div>
+      <div class="prompt-content">[이름]: 스마트 소비 감시관
+[역할]: 냉철하고 깐깐한 개인 재정 코치
+[규칙]: 사용자가 상품명과 가격(또는 쇼핑몰 링크)을 입력하면 다음을 실행한다:
+1. [사용당 단가 분석]: 예상 사용 횟수를 추정해 '1회 사용 시 실질 비용' 계산
+2. [대체재 질문]: 집에 있는 물건 중 이것을 대체할 수 있는 것은 없는가?
+3. [기회비용]: 이 돈을 저축/투자했을 때 1년 뒤 가치 비교
+4. 최종적으로 [구매 강력 추천 / 3일간 보류 / 절대 비추천] 중 판정을 내리고 명확한 이유를 제시한다.</div>
+    </div>
+  </div>
+
+  <!-- Item 10 -->
+  <div class="item-card">
+    <div class="item-header">
+      <div class="item-title-wrap">
+        <div class="item-number">10</div>
+        <div class="item-title">주말 가족·연인 맞춤 나들이 코디네이터 Gem</div>
+      </div>
+      <span class="item-tag">주말 여행 / 코스 설계</span>
+    </div>
+    <div class="item-meta-row">
+      <div class="meta-item">
+        <span class="meta-label">🎯 핵심 효과:</span>
+        <span class="meta-val">"이번 주말에 어디 가지?" 고민 5분 컷, 동선 낭비 없는 1일 나들이 & 주차 팁</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">📍 메뉴 경로:</span>
+        <span class="meta-val">Gems 관리 ➔ [+ 새 Gem 만들기]</span>
+      </div>
+    </div>
+    <div class="prompt-container">
+      <div class="prompt-header">
+        <span>⚙️ Gem 시스템 지침(Instructions) 설정값</span>
+        <span>SYSTEM PROMPT</span>
+      </div>
+      <div class="prompt-content">[이름]: 주말 나들이 플래너
+[역할]: 국내 구석구석을 잘 아는 15년 차 여행 가이드
+[규칙]: 사용자가 [출발지, 동행자, 이동 가능 시간(예: 차로 1시간), 선호 스타일(자연/실내/맛집)]을 입력하면:
+- 오전 - 점심 식사 - 오후 - 귀가 순으로 동선 낭비 없는 1일 코스 제안
+- 주차가 편하고 웨이팅이 덜한 현지인 맛집 2곳 추천
+- 비가 오거나 날씨가 궂을 때를 대비한 대체 실내 코스 1곳 반드시 포함</div>
+    </div>
+  </div>
+
+  <!-- Item 11 -->
+  <div class="item-card">
+    <div class="item-header">
+      <div class="item-title-wrap">
+        <div class="item-number">11</div>
+        <div class="item-title">퍼스널 홈트레이닝 & 영양 밸런스 코치 Gem</div>
+      </div>
+      <span class="item-tag">체력 증진 / 홈트 루틴</span>
+    </div>
+    <div class="item-meta-row">
+      <div class="meta-item">
+        <span class="meta-label">🎯 핵심 효과:</span>
+        <span class="meta-val">집에서도 부상 없이 20~30분 고효율 홈트레이닝 루틴과 단백질 식단 코칭</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">📍 메뉴 경로:</span>
+        <span class="meta-val">Gems 관리 ➔ [+ 새 Gem 만들기]</span>
+      </div>
+    </div>
+    <div class="prompt-container">
+      <div class="prompt-header">
+        <span>⚙️ Gem 시스템 지침(Instructions) 설정값</span>
+        <span>SYSTEM PROMPT</span>
+      </div>
+      <div class="prompt-content">[이름]: 홈트 & 식단 전담 코치
+[역할]: 부상 방지를 최우선으로 하는 전문 피트니스 트레이너
+[규칙]: 사용자가 [현재 운동 목표, 오늘 운동 가능 시간(예: 25분), 보유 장비(맨몸/덤벨/폼롤러)]를 입력하면:
+1. 부상 방지 웜업 3분
+2. 본 운동 세트 (동작명, 횟수, 호흡법, 자극 부위)
+3. 쿨다운 스트레칭 3분
+4. 운동 직후 먹기 좋은 간편 단백질 식단 추천</div>
+    </div>
+  </div>
+
+  <!-- Item 12 -->
+  <div class="item-card">
+    <div class="item-header">
+      <div class="item-title-wrap">
+        <div class="item-number">12</div>
+        <div class="item-title">경조사·감사·거절 품격 커뮤니케이션 Gem</div>
+      </div>
+      <span class="item-tag">에티켓 / 매너 메시지</span>
+    </div>
+    <div class="item-meta-row">
+      <div class="meta-item">
+        <span class="meta-label">🎯 핵심 효과:</span>
+        <span class="meta-val">부고 위로, 결혼 축하, 금전/부탁 거절 등 난처한 상황에서 품격 있는 문장 작성</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">📍 메뉴 경로:</span>
+        <span class="meta-val">Gems 관리 ➔ [+ 새 Gem 만들기]</span>
+      </div>
+    </div>
+    <div class="prompt-container">
+      <div class="prompt-header">
+        <span>⚙️ Gem 시스템 지침(Instructions) 설정값</span>
+        <span>SYSTEM PROMPT</span>
+      </div>
+      <div class="prompt-content">[이름]: 비즈니스 & 일상 소통 에티켓 마스터
+[규칙]: 상대방과의 관계(친구/상사/지인)와 전달할 핵심 사실을 입력받아:
+- 버전 A: 담백하고 부담 없는 톤
+- 버전 B: 정중하고 격식 있는 예의 톤
+- 특히 '거절' 메시지의 경우 상대방의 기분을 상하게 하지 않으면서 단호하게 선을 긋는 세련된 문장을 구성한다.</div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- LEVEL 4 -->
+  <div class="level-section-header">
+    <h2>📚 Level 4. 취미와 건강을 축적하는 개인 지식 베이스 (NotebookLM)</h2>
+    <span class="level-badge">난이도 ★★★★☆ · 심화</span>
+  </div>
+
+  <!-- Item 13 -->
+  <div class="item-card">
+    <div class="item-header">
+      <div class="item-title-wrap">
+        <div class="item-number">13</div>
+        <div class="item-title">건강검진 결과지 추적 & 맞춤 건강 Q&A</div>
+      </div>
+      <span class="item-tag">개인 헬스케어 / 오답 방지</span>
+    </div>
+    <div class="item-meta-row">
+      <div class="meta-item">
+        <span class="meta-label">🎯 핵심 효과:</span>
+        <span class="meta-val">내 실제 검진표 PDF를 근거로 작년 대비 악화된 수치와 맞춤 생활습관을 팩트 기반 질문</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">📍 메뉴 경로:</span>
+        <span class="meta-val"><code>notebooklm.google.com</code> ➔ [+ 소스 추가] ➔ 건강검진 PDF 업로드</span>
+      </div>
+    </div>
+    <div class="prompt-container">
+      <div class="prompt-header">
+        <span>💬 NotebookLM 대화창 프롬프트</span>
+        <span>GROUNDED PROMPT</span>
+      </div>
+      <div class="prompt-content">업로드된 검진 결과지들을 비교 분석해줘:
+1. 작년 대비 올해 유의미하게 수치가 악화되었거나(간수치, 콜레스테롤, 공복혈당 등) 경계치에 있는 항목을 표로 정리해줘.
+2. 해당 수치들을 개선하기 위해 일상에서 실천해야 할 구체적인 식습관과 유산소 운동 지침을 알려줘.
+(모든 답변은 문서의 해당 검진 항목을 인용하여 각주를 달아줘.)</div>
+    </div>
+  </div>
+
+  <!-- Item 14 -->
+  <div class="item-card">
+    <div class="item-header">
+      <div class="item-title-wrap">
+        <div class="item-number">14</div>
+        <div class="item-title">관심사 아티클로 만드는 출퇴근 10분 오디오 팟캐스트</div>
+      </div>
+      <span class="item-tag">오디오 브리핑 / 시간 활용</span>
+    </div>
+    <div class="item-meta-row">
+      <div class="meta-item">
+        <span class="meta-label">🎯 핵심 효과:</span>
+        <span class="meta-val">읽기 부담스러운 재테크 리포트나 기술 칼럼 3편을 라디오 토크쇼 오디오로 청취</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">📍 메뉴 경로:</span>
+        <span class="meta-val">NotebookLM에 문서 추가 ➔ 상단 Studio 패널 ➔ <strong>[Audio Overview (Generate)]</strong> 클릭</span>
+      </div>
+    </div>
+    <div class="tip-box">
+      <strong>💡 활용 꿀팁:</strong> 두 명의 AI 호스트가 대화하는 오디오 파일(.wav)을 스마트폰으로 다운받아 출퇴근길에 팟캐스트처럼 들을 수 있습니다.
+    </div>
+  </div>
+
+  <!-- Item 15 -->
+  <div class="item-card">
+    <div class="item-header">
+      <div class="item-title-wrap">
+        <div class="item-number">15</div>
+        <div class="item-title">독서 노트 축적 및 실천 액션 플랜 도출</div>
+      </div>
+      <span class="item-tag">자기계발 / 지식 내재화</span>
+    </div>
+    <div class="item-meta-row">
+      <div class="meta-item">
+        <span class="meta-label">🎯 핵심 효과:</span>
+        <span class="meta-val">책을 읽고 잊어버리는 대신 내 삶에 적용할 구체적인 실천 체크리스트로 자산화</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">📍 메뉴 경로:</span>
+        <span class="meta-val">NotebookLM 대화창</span>
+      </div>
+    </div>
+    <div class="prompt-container">
+      <div class="prompt-header">
+        <span>💬 NotebookLM 대화창 프롬프트</span>
+        <span>ACTION PROMPT</span>
+      </div>
+      <div class="prompt-content">내가 업로드한 [도서 요약본 및 밑줄 메모] 소스를 바탕으로:
+1. 저자가 말하는 핵심 원리 3가지를 정리해줘.
+2. 이 책의 통찰을 바탕으로, 내일부터 당장 내 일상에서 실천할 수 있는 [작은 습관 액션 플랜 3가지]를 체크리스트로 만들어줘.</div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- LEVEL 5 -->
+  <div class="level-section-header">
+    <h2>💻 Level 5. 캔버스(Canvas)로 5분 만에 만드는 생활 자동화 미니툴</h2>
+    <span class="level-badge">난이도 ★★★★★ · 마스터</span>
+  </div>
+
+  <!-- Item 16 -->
+  <div class="item-card">
+    <div class="item-header">
+      <div class="item-title-wrap">
+        <div class="item-number">16</div>
+        <div class="item-title">스마트 예산 가계부 & 지출 시뮬레이터</div>
+      </div>
+      <span class="item-tag">노코드 웹 앱 / 개인 재정</span>
+    </div>
+    <div class="item-meta-row">
+      <div class="meta-item">
+        <span class="meta-label">🎯 핵심 효과:</span>
+        <span class="meta-val">복잡한 엑셀 수식 대신 브라우저에서 바로 동작하는 나만의 인터랙티브 가계부 시뮬레이터</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">📍 메뉴 경로:</span>
+        <span class="meta-val">PC 제미나이 ➔ 프롬프트 좌측 <strong>`+`</strong> ➔ <strong>[캔버스(Canvas)]</strong> 모드 활성화</span>
+      </div>
+    </div>
+    <div class="prompt-container">
+      <div class="prompt-header">
+        <span>💬 캔버스 노코드 개발 프롬프트</span>
+        <span>WEB APP GENERATION</span>
+      </div>
+      <div class="prompt-content">캔버스 모드에서 단일 HTML(내장 CSS/JS)로 바로 구동되는 [1인 가구 월간 예산 시뮬레이터]를 만들어줘:
+- 기능 요구사항:
+  1. 월 수입, 고정 지출(월세/공과금/보험), 변동 예산(식비/쇼핑) 입력창
+  2. 입력 시 '하루 사용 가능한 자유 예산(원/일)'과 '예상 연간 저축액'을 실시간 그래프 카드로 계산 표시
+  3. 모던한 다크모드 카드 UI, '오늘 지출 추가' 버튼 지원
+캔버스 우측 화면에서 즉시 실행(Preview)할 수 있게 해줘.</div>
+    </div>
+  </div>
+
+  <!-- Item 17 -->
+  <div class="item-card">
+    <div class="item-header">
+      <div class="item-title-wrap">
+        <div class="item-number">17</div>
+        <div class="item-title">30일 습관 형성(Habit Tracker) 인터랙티브 보드</div>
+      </div>
+      <span class="item-tag">목표 관리 / 로컬 저장</span>
+    </div>
+    <div class="item-meta-row">
+      <div class="meta-item">
+        <span class="meta-label">🎯 핵심 효과:</span>
+        <span class="meta-val">매일 클릭 한 번으로 달성률이 시각화되는 감성 웹 대시보드 5분 만에 완성</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">📍 메뉴 경로:</span>
+        <span class="meta-val">PC 제미나이 ➔ [캔버스(Canvas)] 모드</span>
+      </div>
+    </div>
+    <div class="prompt-container">
+      <div class="prompt-header">
+        <span>💬 캔버스 노코드 개발 프롬프트</span>
+        <span>WEB APP GENERATION</span>
+      </div>
+      <div class="prompt-content">캔버스에서 실행되는 [30일 인터랙티브 습관 트래커 웹 도구]를 만들어줘:
+- 3개 습관(운동, 독서, 물 마시기)의 30일 체크박스 그리드 제공
+- 날짜별 체크 시 로컬 스토리지에 자동 저장되고 상단에 '이번 달 달성률(%)' 프로그레스 바가 차오름
+- 깔끔하고 감성적인 파스텔 톤 UI 디자인 적용</div>
+    </div>
+  </div>
+
+  <!-- Item 18 -->
+  <div class="item-card">
+    <div class="item-header">
+      <div class="item-title-wrap">
+        <div class="item-number">18</div>
+        <div class="item-title">생활 영어 단어장 & 플래시카드 퀴즈 웹 앱</div>
+      </div>
+      <span class="item-tag">3D 플립 카드 / 플래시카드</span>
+    </div>
+    <div class="item-meta-row">
+      <div class="meta-item">
+        <span class="meta-label">🎯 핵심 효과:</span>
+        <span class="meta-val">오늘 음성 대화로 배운 실전 표현을 3D 카드 뒤집기 게임으로 복습</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">📍 메뉴 경로:</span>
+        <span class="meta-val">PC 제미나이 ➔ [캔버스(Canvas)] 모드</span>
+      </div>
+    </div>
+    <div class="prompt-container">
+      <div class="prompt-header">
+        <span>💬 캔버스 노코드 개발 프롬프트</span>
+        <span>WEB APP GENERATION</span>
+      </div>
+      <div class="prompt-content">캔버스에서 동작하는 [카드 뒤집기 영단어 퀴즈 앱]을 만들어줘:
+- 카드를 클릭하면 3D 플립 애니메이션으로 앞면(영어 표현)과 뒷면(한국어 뜻 및 예문)이 뒤집힘
+- 하단에 [알고 있음 / 다시 공부] 버튼을 누르면 다음 카드로 넘어감
+- 오늘 배운 비즈니스 & 일상 표현 10개를 기본 데이터로 채워줘.</div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- Checklist Appendix -->
+  <div class="roadmap-card" style="margin-top: 24px;">
+    <div class="roadmap-title">
+      <span>📋 [부록] 30일 실생활 AI 정복 챌린지 실천표</span>
+    </div>
+    <table class="styled-table">
+      <thead>
+        <tr>
+          <th style="width: 18%;">주차 / 테마</th>
+          <th style="width: 14%;">일차</th>
+          <th style="width: 58%;">실습 목표</th>
+          <th style="width: 10%; text-align: center;">달성</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td rowspan="4"><strong>1주차</strong><br>카메라 AI 루틴</td>
+          <td>Day 01</td>
+          <td>냉장고 사진 찍고 오늘 저녁 20분 레시피 추천받기</td>
+          <td style="text-align: center;">⬜</td>
+        </tr>
+        <tr>
+          <td>Day 03</td>
+          <td>약봉투나 영양제 성분표 촬영하여 주의사항 3줄 해설 확인</td>
+          <td style="text-align: center;">⬜</td>
+        </tr>
+        <tr>
+          <td>Day 05</td>
+          <td>헷갈리는 분리수거 품목 사진 찍어 정확한 배출법 질문</td>
+          <td style="text-align: center;">⬜</td>
+        </tr>
+        <tr>
+          <td>Day 07</td>
+          <td>아파트 관리비나 통신비 고지서 분석하여 절약 팁 확인</td>
+          <td style="text-align: center;">⬜</td>
+        </tr>
+        <tr>
+          <td rowspan="4"><strong>2주차</strong><br>라이브 음성 AI</td>
+          <td>Day 08</td>
+          <td>퇴근길 산책하며 이어폰 끼고 하루 생각 정리 대화</td>
+          <td style="text-align: center;">⬜</td>
+        </tr>
+        <tr>
+          <td>Day 10</td>
+          <td>10분 상황별(공항/카페) 실전 영어 롤플레잉 해보기</td>
+          <td style="text-align: center;">⬜</td>
+        </tr>
+        <tr>
+          <td>Day 12</td>
+          <td>기념일 선물이나 주말 가족 외식 메뉴 음성으로 추천받기</td>
+          <td style="text-align: center;">⬜</td>
+        </tr>
+        <tr>
+          <td>Day 14</td>
+          <td>가족이나 아이를 위한 인터랙티브 맞춤 동화 구연</td>
+          <td style="text-align: center;">⬜</td>
+        </tr>
+        <tr>
+          <td rowspan="3"><strong>3주차</strong><br>나만의 전담 비서</td>
+          <td>Day 15</td>
+          <td>[스마트 소비 감시관 Gem] 등록하고 장바구니 품목 검증</td>
+          <td style="text-align: center;">⬜</td>
+        </tr>
+        <tr>
+          <td>Day 18</td>
+          <td>[주말 나들이 코디네이터 Gem]으로 당일치기 코스 설계</td>
+          <td style="text-align: center;">⬜</td>
+        </tr>
+        <tr>
+          <td>Day 21</td>
+          <td>[경조사 에티켓 Gem]으로 감사/위로 인사말 템플릿 완성</td>
+          <td style="text-align: center;">⬜</td>
+        </tr>
+        <tr>
+          <td rowspan="3"><strong>4주차</strong><br>지식 & 미니툴</td>
+          <td>Day 22</td>
+          <td>NotebookLM에 건강검진표 PDF 넣고 내 건강 Q&A 해보기</td>
+          <td style="text-align: center;">⬜</td>
+        </tr>
+        <tr>
+          <td>Day 25</td>
+          <td>관심 아티클로 10분 오디오 팟캐스트(Audio Overview) 생성해 청취</td>
+          <td style="text-align: center;">⬜</td>
+        </tr>
+        <tr>
+          <td>Day 28</td>
+          <td>캔버스(Canvas) 모드로 나만의 1일 가계부/계산기 웹툴 구동해보기</td>
+          <td style="text-align: center;">⬜</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    <p>💡 일상을 바꾸는 AI 실생활 활용 실전 가이드 · 스마트폰 & PC 학습 실습 교재</p>
+    <p style="margin-top: 4px; color: #94a3b8;">제미나이 최신 기능(Live, Gems/Skills, NotebookLM, Canvas) 완벽 대응</p>
+  </div>
+
+</div>
+
+</body>
+</html>

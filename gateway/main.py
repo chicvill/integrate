@@ -358,6 +358,12 @@ if os.path.exists(grammer_dir):
     app.mount("/grammar", StaticFiles(directory=grammer_dir, html=True), name="grammar_app")
     app.mount("/grammer", StaticFiles(directory=grammer_dir, html=True), name="grammer_app")
 
+# ── AI 실생활 활용 실전 가이드 (스마트폰 & PC 실습 교재) ──
+ai_guide_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "ai_guide"))
+if os.path.exists(ai_guide_dir):
+    app.mount("/ai_guide", NoCacheStaticFiles(directory=ai_guide_dir, html=True), name="ai_guide_app")
+    app.mount("/ai-guide", NoCacheStaticFiles(directory=ai_guide_dir, html=True), name="ai_guide_alias")
+
 gateway_static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "static"))
 if os.path.exists(gateway_static_dir):
     app.mount("/static", StaticFiles(directory=gateway_static_dir), name="gateway_static")
@@ -441,6 +447,7 @@ async def check_all_services_health():
         {"id": "n8n_editor", "name": "n8n 비주얼 편집기", "port": 5678, "url": f"http://{host_ip}:5678/healthz"},
         {"id": "n8n_deposit", "name": "농협 입금 알림판", "port": 3000, "url": f"http://{host_ip}:3000/"},
         {"id": "grammar", "name": "Grammar Quest (AI 영문법)", "port": 9014, "url": "http://127.0.0.1:9000/grammar/"},
+        {"id": "ai_guide", "name": "AI 실생활 실습 가이드", "port": 9000, "url": "http://127.0.0.1:9000/ai_guide/"},
     ]
 
     def ping_sync(s: dict) -> dict:

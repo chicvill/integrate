@@ -69,7 +69,7 @@
   <nav class="navbar">
     <a href="/" class="brand"><div class="brand-logo">MQ</div>MQnet Platform</a>
     <div style="display: flex; gap: 0.75rem; align-items: center;">
-      <div class="status-pill"><div class="status-dot"></div>15 Apps Active</div>
+      <div class="status-pill"><div class="status-dot"></div>16 Apps Active</div>
       <a href="/docs" target="_blank" class="btn">📖 API Docs</a>
       <a href="/health" target="_blank" class="btn">⚡ Health</a>
     </div>
@@ -77,12 +77,12 @@
 
   <div class="container">
     <div class="hero">
-      <h1>하나의 서버로 완성하는<br><span>15대 올인원 SaaS & 자동화 플랫폼</span></h1>
+      <h1>하나의 서버로 완성하는<br><span>16대 올인원 SaaS & 자동화 플랫폼</span></h1>
       <p>단일 포트 8000/9000/10000 게이트웨이에서 공통 인증, 통합 DB, Gemini 2.5 AI 및 n8n 자동화를 공유하여 모든 서비스를 즉시 실행합니다.</p>
     </div>
 
     <div class="stats">
-      <div class="stat-item"><div style="font-size: 0.8rem; color: var(--text-muted);">통합 서비스</div><div class="stat-val">15개 앱</div></div>
+      <div class="stat-item"><div style="font-size: 0.8rem; color: var(--text-muted);">통합 서비스</div><div class="stat-val">16개 앱</div></div>
       <div class="stat-item"><div style="font-size: 0.8rem; color: var(--text-muted);">공유 DB</div><div class="stat-val">SQLite/Postgres</div></div>
       <div class="stat-item"><div style="font-size: 0.8rem; color: var(--text-muted);">인공지능</div><div class="stat-val">Gemini 2.5</div></div>
       <div class="stat-item"><div style="font-size: 0.8rem; color: var(--text-muted);">게이트웨이 포트</div><div class="stat-val">:8000 (:9000)</div></div>
@@ -292,6 +292,20 @@
         <div class="actions" style="display:flex; gap:0.5rem;">
           <a href="/grammar/" target="_blank" class="btn-main" style="flex:1.4; text-align:center; text-decoration:none; background: linear-gradient(135deg, #059669, #10b981); color:white; font-weight:800; font-size:0.9rem; padding:0.75rem 0.5rem; border-radius:12px;">🔤 영문법 퀘스트 실행 ↗</a>
           <button class="btn" style="flex:0.8; background: rgba(255,255,255,0.06); color:var(--text-muted); font-size:0.8rem; border-radius:12px;" onclick="window.open('/docs#/AI%20영문법%20퀘스트','_blank')">📖 API</button>
+        </div>
+      </div>
+
+      <!-- 16. AI 실생활 활용 실전 가이드 (스마트폰 & PC 실습 교재) -->
+      <div class="card" style="cursor:pointer;" onclick="if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('/ai_guide/','_blank')">
+        <div>
+          <div class="card-top"><span class="icon">📘</span><span class="badge" style="background:rgba(59,130,246,0.15); color:#60a5fa;">34.31.10.12:9000/ai_guide</span></div>
+          <h3>AI 실생활 활용 실전 가이드</h3>
+          <p>스마트폰 카메라 사진 1장 루틴부터 제미나이 라이브, Gems 비서, NotebookLM, 캔버스 미니툴까지 18가지 실습 교재입니다.</p>
+          <div class="tags"><span class="tag">스마트폰 사진 루틴</span><span class="tag">제미나이 라이브</span><span class="tag">나만의 Gems 비서</span><span class="tag">NotebookLM 지식베이스</span><span class="tag">Canvas 미니툴</span><span class="tag">PDF 인쇄 지원</span></div>
+        </div>
+        <div class="actions" style="display:flex; gap:0.5rem;">
+          <a href="/ai_guide/" target="_blank" class="btn-main" style="flex:1.4; text-align:center; text-decoration:none; background: linear-gradient(135deg, #2563eb, #7c3aed); color:white; font-weight:800; font-size:0.9rem; padding:0.75rem 0.5rem; border-radius:12px;">📘 실습 교재 열기 ↗</a>
+          <button class="btn" style="flex:0.8; background: rgba(255,255,255,0.06); color:var(--text-muted); font-size:0.8rem; border-radius:12px;" onclick="window.open('/ai_guide/manual.html','_blank')">🖨️ PDF/인쇄</button>
         </div>
       </div>
 
