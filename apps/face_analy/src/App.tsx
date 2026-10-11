@@ -20,8 +20,12 @@ import {
   Download,
   Copy,
   Eye,
-  Layers,
-  Sparkle
+  Sliders,
+  ChevronUp,
+  ChevronDown,
+  RotateCcw,
+  ZoomIn,
+  ZoomOut
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactCrop, { type Crop, type PixelCrop } from 'react-image-crop';
@@ -32,7 +36,9 @@ import {
   AnalysisResult, 
   generateHairPreview, 
   HAIRSTYLE_PRESETS, 
-  HairStyleOption 
+  HairStyleOption,
+  HairFittingParams,
+  DEFAULT_FITTING_PARAMS
 } from './services/gemini';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -68,6 +74,15 @@ export default function App() {
   const [hairError, setHairError] = useState<string | null>(null);
   const [showOriginal, setShowOriginal] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
+
+  // 맞춤 두상 피팅 파라미터 (위치, 크기, 투명도 조절)
+  const [fittingParams, setFittingParams] = useState<HairFittingParams>({
+    offsetY: -10, // 머리 윗부분에 자연스럽게 얹어지도록 상향 조정
+    scaleX: 0.76, // 두상 너비에 맞게 슬림화
+    scaleY: 0.76, // 이마를 과도하게 덮지 않도록 기장 최적화
+    opacity: 0.88,
+  });
+  const [showSliders, setShowSliders] = useState(false);
 
   // Check if current page is on HTTPS or localhost
   const isSecureOrigin =
@@ -222,7 +237,7 @@ export default function App() {
       // 분석 완료 즉시 맞춤 추천 헤어스타일 1차 자동 생성
       const defaultStyle = res.type === 'TETO' ? 'slick_dandy' : 'soft_asche';
       setSelectedStyleId(defaultStyle);
-      applyHairStyle(targetImage, defaultStyle);
+      applyHairStyle(targetImage, defaultStyle, fittingParams);
     } catch (err: any) {
       console.error(err);
       setError('분석 중 오류가 발생했습니다. 다시 촬영하여 시도해주세요.');
@@ -232,11 +247,15 @@ export default function App() {
   };
 
   // 헤어스타일 변경 렌더링
-  const applyHairStyle = async (faceImg: string, styleId: string) => {
+  const applyHairStyle = async (
+    faceImg: string, 
+    styleId: string, 
+    customParams?: HairFittingParams
+  ) => {
     setIsGeneratingHair(true);
     setHairError(null);
     try {
-      const preview = await generateHairPreview(faceImg, styleId);
+      const preview = await generateHairPreview(faceImg, styleId, customParams || fittingParams);
       setHairPreview(preview);
     } catch (err: any) {
       console.error(err);
@@ -249,7 +268,39 @@ export default function App() {
   const handleSelectStyle = (styleId: string) => {
     if (!image) return;
     setSelectedStyleId(styleId);
-    applyHairStyle(image, styleId);
+    applyHairStyle(image, styleId, fittingParams);
+  };
+
+  // 피팅 파라미터 간편 넛지 (올리기/내리기/키우기/줄이기)
+  const handleNudge = (deltaY: number, deltaScale: number) => {
+    if (!image) return;
+    const newParams: HairFittingParams = {
+      ...fittingParams,
+      offsetY: Math.max(-30, Math.min(25, fittingParams.offsetY + deltaY)),
+      scaleX: Math.max(0.45, Math.min(1.3, Number((fittingParams.scaleX + deltaScale).toFixed(2)))),
+      scaleY: Math.max(0.45, Math.min(1.3, Number((fittingParams.scaleY + deltaScale).toFixed(2)))),
+    };
+    setFittingParams(newParams);
+    applyHairStyle(image, selectedStyleId, newParams);
+  };
+
+  const handleParamChange = (key: keyof HairFittingParams, value: number) => {
+    if (!image) return;
+    const newParams = { ...fittingParams, [key]: value };
+    setFittingParams(newParams);
+    applyHairStyle(image, selectedStyleId, newParams);
+  };
+
+  const handleResetFitting = () => {
+    if (!image) return;
+    const resetP: HairFittingParams = {
+      offsetY: -10,
+      scaleX: 0.76,
+      scaleY: 0.76,
+      opacity: 0.88,
+    };
+    setFittingParams(resetP);
+    applyHairStyle(image, selectedStyleId, resetP);
   };
 
   const handleCopyPrompt = (text: string) => {
@@ -790,6 +841,119 @@ export default function App() {
                   );
                 })}
               </div>
+
+              {/* 🎯 두상 맞춤 피팅 조절 툴바 (위치 올리기/내리기, 크기 키우기/줄이기) */}
+              <div className="p-3 bg-white rounded-2xl border border-gray-200/80 shadow-sm space-y-2">
+                <div className="flex items-center justify-between text-[11px] font-bold text-gray-700">
+                  <span className="flex items-center gap-1">
+                    <span>🎯 두상 맞춤 조절:</span>
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowSliders(!showSliders)}
+                      className="px-2 py-0.5 rounded text-[10px] bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-semibold flex items-center gap-1"
+                    >
+                      <Sliders className="w-3 h-3" />
+                      <span>{showSliders ? '슬라이더 닫기' : '정밀 슬라이더'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleResetFitting}
+                      className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                      title="피팅 초기화"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* 퀵 액션 버튼 4개 (원터치 넛지) */}
+                <div className="grid grid-cols-4 gap-1.5 text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => handleNudge(-4, 0)}
+                    className="py-1.5 px-2 bg-gray-50 hover:bg-indigo-50 text-gray-700 hover:text-indigo-600 border border-gray-200 rounded-xl font-bold flex items-center justify-center gap-1 active:scale-95 transition-all"
+                    title="헤어를 위로 올립니다"
+                  >
+                    <ChevronUp className="w-3.5 h-3.5" />
+                    <span>올리기</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleNudge(4, 0)}
+                    className="py-1.5 px-2 bg-gray-50 hover:bg-indigo-50 text-gray-700 hover:text-indigo-600 border border-gray-200 rounded-xl font-bold flex items-center justify-center gap-1 active:scale-95 transition-all"
+                    title="헤어를 아래로 내립니다"
+                  >
+                    <ChevronDown className="w-3.5 h-3.5" />
+                    <span>내리기</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleNudge(0, -0.06)}
+                    className="py-1.5 px-2 bg-gray-50 hover:bg-indigo-50 text-gray-700 hover:text-indigo-600 border border-gray-200 rounded-xl font-bold flex items-center justify-center gap-1 active:scale-95 transition-all"
+                    title="헤어 크기를 줄입니다"
+                  >
+                    <ZoomOut className="w-3.5 h-3.5" />
+                    <span>작게</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleNudge(0, 0.06)}
+                    className="py-1.5 px-2 bg-gray-50 hover:bg-indigo-50 text-gray-700 hover:text-indigo-600 border border-gray-200 rounded-xl font-bold flex items-center justify-center gap-1 active:scale-95 transition-all"
+                    title="헤어 크기를 키웁니다"
+                  >
+                    <ZoomIn className="w-3.5 h-3.5" />
+                    <span>크게</span>
+                  </button>
+                </div>
+
+                {/* 정밀 슬라이더 패널 (토글 시 노출) */}
+                {showSliders && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="pt-2 border-t border-gray-100 space-y-2 text-[10px]"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-500">↕️ 이마/정수리 높이 ({fittingParams.offsetY}%)</span>
+                      <input 
+                        type="range" 
+                        min="-28" 
+                        max="20" 
+                        step="2"
+                        value={fittingParams.offsetY} 
+                        onChange={(e) => handleParamChange('offsetY', Number(e.target.value))}
+                        className="w-32 accent-indigo-600"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-500">↔️ 두상 너비 ({Math.round(fittingParams.scaleX * 100)}%)</span>
+                      <input 
+                        type="range" 
+                        min="0.5" 
+                        max="1.25" 
+                        step="0.05"
+                        value={fittingParams.scaleX} 
+                        onChange={(e) => handleParamChange('scaleX', Number(e.target.value))}
+                        className="w-32 accent-indigo-600"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-500">🌫️ 모발 투명도 ({Math.round(fittingParams.opacity * 100)}%)</span>
+                      <input 
+                        type="range" 
+                        min="0.4" 
+                        max="1.0" 
+                        step="0.05"
+                        value={fittingParams.opacity} 
+                        onChange={(e) => handleParamChange('opacity', Number(e.target.value))}
+                        className="w-32 accent-indigo-600"
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </div>
               
               {/* Image Preview Box with Controls */}
               <div className="relative aspect-[3/4] rounded-3xl overflow-hidden glass bg-gray-100 group border border-gray-200/60 shadow-lg">
@@ -849,7 +1013,7 @@ export default function App() {
                       상단의 스타일 버튼을 눌러<br />원하는 헤어를 피팅해보세요!
                     </p>
                     <button 
-                      onClick={() => applyHairStyle(image, selectedStyleId)}
+                      onClick={() => applyHairStyle(image, selectedStyleId, fittingParams)}
                       className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-xs hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 active:scale-95"
                     >
                       헤어스타일 적용하기
@@ -862,7 +1026,7 @@ export default function App() {
                     <AlertCircle className="w-8 h-8 text-red-500 mb-2" />
                     <p className="text-red-600 text-xs font-medium">{hairError}</p>
                     <button 
-                      onClick={() => applyHairStyle(image, selectedStyleId)}
+                      onClick={() => applyHairStyle(image, selectedStyleId, fittingParams)}
                       className="mt-3 text-xs font-bold text-red-600 underline"
                     >
                       다시 시도
@@ -875,8 +1039,16 @@ export default function App() {
               {currentStyle && (
                 <div className="p-4 bg-white rounded-2xl border border-gray-200/80 shadow-sm space-y-2.5 text-xs">
                   <div>
-                    <span className="font-bold text-gray-900 block mb-0.5">💡 {currentStyle.name} 스타일링 팁</span>
-                    <p className="text-gray-500 leading-relaxed text-[11px]">{currentStyle.desc}</p>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-gray-900">💡 {currentStyle.name} 가이드</span>
+                      <span className="text-[10px] text-indigo-600 font-semibold bg-indigo-50 px-2 py-0.5 rounded-full">
+                        손질 난이도: {currentStyle.difficulty}
+                      </span>
+                    </div>
+                    <p className="text-gray-500 leading-relaxed text-[11px] mb-1">{currentStyle.desc}</p>
+                    <div className="flex items-center gap-2 text-[10px] text-gray-400">
+                      <span>📏 추천 기장: {currentStyle.hairLength}</span>
+                    </div>
                   </div>
 
                   <div className="pt-2 border-t border-gray-100">

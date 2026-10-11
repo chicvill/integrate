@@ -1,4 +1,10 @@
-import { renderStyledHair, HAIRSTYLE_PRESETS, HairStyleOption } from './hairStyler';
+import { 
+  renderStyledHair, 
+  HAIRSTYLE_PRESETS, 
+  HairStyleOption, 
+  HairFittingParams, 
+  DEFAULT_FITTING_PARAMS 
+} from './hairStyler';
 
 export interface HairOption {
   id: string;
@@ -68,9 +74,13 @@ export async function analyzeFace(base64Image: string): Promise<AnalysisResult> 
   };
 }
 
-export async function generateHairPreview(base64Image: string, styleId: string): Promise<string> {
-  return renderStyledHair(base64Image, styleId);
+export async function generateHairPreview(
+  base64Image: string, 
+  styleId: string,
+  params?: Partial<HairFittingParams>
+): Promise<string> {
+  return renderStyledHair(base64Image, styleId, params);
 }
 
-export { HAIRSTYLE_PRESETS };
-export type { HairStyleOption };
+export { HAIRSTYLE_PRESETS, DEFAULT_FITTING_PARAMS };
+export type { HairStyleOption, HairFittingParams };

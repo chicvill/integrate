@@ -23,8 +23,8 @@ echo "Gateway Container Restarted!"
 
 $remoteScript = "$ProjectRoot\deploy_face_remote.sh"
 [System.IO.File]::WriteAllText($remoteScript, $remoteCmd, [System.Text.Encoding]::ASCII)
-gcloud compute scp $remoteScript "integrated:~/deploy_face_remote.sh" --zone=us-central1-a
-gcloud compute ssh integrated --zone=us-central1-a --command "bash ~/deploy_face_remote.sh"
+gcloud compute scp $remoteScript "integrated:deploy_face_remote.sh" --zone=us-central1-a
+gcloud compute ssh integrated --zone=us-central1-a --command "bash ~/deploy_face_remote.sh && rm -f ~/deploy_face_remote.sh"
 
 if (Test-Path $TarFile) {
     Remove-Item $TarFile -Force
