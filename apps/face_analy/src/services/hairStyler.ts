@@ -1,23 +1,56 @@
 /**
  * apps/face_analy/src/services/hairStyler.ts
- * HTML5 Canvas 기반 가상 헤어스타일 렌더러 & 살롱 스타일링 엔진.
- * 두상 크기와 이마 높이에 맞춘 실시간 크기/위치 조절(Scale, Offset) 및
- * 부드러운 모발 텍스처(Feathering, Multi-strand, Soft Alpha)를 지원합니다.
+ * HTML5 Canvas 기반 가상 토탈 메이크오버 스튜디오 (헤어 피팅 + 퍼스널 메이크업 컨트롤러).
+ * 두상 크기/위치 조절, 모발 텍스처 페더링, 립 틴트, 치크 블러셔, 피부 톤업, 눈매 음영을 실시간 합성합니다.
  */
 
 export interface HairFittingParams {
-  offsetY: number; // 상하 위치 조절 (-30 ~ +30, 기본값: -6)
-  scaleX: number;  // 너비/두상 크기 조절 (0.5 ~ 1.3, 기본값: 0.8)
-  scaleY: number;  // 기장/길이 조절 (0.5 ~ 1.3, 기본값: 0.8)
-  opacity: number; // 모발 투명도/농도 (0.4 ~ 1.0, 기본값: 0.85)
+  offsetY: number; // 상하 위치 조절 (-30 ~ +30, 기본값: -10)
+  scaleX: number;  // 너비/두상 크기 조절 (0.5 ~ 1.3, 기본값: 0.76)
+  scaleY: number;  // 기장/길이 조절 (0.5 ~ 1.3, 기본값: 0.76)
+  opacity: number; // 모발 투명도/농도 (0.4 ~ 1.0, 기본값: 0.88)
 }
 
 export const DEFAULT_FITTING_PARAMS: HairFittingParams = {
-  offsetY: -6,
-  scaleX: 0.82,
-  scaleY: 0.82,
+  offsetY: -10,
+  scaleX: 0.76,
+  scaleY: 0.76,
   opacity: 0.88,
 };
+
+export interface MakeupParams {
+  skinTone: number;       // 0 ~ 100 (피부결 정돈 & 톤업 필터)
+  lipColor: 'coral' | 'rose' | 'red' | 'nude' | 'none'; // 립 틴트 컬러
+  lipIntensity: number;   // 0 ~ 100 (립 발색 농도)
+  blusherColor: 'peach' | 'pink' | 'contour' | 'none';  // 치크 블러셔 컬러
+  blusherIntensity: number; // 0 ~ 100 (치크 생기 농도)
+  eyeShading: number;     // 0 ~ 100 (눈매 음영 깊이)
+}
+
+export const DEFAULT_MAKEUP_TETO: MakeupParams = {
+  skinTone: 45,
+  lipColor: 'rose',
+  lipIntensity: 65,
+  blusherColor: 'contour',
+  blusherIntensity: 45,
+  eyeShading: 60,
+};
+
+export const DEFAULT_MAKEUP_EGEN: MakeupParams = {
+  skinTone: 55,
+  lipColor: 'coral',
+  lipIntensity: 70,
+  blusherColor: 'peach',
+  blusherIntensity: 60,
+  eyeShading: 30,
+};
+
+export interface MakeoverConfig {
+  styleId: string;
+  customHairColor?: string;
+  fittingParams?: HairFittingParams;
+  makeupParams?: MakeupParams;
+}
 
 export interface HairStyleOption {
   id: string;
@@ -111,19 +144,23 @@ export const HAIRSTYLE_PRESETS: HairStyleOption[] = [
 ];
 
 /**
- * 캔버스에 가상 헤어스타일 및 컬러 필터, 살롱 워터마크를 합성하여 고해상도 Data URL을 반환
+ * 캔버스에 가상 토탈 메이크오버 (피부 보정, 메이크업, 헤어스타일, 살롱 워터마크) 렌더링
  */
-export async function renderStyledHair(
+export async function renderTotalMakeover(
   base64Image: string,
-  styleId: string,
-  customParams?: Partial<HairFittingParams>
+  config: MakeoverConfig
 ): Promise<string> {
   const selectedStyle =
-    HAIRSTYLE_PRESETS.find((s) => s.id === styleId) || HAIRSTYLE_PRESETS[0];
+    HAIRSTYLE_PRESETS.find((s) => s.id === config.styleId) || HAIRSTYLE_PRESETS[0];
 
-  const params: HairFittingParams = {
+  const fitParams: HairFittingParams = {
     ...DEFAULT_FITTING_PARAMS,
-    ...(customParams || {}),
+    ...(config.fittingParams || {}),
+  };
+
+  const makeup: MakeupParams = {
+    ...(selectedStyle.category === 'TETO' ? DEFAULT_MAKEUP_TETO : DEFAULT_MAKEUP_EGEN),
+    ...(config.makeupParams || {}),
   };
 
   return new Promise((resolve) => {
@@ -145,24 +182,53 @@ export async function renderStyledHair(
       // 1. 원본 사진 렌더링
       ctx.drawImage(img, 0, 0, width, height);
 
-      // 2. 살롱 조명 & 부드러운 분위기 필터 (자연스러운 틴팅)
+      // 2. 가상 메이크업 1단계: 피부 톤업 및 결 정돈
+      if (makeup.skinTone > 0) {
+        ctx.save();
+        applySkinToneFilter(ctx, width, height, makeup.skinTone, selectedStyle.category);
+        ctx.restore();
+      }
+
+      // 3. 가상 메이크업 2단계: 아이섀도우 / 눈매 음영
+      if (makeup.eyeShading > 0) {
+        ctx.save();
+        applyEyeContour(ctx, width, height, makeup.eyeShading, selectedStyle.category);
+        ctx.restore();
+      }
+
+      // 4. 가상 메이크업 3단계: 치크 블러셔
+      if (makeup.blusherColor !== 'none' && makeup.blusherIntensity > 0) {
+        ctx.save();
+        applyBlusher(ctx, width, height, makeup.blusherColor, makeup.blusherIntensity);
+        ctx.restore();
+      }
+
+      // 5. 가상 메이크업 4단계: 립 틴트 메이크업
+      if (makeup.lipColor !== 'none' && makeup.lipIntensity > 0) {
+        ctx.save();
+        applyLipTint(ctx, width, height, makeup.lipColor, makeup.lipIntensity);
+        ctx.restore();
+      }
+
+      // 6. 살롱 조명 & 부드러운 분위기 필터
       ctx.save();
       applySalonLighting(ctx, width, height, selectedStyle);
       ctx.restore();
 
-      // 3. 모발 텍스처 렌더링 (파라미터 기반 크기, 위치, 소프트 페더링 적용)
+      // 7. 모발 텍스처 렌더링 (파라미터 기반 크기, 위치, 소프트 페더링 적용)
       ctx.save();
-      drawNaturalHairstyle(ctx, width, height, selectedStyle, params);
+      const hairColor = config.customHairColor || selectedStyle.colorHex;
+      drawNaturalHairstyle(ctx, width, height, selectedStyle, fitParams, hairColor);
       ctx.restore();
 
-      // 4. 프리미엄 살롱 엠블럼 & 워터마크 카드 (하단)
-      drawSalonEmblem(ctx, width, height, selectedStyle);
+      // 8. 프리미엄 살롱 엠블럼 & 워터마크 카드 (하단)
+      drawSalonEmblem(ctx, width, height, selectedStyle, makeup);
 
       resolve(canvas.toDataURL('image/jpeg', 0.92));
     };
 
     img.onerror = (e) => {
-      console.error('Failed to load image for hair rendering:', e);
+      console.error('Failed to load image for total makeover rendering:', e);
       resolve(base64Image);
     };
 
@@ -171,7 +237,202 @@ export async function renderStyledHair(
 }
 
 /**
- * 살롱 조명 & 비네팅 효과 (자연스러운 톤 매칭)
+ * 하위 호환용 래퍼 함수
+ */
+export async function renderStyledHair(
+  base64Image: string,
+  styleId: string,
+  customParams?: Partial<HairFittingParams>
+): Promise<string> {
+  return renderTotalMakeover(base64Image, {
+    styleId,
+    fittingParams: customParams ? { ...DEFAULT_FITTING_PARAMS, ...customParams } : undefined,
+  });
+}
+
+// ─── 💄 메이크업 레이어 렌더링 함수들 ──────────────────────────────
+
+/**
+ * 1. 피부 톤업 및 소프트 스킨 결 정돈 필터
+ */
+function applySkinToneFilter(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  intensity: number,
+  category: 'TETO' | 'EGEN' | 'ALL'
+) {
+  const alpha = (intensity / 100) * 0.35;
+  const cx = w * 0.5;
+  const cy = h * 0.52;
+
+  // 얼굴 중심 타원형 화사한 톤업 글로우
+  ctx.save();
+  ctx.globalCompositeOperation = 'soft-light';
+  const glow = ctx.createRadialGradient(cx, cy, w * 0.15, cx, cy, w * 0.45);
+  if (category === 'TETO') {
+    glow.addColorStop(0, `rgba(255, 250, 245, ${alpha * 1.2})`);
+    glow.addColorStop(1, 'rgba(230, 235, 245, 0)');
+  } else {
+    glow.addColorStop(0, `rgba(255, 240, 235, ${alpha * 1.3})`);
+    glow.addColorStop(1, 'rgba(255, 230, 220, 0)');
+  }
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, w * 0.38, h * 0.38, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 매끄러운 피부결을 위한 미세 소프트 블러 오버레이
+  ctx.globalCompositeOperation = 'lighter';
+  const softGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, w * 0.35);
+  softGrad.addColorStop(0, `rgba(255, 255, 255, ${alpha * 0.22})`);
+  softGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = softGrad;
+  ctx.fillRect(0, 0, w, h);
+  ctx.restore();
+}
+
+/**
+ * 2. 아이섀도우 & 눈매 음영 컨투어링
+ */
+function applyEyeContour(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  intensity: number,
+  category: 'TETO' | 'EGEN' | 'ALL'
+) {
+  const alpha = (intensity / 100) * 0.32;
+  const leftEyeX = w * 0.37;
+  const rightEyeX = w * 0.63;
+  const eyeY = h * 0.44;
+  const eyeRadius = w * 0.11;
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'multiply';
+
+  const shadeColor = category === 'TETO' ? 'rgba(75, 55, 50, ' : 'rgba(100, 65, 55, ';
+
+  // 좌측 눈매 음영
+  const leftGrad = ctx.createRadialGradient(leftEyeX, eyeY, eyeRadius * 0.2, leftEyeX, eyeY, eyeRadius);
+  leftGrad.addColorStop(0, `${shadeColor}${alpha})`);
+  leftGrad.addColorStop(0.7, `${shadeColor}${alpha * 0.4})`);
+  leftGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = leftGrad;
+  ctx.beginPath();
+  ctx.ellipse(leftEyeX, eyeY, eyeRadius, eyeRadius * 0.55, -0.05, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 우측 눈매 음영
+  const rightGrad = ctx.createRadialGradient(rightEyeX, eyeY, eyeRadius * 0.2, rightEyeX, eyeY, eyeRadius);
+  rightGrad.addColorStop(0, `${shadeColor}${alpha})`);
+  rightGrad.addColorStop(0.7, `${shadeColor}${alpha * 0.4})`);
+  rightGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = rightGrad;
+  ctx.beginPath();
+  ctx.ellipse(rightEyeX, eyeY, eyeRadius, eyeRadius * 0.55, 0.05, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+/**
+ * 3. 양 볼 치크 블러셔 (생기 & 컨투어링)
+ */
+function applyBlusher(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  colorType: 'peach' | 'pink' | 'contour' | 'none',
+  intensity: number
+) {
+  const alpha = (intensity / 100) * 0.42;
+  const leftCheekX = w * 0.33;
+  const rightCheekX = w * 0.67;
+  const cheekY = h * 0.54;
+  const cheekRadius = w * 0.14;
+
+  let rgb = '255, 145, 115'; // peach
+  if (colorType === 'pink') rgb = '255, 120, 160';
+  if (colorType === 'contour') rgb = '165, 110, 85';
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'soft-light';
+
+  // 좌측 볼 치크
+  const leftGrad = ctx.createRadialGradient(leftCheekX, cheekY, cheekRadius * 0.1, leftCheekX, cheekY, cheekRadius);
+  leftGrad.addColorStop(0, `rgba(${rgb}, ${alpha * 1.2})`);
+  leftGrad.addColorStop(0.7, `rgba(${rgb}, ${alpha * 0.4})`);
+  leftGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = leftGrad;
+  ctx.beginPath();
+  ctx.ellipse(leftCheekX, cheekY, cheekRadius, cheekRadius * 0.68, 0.12, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 우측 볼 치크
+  const rightGrad = ctx.createRadialGradient(rightCheekX, cheekY, cheekRadius * 0.1, rightCheekX, cheekY, cheekRadius);
+  rightGrad.addColorStop(0, `rgba(${rgb}, ${alpha * 1.2})`);
+  rightGrad.addColorStop(0.7, `rgba(${rgb}, ${alpha * 0.4})`);
+  rightGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = rightGrad;
+  ctx.beginPath();
+  ctx.ellipse(rightCheekX, cheekY, cheekRadius, cheekRadius * 0.68, -0.12, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+/**
+ * 4. 입술 립 틴트 메이크업 (자연스러운 혈색 그라데이션)
+ */
+function applyLipTint(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  colorType: 'coral' | 'rose' | 'red' | 'nude' | 'none',
+  intensity: number
+) {
+  const alpha = (intensity / 100) * 0.55;
+  const mouthX = w * 0.5;
+  const mouthY = h * 0.71;
+  const lipWidth = w * 0.13;
+  const lipHeight = h * 0.048;
+
+  let rgb = '245, 105, 95'; // coral
+  if (colorType === 'rose') rgb = '205, 65, 95';
+  if (colorType === 'red') rgb = '220, 38, 38';
+  if (colorType === 'nude') rgb = '195, 125, 105';
+
+  ctx.save();
+  // 입술 형태에 맞춘 타원형 그라데이션 틴팅
+  ctx.globalCompositeOperation = 'color';
+  const lipGrad = ctx.createRadialGradient(mouthX, mouthY, lipWidth * 0.15, mouthX, mouthY, lipWidth);
+  lipGrad.addColorStop(0, `rgba(${rgb}, ${alpha * 1.3})`);
+  lipGrad.addColorStop(0.65, `rgba(${rgb}, ${alpha * 0.65})`);
+  lipGrad.addColorStop(1, 'rgba(0,0,0,0)');
+
+  ctx.fillStyle = lipGrad;
+  ctx.beginPath();
+  ctx.ellipse(mouthX, mouthY, lipWidth, lipHeight, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 입술 중앙 생기 글로우 하이라이트
+  ctx.globalCompositeOperation = 'soft-light';
+  const glowGrad = ctx.createRadialGradient(mouthX, mouthY, 2, mouthX, mouthY, lipWidth * 0.7);
+  glowGrad.addColorStop(0, `rgba(${rgb}, ${alpha * 0.9})`);
+  glowGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = glowGrad;
+  ctx.beginPath();
+  ctx.ellipse(mouthX, mouthY, lipWidth * 0.75, lipHeight * 0.6, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+// ─── 💇 헤어스타일 렌더링 함수들 ──────────────────────────────
+
+/**
+ * 살롱 조명 & 비네팅 효과
  */
 function applySalonLighting(
   ctx: CanvasRenderingContext2D,
@@ -180,50 +441,44 @@ function applySalonLighting(
   style: HairStyleOption
 ) {
   if (style.category === 'TETO') {
-    // 테토: 세련되고 쿨한 콘트라스트 & 소프트 비네팅
     const vigGrad = ctx.createRadialGradient(w / 2, h / 2, w * 0.4, w / 2, h / 2, w * 0.85);
     vigGrad.addColorStop(0, 'rgba(0,0,0,0)');
-    vigGrad.addColorStop(1, 'rgba(15, 23, 42, 0.28)');
+    vigGrad.addColorStop(1, 'rgba(15, 23, 42, 0.22)');
     ctx.fillStyle = vigGrad;
     ctx.fillRect(0, 0, w, h);
   } else {
-    // 에겐: 화사하고 따뜻한 소프트 글로우 틴팅
     const glowGrad = ctx.createRadialGradient(w / 2, h * 0.35, w * 0.15, w / 2, h * 0.35, w * 0.75);
     glowGrad.addColorStop(0, 'rgba(255, 248, 240, 0.08)');
-    glowGrad.addColorStop(1, 'rgba(60, 40, 30, 0.18)');
+    glowGrad.addColorStop(1, 'rgba(60, 40, 30, 0.14)');
     ctx.fillStyle = glowGrad;
     ctx.fillRect(0, 0, w, h);
   }
 }
 
 /**
- * 자연스러운 모발 렌더링 (하드한 단색 폴리곤 제거, 부드러운 페더링 및 레이어드 스트랜드 적용)
+ * 자연스러운 모발 렌더링
  */
 function drawNaturalHairstyle(
   ctx: CanvasRenderingContext2D,
   w: number,
   h: number,
   style: HairStyleOption,
-  params: HairFittingParams
+  params: HairFittingParams,
+  hairColor: string
 ) {
   const { offsetY, scaleX, scaleY, opacity } = params;
 
-  // 기준 중심점 (얼굴 중앙 상단)
   const cx = w * 0.5;
-  // 기본 헤어라인 높이 (이마 상단 기준) + 사용자 Y 오프셋 반영
   const baseHairlineY = h * 0.22 + (offsetY / 100) * h;
   const crownY = Math.max(0, baseHairlineY - h * 0.20 * scaleY);
 
-  // 두상 너비 (scaleX 반영)
   const halfWidth = w * 0.34 * scaleX;
-  const leftX = cx - halfWidth;
-  const rightX = cx + halfWidth;
 
   ctx.globalAlpha = Math.min(1, Math.max(0.3, opacity));
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
-  // ── 1. 정수리 & 사이드 볼륨 베이스 (소프트 그라데이션) ──
+  // 1. 정수리 & 사이드 볼륨 베이스 (소프트 그라데이션)
   ctx.save();
   const baseGrad = ctx.createRadialGradient(
     cx,
@@ -233,14 +488,13 @@ function drawNaturalHairstyle(
     crownY + (baseHairlineY - crownY) * 0.4,
     halfWidth * 1.15
   );
-  baseGrad.addColorStop(0, style.colorHex);
-  baseGrad.addColorStop(0.7, hexToRgba(style.colorHex, 0.82));
-  baseGrad.addColorStop(0.95, hexToRgba(style.colorHex, 0.3));
+  baseGrad.addColorStop(0, hairColor);
+  baseGrad.addColorStop(0.7, hexToRgba(hairColor, 0.82));
+  baseGrad.addColorStop(0.95, hexToRgba(hairColor, 0.3));
   baseGrad.addColorStop(1, 'rgba(0,0,0,0)');
 
   ctx.fillStyle = baseGrad;
   ctx.beginPath();
-  // 정수리 둥근 볼륨 돔
   ctx.ellipse(
     cx,
     (crownY + baseHairlineY) * 0.5,
@@ -253,30 +507,27 @@ function drawNaturalHairstyle(
   ctx.fill();
   ctx.restore();
 
-  // ── 2. 스타일별 정교한 앞머리 텍스처 & 가닥 렌더링 ──
+  // 2. 스타일별 정교한 앞머리 텍스처
   ctx.save();
   if (style.id === 'slick_dandy') {
-    renderSlickDandyBangs(ctx, cx, baseHairlineY, crownY, halfWidth, style.colorHex, scaleY);
+    renderSlickDandyBangs(ctx, cx, baseHairlineY, crownY, halfWidth, hairColor, scaleY);
   } else if (style.id === 'guile_cut') {
-    renderGuileBangs(ctx, cx, baseHairlineY, crownY, halfWidth, style.colorHex, scaleY);
+    renderGuileBangs(ctx, cx, baseHairlineY, crownY, halfWidth, hairColor, scaleY);
   } else if (style.id === 'soft_asche') {
-    renderSoftAscheBangs(ctx, cx, baseHairlineY, crownY, halfWidth, style.colorHex, scaleY);
+    renderSoftAscheBangs(ctx, cx, baseHairlineY, crownY, halfWidth, hairColor, scaleY);
   } else if (style.id === 'shadow_volume') {
-    renderShadowVolumeBangs(ctx, cx, baseHairlineY, crownY, halfWidth, style.colorHex, scaleY);
+    renderShadowVolumeBangs(ctx, cx, baseHairlineY, crownY, halfWidth, hairColor, scaleY);
   } else if (style.id === 'tassel_cut') {
-    renderTasselCutBangs(ctx, cx, baseHairlineY, crownY, halfWidth, style.colorHex, scaleY);
+    renderTasselCutBangs(ctx, cx, baseHairlineY, crownY, halfWidth, hairColor, scaleY);
   } else {
-    renderRomanticWaveBangs(ctx, cx, baseHairlineY, crownY, halfWidth, style.colorHex, scaleY);
+    renderRomanticWaveBangs(ctx, cx, baseHairlineY, crownY, halfWidth, hairColor, scaleY);
   }
   ctx.restore();
 
-  // ── 3. 자연스러운 모발 스트랜드 및 하이라이트 레이어 ──
-  renderHairHighlights(ctx, cx, crownY, baseHairlineY, halfWidth, style.colorHex);
+  // 3. 은은한 모발 스트랜드 하이라이트
+  renderHairHighlights(ctx, cx, crownY, baseHairlineY, halfWidth, hairColor);
 }
 
-/**
- * 1. 슬릭 댄디컷: 가볍게 한쪽으로 흐르는 시스루 슬릭 질감
- */
 function renderSlickDandyBangs(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -289,20 +540,16 @@ function renderSlickDandyBangs(
   const bangLength = (baseY - crownY) * 0.38 * scaleY;
   const numStrands = 28;
 
-  // 사이드 헤어 다운펌 밀착 라인
   ctx.fillStyle = hexToRgba(color, 0.65);
   ctx.beginPath();
   ctx.ellipse(cx - hw * 0.85, baseY, hw * 0.22, bangLength * 1.1, 0.15, 0, Math.PI * 2);
   ctx.ellipse(cx + hw * 0.85, baseY, hw * 0.22, bangLength * 1.1, -0.15, 0, Math.PI * 2);
   ctx.fill();
 
-  // 슬릭 앞머리 스트랜드 (시스루하게 이마가 자연스럽게 비침)
   for (let i = 0; i < numStrands; i++) {
-    const t = (i / numStrands) * 2 - 1; // -1 to 1
+    const t = (i / numStrands) * 2 - 1;
     const sx = cx + t * hw * 0.72;
     const sy = baseY - bangLength * 0.25;
-
-    // 약간 좌측/우측으로 흐르는 곡선
     const endX = sx + hw * 0.08 * (t > 0 ? 1 : 0.6);
     const endY = baseY + bangLength * (0.8 + 0.2 * Math.sin(i));
 
@@ -320,9 +567,6 @@ function renderSlickDandyBangs(
   }
 }
 
-/**
- * 2. 가일컷 / 아이비리그: 한쪽 이마 시원하게 개방 (포마드 넘김)
- */
 function renderGuileBangs(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -334,7 +578,6 @@ function renderGuileBangs(
 ) {
   const bangLength = (baseY - crownY) * 0.35 * scaleY;
 
-  // 우측: 시원하게 뒤로 넘긴 포마드 (이마 시원하게 노출)
   for (let i = 0; i < 18; i++) {
     const sx = cx + (i / 18) * hw * 0.75;
     const sy = baseY - bangLength * 0.2;
@@ -349,7 +592,6 @@ function renderGuileBangs(
     ctx.stroke();
   }
 
-  // 좌측: 세련된 쉼표/가일 앞머리 곡선
   for (let i = 0; i < 16; i++) {
     const sx = cx - (i / 16) * hw * 0.65;
     const sy = baseY - bangLength * 0.1;
@@ -370,9 +612,6 @@ function renderGuileBangs(
   }
 }
 
-/**
- * 3. 소프트 애즈펌: 가운데가 자연스럽게 열린 부드러운 C컬
- */
 function renderSoftAscheBangs(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -385,7 +624,6 @@ function renderSoftAscheBangs(
   const bangLength = (baseY - crownY) * 0.42 * scaleY;
   const numStrands = 24;
 
-  // 좌측 C컬 날개 (중앙에서 바깥으로 둥글게 C컬)
   for (let i = 2; i < numStrands / 2; i++) {
     const t = i / (numStrands / 2);
     const sx = cx - t * hw * 0.65;
@@ -402,12 +640,10 @@ function renderSoftAscheBangs(
     ctx.lineWidth = 3.5 + (i % 2);
     ctx.beginPath();
     ctx.moveTo(sx, sy);
-    // C컬 곡선
     ctx.quadraticCurveTo(sx + hw * 0.05, sy + bangLength * 0.5, ex, ey);
     ctx.stroke();
   }
 
-  // 우측 C컬 날개 (중앙 애즈 틈 확보 후 바깥으로 C컬)
   for (let i = 2; i < numStrands / 2; i++) {
     const t = i / (numStrands / 2);
     const sx = cx + t * hw * 0.65;
@@ -424,15 +660,11 @@ function renderSoftAscheBangs(
     ctx.lineWidth = 3.5 + (i % 2);
     ctx.beginPath();
     ctx.moveTo(sx, sy);
-    // C컬 곡선
     ctx.quadraticCurveTo(sx - hw * 0.05, sy + bangLength * 0.5, ex, ey);
     ctx.stroke();
   }
 }
 
-/**
- * 4. 쉐도우 볼륨펌: 풍성하고 불규칙한 S컬 텍스처
- */
 function renderShadowVolumeBangs(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -450,7 +682,6 @@ function renderShadowVolumeBangs(
     const sx = cx + t * hw * 0.75;
     const sy = baseY - bangLength * 0.3;
 
-    // S컬 지그재그 곡선
     const cp1x = sx + (i % 2 === 0 ? 8 : -8);
     const cp1y = sy + bangLength * 0.35;
     const cp2x = sx - (i % 2 === 0 ? 8 : -8);
@@ -472,9 +703,6 @@ function renderShadowVolumeBangs(
   }
 }
 
-/**
- * 5. 테슬컷 / 스트레이트: 매끄럽고 곧게 떨어지는 라인
- */
 function renderTasselCutBangs(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -486,7 +714,6 @@ function renderTasselCutBangs(
 ) {
   const sideLength = (baseY - crownY) * 0.95 * scaleY;
 
-  // 양옆 뺨을 타고 일자로 곧게 떨어지는 태슬 가닥
   for (let s = -1; s <= 1; s += 2) {
     for (let i = 0; i < 12; i++) {
       const sx = cx + s * (hw * 0.72 + i * 2.5);
@@ -509,9 +736,6 @@ function renderTasselCutBangs(
   }
 }
 
-/**
- * 6. 로맨틱 웨이브 & 시스루 뱅: 가벼운 앞머리와 흐르는 볼륨
- */
 function renderRomanticWaveBangs(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -523,7 +747,6 @@ function renderRomanticWaveBangs(
 ) {
   const bangLength = (baseY - crownY) * 0.36 * scaleY;
 
-  // 가벼운 시스루 앞머리 (가닥 사이 간격을 넓혀 투명하게)
   for (let i = 0; i < 14; i++) {
     const t = (i / 14) * 2 - 1;
     const sx = cx + t * hw * 0.45;
@@ -544,7 +767,6 @@ function renderRomanticWaveBangs(
     ctx.stroke();
   }
 
-  // 양옆 S라인 웨이브
   for (let s = -1; s <= 1; s += 2) {
     for (let i = 0; i < 10; i++) {
       const sx = cx + s * (hw * 0.75 + i * 3);
@@ -562,9 +784,6 @@ function renderRomanticWaveBangs(
   }
 }
 
-/**
- * 은은한 정수리 볼륨 광택 및 하이라이트 레이어
- */
 function renderHairHighlights(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -577,7 +796,6 @@ function renderHairHighlights(
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
   ctx.lineWidth = 2;
 
-  // 정수리 곡선을 따라 흐르는 자연스러운 빛 반사선
   for (let i = -2; i <= 2; i++) {
     const yOffset = crownY + (baseY - crownY) * 0.35 + i * 6;
     ctx.beginPath();
@@ -588,18 +806,18 @@ function renderHairHighlights(
 }
 
 /**
- * 캔버스 하단 살롱 엠블럼 워터마크 카드
+ * 캔버스 하단 워터마크 카드
  */
 function drawSalonEmblem(
   ctx: CanvasRenderingContext2D,
   w: number,
   h: number,
-  style: HairStyleOption
+  style: HairStyleOption,
+  makeup?: MakeupParams
 ) {
   const cardHeight = Math.max(46, Math.round(h * 0.09));
   const cardY = h - cardHeight;
 
-  // 반투명 그라데이션 배경 바
   const barGrad = ctx.createLinearGradient(0, cardY, 0, h);
   barGrad.addColorStop(0, 'rgba(15, 23, 42, 0)');
   barGrad.addColorStop(0.4, 'rgba(15, 23, 42, 0.78)');
@@ -607,39 +825,32 @@ function drawSalonEmblem(
   ctx.fillStyle = barGrad;
   ctx.fillRect(0, cardY, w, cardHeight);
 
-  // 살롱 로고 & 스타일 텍스트
   const paddingX = Math.round(w * 0.05);
   const textY1 = cardY + cardHeight * 0.52;
   const textY2 = cardY + cardHeight * 0.84;
 
   ctx.textAlign = 'left';
 
-  // 1. 헤어스타일 명칭
   const fontSize1 = Math.max(13, Math.round(w * 0.036));
   ctx.font = `bold ${fontSize1}px Pretendard, system-ui, -apple-system, sans-serif`;
   ctx.fillStyle = '#ffffff';
   ctx.fillText(`✂️ ${style.name} (${style.colorName})`, paddingX, textY1);
 
-  // 2. 살롱 태그
   const fontSize2 = Math.max(10, Math.round(w * 0.023));
   ctx.font = `${fontSize2}px Pretendard, system-ui, -apple-system, sans-serif`;
   ctx.fillStyle = style.category === 'TETO' ? '#818cf8' : '#34d399';
-  ctx.fillText(
-    `MQ SALON AI STYLED • ${style.category === 'TETO' ? '테토 맞춤 슬릭 실루엣' : '에겐 맞춤 볼륨 실루엣'}`,
-    paddingX,
-    textY2
-  );
+  
+  const makeupDesc = makeup && makeup.lipColor !== 'none' 
+    ? `+ 퍼스널 립/치크 메이크업 (${makeup.lipColor})` 
+    : '가상 살롱 피팅';
+  ctx.fillText(`MQ TOTAL MAKEOVER • ${makeupDesc}`, paddingX, textY2);
 
-  // 우측 상단 워터마크 태그
   ctx.textAlign = 'right';
   ctx.font = `bold ${Math.max(9, Math.round(w * 0.021))}px sans-serif`;
   ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
-  ctx.fillText('VIRTUAL FITTING', w - paddingX, textY2);
+  ctx.fillText('AI MAKEOVER STUDIO', w - paddingX, textY2);
 }
 
-/**
- * Hex 색상을 rgba 문자열로 변환하는 헬퍼
- */
 function hexToRgba(hex: string, alpha: number): string {
   let c = hex.replace('#', '');
   if (c.length === 3) {

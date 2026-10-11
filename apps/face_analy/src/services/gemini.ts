@@ -1,9 +1,14 @@
 import { 
+  renderTotalMakeover,
   renderStyledHair, 
   HAIRSTYLE_PRESETS, 
   HairStyleOption, 
   HairFittingParams, 
-  DEFAULT_FITTING_PARAMS 
+  DEFAULT_FITTING_PARAMS,
+  MakeupParams,
+  DEFAULT_MAKEUP_TETO,
+  DEFAULT_MAKEUP_EGEN,
+  MakeoverConfig
 } from './hairStyler';
 
 export interface HairOption {
@@ -74,6 +79,13 @@ export async function analyzeFace(base64Image: string): Promise<AnalysisResult> 
   };
 }
 
+export async function generateMakeoverPreview(
+  base64Image: string,
+  config: MakeoverConfig
+): Promise<string> {
+  return renderTotalMakeover(base64Image, config);
+}
+
 export async function generateHairPreview(
   base64Image: string, 
   styleId: string,
@@ -82,5 +94,15 @@ export async function generateHairPreview(
   return renderStyledHair(base64Image, styleId, params);
 }
 
-export { HAIRSTYLE_PRESETS, DEFAULT_FITTING_PARAMS };
-export type { HairStyleOption, HairFittingParams };
+export { 
+  HAIRSTYLE_PRESETS, 
+  DEFAULT_FITTING_PARAMS, 
+  DEFAULT_MAKEUP_TETO, 
+  DEFAULT_MAKEUP_EGEN 
+};
+export type { 
+  HairStyleOption, 
+  HairFittingParams, 
+  MakeupParams, 
+  MakeoverConfig 
+};
