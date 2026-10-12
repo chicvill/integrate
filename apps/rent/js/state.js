@@ -5,9 +5,8 @@
  */
 
 import { apiGetRooms, apiGetExpenses, apiGetBranches, apiGetTenantHistories } from './api.js?v=2.0';
-import { CANONICAL_ROOMS_DATA } from './seed_data.js';
 
-export const STORAGE_KEY = "ONEROOM_DATA_STORE_29_V6";
+export const STORAGE_KEY = "ONEROOM_DATA_STORE_29_V5";
 export const AUTH_STORAGE_KEY = "RENT_ADMIN_AUTH_V1";
 
 export const ROOM_NUMBERS = [
@@ -143,23 +142,6 @@ if (urlParams.get('branch')) {
  * 백엔드 DB에서 전체 데이터 로드 (실패 시 localStorage 폴백)
  */
 export async function loadInitialData() {
-  // 캐시 마이그레이션: 과거 mock 데이터(-10 하드코딩) 제거 및 V6 갱신
-  try {
-    const vKey = "RENT_DATA_VERSION_V6";
-    if (localStorage.getItem(vKey) !== "20261012_CANONICAL_V6") {
-      console.log("🧹 구버전 캐시(-10 하드코딩) 정리 및 공인 실입금 장부 데이터 V6 갱신");
-      for (let i = localStorage.length - 1; i >= 0; i--) {
-        const k = localStorage.key(i);
-        if (k && (k.startsWith("ONEROOM_DATA_STORE") || k.startsWith("rent_system_"))) {
-          localStorage.removeItem(k);
-        }
-      }
-      localStorage.setItem(vKey, "20261012_CANONICAL_V6");
-    }
-  } catch (e) {
-    console.warn("localStorage version check skipped:", e);
-  }
-
   try {
     // 1. 백엔드 API 호출 시도
     const [roomsRes, expRes, branchRes, histRes] = await Promise.all([
@@ -301,9 +283,6 @@ export function evaluatePaymentRule({ year, month, inYear, inMonth, leaseType = 
 }
 
 export function generateDefaultSeedRooms() {
-  if (typeof CANONICAL_ROOMS_DATA !== 'undefined' && CANONICAL_ROOMS_DATA && Object.keys(CANONICAL_ROOMS_DATA).length > 0) {
-    return JSON.parse(JSON.stringify(CANONICAL_ROOMS_DATA));
-  }
   const DEFAULT_NAMES = ["김민준", "이서연", "박도윤", "정하은", "최지호", "강지우", "윤시우", "조서아", "임민서", "한준우", "오예은", "서지안", "신유준", "권다은", "황현우", "송지유", "안우진", "홍서현", "유동현", "고민서", "문도현", "양채원", "손정우", "배채은", "조민성", "백지아", "허성민", "남은서", "유준호"];
   const res = {};
 
@@ -408,17 +387,6 @@ export function generateDefaultSeedRooms() {
 
 export function loadLocalFallback() {
   try {
-    const vKey = "RENT_DATA_VERSION_V6";
-    if (localStorage.getItem(vKey) !== "20261012_CANONICAL_V6") {
-      for (let i = localStorage.length - 1; i >= 0; i--) {
-        const k = localStorage.key(i);
-        if (k && (k.startsWith("ONEROOM_DATA_STORE") || k.startsWith("rent_system_"))) {
-          localStorage.removeItem(k);
-        }
-      }
-      localStorage.setItem(vKey, "20261012_CANONICAL_V6");
-    }
-
     const raw = localStorage.getItem(`${STORAGE_KEY}_${state.currentBranch}`);
     if (raw) {
       const parsed = JSON.parse(raw);
@@ -429,7 +397,26 @@ export function loadLocalFallback() {
         { branch_id: 'main', name: '시크빌 (29개실)', billing_status: 'PAID' },
         { branch_id: 'branch_02', name: '원룸 별관 (29개실)', billing_status: 'PAID' }
       ]).map(b => b.branch_id === 'main' ? { ...b, name: '시크빌 (29개실)' } : b);
-      state.tenantHistories = parsed.tenantHistories || [];
+      state.tenantHistories = parsed.tenantHistories || [
+        {
+          id: 'prev-tenant-201',
+          branch_id: state.currentBranch,
+          room_number: 201,
+          name: '박지훈',
+          id_number: '940315-1******',
+          phone: '010-9876-0201',
+          lease_type: '월세',
+          pay_timing: '후불',
+          deposit: 5000000,
+          rent: 420000,
+          maintenance: 50000,
+          clean_fee: 80000,
+          move_in: `${currentYear - 1}-07-01`,
+          expiry: `${currentYear}-06-30`,
+          move_out: `${currentYear}-06-30`,
+          retention_until: `${currentYear + 1}-06-30`
+        }
+      ];
     } else {
       state.selectedRoom = 101;
       state.rooms = generateDefaultSeedRooms();
@@ -438,10 +425,85 @@ export function loadLocalFallback() {
         { branch_id: 'main', name: '시크빌 (29개실)', billing_status: 'PAID' },
         { branch_id: 'branch_02', name: '원룸 별관 (29개실)', billing_status: 'PAID' }
       ];
-      state.tenantHistories = [];
+      state.tenantHistories = [
+        {
+          id: 'prev-tenant-201',
+          branch_id: state.currentBranch,
+          room_number: 201,
+          name: '박지훈',
+          id_number: '940315-1******',
+          phone: '010-9876-0201',
+          lease_type: '월세',
+          pay_timing: '후불',
+          deposit: 5000000,
+          rent: 420000,
+          maintenance: 50000,
+          clean_fee: 80000,
+          move_in: `${currentYear - 1}-07-01`,
+          expiry: `${currentYear}-06-30`,
+          move_out: `${currentYear}-06-30`,
+          retention_until: `${currentYear + 1}-06-30`
+        }
+      ];
       saveLocalFallback();
     }
 
+    // 201호 세입자 정보 검증 및 정민준(2022-03-19 전입) 보정
+    if (state.rooms && state.rooms[201]) {
+      const r201 = state.rooms[201];
+      if (r201.name === "이서연" || r201.name === "정민준" || !r201.name) {
+        r201.name = "정민준";
+        r201.phone = "010-5578-5358";
+        r201.rent = 290000;
+        r201.maintenance = 150000;
+        r201.deposit = 5000000;
+        r201.move_in = "2022-03-19";
+        r201.expiry = "2023-03-18";
+      }
+    }
+
+    // 503호 세입자 정보 검증 및 김백찬 보정
+    if (state.rooms && state.rooms[503]) {
+      const r503 = state.rooms[503];
+      if (r503.name === "장지아" || r503.name === "김백찬" || !r503.name) {
+        r503.name = "김백찬";
+        if (!r503.phone) r503.phone = "010-3344-5503";
+      }
+    }
+
+    // 404호 세입자 정보 검증 및 이종진(2026-06-08 전입, 월세/후불) 보정
+    if (state.rooms && state.rooms[404]) {
+      const r404 = state.rooms[404];
+      if (r404.name !== "이종진" || !r404.move_in || r404.move_in.indexOf("06") === -1) {
+        r404.name = "이종진";
+        r404.phone = "010-2345-4404";
+        r404.rent = 290000;
+        r404.maintenance = 150000;
+        r404.deposit = 5000000;
+        r404.lease_type = "월세";
+        r404.pay_timing = "후불";
+        r404.move_in = `${currentYear}-06-08`;
+        r404.expiry = `${currentYear + 1}-06-07`;
+      }
+    }
+
+    // 505호 세입자 정보 검증 및 김정현(2026-06-29 전입, 월세/후불) 보정
+    if (state.rooms && state.rooms[505]) {
+      const r505 = state.rooms[505];
+      if (r505.name !== "김정현" || r505.move_in !== `${currentYear}-06-29`) {
+        r505.name = "김정현";
+        r505.phone = "010-4499-5505";
+        r505.rent = 290000;
+        r505.maintenance = 150000;
+        r505.deposit = 5000000;
+        r505.lease_type = "월세";
+        r505.pay_timing = "후불";
+        r505.move_in = `${currentYear}-06-29`;
+        r505.expiry = `${currentYear + 1}-06-28`;
+      }
+    }
+
+    // 전입일부터 현재까지의 납부 내역 자동 보정 동기화 (구버전 캐시 자동 치유)
     fillTenantPaymentsState();
   } catch (e) {
     console.error("Local load error:", e);
@@ -474,28 +536,8 @@ export function fillTenantPaymentsState(roomNumber = null) {
 
     periods.forEach(({ year: y, month: m }) => {
       const pKey = `${y}-${m}`;
-      const existing = room.payments[pKey] || (y === currentYear ? room.payments[m] : null);
-      
-      // 이미 납부 정보(paid 및 paid_date)가 명시적으로 기록된 경우 기존 값 그대로 100% 보존
-      if (existing && existing.paid !== undefined) {
-        const payObj = {
-          ...existing,
-          month: m,
-          year: y,
-          paid: Boolean(existing.paid),
-          paid_date: existing.paid ? (existing.paid_date || '') : '',
-          rent_amount: existing.rent_amount !== undefined ? existing.rent_amount : (isJeonse ? 0 : rentVal),
-          maintenance_amount: existing.maintenance_amount !== undefined ? existing.maintenance_amount : maintVal,
-          note: existing.note !== undefined ? existing.note : '',
-          tenant_name: existing.tenant_name || room.name,
-          is_previous_tenant: Boolean(existing.is_previous_tenant)
-        };
-        room.payments[pKey] = payObj;
-        if (y === currentYear) room.payments[m] = payObj;
-        return;
-      }
-
-      const hasPrev = Boolean(existing && existing.is_previous_tenant && existing.tenant_name);
+      const existing = room.payments[pKey] || (y === currentYear ? room.payments[m] : {}) || {};
+      const hasPrev = Boolean(existing.is_previous_tenant && existing.tenant_name);
 
       const rule = evaluatePaymentRule({
         year: y,
@@ -510,14 +552,14 @@ export function fillTenantPaymentsState(roomNumber = null) {
       });
 
       const payObj = {
-        ...(existing || {}),
+        ...existing,
         month: m,
         year: y,
         paid: rule.paid,
-        paid_date: rule.paid ? `${y}-${String(m).padStart(2, '0')}-10` : '',
+        paid_date: rule.paid ? (existing.paid_date || `${y}-${String(m).padStart(2, '0')}-10`) : '',
         rent_amount: hasPrev ? existing.rent_amount : rentVal,
         maintenance_amount: hasPrev ? existing.maintenance_amount : maintVal,
-        note: rule.note || (existing && existing.note) || '',
+        note: rule.note || existing.note || '',
         tenant_name: hasPrev ? existing.tenant_name : room.name,
         is_previous_tenant: hasPrev
       };

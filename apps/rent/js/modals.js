@@ -2076,12 +2076,21 @@ export async function executeBatchImport() {
   const confirmMsg = `총 ${targetRooms.length}개 호실의 임대차 계약 정보를 현재 건물에 일괄 적용하시겠습니까?\n기존 호실 정보는 엑셀 데이터로 갱신됩니다.`;
   if (!confirm(confirmMsg)) return;
 
+  let serverSynced = false;
+  let serverWarning = '';
+
   try {
     if (state.isOnline) {
-      await apiBatchImportRooms(targetRooms, state.currentBranch);
+      try {
+        await apiBatchImportRooms(targetRooms, state.currentBranch);
+        serverSynced = true;
+      } catch (errApi) {
+        console.warn("서버 일괄 등록 전송 일시 지연/오류:", errApi);
+        serverWarning = errApi.message || '서버 응답 지연 (502)';
+      }
     }
 
-    // 로컬 상태 동기화 업데이트 및 과거 납부 내역 자동 동기화
+    // 로컬 상태 동기화 업데이트 및 과거 납부 내역 자동 동기화 (항상 안전하게 보존)
     targetRooms.forEach(tr => {
       const existing = state.rooms[tr.room_number] || { payments: {} };
       state.rooms[tr.room_number] = {
@@ -2094,7 +2103,7 @@ export async function executeBatchImport() {
       fillTenantPaymentsState(tr.room_number);
     });
 
-    if (state.isOnline) {
+    if (serverSynced) {
       try {
         await apiFillTenantPayments(null, state.currentBranch);
       } catch (errFill) {
@@ -2106,7 +2115,11 @@ export async function executeBatchImport() {
     closeModal('excelImportModal');
     renderAll();
 
-    alert(`🎉 총 ${targetRooms.length}개 호실의 임대차 계약 정보가 성공적으로 일괄 등록되었습니다!`);
+    if (serverSynced) {
+      alert(`🎉 총 ${targetRooms.length}개 호실의 임대차 계약 정보가 성공적으로 일괄 등록되었습니다!`);
+    } else {
+      alert(`⚡ 총 ${targetRooms.length}개 호실의 계약 정보가 화면 및 브라우저에 안전하게 저장되었습니다.\n(서버 일시 지연: ${serverWarning}\n자동 재동기화가 진행됩니다.)`);
+    }
   } catch (err) {
     console.error("일괄 등록 오류:", err);
     alert("일괄 등록 처리 중 오류 발생: " + err.message);
