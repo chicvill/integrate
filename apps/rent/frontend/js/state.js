@@ -191,6 +191,73 @@ export function saveLocalFallback() {
   }
 }
 
+// ── 도메인 공통 계산 규칙 (Clean Architecture: 롤링 12개월 & 후불 규칙 모듈화) ──
+export function getRollingPeriods(curYear = currentYear, curMonth = currentMonth, count = 12) {
+  const periods = [];
+  for (let i = 0; i < count; i++) {
+    let m = curMonth - i;
+    let y = curYear;
+    if (m <= 0) {
+      m += 12;
+      y -= 1;
+    }
+    periods.push({ year: y, month: m });
+  }
+  for (let mFuture = curMonth + 1; mFuture <= 12; mFuture++) {
+    if (!periods.some(p => p.year === curYear && p.month === mFuture)) {
+      periods.push({ year: curYear, month: mFuture });
+    }
+  }
+  return periods;
+}
+
+export function evaluatePaymentRule({ year, month, inYear, inMonth, leaseType = '월세', payTiming = '후불', curYear = currentYear, curMonth = currentMonth, hasPrevHist = false }) {
+  const isBeforeMoveIn = (year < inYear) || (year === inYear && month < inMonth);
+  const isMoveInMonth = (year === inYear && month === inMonth);
+  const isFuture = (year > curYear) || (year === curYear && month > curMonth);
+  const isPostpaid = (payTiming === '후불' || !payTiming);
+  const isMonthly = (leaseType === '월세' || !leaseType);
+
+  if (isBeforeMoveIn) {
+    return {
+      isBeforeMoveIn: true,
+      isMoveInMonth: false,
+      isFuture: false,
+      paid: hasPrevHist,
+      note: hasPrevHist ? '이전 세입자 정상 입금 (전출)' : '전입 이전 (기록 없음/미납)'
+    };
+  }
+
+  if (isMoveInMonth) {
+    const isPaid = !(isMonthly && isPostpaid);
+    return {
+      isBeforeMoveIn: false,
+      isMoveInMonth: true,
+      isFuture: false,
+      paid: isPaid,
+      note: isPaid ? '입주월 정상 입금 (선불)' : '입주월 (후불 익월 납부)'
+    };
+  }
+
+  if (!isFuture) {
+    return {
+      isBeforeMoveIn: false,
+      isMoveInMonth: false,
+      isFuture: false,
+      paid: true,
+      note: '정상 입금'
+    };
+  }
+
+  return {
+    isBeforeMoveIn: false,
+    isMoveInMonth: false,
+    isFuture: true,
+    paid: false,
+    note: ''
+  };
+}
+
 export function generateDefaultSeedRooms() {
   const DEFAULT_NAMES = ["김민준", "이서연", "박도윤", "정하은", "최지호", "강지우", "윤시우", "조서아", "임민서", "한준우", "오예은", "서지안", "신유준", "권다은", "황현우", "송지유", "안우진", "홍서현", "유동현", "고민서", "문도현", "양채원", "손정우", "배채은", "조민성", "백지아", "허성민", "남은서", "유준호"];
   const res = {};
@@ -233,31 +300,30 @@ export function generateDefaultSeedRooms() {
       depositVal = 5000000;
     }
 
+    const inY = parseInt(moveInDate.split('-')[0], 10);
+    const inM = parseInt(moveInDate.split('-')[1], 10);
     const payments = {};
     for (let m = 1; m <= 12; m++) {
-      let isPaid = false;
-      const inY = parseInt(moveInDate.split('-')[0], 10);
-      const inM = parseInt(moveInDate.split('-')[1], 10);
-      const isBefore = (currentYear < inY) || (currentYear === inY && m < inM);
-      const isMoveIn = (currentYear === inY && m === inM);
-      if (isBefore) {
-        isPaid = false;
-      } else if (isMoveIn) {
-        isPaid = false; // 월세/후불 입주월은 익월 수납이므로 미납
-      } else if (m <= currentMonth) {
-        isPaid = true;
-      } else {
-        isPaid = false;
-      }
+      const rule = evaluatePaymentRule({
+        year: currentYear,
+        month: m,
+        inYear: inY,
+        inMonth: inM,
+        leaseType: isJeonse ? '전세' : '월세',
+        payTiming: '후불',
+        curYear: currentYear,
+        curMonth: currentMonth,
+        hasPrevHist: false
+      });
 
       payments[m] = {
         month: m,
         year: currentYear,
-        paid: isPaid,
-        paid_date: isPaid ? `2026-${String(m).padStart(2, '0')}-10` : "",
+        paid: rule.paid,
+        paid_date: rule.paid ? `${currentYear}-${String(m).padStart(2, '0')}-10` : "",
         rent_amount: rentVal,
         maintenance_amount: maintVal,
-        note: isPaid ? "정상 입금" : (isMoveIn ? "입주월 (후불 익월 납부)" : ""),
+        note: rule.note,
         tenant_name: tenantName,
         is_previous_tenant: false
       };
@@ -402,8 +468,6 @@ export function fillTenantPaymentsState(roomNumber = null) {
     const isJeonse = (room.lease_type === '전세');
     const rentVal = isJeonse ? 0 : (room.rent || 0);
     const maintVal = room.maintenance || 0;
-    const isPostpaid = (room.pay_timing === '후불' || !room.pay_timing);
-    const isMonthly = (room.lease_type === '월세' || !room.lease_type);
 
     let inYear = currentYear;
     let inMonth = 1;
@@ -419,99 +483,40 @@ export function fillTenantPaymentsState(roomNumber = null) {
     }
 
     if (!room.payments) room.payments = {};
-
-    // 롤링 12개월(2026.10 ~ 2025.11) + 당해 미래월(2026.11, 2026.12)
-    const periods = [];
-    for (let i = 0; i < 12; i++) {
-      let m = currentMonth - i;
-      let y = currentYear;
-      if (m <= 0) {
-        m += 12;
-        y -= 1;
-      }
-      periods.push({ year: y, month: m });
-    }
-    for (let mFuture = currentMonth + 1; mFuture <= 12; mFuture++) {
-      if (!periods.some(p => p.year === currentYear && p.month === mFuture)) {
-        periods.push({ year: currentYear, month: mFuture });
-      }
-    }
+    const periods = getRollingPeriods(currentYear, currentMonth, 12);
 
     periods.forEach(({ year: y, month: m }) => {
       const pKey = `${y}-${m}`;
       const existing = room.payments[pKey] || (y === currentYear ? room.payments[m] : {}) || {};
+      const hasPrev = Boolean(existing.is_previous_tenant && existing.tenant_name);
 
-      const isBeforeMoveIn = (y < inYear) || (y === inYear && m < inMonth);
-      const isMoveInMonth = (y === inYear && m === inMonth);
-      const isFuture = (y > currentYear) || (y === currentYear && m > currentMonth);
+      const rule = evaluatePaymentRule({
+        year: y,
+        month: m,
+        inYear,
+        inMonth,
+        leaseType: room.lease_type || '월세',
+        payTiming: room.pay_timing || '후불',
+        curYear: currentYear,
+        curMonth: currentMonth,
+        hasPrevHist: hasPrev
+      });
 
-      if (isBeforeMoveIn) {
-        // 전입 이전: 이전 세입자 기록이 있으면 유지, 없으면 미납
-        const hasPrev = existing.is_previous_tenant && existing.tenant_name;
-        const payObj = {
-          ...existing,
-          month: m,
-          year: y,
-          paid: hasPrev ? !!existing.paid : false,
-          paid_date: hasPrev ? (existing.paid_date || '') : '',
-          rent_amount: hasPrev ? existing.rent_amount : rentVal,
-          maintenance_amount: hasPrev ? existing.maintenance_amount : maintVal,
-          note: hasPrev ? existing.note : '전입 이전 (기록 없음/미납)',
-          tenant_name: hasPrev ? existing.tenant_name : room.name,
-          is_previous_tenant: hasPrev
-        };
-        room.payments[pKey] = payObj;
-        if (y === currentYear) room.payments[m] = payObj;
-      } else if (isMoveInMonth) {
-        // 입주월: 월세/후불인 경우 익월 납부이므로 입주월은 미납 처리!
-        const isPaidMoveIn = !(isMonthly && isPostpaid);
-        const payObj = {
-          ...existing,
-          month: m,
-          year: y,
-          paid: isPaidMoveIn,
-          paid_date: isPaidMoveIn ? (existing.paid_date || `${y}-${String(m).padStart(2, '0')}-10`) : '',
-          rent_amount: rentVal,
-          maintenance_amount: maintVal,
-          note: isPaidMoveIn ? '입주월 정상 입금 (선불)' : '입주월 (후불 익월 납부)',
-          tenant_name: room.name,
-          is_previous_tenant: false
-        };
-        room.payments[pKey] = payObj;
-        if (y === currentYear) room.payments[m] = payObj;
-      } else if (!isFuture) {
-        // 입주월 익월 ~ 현재월까지: 현 세입자 정상 완납
-        const payObj = {
-          ...existing,
-          month: m,
-          year: y,
-          paid: true,
-          paid_date: existing.paid_date || `${y}-${String(m).padStart(2, '0')}-10`,
-          rent_amount: rentVal,
-          maintenance_amount: maintVal,
-          note: existing.note || "정상 입금",
-          tenant_name: room.name,
-          is_previous_tenant: false
-        };
-        room.payments[pKey] = payObj;
-        if (y === currentYear) room.payments[m] = payObj;
-      } else {
-        // 미래 월: 미납 대기
-        const payObj = {
-          ...existing,
-          month: m,
-          year: y,
-          paid: false,
-          paid_date: "",
-          rent_amount: rentVal,
-          maintenance_amount: maintVal,
-          note: "",
-          tenant_name: room.name,
-          is_previous_tenant: false
-        };
-        room.payments[pKey] = payObj;
-        if (y === currentYear) room.payments[m] = payObj;
-      }
+      const payObj = {
+        ...existing,
+        month: m,
+        year: y,
+        paid: rule.paid,
+        paid_date: rule.paid ? (existing.paid_date || `${y}-${String(m).padStart(2, '0')}-10`) : '',
+        rent_amount: hasPrev ? existing.rent_amount : rentVal,
+        maintenance_amount: hasPrev ? existing.maintenance_amount : maintVal,
+        note: rule.note || existing.note || '',
+        tenant_name: hasPrev ? existing.tenant_name : room.name,
+        is_previous_tenant: hasPrev
+      };
+
+      room.payments[pKey] = payObj;
+      if (y === currentYear) room.payments[m] = payObj;
     });
   });
 

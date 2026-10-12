@@ -12,10 +12,14 @@
 
 /**
  * apps/rent/frontend/js/api.js
- * MQnet SaaS 표준 동적 API Base URL 판정 및 백엔드(integrat.db) 통신 클라이언트.
- * 오프라인/로컬 실행 시 localStorage 자동 폴백 지원.
+ * MQnet SaaS 표준 모듈화 API 클라이언트 (Clean Architecture)
+ * - Base URL 자동 판정 및 인증 헤더 자동 주입
+ * - 공통 HttpClient (GET, POST, PUT, PATCH) 기반 중복 코드 제거
+ * - 도메인별 네임스페이스 (rooms, payments, expenses, vat, branches, auth)
+ * - 기존 개별 함수 100% 하위 호환성 유지
  */
 
+// ── 1. API Base & Auth Helper ──
 function getApiBase(appName = 'rent') {
   const p = window.location.pathname.toLowerCase();
   if (p.startsWith(`/${appName.toLowerCase()}`)) {
@@ -34,6 +38,13 @@ function getAuthHeaders() {
     headers['Authorization'] = `Bearer ${token}`;
   }
   return headers;
+}
+
+// ── 2. Unified HTTP Client ──
+function buildQueryString(params = {}) {
+  const entries = Object.entries(params).filter(([_, v]) => v !== undefined && v !== null && v !== '');
+  if (entries.length === 0) return '';
+  return '?' + entries.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
 }
 
 async function fetchWithAuth(url, options = {}) {
@@ -61,163 +72,136 @@ async function fetchWithAuth(url, options = {}) {
   return await res.json();
 }
 
-// ── 핵심 원룸 API ──
-async function apiGetRooms(branchId = 'main') {
-  const base = getApiBase('rent');
-  return await fetchWithAuth(`${base}/rooms?branch_id=${encodeURIComponent(branchId)}`);
-}
-
-async function apiUpdateContract(roomNumber, data, branchId = 'main') {
-  const base = getApiBase('rent');
-  return await fetchWithAuth(`${base}/rooms/${roomNumber}?branch_id=${encodeURIComponent(branchId)}`, {
-    method: 'PUT',
-    body: JSON.stringify(data)
-  });
-}
-
-async function apiBatchImportRooms(roomsData, branchId = 'main') {
-  const base = getApiBase('rent');
-  return await fetchWithAuth(`${base}/rooms/batch-import?branch_id=${encodeURIComponent(branchId)}`, {
-    method: 'POST',
-    body: JSON.stringify(roomsData)
-  });
-}
-
-async function apiOcrImportImage(imageBase64, branchId = 'main') {
-  const base = getApiBase('rent');
-  return await fetchWithAuth(`${base}/rooms/ocr-import?branch_id=${encodeURIComponent(branchId)}`, {
-    method: 'POST',
-    body: JSON.stringify({ image_base64: imageBase64 })
-  });
-}
-
-async function apiProcessPayment(roomNumber, month, branchId = 'main', paidDate = null, note = '정상 입금', tenantName = null, year = 2026) {
-  const base = getApiBase('rent');
-  return await fetchWithAuth(`${base}/rooms/${roomNumber}/payment?branch_id=${encodeURIComponent(branchId)}`, {
-    method: 'POST',
-    body: JSON.stringify({ month, year, paid_date: paidDate, note, tenant_name: tenantName })
-  });
-}
-
-async function apiCancelPayment(roomNumber, month, branchId = 'main', year = 2026) {
-  const base = getApiBase('rent');
-  return await fetchWithAuth(`${base}/rooms/${roomNumber}/cancel-payment?branch_id=${encodeURIComponent(branchId)}`, {
-    method: 'POST',
-    body: JSON.stringify({ month, year })
-  });
-}
-
-async function apiFillTenantPayments(roomNumber = null, branchId = 'main') {
-  const base = getApiBase('rent');
-  return await fetchWithAuth(`${base}/rooms/fill-payments?branch_id=${encodeURIComponent(branchId)}`, {
-    method: 'POST',
-    body: JSON.stringify({ room_number: roomNumber })
-  });
-}
-
-async function apiGetExpenses(branchId = 'main') {
-  const base = getApiBase('rent');
-  return await fetchWithAuth(`${base}/expenses?branch_id=${encodeURIComponent(branchId)}`);
-}
-
-async function apiCreateExpense(data, branchId = 'main') {
-  const base = getApiBase('rent');
-  return await fetchWithAuth(`${base}/expenses?branch_id=${encodeURIComponent(branchId)}`, {
-    method: 'POST',
-    body: JSON.stringify(data)
-  });
-}
-
-// ── 전출자 1년 보존 이력 API ──
-async function apiGetTenantHistories(branchId = 'main', roomNumber = null) {
-  const base = getApiBase('rent');
-  const roomQuery = roomNumber ? `&room_number=${roomNumber}` : '';
-  return await fetchWithAuth(`${base}/tenant-histories?branch_id=${encodeURIComponent(branchId)}${roomQuery}`);
-}
-
-// ── 다중 건물/지점 API ──
-async function apiGetBranches(activeOnly = false) {
-  const base = getApiBase('rent');
-  return await fetchWithAuth(`${base}/branches?active_only=${activeOnly}`);
-}
-
-async function apiCreateBranch(data) {
-  const base = getApiBase('rent');
-  return await fetchWithAuth(`${base}/branches`, {
-    method: 'POST',
-    body: JSON.stringify(data)
-  });
-}
-
-async function apiUpdateBranchBilling(branchId, billingStatus, lastPaidAt = null) {
-  const base = getApiBase('rent');
-  return await fetchWithAuth(`${base}/branches/${branchId}/billing`, {
-    method: 'PATCH',
-    body: JSON.stringify({ billing_status: billingStatus, last_paid_at: lastPaidAt })
-  });
-}
-
-// ── 관리자 로그인 & 등업 신청 ──
-async function apiAdminLogin(username, password) {
-  const base = getApiBase('rent');
-  return await fetchWithAuth(`${base}/auth/admin-login`, {
-    method: 'POST',
-    body: JSON.stringify({ username, password })
-  });
-}
-
-async function apiRequestUpgrade(data) {
-  const base = getApiBase('rent');
-  return await fetchWithAuth(`${base}/upgrade-request`, {
-    method: 'POST',
-    body: JSON.stringify(data)
-  });
-}
-
-// ── 부가가치세(VAT) 기간별 수납 집계 API ──
-async function apiGetVatReport(startMonth = 1, endMonth = 6, year = 2026, branchId = 'main', roomNumbers = null) {
-  const base = getApiBase('rent');
-  let url = `${base}/vat-report?start_month=${startMonth}&end_month=${endMonth}&year=${year}&branch_id=${encodeURIComponent(branchId)}`;
-  if (roomNumbers && roomNumbers.length > 0) {
-    url += `&room_numbers=${encodeURIComponent(roomNumbers.join(','))}`;
-  }
-  return await fetchWithAuth(url);
-}
-
-async function apiGetVatSettings(branchId = 'main') {
-  const base = getApiBase('rent');
-  try {
-    const res = await fetchWithAuth(`${base}/vat-settings?branch_id=${encodeURIComponent(branchId)}`);
-    if (res && res.vat_target_rooms) {
-      localStorage.setItem(`rent_vat_rooms_${branchId}`, JSON.stringify(res.vat_target_rooms));
-    }
-    return res;
-  } catch (err) {
-    const cached = localStorage.getItem(`rent_vat_rooms_${branchId}`);
-    if (cached) {
-      try {
-        return { success: true, branch_id: branchId, vat_target_rooms: JSON.parse(cached) };
-      } catch (_) {}
-    }
-    throw err;
-  }
-}
-
-async function apiSaveVatSettings(branchId, targetRooms) {
-  const base = getApiBase('rent');
-  localStorage.setItem(`rent_vat_rooms_${branchId}`, JSON.stringify(targetRooms));
-  try {
-    return await fetchWithAuth(`${base}/vat-settings`, {
+const http = {
+  get(endpoint, params = {}) {
+    const base = getApiBase('rent');
+    return fetchWithAuth(`${base}${endpoint}${buildQueryString(params)}`);
+  },
+  post(endpoint, data = {}, params = {}) {
+    const base = getApiBase('rent');
+    return fetchWithAuth(`${base}${endpoint}${buildQueryString(params)}`, {
       method: 'POST',
-      body: JSON.stringify({ branch_id: branchId, vat_target_rooms: targetRooms })
+      body: JSON.stringify(data)
     });
-  } catch (err) {
-    // 로컬/오프라인 환경에서도 저장은 유지되도록 fallback 반환
-    return { success: true, branch_id: branchId, vat_target_rooms: targetRooms, offline: true };
+  },
+  put(endpoint, data = {}, params = {}) {
+    const base = getApiBase('rent');
+    return fetchWithAuth(`${base}${endpoint}${buildQueryString(params)}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  },
+  patch(endpoint, data = {}, params = {}) {
+    const base = getApiBase('rent');
+    return fetchWithAuth(`${base}${endpoint}${buildQueryString(params)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
   }
-}
+};
 
+// ── 3. 도메인별 모듈화 API 서비스 ──
 
+const roomsApi = {
+  list: (branchId = 'main') => http.get('/rooms', { branch_id: branchId }),
+  updateContract: (roomNumber, data, branchId = 'main') => http.put(`/rooms/${roomNumber}`, data, { branch_id: branchId }),
+  batchImport: (roomsData, branchId = 'main') => http.post('/rooms/batch-import', roomsData, { branch_id: branchId }),
+  ocrImport: (imageBase64, branchId = 'main') => http.post('/rooms/ocr-import', { image_base64: imageBase64 }, { branch_id: branchId }),
+  fillPayments: (roomNumber = null, branchId = 'main') => http.post('/rooms/fill-payments', { room_number: roomNumber }, { branch_id: branchId })
+};
+
+const paymentsApi = {
+  process: (roomNumber, month, branchId = 'main', paidDate = null, note = '정상 입금', tenantName = null, year = 2026) =>
+    http.post(`/rooms/${roomNumber}/payment`, { month, year, paid_date: paidDate, note, tenant_name: tenantName }, { branch_id: branchId }),
+  cancel: (roomNumber, month, branchId = 'main', year = 2026) =>
+    http.post(`/rooms/${roomNumber}/cancel-payment`, { month, year }, { branch_id: branchId })
+};
+
+const expensesApi = {
+  list: (branchId = 'main') => http.get('/expenses', { branch_id: branchId }),
+  create: (data, branchId = 'main') => http.post('/expenses', data, { branch_id: branchId })
+};
+
+const historiesApi = {
+  list: (branchId = 'main', roomNumber = null) => {
+    const params = { branch_id: branchId };
+    if (roomNumber) params.room_number = roomNumber;
+    return http.get('/tenant-histories', params);
+  }
+};
+
+const branchesApi = {
+  list: (activeOnly = false) => http.get('/branches', { active_only: activeOnly }),
+  create: (data) => http.post('/branches', data),
+  updateBilling: (branchId, billingStatus, lastPaidAt = null) =>
+    http.patch(`/branches/${branchId}/billing`, { billing_status: billingStatus, last_paid_at: lastPaidAt })
+};
+
+const authApi = {
+  login: (username, password) => http.post('/auth/admin-login', { username, password }),
+  requestUpgrade: (data) => http.post('/upgrade-request', data)
+};
+
+const vatApi = {
+  getReport: (startMonth = 1, endMonth = 6, year = 2026, branchId = 'main', roomNumbers = null) => {
+    const params = { start_month: startMonth, end_month: endMonth, year, branch_id: branchId };
+    if (roomNumbers && roomNumbers.length > 0) {
+      params.room_numbers = roomNumbers.join(',');
+    }
+    return http.get('/vat-report', params);
+  },
+  getSettings: async (branchId = 'main') => {
+    try {
+      const res = await http.get('/vat-settings', { branch_id: branchId });
+      if (res && res.vat_target_rooms) {
+        localStorage.setItem(`rent_vat_rooms_${branchId}`, JSON.stringify(res.vat_target_rooms));
+      }
+      return res;
+    } catch (err) {
+      const cached = localStorage.getItem(`rent_vat_rooms_${branchId}`);
+      if (cached) {
+        try {
+          return { success: true, branch_id: branchId, vat_target_rooms: JSON.parse(cached) };
+        } catch (_) {}
+      }
+      throw err;
+    }
+  },
+  saveSettings: async (branchId, targetRooms) => {
+    localStorage.setItem(`rent_vat_rooms_${branchId}`, JSON.stringify(targetRooms));
+    try {
+      return await http.post('/vat-settings', { branch_id: branchId, vat_target_rooms: targetRooms });
+    } catch (err) {
+      return { success: true, branch_id: branchId, vat_target_rooms: targetRooms, offline: true };
+    }
+  }
+};
+
+// ── 4. 100% 하위 호환용 개별 함수 Exports ──
+const apiGetRooms = roomsApi.list;
+const apiUpdateContract = roomsApi.updateContract;
+const apiBatchImportRooms = roomsApi.batchImport;
+const apiOcrImportImage = roomsApi.ocrImport;
+const apiFillTenantPayments = roomsApi.fillPayments;
+
+const apiProcessPayment = paymentsApi.process;
+const apiCancelPayment = paymentsApi.cancel;
+
+const apiGetExpenses = expensesApi.list;
+const apiCreateExpense = expensesApi.create;
+
+const apiGetTenantHistories = historiesApi.list;
+
+const apiGetBranches = branchesApi.list;
+const apiCreateBranch = branchesApi.create;
+const apiUpdateBranchBilling = branchesApi.updateBilling;
+
+const apiAdminLogin = authApi.login;
+const apiRequestUpgrade = authApi.requestUpgrade;
+
+const apiGetVatReport = vatApi.getReport;
+const apiGetVatSettings = vatApi.getSettings;
+const apiSaveVatSettings = vatApi.saveSettings;
 
 /**
  * apps/rent/frontend/js/state.js
@@ -412,6 +396,73 @@ function saveLocalFallback() {
   }
 }
 
+// ── 도메인 공통 계산 규칙 (Clean Architecture: 롤링 12개월 & 후불 규칙 모듈화) ──
+function getRollingPeriods(curYear = currentYear, curMonth = currentMonth, count = 12) {
+  const periods = [];
+  for (let i = 0; i < count; i++) {
+    let m = curMonth - i;
+    let y = curYear;
+    if (m <= 0) {
+      m += 12;
+      y -= 1;
+    }
+    periods.push({ year: y, month: m });
+  }
+  for (let mFuture = curMonth + 1; mFuture <= 12; mFuture++) {
+    if (!periods.some(p => p.year === curYear && p.month === mFuture)) {
+      periods.push({ year: curYear, month: mFuture });
+    }
+  }
+  return periods;
+}
+
+function evaluatePaymentRule({ year, month, inYear, inMonth, leaseType = '월세', payTiming = '후불', curYear = currentYear, curMonth = currentMonth, hasPrevHist = false }) {
+  const isBeforeMoveIn = (year < inYear) || (year === inYear && month < inMonth);
+  const isMoveInMonth = (year === inYear && month === inMonth);
+  const isFuture = (year > curYear) || (year === curYear && month > curMonth);
+  const isPostpaid = (payTiming === '후불' || !payTiming);
+  const isMonthly = (leaseType === '월세' || !leaseType);
+
+  if (isBeforeMoveIn) {
+    return {
+      isBeforeMoveIn: true,
+      isMoveInMonth: false,
+      isFuture: false,
+      paid: hasPrevHist,
+      note: hasPrevHist ? '이전 세입자 정상 입금 (전출)' : '전입 이전 (기록 없음/미납)'
+    };
+  }
+
+  if (isMoveInMonth) {
+    const isPaid = !(isMonthly && isPostpaid);
+    return {
+      isBeforeMoveIn: false,
+      isMoveInMonth: true,
+      isFuture: false,
+      paid: isPaid,
+      note: isPaid ? '입주월 정상 입금 (선불)' : '입주월 (후불 익월 납부)'
+    };
+  }
+
+  if (!isFuture) {
+    return {
+      isBeforeMoveIn: false,
+      isMoveInMonth: false,
+      isFuture: false,
+      paid: true,
+      note: '정상 입금'
+    };
+  }
+
+  return {
+    isBeforeMoveIn: false,
+    isMoveInMonth: false,
+    isFuture: true,
+    paid: false,
+    note: ''
+  };
+}
+
 function generateDefaultSeedRooms() {
   const DEFAULT_NAMES = ["김민준", "이서연", "박도윤", "정하은", "최지호", "강지우", "윤시우", "조서아", "임민서", "한준우", "오예은", "서지안", "신유준", "권다은", "황현우", "송지유", "안우진", "홍서현", "유동현", "고민서", "문도현", "양채원", "손정우", "배채은", "조민성", "백지아", "허성민", "남은서", "유준호"];
   const res = {};
@@ -454,31 +505,30 @@ function generateDefaultSeedRooms() {
       depositVal = 5000000;
     }
 
+    const inY = parseInt(moveInDate.split('-')[0], 10);
+    const inM = parseInt(moveInDate.split('-')[1], 10);
     const payments = {};
     for (let m = 1; m <= 12; m++) {
-      let isPaid = false;
-      const inY = parseInt(moveInDate.split('-')[0], 10);
-      const inM = parseInt(moveInDate.split('-')[1], 10);
-      const isBefore = (currentYear < inY) || (currentYear === inY && m < inM);
-      const isMoveIn = (currentYear === inY && m === inM);
-      if (isBefore) {
-        isPaid = false;
-      } else if (isMoveIn) {
-        isPaid = false; // 월세/후불 입주월은 익월 수납이므로 미납
-      } else if (m <= currentMonth) {
-        isPaid = true;
-      } else {
-        isPaid = false;
-      }
+      const rule = evaluatePaymentRule({
+        year: currentYear,
+        month: m,
+        inYear: inY,
+        inMonth: inM,
+        leaseType: isJeonse ? '전세' : '월세',
+        payTiming: '후불',
+        curYear: currentYear,
+        curMonth: currentMonth,
+        hasPrevHist: false
+      });
 
       payments[m] = {
         month: m,
         year: currentYear,
-        paid: isPaid,
-        paid_date: isPaid ? `2026-${String(m).padStart(2, '0')}-10` : "",
+        paid: rule.paid,
+        paid_date: rule.paid ? `${currentYear}-${String(m).padStart(2, '0')}-10` : "",
         rent_amount: rentVal,
         maintenance_amount: maintVal,
-        note: isPaid ? "정상 입금" : (isMoveIn ? "입주월 (후불 익월 납부)" : ""),
+        note: rule.note,
         tenant_name: tenantName,
         is_previous_tenant: false
       };
@@ -623,8 +673,6 @@ function fillTenantPaymentsState(roomNumber = null) {
     const isJeonse = (room.lease_type === '전세');
     const rentVal = isJeonse ? 0 : (room.rent || 0);
     const maintVal = room.maintenance || 0;
-    const isPostpaid = (room.pay_timing === '후불' || !room.pay_timing);
-    const isMonthly = (room.lease_type === '월세' || !room.lease_type);
 
     let inYear = currentYear;
     let inMonth = 1;
@@ -640,99 +688,40 @@ function fillTenantPaymentsState(roomNumber = null) {
     }
 
     if (!room.payments) room.payments = {};
-
-    // 롤링 12개월(2026.10 ~ 2025.11) + 당해 미래월(2026.11, 2026.12)
-    const periods = [];
-    for (let i = 0; i < 12; i++) {
-      let m = currentMonth - i;
-      let y = currentYear;
-      if (m <= 0) {
-        m += 12;
-        y -= 1;
-      }
-      periods.push({ year: y, month: m });
-    }
-    for (let mFuture = currentMonth + 1; mFuture <= 12; mFuture++) {
-      if (!periods.some(p => p.year === currentYear && p.month === mFuture)) {
-        periods.push({ year: currentYear, month: mFuture });
-      }
-    }
+    const periods = getRollingPeriods(currentYear, currentMonth, 12);
 
     periods.forEach(({ year: y, month: m }) => {
       const pKey = `${y}-${m}`;
       const existing = room.payments[pKey] || (y === currentYear ? room.payments[m] : {}) || {};
+      const hasPrev = Boolean(existing.is_previous_tenant && existing.tenant_name);
 
-      const isBeforeMoveIn = (y < inYear) || (y === inYear && m < inMonth);
-      const isMoveInMonth = (y === inYear && m === inMonth);
-      const isFuture = (y > currentYear) || (y === currentYear && m > currentMonth);
+      const rule = evaluatePaymentRule({
+        year: y,
+        month: m,
+        inYear,
+        inMonth,
+        leaseType: room.lease_type || '월세',
+        payTiming: room.pay_timing || '후불',
+        curYear: currentYear,
+        curMonth: currentMonth,
+        hasPrevHist: hasPrev
+      });
 
-      if (isBeforeMoveIn) {
-        // 전입 이전: 이전 세입자 기록이 있으면 유지, 없으면 미납
-        const hasPrev = existing.is_previous_tenant && existing.tenant_name;
-        const payObj = {
-          ...existing,
-          month: m,
-          year: y,
-          paid: hasPrev ? !!existing.paid : false,
-          paid_date: hasPrev ? (existing.paid_date || '') : '',
-          rent_amount: hasPrev ? existing.rent_amount : rentVal,
-          maintenance_amount: hasPrev ? existing.maintenance_amount : maintVal,
-          note: hasPrev ? existing.note : '전입 이전 (기록 없음/미납)',
-          tenant_name: hasPrev ? existing.tenant_name : room.name,
-          is_previous_tenant: hasPrev
-        };
-        room.payments[pKey] = payObj;
-        if (y === currentYear) room.payments[m] = payObj;
-      } else if (isMoveInMonth) {
-        // 입주월: 월세/후불인 경우 익월 납부이므로 입주월은 미납 처리!
-        const isPaidMoveIn = !(isMonthly && isPostpaid);
-        const payObj = {
-          ...existing,
-          month: m,
-          year: y,
-          paid: isPaidMoveIn,
-          paid_date: isPaidMoveIn ? (existing.paid_date || `${y}-${String(m).padStart(2, '0')}-10`) : '',
-          rent_amount: rentVal,
-          maintenance_amount: maintVal,
-          note: isPaidMoveIn ? '입주월 정상 입금 (선불)' : '입주월 (후불 익월 납부)',
-          tenant_name: room.name,
-          is_previous_tenant: false
-        };
-        room.payments[pKey] = payObj;
-        if (y === currentYear) room.payments[m] = payObj;
-      } else if (!isFuture) {
-        // 입주월 익월 ~ 현재월까지: 현 세입자 정상 완납
-        const payObj = {
-          ...existing,
-          month: m,
-          year: y,
-          paid: true,
-          paid_date: existing.paid_date || `${y}-${String(m).padStart(2, '0')}-10`,
-          rent_amount: rentVal,
-          maintenance_amount: maintVal,
-          note: existing.note || "정상 입금",
-          tenant_name: room.name,
-          is_previous_tenant: false
-        };
-        room.payments[pKey] = payObj;
-        if (y === currentYear) room.payments[m] = payObj;
-      } else {
-        // 미래 월: 미납 대기
-        const payObj = {
-          ...existing,
-          month: m,
-          year: y,
-          paid: false,
-          paid_date: "",
-          rent_amount: rentVal,
-          maintenance_amount: maintVal,
-          note: "",
-          tenant_name: room.name,
-          is_previous_tenant: false
-        };
-        room.payments[pKey] = payObj;
-        if (y === currentYear) room.payments[m] = payObj;
-      }
+      const payObj = {
+        ...existing,
+        month: m,
+        year: y,
+        paid: rule.paid,
+        paid_date: rule.paid ? (existing.paid_date || `${y}-${String(m).padStart(2, '0')}-10`) : '',
+        rent_amount: hasPrev ? existing.rent_amount : rentVal,
+        maintenance_amount: hasPrev ? existing.maintenance_amount : maintVal,
+        note: rule.note || existing.note || '',
+        tenant_name: hasPrev ? existing.tenant_name : room.name,
+        is_previous_tenant: hasPrev
+      };
+
+      room.payments[pKey] = payObj;
+      if (y === currentYear) room.payments[m] = payObj;
     });
   });
 
@@ -1063,43 +1052,35 @@ function renderPastHistorySection(room) {
     // 결제 데이터 조회 (연도-월 키 우선, 당해연도 월 키, 없으면 기본 객체)
     const existingP = (room.payments && (room.payments[pKey] || (y === currentYear ? room.payments[m] : null)));
 
-    // 전입일 및 계약조건 기반 판정
-    let isPastPaid = false;
-    let isBeforeMoveIn = false;
-    let isMoveInMonth = false;
-    const isPostpaid = (room.pay_timing === '후불' || !room.pay_timing);
-    const isMonthly = (room.lease_type === '월세' || !room.lease_type);
-    const isFuture = (y > currentYear) || (y === currentYear && m > currentMonth);
-
+    let inYear = currentYear;
+    let inMonth = 1;
     if (room.name && room.move_in) {
       try {
-        const inYear = parseInt(room.move_in.substring(0, 4), 10);
-        const inMonth = parseInt(room.move_in.substring(5, 7), 10);
-        if (y < inYear || (y === inYear && m < inMonth)) {
-          isBeforeMoveIn = true;
-          isPastPaid = false; // 이전 세입자 기록 없으면 미납
-        } else if (y === inYear && m === inMonth) {
-          isMoveInMonth = true;
-          // 월세/후불인 경우 익월 납부이므로 입주월은 미납!
-          isPastPaid = !(isMonthly && isPostpaid);
-        } else if (!isFuture) {
-          isPastPaid = true; // 입주월 익월부터 현재월까지 완납
-        } else {
-          isPastPaid = false; // 미래월 미납
-        }
-      } catch (e) {
-        isPastPaid = false;
-      }
+        inYear = parseInt(room.move_in.substring(0, 4), 10);
+        inMonth = parseInt(room.move_in.substring(5, 7), 10);
+      } catch (e) {}
     }
+
+    const rule = evaluatePaymentRule({
+      year: y,
+      month: m,
+      inYear,
+      inMonth,
+      leaseType: room.lease_type || '월세',
+      payTiming: room.pay_timing || '후불',
+      curYear: currentYear,
+      curMonth: currentMonth,
+      hasPrevHist: Boolean(existingP?.is_previous_tenant)
+    });
 
     const p = existingP || {
       month: m,
       year: y,
-      paid: isPastPaid,
-      paid_date: isPastPaid ? `${y}-${String(m).padStart(2, '0')}-10` : '',
+      paid: rule.paid,
+      paid_date: rule.paid ? `${y}-${String(m).padStart(2, '0')}-10` : '',
       rent_amount: isJeonse ? 0 : room.rent,
       maintenance_amount: room.maintenance,
-      note: isPastPaid ? '정상 입금' : (isMoveInMonth ? '입주월 (후불 익월 납부)' : ''),
+      note: rule.note,
       tenant_name: room.name,
       is_previous_tenant: false
     };

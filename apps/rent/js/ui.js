@@ -3,7 +3,7 @@
  * 원룸 임차료 관리 시스템 모바일 최적화 DOM 렌더링 및 UI 슬라이드 드로어 제어.
  */
 
-import { state, FLOOR_STRUCTURE, currentMonth, currentYear, formattedToday, saveLocalFallback, loadInitialData, fillTenantPaymentsState } from './state.js?v=2.0';
+import { state, FLOOR_STRUCTURE, currentMonth, currentYear, formattedToday, saveLocalFallback, loadInitialData, fillTenantPaymentsState, evaluatePaymentRule } from './state.js?v=2.0';
 import { apiProcessPayment, apiCancelPayment, apiFillTenantPayments, apiGetRooms } from './api.js?v=2.0';
 
 export function selectRoom(roomNum) {
@@ -320,43 +320,35 @@ export function renderPastHistorySection(room) {
     // 결제 데이터 조회 (연도-월 키 우선, 당해연도 월 키, 없으면 기본 객체)
     const existingP = (room.payments && (room.payments[pKey] || (y === currentYear ? room.payments[m] : null)));
 
-    // 전입일 및 계약조건 기반 판정
-    let isPastPaid = false;
-    let isBeforeMoveIn = false;
-    let isMoveInMonth = false;
-    const isPostpaid = (room.pay_timing === '후불' || !room.pay_timing);
-    const isMonthly = (room.lease_type === '월세' || !room.lease_type);
-    const isFuture = (y > currentYear) || (y === currentYear && m > currentMonth);
-
+    let inYear = currentYear;
+    let inMonth = 1;
     if (room.name && room.move_in) {
       try {
-        const inYear = parseInt(room.move_in.substring(0, 4), 10);
-        const inMonth = parseInt(room.move_in.substring(5, 7), 10);
-        if (y < inYear || (y === inYear && m < inMonth)) {
-          isBeforeMoveIn = true;
-          isPastPaid = false; // 이전 세입자 기록 없으면 미납
-        } else if (y === inYear && m === inMonth) {
-          isMoveInMonth = true;
-          // 월세/후불인 경우 익월 납부이므로 입주월은 미납!
-          isPastPaid = !(isMonthly && isPostpaid);
-        } else if (!isFuture) {
-          isPastPaid = true; // 입주월 익월부터 현재월까지 완납
-        } else {
-          isPastPaid = false; // 미래월 미납
-        }
-      } catch (e) {
-        isPastPaid = false;
-      }
+        inYear = parseInt(room.move_in.substring(0, 4), 10);
+        inMonth = parseInt(room.move_in.substring(5, 7), 10);
+      } catch (e) {}
     }
+
+    const rule = evaluatePaymentRule({
+      year: y,
+      month: m,
+      inYear,
+      inMonth,
+      leaseType: room.lease_type || '월세',
+      payTiming: room.pay_timing || '후불',
+      curYear: currentYear,
+      curMonth: currentMonth,
+      hasPrevHist: Boolean(existingP?.is_previous_tenant)
+    });
 
     const p = existingP || {
       month: m,
       year: y,
-      paid: isPastPaid,
-      paid_date: isPastPaid ? `${y}-${String(m).padStart(2, '0')}-10` : '',
+      paid: rule.paid,
+      paid_date: rule.paid ? `${y}-${String(m).padStart(2, '0')}-10` : '',
       rent_amount: isJeonse ? 0 : room.rent,
       maintenance_amount: room.maintenance,
-      note: isPastPaid ? '정상 입금' : (isMoveInMonth ? '입주월 (후불 익월 납부)' : ''),
+      note: rule.note,
       tenant_name: room.name,
       is_previous_tenant: false
     };
