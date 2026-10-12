@@ -16,7 +16,8 @@ from ..schemas import (
     BranchCreate, BranchUpdate, BranchBillingUpdate, BranchResponse, BranchListResponse,
     TenantHistoryResponse, TenantHistoryListResponse,
     SystemStatusResponse,
-    AdminLoginRequest, UpgradeRequestPayload, UpgradeApprovePayload
+    AdminLoginRequest, UpgradeRequestPayload, UpgradeApprovePayload,
+    VatSettingsUpdate, VatSettingsResponse
 )
 from ..services.rent_service import service
 from ..config import settings
@@ -219,6 +220,16 @@ async def list_tenant_histories(
     )
 
 
+@router.delete("/tenant-histories/expired")
+async def purge_expired_tenant_histories(
+    branch_id: str = Query("main", description="건물 ID"),
+    db: Session = Depends(get_db)
+):
+    """전출 후 1년(법적 보존기한)이 지난 만료 세입자 이력 영구 파기/삭제"""
+    return service.purge_expired_tenant_histories(db, branch_id=branch_id)
+
+
+
 # ── 지출 장부 라우트 ──
 @router.get("/expenses", response_model=ExpenseListResponse)
 async def list_expenses(
@@ -274,6 +285,28 @@ async def get_vat_report(
         end_month=end_month,
         year=year,
         room_numbers=parsed_room_numbers
+    )
+
+
+@router.get("/vat-settings", response_model=VatSettingsResponse)
+async def get_vat_settings(
+    branch_id: str = Query("main", description="건물 식별 ID"),
+    db: Session = Depends(get_db)
+):
+    """지점별 부가세 신고 대상 호실 설정 DB 조회"""
+    return service.get_vat_settings(db, branch_id=branch_id)
+
+
+@router.post("/vat-settings", response_model=VatSettingsResponse)
+async def save_vat_settings(
+    payload: VatSettingsUpdate,
+    db: Session = Depends(get_db)
+):
+    """지점별 부가세 신고 대상 호실 설정 DB 영구 저장 및 유지"""
+    return service.save_vat_settings(
+        db,
+        branch_id=payload.branch_id,
+        target_rooms=payload.vat_target_rooms
     )
 
 

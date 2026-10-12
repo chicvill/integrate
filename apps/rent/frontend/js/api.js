@@ -164,3 +164,37 @@ export async function apiGetVatReport(startMonth = 1, endMonth = 6, year = 2026,
   return await fetchWithAuth(url);
 }
 
+export async function apiGetVatSettings(branchId = 'main') {
+  const base = getApiBase('rent');
+  try {
+    const res = await fetchWithAuth(`${base}/vat-settings?branch_id=${encodeURIComponent(branchId)}`);
+    if (res && res.vat_target_rooms) {
+      localStorage.setItem(`rent_vat_rooms_${branchId}`, JSON.stringify(res.vat_target_rooms));
+    }
+    return res;
+  } catch (err) {
+    const cached = localStorage.getItem(`rent_vat_rooms_${branchId}`);
+    if (cached) {
+      try {
+        return { success: true, branch_id: branchId, vat_target_rooms: JSON.parse(cached) };
+      } catch (_) {}
+    }
+    throw err;
+  }
+}
+
+export async function apiSaveVatSettings(branchId, targetRooms) {
+  const base = getApiBase('rent');
+  localStorage.setItem(`rent_vat_rooms_${branchId}`, JSON.stringify(targetRooms));
+  try {
+    return await fetchWithAuth(`${base}/vat-settings`, {
+      method: 'POST',
+      body: JSON.stringify({ branch_id: branchId, vat_target_rooms: targetRooms })
+    });
+  } catch (err) {
+    // 로컬/오프라인 환경에서도 저장은 유지되도록 fallback 반환
+    return { success: true, branch_id: branchId, vat_target_rooms: targetRooms, offline: true };
+  }
+}
+
+

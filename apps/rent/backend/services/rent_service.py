@@ -573,9 +573,29 @@ class RentService:
         db.refresh(b)
         return b
 
+    def purge_expired_tenant_histories(self, db: Session, branch_id: str = "main") -> Dict[str, Any]:
+        """전출 후 1년(법적 보존기한)이 경과한 만료 세입자 이력 및 관련 데이터 자동 영구 삭제"""
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        q = db.query(RentTenantHistory).filter(RentTenantHistory.branch_id == branch_id)
+        expired = q.filter(RentTenantHistory.retention_until < today_str).all()
+        count = len(expired)
+        if count > 0:
+            for h in expired:
+                db.delete(h)
+            db.commit()
+        return {
+            "success": True,
+            "branch_id": branch_id,
+            "purged_count": count,
+            "message": f"전출 후 1년이 경과한 세입자 이력 {count}건이 영구 정리되었습니다."
+        }
+
     def list_tenant_histories(self, db: Session, branch_id: str = "main", room_number: Optional[int] = None) -> List[RentTenantHistory]:
-        """전출 후 1년간 필수 보관되는 전출자 이력 조회 (만료일 이전 데이터 보존)"""
+        """전출 후 1년간 필수 보관되는 전출자 이력 조회 (1년 경과 데이터 자동 파기 후 유효 데이터만 반환)"""
         self.ensure_default_seed(db, branch_id)
+        # 1년 경과한 만료 세입자 자동 정리
+        self.purge_expired_tenant_histories(db, branch_id)
+
         q = db.query(RentTenantHistory).filter(RentTenantHistory.branch_id == branch_id)
         if room_number:
             q = q.filter(RentTenantHistory.room_number == room_number)
@@ -656,6 +676,10 @@ class RentService:
                 "status": "완납" if all(r.get("payments", {}).get(m, {}).get("paid") for m in months) else ("미납" if room_period_total == 0 else "부분완납")
             })
 
+        # DB에 저장된 부가세 대상 호실 목록
+        saved_settings = self.get_vat_settings(db, branch_id)
+        saved_target_rooms = saved_settings.get("vat_target_rooms")
+
         return {
             "success": True,
             "branch_id": branch_id,
@@ -666,8 +690,65 @@ class RentService:
             "total_collected": total_collected,
             "total_supply": total_supply,
             "total_vat": total_vat,
+            "saved_vat_target_rooms": saved_target_rooms,
             "rows": report_rows
+        }
+
+    def get_vat_settings(self, db: Session, branch_id: str = "main") -> Dict[str, Any]:
+        """지점별 부가세 대상 호실 목록 DB 조회"""
+        self.ensure_default_seed(db, branch_id)
+        branch = db.query(RentBranch).filter(RentBranch.branch_id == branch_id).first()
+        saved_rooms = None
+        if branch and branch.metadata_json and isinstance(branch.metadata_json, dict):
+            saved_rooms = branch.metadata_json.get("vat_target_rooms")
+
+        # 만약 branch metadata에 없으면 room 개별 metadata에서 탐색
+        if saved_rooms is None:
+            rooms = db.query(RentRoom).filter(RentRoom.branch_id == branch_id).all()
+            target_list = []
+            has_room_flag = False
+            for rm in rooms:
+                meta = rm.metadata_json or {}
+                if "is_vat_target" in meta:
+                    has_room_flag = True
+                    if meta.get("is_vat_target"):
+                        target_list.append(rm.room_number)
+            if has_room_flag:
+                saved_rooms = sorted(target_list)
+
+        return {
+            "success": True,
+            "branch_id": branch_id,
+            "vat_target_rooms": saved_rooms
+        }
+
+    def save_vat_settings(self, db: Session, branch_id: str = "main", target_rooms: List[int] = []) -> Dict[str, Any]:
+        """지점별 부가세 대상 호실 목록 DB 저장 및 영구 유지"""
+        self.ensure_default_seed(db, branch_id)
+        target_rooms = sorted(list(set(int(r) for r in target_rooms)))
+
+        # 1. RentBranch 메타데이터 업데이트
+        branch = db.query(RentBranch).filter(RentBranch.branch_id == branch_id).first()
+        if branch:
+            new_meta = dict(branch.metadata_json or {})
+            new_meta["vat_target_rooms"] = target_rooms
+            branch.metadata_json = new_meta
+
+        # 2. 각 RentRoom 개별 메타데이터 동기화
+        rooms = db.query(RentRoom).filter(RentRoom.branch_id == branch_id).all()
+        for rm in rooms:
+            rm_meta = dict(rm.metadata_json or {})
+            rm_meta["is_vat_target"] = (rm.room_number in target_rooms)
+            rm.metadata_json = rm_meta
+
+        db.commit()
+        return {
+            "success": True,
+            "branch_id": branch_id,
+            "vat_target_rooms": target_rooms,
+            "message": f"부가세 대상 호실 {len(target_rooms)}개실 설정이 DB에 영구 저장되었습니다."
         }
 
 
 service = RentService()
+

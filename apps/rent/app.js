@@ -33,6 +33,7 @@ import {
   exportVatCSV,
   onToggleVatRoomRow,
   toggleAllVatRooms,
+  saveVatTargetRoomsSetting,
   openTenantHistoryModal,
   openNewBranchModal,
   handleNewBranchSubmit,
@@ -76,6 +77,7 @@ window.handleVatCustomQuery = handleVatCustomQuery;
 window.exportVatCSV = exportVatCSV;
 window.onToggleVatRoomRow = onToggleVatRoomRow;
 window.toggleAllVatRooms = toggleAllVatRooms;
+window.saveVatTargetRoomsSetting = saveVatTargetRoomsSetting;
 
 window.openExcelImportModal = openExcelImportModal;
 window.handleExcelFileSelect = handleExcelFileSelect;

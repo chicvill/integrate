@@ -601,6 +601,11 @@
             <option value="12">12월</option>
           </select>
           <button type="button" onclick="handleVatCustomQuery()" class="px-2.5 py-0.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs cursor-pointer">조회</button>
+          <button type="button" id="btnSaveVatRoomsSetting" onclick="saveVatTargetRoomsSetting()" class="px-2.5 py-0.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs cursor-pointer flex items-center gap-1 transition shadow-sm" title="현재 선택된 부가세 대상 호실 설정을 DB에 저장하여 계속 유지합니다">
+            <span>💾</span>
+            <span id="btnSaveVatRoomsText">호실설정 저장</span>
+          </button>
+          <span id="vatSaveStatusBadge" class="hidden px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[11px] font-semibold">저장됨</span>
         </div>
       </div>
 

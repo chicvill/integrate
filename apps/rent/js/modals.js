@@ -4,7 +4,7 @@
  */
 
 import { state, formattedToday, saveLocalFallback, setAuthUser, clearAuthUser, getAuthSessionInfo, touchAuthSession } from './state.js?v=2.0';
-import { apiUpdateContract, apiCreateExpense, apiRequestUpgrade, apiGetVatReport, apiCreateBranch, apiGetTenantHistories, apiBatchImportRooms, apiOcrImportImage, apiAdminLogin } from './api.js?v=2.0';
+import { apiUpdateContract, apiCreateExpense, apiRequestUpgrade, apiGetVatReport, apiGetVatSettings, apiSaveVatSettings, apiCreateBranch, apiGetTenantHistories, apiBatchImportRooms, apiOcrImportImage, apiAdminLogin } from './api.js?v=2.0';
 import { renderAll, switchBranch } from './ui.js?v=2.0';
 
 export function openModal(id) {
@@ -235,7 +235,7 @@ export async function handleUpgradeSubmit(e) {
 // ── 5. 부가가치세(VAT) 및 기간별 호실 수납 집계 ──
 export let currentVatRawData = null; // 원본 전체 데이터
 export let currentVatData = null;    // 필터링 적용된 현재 표시 데이터
-export let selectedVatRooms = new Set(); // 선택된 호실 번호 목록 (디폴트: 전체)
+export let selectedVatRooms = new Set(); // 선택된 호실 번호 목록 (DB 연동 유지)
 
 export let currentVatParams = {
   year: 2026,
@@ -244,19 +244,91 @@ export let currentVatParams = {
   label: '1기 (1~6월)'
 };
 
+let vatAutoSaveTimer = null;
+
 export async function openVatModal() {
-  initVatRoomsSelection();
   openModal('vatModal');
+  await initVatRoomsSelection();
   // 기본 1기 (1~6월, 2026년) 자동 조회
   await setVatPeriod(1, 6, '1기 (1~6월)');
 }
 
 /**
- * 부가세 산출 대상 호실 초기화 (디폴트: 모든 호실 선택)
+ * 부가세 산출 대상 호실 초기화 (DB 우선 조회 -> 캐시 -> 기본 전체)
  */
-export function initVatRoomsSelection() {
+export async function initVatRoomsSelection() {
+  const currentBranch = state.currentBranchId || state.currentBranch || 'main';
+  try {
+    const res = await apiGetVatSettings(currentBranch);
+    if (res && Array.isArray(res.vat_target_rooms) && res.vat_target_rooms.length > 0) {
+      selectedVatRooms = new Set(res.vat_target_rooms.map(Number));
+      return;
+    }
+  } catch (err) {
+    console.warn('[VAT] DB 조회 폴백:', err);
+  }
+
+  // localStorage 캐시 fallback
+  try {
+    const cached = localStorage.getItem(`rent_vat_rooms_${currentBranch}`);
+    if (cached) {
+      const arr = JSON.parse(cached);
+      if (Array.isArray(arr) && arr.length > 0) {
+        selectedVatRooms = new Set(arr.map(Number));
+        return;
+      }
+    }
+  } catch (_) {}
+
+  // 최초 기본값: 전체 호실
   const allRoomKeys = Object.keys(state.rooms || {}).map(Number).sort((a, b) => a - b);
   selectedVatRooms = new Set(allRoomKeys);
+}
+
+/**
+ * 현재 선택된 부가세 대상 호실 목록을 DB에 영구 저장
+ */
+export async function saveVatTargetRoomsSetting(showMessage = true) {
+  const currentBranch = state.currentBranchId || state.currentBranch || 'main';
+  const targetRooms = Array.from(selectedVatRooms).sort((a, b) => a - b);
+  const btn = document.getElementById('btnSaveVatRoomsSetting');
+  const badge = document.getElementById('vatSaveStatusBadge');
+  const txt = document.getElementById('btnSaveVatRoomsText');
+
+  if (btn) btn.disabled = true;
+  if (txt) txt.textContent = '저장 중...';
+
+  try {
+    await apiSaveVatSettings(currentBranch, targetRooms);
+    if (badge) {
+      badge.textContent = `💾 ${targetRooms.length}실 DB 저장됨`;
+      badge.classList.remove('hidden');
+      setTimeout(() => {
+        badge.classList.add('hidden');
+      }, 3000);
+    }
+  } catch (err) {
+    console.error('[VAT] 부가세 호실 설정 저장 실패:', err);
+    if (badge) {
+      badge.textContent = '❌ 저장 실패';
+      badge.classList.remove('hidden');
+      setTimeout(() => badge.classList.add('hidden'), 3000);
+    }
+  } finally {
+    if (btn) btn.disabled = false;
+    if (txt) txt.textContent = '호실설정 저장';
+  }
+}
+window.saveVatTargetRoomsSetting = saveVatTargetRoomsSetting;
+
+/**
+ * 체크박스 조작 시 1.2초 뒤 자동 DB 저장 (Debounce)
+ */
+function triggerVatAutoSave() {
+  if (vatAutoSaveTimer) clearTimeout(vatAutoSaveTimer);
+  vatAutoSaveTimer = setTimeout(() => {
+    saveVatTargetRoomsSetting(false);
+  }, 1200);
 }
 
 /**
@@ -270,6 +342,7 @@ export function onToggleVatRoomRow(rNum, isChecked) {
     selectedVatRooms.delete(num);
   }
   applyVatRoomFilter();
+  triggerVatAutoSave();
 }
 
 /**
@@ -286,6 +359,7 @@ export function toggleAllVatRooms(isChecked) {
     selectedVatRooms.clear();
   }
   applyVatRoomFilter();
+  triggerVatAutoSave();
 }
 
 /**
@@ -390,6 +464,11 @@ export async function fetchAndRenderVat(startMonth, endMonth, year, label) {
   }
 
   currentVatRawData = data;
+  if (data && Array.isArray(data.saved_vat_target_rooms) && data.saved_vat_target_rooms.length > 0) {
+    if (selectedVatRooms.size === 0 || selectedVatRooms.size === Object.keys(state.rooms || {}).length) {
+      selectedVatRooms = new Set(data.saved_vat_target_rooms.map(Number));
+    }
+  }
   applyVatRoomFilter();
 }
 

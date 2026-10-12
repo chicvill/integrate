@@ -202,3 +202,16 @@ class UpgradeApprovePayload(BaseModel):
     request_id: str
     action: str  # APPROVE, REJECT
     assigned_branch_id: Optional[str] = None
+
+
+class VatSettingsUpdate(BaseModel):
+    branch_id: str = "main"
+    vat_target_rooms: List[int]
+
+
+class VatSettingsResponse(BaseModel):
+    success: bool
+    branch_id: str
+    vat_target_rooms: Optional[List[int]] = None
+    message: Optional[str] = None
+
