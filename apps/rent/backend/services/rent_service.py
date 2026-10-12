@@ -3,8 +3,9 @@ apps/rent/backend/services/rent_service.py
 원룸 임차료 관리 시스템 비즈니스 로직 서비스.
 Clean Architecture 규격에 맞춰 DB 조작 및 29개실 시드 캐싱을 전담합니다.
 """
+import uuid
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, cast
 from sqlalchemy.orm import Session
 
 from ..db.models import RentBranch, RentRoom, RentPayment, RentExpense, RentUpgradeRequest, RentTenantHistory
@@ -226,41 +227,45 @@ class RentService:
 
         pay_map: Dict[int, Dict[Any, Any]] = {}
         for p in payments_db:
-            if p.room_number not in pay_map:
-                pay_map[p.room_number] = {}
+            r_num: int = cast(int, p.room_number)
+            p_month: int = cast(int, p.month)
+            p_year: int = cast(int, p.year)
+            if r_num not in pay_map:
+                pay_map[r_num] = {}
             pay_obj = {
-                "month": p.month,
-                "year": p.year,
-                "paid": p.paid,
-                "paid_date": p.paid_date or "",
+                "month": p_month,
+                "year": p_year,
+                "paid": bool(p.paid),
+                "paid_date": str(p.paid_date or ""),
                 "rent_amount": p.rent_amount,
                 "maintenance_amount": p.maintenance_amount,
-                "note": p.note or "",
-                "tenant_name": p.tenant_name or "",
+                "note": str(p.note or ""),
+                "tenant_name": str(p.tenant_name or ""),
                 "is_previous_tenant": bool(p.is_previous_tenant)
             }
             # 하위 호환용 월 키 및 연도-월 복합키 동시 제공
-            pay_map[p.room_number][p.month] = pay_obj
-            pay_map[p.room_number][f"{p.year}-{p.month}"] = pay_obj
+            pay_map[r_num][p_month] = pay_obj
+            pay_map[r_num][f"{p_year}-{p_month}"] = pay_obj
 
-        result = {}
+        result: Dict[int, Any] = {}
         for r in rooms_db:
-            result[r.room_number] = {
-                "room_number": r.room_number,
-                "branch_id": r.branch_id,
-                "name": r.name or "",
-                "id_number": r.id_number or "",
-                "phone": r.phone or "",
-                "lease_type": r.lease_type or "월세",
-                "pay_timing": r.pay_timing or "후불",
+            r_num: int = cast(int, r.room_number)
+            result[r_num] = {
+                "room_number": r_num,
+                "branch_id": str(r.branch_id),
+                "name": str(r.name or ""),
+                "id_number": str(r.id_number or ""),
+                "phone": str(r.phone or ""),
+                "lease_type": str(r.lease_type or "월세"),
+                "pay_timing": str(r.pay_timing or "후불"),
                 "deposit": r.deposit,
                 "rent": r.rent,
                 "maintenance": r.maintenance,
                 "clean_fee": r.clean_fee,
-                "move_in": r.move_in or "",
-                "expiry": r.expiry or "",
-                "move_out": r.move_out or "",
-                "payments": pay_map.get(r.room_number, {})
+                "move_in": str(r.move_in or ""),
+                "expiry": str(r.expiry or ""),
+                "move_out": str(r.move_out or ""),
+                "payments": pay_map.get(r_num, {})
             }
         return result
 
@@ -820,7 +825,7 @@ class RentService:
         histories = self.list_tenant_histories(db, branch_id)
         hist_map: Dict[int, List[RentTenantHistory]] = {}
         for h in histories:
-            hist_map.setdefault(h.room_number, []).append(h)
+            hist_map.setdefault(cast(int, h.room_number), []).append(h)
 
         target_rooms = sorted(rooms.keys())
         if room_numbers is not None and len(room_numbers) > 0:
@@ -930,7 +935,7 @@ class RentService:
     def save_vat_settings(self, db: Session, branch_id: str = "main", target_rooms: List[int] = []) -> Dict[str, Any]:
         """지점별 부가세 대상 호실 목록 DB 저장 및 영구 유지"""
         self.ensure_default_seed(db, branch_id)
-        target_rooms = sorted(list(set(int(r) for r in target_rooms)))
+        target_rooms = sorted(list(set(target_rooms)))
 
         # 1. RentBranch 메타데이터 업데이트
         branch = db.query(RentBranch).filter(RentBranch.branch_id == branch_id).first()

@@ -35,7 +35,11 @@ async def get_system_status(db: Session = Depends(get_db)):
     active_contracts = total_rooms - vacant_rooms
     branches_count = db.query(RentBranch).count()
     expenses = db.query(RentExpense).all()
-    expenses_total = sum(e.amount for e in expenses)
+    expenses_total: int = 0
+    for e in expenses:
+        amt = getattr(e, "amount", 0)
+        if isinstance(amt, (int, float)):
+            expenses_total += int(amt)
 
     return SystemStatusResponse(
         app_id=settings.APP_ID,
@@ -256,7 +260,11 @@ async def list_expenses(
 ):
     """건물 운영 지출 장부 목록 및 합계 조회"""
     expenses = service.list_expenses(db, branch_id=branch_id)
-    total_amt = sum(e.amount for e in expenses)
+    total_amt: int = 0
+    for e in expenses:
+        amt = getattr(e, "amount", 0)
+        if isinstance(amt, (int, float)):
+            total_amt += int(amt)
     return ExpenseListResponse(
         success=True,
         total=len(expenses),
