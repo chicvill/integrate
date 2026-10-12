@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>29개실 원룸 임차료 관리 시스템 - MQnet SaaS Edition</title>
+  
+  <!-- MQnet Canonical SaaS Modular Stylesheets (Cache Busting v=2.0) -->
+  <link rel="stylesheet" href="./css/variables.css?v=2.0">
+  <link rel="stylesheet" href="./css/layout.css?v=2.0">
+  <link rel="stylesheet" href="./css/components.css?v=2.0">
+  <link rel="stylesheet" href="./style.css?v=2.0">
+
+  <!-- Tailwind CSS & Fonts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            surface: {
+              950: '#090d16',
+              900: '#0f172a',
+              850: '#15203b',
+              800: '#1e293b',
+              700: '#334155',
+              600: '#475569'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-surface-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-cyan-500 selection:text-slate-900 pb-16">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800/80 bg-surface-900/90 backdrop-blur sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 py-3 sm:py-3.5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-500 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-cyan-950/60">
+          29
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-1.5">
+            원룸 임차료 관리 시스템
+            <span class="text-[10px] font-semibold text-cyan-400 bg-cyan-950/70 border border-cyan-800/80 px-2 py-0.5 rounded-full">SaaS Pro</span>
+          </h1>
+          <p class="text-xs text-slate-400">101호 · 201~605호 · 701~703호 전용 관리기</p>
+        </div>
+      </div>
+
+      <!-- Branch Selector & Quick Actions -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <!-- Multi-Branch Selector -->
+        <div class="flex items-center bg-surface-800 border border-slate-700 rounded-lg px-2 py-1">
+          <span class="text-xs text-slate-400 mr-1.5 font-semibold">🏢 건물:</span>
+          <select id="branchSelector" onchange="handleBranchChange()" class="bg-transparent text-cyan-300 font-bold text-xs focus:outline-none cursor-pointer">
+            <option value="main">원룸 본관 (29개실)</option>
+          </select>
+        </div>
+
+        <a href="./branches.html" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 transition flex items-center gap-1" title="본사 건물 및 수납 관리 센터">
+          🏛️ 본사 관제
+        </a>
+
+        <button type="button" onclick="openExpenseModal()" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 transition flex items-center gap-1 shadow-sm">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6"/></svg>
+          오늘 지출 추가
+        </button>
+
+        <button type="button" onclick="openLedgerModal()" class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 transition flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          지출 장부
+        </button>
+
+        <button type="button" onclick="exportCurrentRoomCSV()" class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 transition flex items-center gap-1" title="엑셀(CSV) 다운로드">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          CSV 내보내기
+        </button>
+
+        <a href="./manual.html" class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-surface-800 hover:bg-surface-700 text-cyan-300 border border-cyan-800/60 transition flex items-center gap-1" title="운영 매뉴얼 열기">
+          <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+          매뉴얼
+        </a>
+
+        <button type="button" onclick="openUpgradeModal()" class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 transition flex items-center gap-1">
+          등업 신청
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main id="mainContainerView" class="max-w-6xl mx-auto px-4 mt-6 space-y-6">
+
+    <!-- 0. 29 ROOMS QUICK FLOOR MAP & ROOM SELECTOR -->
+    <div class="bg-surface-900 border border-slate-800 rounded-2xl shadow-xl p-4 sm:p-5">
+      <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+          <h2 class="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-1.5">
+            🏢 29개실 전 호실 층별 맵
+            <span class="text-[11px] font-normal text-slate-400">(클릭 시 해당 호실로 즉시 전환)</span>
+          </h2>
+        </div>
+        <div class="flex items-center gap-3 text-xs">
+          <span class="flex items-center gap-1.5 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50"></span> 완납</span>
+          <span class="flex items-center gap-1.5 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm shadow-rose-500/50"></span> 당월 미납</span>
+          <span class="flex items-center gap-1.5 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-slate-600"></span> 공실</span>
+        </div>
+      </div>
+
+      <!-- Floor rows container (Rendered dynamically) -->
+      <div id="roomFloorMap" class="space-y-2">
+        <!-- Floor grid rows inserted via JS -->
+      </div>
+    </div>
+
+    <!-- 1. CONTRACT INFORMATION CARD -->
+    <div class="bg-surface-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+      <div class="px-5 py-4 bg-surface-850/70 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3 flex-wrap">
+          <!-- Big Room Indicator Badge -->
+          <span id="cardRoomTitleBig" class="text-lg sm:text-xl font-black text-white bg-cyan-600/30 border border-cyan-500/60 px-3 py-1 rounded-xl font-mono shadow-sm">
+            101호
+          </span>
+
+          <!-- Room Dropdown -->
+          <div class="flex items-center bg-cyan-950/70 border border-cyan-600/70 rounded-xl px-2.5 py-1 shadow-inner">
+            <span class="text-xs text-cyan-400 font-semibold mr-1.5 flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+              호실:
+            </span>
+            <select id="roomSelect" onchange="handleRoomChange()" class="bg-surface-800 text-cyan-300 font-black text-base border border-cyan-700/80 rounded-lg px-2 py-0.5 focus:outline-none focus:border-cyan-400 cursor-pointer">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+
+          <!-- Tenant Name & Type Badges -->
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h2 id="cardTenantName" class="text-base sm:text-lg font-bold text-white tracking-tight">홍길동 고객</h2>
+              <span id="cardStatusBadge" class="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">입주중</span>
+              <span id="cardLeaseTypeBadge" class="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30">월세</span>
+              <span id="cardPayTimingBadge" class="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30">후불</span>
+            </div>
+            <p id="cardPhoneText" class="text-xs text-slate-400 mt-0.5">연락처: 010-0000-0000</p>
+          </div>
+        </div>
+
+        <!-- Contract Actions -->
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="openContractEditModal()" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+            <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+            수정
+          </button>
+          <button type="button" id="toggleContractBtn" onclick="toggleContractAccordion()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-cyan-950/60 hover:bg-cyan-900/60 text-cyan-300 border border-cyan-800/80 transition flex items-center gap-1.5 cursor-pointer">
+            <span id="contractToggleText">계약내용 펼치기</span>
+            <svg id="contractToggleArrow" class="w-3.5 h-3.5 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Collapsible Contract Details Grid -->
+      <div id="contractAccordionBody" class="collapse-content collapse-hidden px-5 py-5 bg-surface-900 border-t border-slate-800/80">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 text-xs">
+          <div class="p-3 rounded-xl bg-surface-850/80 border border-slate-800">
+            <span class="text-slate-400 block mb-1">식별키 / 생년월일</span>
+            <span id="cIdNumber" class="text-sm font-semibold text-slate-100">950101-*******</span>
+          </div>
+          <div class="p-3 rounded-xl bg-surface-850/80 border border-slate-800">
+            <span class="text-slate-400 block mb-1">임차 형태 / 정산</span>
+            <span id="cTypeTimingSummary" class="text-sm font-semibold text-cyan-300">월세 / 후불</span>
+          </div>
+          <div class="p-3 rounded-xl bg-surface-850/80 border border-slate-800">
+            <span class="text-slate-400 block mb-1">보증금</span>
+            <span id="cDeposit" class="text-sm font-bold text-amber-400">5,000,000원</span>
+          </div>
+          <div class="p-3 rounded-xl bg-surface-850/80 border border-slate-800">
+            <span class="text-slate-400 block mb-1">월 임차료 (월세)</span>
+            <span id="cRent" class="text-sm font-bold text-cyan-400">400,000원</span>
+          </div>
+          <div class="p-3 rounded-xl bg-surface-850/80 border border-slate-800">
+            <span class="text-slate-400 block mb-1">월 관리비</span>
+            <span id="cMaintenance" class="text-sm font-bold text-indigo-400">50,000원</span>
+          </div>
+          <div class="p-3 rounded-xl bg-surface-850/80 border border-slate-800">
+            <span class="text-slate-400 block mb-1">청소비 (입퇴실시)</span>
+            <span id="cCleanFee" class="text-sm font-semibold text-slate-200">80,000원</span>
+          </div>
+          <div class="p-3 rounded-xl bg-surface-850/80 border border-slate-800">
+            <span class="text-slate-400 block mb-1">전입일 / 만기일</span>
+            <span id="cPeriod" class="text-sm font-semibold text-slate-200">2024-03-01 ~ 2025-02-28</span>
+          </div>
+          <div class="p-3 rounded-xl bg-surface-850/80 border border-slate-800">
+            <span class="text-slate-400 block mb-1">전출일</span>
+            <span id="cMoveOut" class="text-sm font-semibold text-rose-300">해당 없음</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. CURRENT MONTH STATUS CARD -->
+    <div class="bg-gradient-to-b from-surface-900 to-surface-850 border-2 border-cyan-500/50 rounded-2xl shadow-2xl p-5 relative overflow-hidden">
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-800">
+        <div class="flex items-center gap-2.5">
+          <span class="w-3 h-3 rounded-full bg-cyan-400 animate-pulse"></span>
+          <h3 class="text-base sm:text-lg font-bold text-white flex items-center gap-2 flex-wrap">
+            <span id="curRoomNumberLarge" class="text-base sm:text-lg font-black text-cyan-300 bg-cyan-950/90 border border-cyan-700/80 px-2.5 py-0.5 rounded-lg font-mono shadow-sm">101호</span>
+            <span id="curMonthTitle" class="text-cyan-400">10월</span> 납부 현황
+            <span class="text-xs px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-800 font-normal">현재월</span>
+            <span id="curTimingTag" class="text-xs px-2 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-800 font-normal">후불</span>
+          </h3>
+        </div>
+        <div class="flex items-center gap-3 text-xs">
+          <span class="text-slate-400">오늘 일자: <strong id="curTodayDate" class="text-slate-200 font-mono">2026-10-12</strong></span>
+          <span id="curMonthStatusBadge" class="px-2.5 py-0.5 rounded-full font-bold text-xs bg-rose-500/20 text-rose-300 border border-rose-500/40">미납</span>
+        </div>
+      </div>
+
+      <!-- Current Month Breakdown Grid -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 my-4">
+        <div class="bg-surface-800/90 rounded-xl p-3 border border-slate-700/80">
+          <span class="text-xs text-slate-400 block">납부 처리일</span>
+          <span id="curPaidDate" class="text-sm font-bold text-slate-100 font-mono mt-0.5 block">-</span>
+        </div>
+        <div class="bg-surface-800/90 rounded-xl p-3 border border-slate-700/80">
+          <span class="text-xs text-slate-400 block">임차료 (월세)</span>
+          <span id="curRentAmount" class="text-sm font-bold text-cyan-400 mt-0.5 block">0원</span>
+        </div>
+        <div class="bg-surface-800/90 rounded-xl p-3 border border-slate-700/80">
+          <span class="text-xs text-slate-400 block">관리비</span>
+          <span id="curMaintAmount" class="text-sm font-bold text-indigo-400 mt-0.5 block">0원</span>
+        </div>
+        <div class="bg-cyan-950/50 rounded-xl p-3 border border-cyan-600/40">
+          <span class="text-xs text-cyan-400 block font-semibold">당월 청구 합계</span>
+          <span id="curTotalAmount" class="text-base sm:text-lg font-black text-white mt-0.5 block">0원</span>
+        </div>
+      </div>
+
+      <!-- Action Button Area -->
+      <div id="curMonthActionArea" class="flex items-center justify-end gap-2 pt-2">
+        <!-- Dynamic Pay Buttons -->
+      </div>
+    </div>
+
+    <!-- 3. PAST PAYMENT HISTORY -->
+    <div class="bg-surface-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+      <div class="px-5 py-4 bg-surface-850/70 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <h3 class="text-sm sm:text-base font-bold text-white">
+            과거 납부 내역
+            <span id="pastTableSubtitle" class="text-xs font-normal text-slate-400 ml-1.5">(전입월 ~ 전월)</span>
+          </h3>
+        </div>
+        <button type="button" id="togglePastBtn" onclick="togglePastAccordion()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+          <span id="pastToggleText">과거 내역 펼치기</span>
+          <svg id="pastToggleArrow" class="w-3.5 h-3.5 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+      </div>
+
+      <div id="pastAccordionBody" class="collapse-content collapse-hidden">
+        <div class="overflow-x-auto p-4">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-surface-800 text-slate-400 border border-slate-700 uppercase tracking-wider font-semibold">
+                <th class="py-2.5 px-3 text-center border-r border-slate-700 w-16">회차(월)</th>
+                <th class="py-2.5 px-3 text-center border-r border-slate-700 w-28">입금일자</th>
+                <th class="py-2.5 px-3 text-right border-r border-slate-700 w-28">월세(원)</th>
+                <th class="py-2.5 px-3 text-right border-r border-slate-700 w-28">관리비(원)</th>
+                <th class="py-2.5 px-3 text-right border-r border-slate-700 w-32 font-bold text-slate-200">합계(원)</th>
+                <th class="py-2.5 px-3 text-center border-r border-slate-700 w-20">상태</th>
+                <th class="py-2.5 px-3 text-center w-20">조작</th>
+              </tr>
+            </thead>
+            <tbody id="pastPaymentTableBody" class="divide-y divide-slate-800">
+              <!-- Rendered rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODALS -->
+
+  <!-- 1. Contract Edit Modal -->
+  <div id="contractModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-surface-900 border border-slate-800 rounded-2xl max-w-lg w-full p-5 shadow-2xl overflow-y-auto max-h-[90vh]">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          📝 <span id="modalRoomTitle">101호</span> 계약 정보 수정
+        </h3>
+        <button type="button" onclick="closeModal('contractModal')" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+      </div>
+
+      <form onsubmit="handleContractFormSubmit(event)" class="space-y-3.5 mt-4 text-xs">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">임차 형태</label>
+            <select id="formLeaseType" onchange="handleLeaseTypeChangeInForm()" class="w-full bg-surface-800 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-cyan-500">
+              <option value="월세">월세</option>
+              <option value="전세">전세</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">납부 방식</label>
+            <select id="formPayTiming" class="w-full bg-surface-800 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-cyan-500">
+              <option value="후불">후불 (말일/익월 납부)</option>
+              <option value="선불">선불 (당월 선납)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-400 mb-1">임차인 성명 (비워두면 공실)</label>
+          <input type="text" id="formName" placeholder="예: 홍길동" class="w-full bg-surface-800 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-cyan-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">식별키 / 주민번호</label>
+            <input type="text" id="formIdNumber" placeholder="950101-1******" class="w-full bg-surface-800 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-cyan-500">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">연락처</label>
+            <input type="text" id="formPhone" placeholder="010-0000-0000" class="w-full bg-surface-800 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-cyan-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">보증금 (원)</label>
+            <input type="number" id="formDeposit" step="10000" class="w-full bg-surface-800 border border-slate-700 rounded-lg p-2 text-slate-200 font-mono focus:outline-none focus:border-cyan-500">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">월 임차료 (원)</label>
+            <input type="number" id="formRent" step="10000" class="w-full bg-surface-800 border border-slate-700 rounded-lg p-2 text-slate-200 font-mono focus:outline-none focus:border-cyan-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">월 관리비 (원)</label>
+            <input type="number" id="formMaintenance" step="1000" class="w-full bg-surface-800 border border-slate-700 rounded-lg p-2 text-slate-200 font-mono focus:outline-none focus:border-cyan-500">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">청소비 (입퇴실시 원)</label>
+            <input type="number" id="formCleanFee" step="1000" class="w-full bg-surface-800 border border-slate-700 rounded-lg p-2 text-slate-200 font-mono focus:outline-none focus:border-cyan-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">전입일</label>
+            <input type="date" id="formMoveIn" class="w-full bg-surface-800 border border-slate-700 rounded-lg p-2 text-slate-200 text-[11px] focus:outline-none focus:border-cyan-500">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">만기일</label>
+            <input type="date" id="formExpiry" class="w-full bg-surface-800 border border-slate-700 rounded-lg p-2 text-slate-200 text-[11px] focus:outline-none focus:border-cyan-500">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">전출일 (퇴실시)</label>
+            <input type="date" id="formMoveOut" class="w-full bg-surface-800 border border-slate-700 rounded-lg p-2 text-slate-200 text-[11px] focus:outline-none focus:border-cyan-500">
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeModal('contractModal')" class="px-4 py-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300">취소</button>
+          <button type="submit" class="px-5 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold">저장하기</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. Today Expense Modal -->
+  <div id="expenseModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-surface-900 border border-slate-800 rounded-2xl max-w-md w-full p-5 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 class="text-base font-bold text-white flex items-center gap-1.5">
+          💸 오늘 지출 추가
+        </h3>
+        <button type="button" onclick="closeModal('expenseModal')" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+      </div>
+
+      <form onsubmit="handleExpenseFormSubmit(event)" class="space-y-3 mt-4 text-xs">
+        <div>
+          <label class="block text-slate-400 mb-1">지출 항목명 *</label>
+          <input type="text" id="expItem" required placeholder="예: 4층 복도 센서등 교체" class="w-full bg-surface-800 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-amber-500">
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">지출 금액 (원) *</label>
+          <input type="number" id="expAmount" required step="1000" placeholder="예: 25000" class="w-full bg-surface-800 border border-slate-700 rounded-lg p-2 text-slate-200 font-mono focus:outline-none focus:border-amber-500">
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">비고 / 영수증 메모</label>
+          <input type="text" id="expNote" placeholder="예: 관리실 보관 영수증" class="w-full bg-surface-800 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-amber-500">
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeModal('expenseModal')" class="px-4 py-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300">취소</button>
+          <button type="submit" class="px-5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold">등록하기</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. Expense Ledger Modal -->
+  <div id="ledgerModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-surface-900 border border-slate-800 rounded-2xl max-w-lg w-full p-5 shadow-2xl flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 class="text-base font-bold text-white flex items-center gap-1.5">
+          📋 지출 장부 목록
+        </h3>
+        <span id="ledgerTotalSumBadge" class="text-xs font-bold text-amber-400 bg-amber-950/70 border border-amber-800/80 px-2.5 py-0.5 rounded-full font-mono">합계: 0원</span>
+      </div>
+
+      <div class="flex-1 overflow-y-auto space-y-2 pr-1 my-3" id="ledgerListContainer">
+        <!-- Rendered list of expenses -->
+      </div>
+
+      <div class="flex items-center justify-end pt-3 border-t border-slate-800">
+        <button type="button" onclick="closeModal('ledgerModal')" class="px-4 py-1.5 text-xs rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 transition">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Upgrade Request Modal -->
+  <div id="upgradeModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-surface-900 border border-slate-800 rounded-2xl max-w-md w-full p-5 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 class="text-base font-bold text-white flex items-center gap-1.5">
+          👑 관리자/실장 등업 신청
+        </h3>
+        <button type="button" onclick="closeModal('upgradeModal')" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+      </div>
+
+      <form onsubmit="handleUpgradeSubmit(event)" class="space-y-3 mt-4 text-xs">
+        <div>
+          <label class="block text-slate-400 mb-1">성명 *</label>
+          <input type="text" id="upgradeName" required placeholder="예: 김실장" class="w-full bg-surface-800 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-purple-500">
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">연락처 *</label>
+          <input type="text" id="upgradePhone" required placeholder="예: 010-1234-5678" class="w-full bg-surface-800 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-purple-500">
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">신청 사유 / 직책</label>
+          <textarea id="upgradeReason" rows="2" placeholder="예: 1호관 현장 관리인으로 등록 요청" class="w-full bg-surface-800 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-purple-500"></textarea>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeModal('upgradeModal')" class="px-4 py-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300">취소</button>
+          <button type="submit" class="px-5 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold">신청서 제출</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Standard ES Module Script (No Build Step) -->
+  <script type="module" src="./app.js?v=2.0"></script>
+</body>
+</html>

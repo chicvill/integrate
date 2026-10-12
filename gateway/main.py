@@ -64,6 +64,7 @@ from apps.face_analy.backend.routers import face_analy_router
 from apps.videoBooth.backend.routers import videobooth_router
 from apps.grammer.backend.routers.grammer_router import router as grammer_router
 from apps.files.backend.routers import files_router
+from apps.rent.backend.routers.main_router import router as rent_router
 from shared.core.base_database import Base, get_database_service
 from apps.YTDownloader.backend.db import models as yt_models
 from shared.monitoring.router import router as monitoring_router
@@ -224,6 +225,9 @@ app.include_router(grammer_router, prefix="/api/grammer", tags=["AI 영문법 �
 app.include_router(files_router, prefix="/api/files", tags=["파일 스토리지 허브"])
 app.include_router(files_router, prefix="/api/filebrowser", include_in_schema=False)
 
+# 12. 원룸 임차료 관리 시스템 (Rent Management 29-Rooms)
+app.include_router(rent_router, prefix="/api/rent", tags=["원룸 임차료 관리 (29개실)"])
+
 # ── 원본 레거시 앱 API 호환 라우팅 (prefix 생략 호환용) ──
 app.include_router(branch_router, prefix="/api/branches", include_in_schema=False)
 app.include_router(seat_router, prefix="/api/seats", include_in_schema=False)
@@ -373,9 +377,11 @@ if os.path.exists(ai_guide_dir):
     app.mount("/ai-guide", NoCacheStaticFiles(directory=ai_guide_dir, html=True), name="ai_guide_alias")
 
 # ── 29개실 원룸 임차료 관리 시스템 (Rent Management) ──
-rent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "rent"))
-if os.path.exists(rent_dir):
-    app.mount("/rent", NoCacheStaticFiles(directory=rent_dir, html=True), name="rent_app")
+rent_frontend = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "rent", "frontend"))
+if not os.path.exists(rent_frontend):
+    rent_frontend = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "rent"))
+if os.path.exists(rent_frontend):
+    app.mount("/rent", NoCacheStaticFiles(directory=rent_frontend, html=True), name="rent_app")
 
 gateway_static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "static"))
 if os.path.exists(gateway_static_dir):

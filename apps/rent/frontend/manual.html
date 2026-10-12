@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>29개실 원룸 임차료 관리 시스템 운영 매뉴얼</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0b0f19;
+      --card-bg: rgba(255, 255, 255, 0.03);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-cyan: #38bdf8;
+      --accent-purple: #c084fc;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+    }
+    body {
+      background: var(--bg-dark);
+      color: #e2e8f0;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      line-height: 1.65;
+      margin: 0;
+      padding: 1.5rem;
+    }
+    .manual-container {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .manual-header {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(192, 132, 252, 0.08));
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 16px;
+      padding: 1.75rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .manual-title {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .manual-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      background: rgba(56, 189, 248, 0.15);
+      padding: 0.25rem 0.7rem;
+      border-radius: 6px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .btn-header {
+      padding: 0.55rem 1.1rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-header.primary {
+      background: var(--accent-cyan);
+      color: #0b0f19;
+      border: none;
+    }
+    .btn-header.secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .section-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.5rem 1.75rem;
+    }
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 0 0 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding-bottom: 0.6rem;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-top: 0.75rem;
+    }
+    .info-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+    }
+    .info-box h4 {
+      margin: 0 0 0.4rem;
+      font-size: 0.95rem;
+      color: var(--accent-cyan);
+      font-weight: 700;
+    }
+    .info-box p {
+      margin: 0;
+      font-size: 0.88rem;
+      color: #cbd5e1;
+    }
+    .callout {
+      background: rgba(56, 189, 248, 0.08);
+      border-left: 4px solid var(--accent-cyan);
+      border-radius: 8px;
+      padding: 0.9rem 1.2rem;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+      color: #bae6fd;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.75rem;
+      font-size: 0.88rem;
+    }
+    th, td {
+      border: 1px solid var(--card-border);
+      padding: 0.65rem 0.9rem;
+      text-align: left;
+    }
+    th {
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+      font-weight: 600;
+    }
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.82rem;
+      color: var(--accent-cyan);
+    }
+    ol, ul {
+      margin: 0.5rem 0 0.5rem 1.5rem;
+      padding: 0;
+      color: #cbd5e1;
+    }
+    li {
+      margin-bottom: 0.4rem;
+      font-size: 0.9rem;
+    }
+    @media print {
+      body { background: #fff !important; color: #000 !important; padding: 0 !important; font-size: 12px !important; }
+      .manual-container { max-width: 100% !important; gap: 0.8rem !important; }
+      .manual-header, .section-card, .info-box { border: 1px solid #ccc !important; background: #fff !important; box-shadow: none !important; color: #000 !important; }
+      .btn-header, .no-print { display: none !important; }
+      h1, h2, h3, h4, .manual-title, .section-title { color: #000 !important; }
+      p, li, td, th { color: #222 !important; }
+      th { background: #f0f0f0 !important; color: #000 !important; }
+      .callout { border: 1px solid #999 !important; border-left: 4px solid #333 !important; background: #f9f9f9 !important; color: #111 !important; }
+      .manual-badge { border: 1px solid #666 !important; color: #000 !important; background: #f0f0f0 !important; }
+      code { color: #000 !important; background: #eee !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="manual-container">
+    <!-- Header -->
+    <header class="manual-header">
+      <div>
+        <div class="manual-badge">MQnet Real Estate Engine v1.0</div>
+        <h1 class="manual-title">🏢 29개실 원룸 임차료 관리 시스템 운영 매뉴얼</h1>
+        <p style="margin: 0; color: #94a3b8; font-size: 0.88rem;">
+          101호 · 201~605호 · 701~703호 전용 원룸 임대차 계약, 월세 수납, 관리비 정산 및 지출 장부 가이드
+        </p>
+      </div>
+      <div style="display: flex; gap: 0.6rem;" class="no-print">
+        <button class="btn-header primary" onclick="window.print()">🖨️ 매뉴얼 인쇄 / PDF 저장</button>
+        <a href="./index.html" class="btn-header secondary">← 임대관리 화면으로 복귀</a>
+      </div>
+    </header>
+
+    <!-- 1. 개요 및 호실 구성 -->
+    <section class="section-card">
+      <h2 class="section-title">📌 1. 시스템 개요 및 호실 구성</h2>
+      <p style="color: #cbd5e1; font-size: 0.92rem;">
+        본 시스템은 총 29개 호실(1층 1개실, 2~6층 각 5개실, 7층 3개실)로 구성된 원룸 임대 건물의 <strong>월세 수납 현황, 계약 갱신, 관리비 정산, 지출 장부</strong>를 실시간으로 기록하고 관리하는 전용 관리기입니다.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>구분</th>
+            <th>해당 호실</th>
+            <th>호실 수</th>
+            <th>특징</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>1층</strong></td>
+            <td>101호</td>
+            <td>1개실</td>
+            <td>근린생활/관리실 또는 1층 단독 주거실</td>
+          </tr>
+          <tr>
+            <td><strong>2층 ~ 6층</strong></td>
+            <td>201~205호, 301~305호, 401~405호, 501~505호, 601~605호</td>
+            <td>25개실</td>
+            <td>기준 주거실 (풀옵션 원룸)</td>
+          </tr>
+          <tr>
+            <td><strong>7층</strong></td>
+            <td>701호, 702호, 703호</td>
+            <td>3개실</td>
+            <td>상층부 특화 주거실 (발코니/테라스)</td>
+          </tr>
+          <tr>
+            <td><strong>총계</strong></td>
+            <td colspan="2"><strong>29개실</strong></td>
+            <td>전 호실 독자 계약 정보 및 수납 이력 유지</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 2. 주요 운영 흐름 -->
+    <section class="section-card">
+      <h2 class="section-title">⚡ 2. 핵심 운영 프로세스</h2>
+      <div class="grid-2">
+        <div class="info-box">
+          <h4>① 호실 선택 및 계약 조회</h4>
+          <p>상단 드롭다운에서 조회하고자 하는 호실을 선택하면 해당 호실의 입주자명, 임대형태(월세/전세), 납부타이밍(선불/후불), 보증금/월세/관리비 정보가 즉시 갱신됩니다.</p>
+        </div>
+        <div class="info-box">
+          <h4>② 당월 수납 처리</h4>
+          <p>월세 납부일 도래 시 입금 확인 후 수납 완료 버튼을 누르면 상태가 입금완료로 전환되며 미납 잔여금이 자동으로 0원으로 반영됩니다.</p>
+        </div>
+        <div class="info-box">
+          <h4>③ 지출 추가 및 장부 관리</h4>
+          <p>[오늘 지출 추가] 버튼으로 건물 유지보수, 수도/전기 공과금, 승강기 관리비 등 지출 내역을 입력하고 [지출 장부] 모달에서 기간별 합계를 파악합니다.</p>
+        </div>
+        <div class="info-box">
+          <h4>④ 엑셀(CSV) 내보내기</h4>
+          <p>호실별 수납 장부와 지출 명세를 원클릭으로 CSV 파일로 추출하여 세무 신고 및 엑셀 정산에 즉시 활용할 수 있습니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 계약 수정 및 입퇴실 관리 -->
+    <section class="section-card">
+      <h2 class="section-title">📝 3. 입퇴실 및 계약 갱신</h2>
+      <ol>
+        <li><strong>신규 입주/계약 갱신:</strong> 상단 호실 카드 우측의 <code>수정</code> 버튼을 클릭하여 임차인 성명, 연락처, 계약 시작일/종료일, 보증금, 월세, 관리비, 청소비(입/퇴실)를 입력하고 저장합니다.</li>
+        <li><strong>선불 / 후불 설정:</strong>
+          <ul>
+            <li><strong>선불:</strong> 입실 월 첫날 또는 계약 개시일에 당월분 임차료를 먼저 수납하는 형태.</li>
+            <li><strong>후불:</strong> 한 달 거주 후 말일 또는 정해진 일자에 후납하는 형태.</li>
+          </ul>
+        </li>
+        <li><strong>퇴실 처리:</strong> 전출일 지정 및 보증금 반환 시 미납 관리비/청소비를 차감 정산할 수 있습니다.</li>
+      </ol>
+      <div class="callout">
+        💡 <strong>팁:</strong> 상단의 <code>계약내용 펼치기</code> 버튼을 누르면 주민번호 앞자리, 보증금, 월세, 청소비 등 상세 계약 항목이 그리드 형태로 깔끔하게 표시됩니다.
+      </div>
+    </section>
+
+    <!-- 4. 데이터 안전 및 백업 -->
+    <section class="section-card">
+      <h2 class="section-title">💾 4. 데이터 보존 및 백업 수칙</h2>
+      <ul>
+        <li>본 시스템은 브라우저의 <code>localStorage</code>를 활용하여 오프라인 환경에서도 빠른 속도로 동작합니다.</li>
+        <li>정기적으로 상단의 <code>CSV 내보내기</code> 기능을 사용하여 건물 전체 호실의 수납 및 지출 데이터를 PC에 저장해 두시기를 권장합니다.</li>
+        <li>다른 PC나 스마트폰에서 작업할 경우 동일 네트워크의 통합 게이트웨이(포트 9000)를 통해 편리하게 접근할 수 있습니다.</li>
+      </ul>
+    </section>
+  </div>
+</body>
+</html>
