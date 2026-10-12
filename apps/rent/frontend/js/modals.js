@@ -1125,10 +1125,11 @@ export async function handleNewBranchSubmit(e) {
 
 export const SYSTEM_FIELDS = [
   { id: 'room_number', label: '호실 (필수)', required: true, keywords: ['호실', '방', '호수', '호', 'room', 'room no', 'no', '실', '방번호', '객실', '호/실', '동호수'] },
-  { id: 'name', label: '세입자명', required: false, keywords: ['세입자', '임차인', '입주자', '이름', '성명', '고객명', '계약자', '계약자명', 'tenant', 'name', '사용자', '상호및대표자', '입주청년이름'] },
+  { id: 'name', label: '세입자명', required: false, keywords: ['세입자', '임차인', '입주자', '이름', '성명', '고객명', '계약자', '계약자명', 'tenant', 'name', '사용자', '상호및대표자', '입주청년이름', '세입자명'] },
+  { id: 'id_number', label: '주민번호', required: false, keywords: ['주민번호', '주민등록번호', '주민', '식별번호', '생년월일', 'id', 'id_number', 'ssn', '등록번호', '주민번호/사업자번호', '주민(사업자)번호', '생년'] },
   { id: 'phone', label: '연락처', required: false, keywords: ['연락처', '전화번호', '휴대폰', '핸드폰', 'hp', 'phone', 'tel', '전화', '임차인전화', '사업자연락처', '휴대폰번호'] },
-  { id: 'lease_type', label: '임대유형', required: false, keywords: ['임대유형', '임대구분', '유형', '구분', '전월세', '월세/전세', 'type', '거래구분', '계약형태', '전월세구분'] },
-  { id: 'deposit', label: '보증금', required: false, keywords: ['보증금', '보증금액', '보증', '전세금', 'deposit', '보증금액(만원)', '전세보증금'] },
+  { id: 'lease_type', label: '임대유형', required: false, keywords: ['임대유형', '임대구분', '유형', '구분', '전월세', '월세/전세', 'type', '거래구분', '계약형태', '전월세구분', '전/월'] },
+  { id: 'deposit', label: '보증금', required: false, keywords: ['보증금', '보증금액', '보증', '전세금', 'deposit', '보증금액(만원)', '전세보증금', '임차보증금'] },
   { id: 'rent', label: '월세(차임)', required: false, keywords: ['월세', '월차임', '임대료', '월임대료', '차임', 'rent', '차임(만원)'] },
   { id: 'maintenance', label: '관리비', required: false, keywords: ['관리비', '유지비', '공동관리비', '공용관리비', 'maintenance', '공용관리비(만원)'] },
   { id: 'pay_timing', label: '납부구분', required: false, keywords: ['납부구분', '선불/후불', '선후불', '선불', '후불', '납부방식', '지불시기', '납부조건', '수납구분'] },
@@ -1792,9 +1793,10 @@ export function autoMapColumns(headers, rows = []) {
     headerStats[h] = {
       isRoomLike: vals.length > 0 && vals.every(v => cleanRoomNumber(v) > 0 && cleanRoomNumber(v) < 2000),
       isPhoneLike: vals.length > 0 && vals.some(v => /(?:01[0-9]|02|031|070)[-.\s]?\d{3,4}[-.\s]?\d{4}/.test(String(v))),
+      isIdNumberLike: vals.length > 0 && vals.some(v => /^\d{6}[-\s]?[1-4\*\d]\d{6}$|^\d{6}[-\s]?[1-4]\*{6}$|^\d{6}[-\s]?\*{7}$|^\d{6}-\d{7}$|^\d{6}$/.test(String(v).trim())),
       isDateLike: vals.length > 0 && vals.every(v => cleanDateValue(v) && /^\d{4}-\d{2}-\d{2}$/.test(cleanDateValue(v))),
       isMoneyLike: vals.length > 0 && vals.every(v => cleanMoneyValue(v) > 0),
-      isLeaseTypeLike: vals.some(v => /월세|전세|반전세|단기|연세/i.test(String(v))),
+      isLeaseTypeLike: vals.some(v => /월세|전세|반전세|단기|연세|전\/월/i.test(String(v))),
       isPayTimingLike: vals.some(v => /선불|후불|당월|익월/i.test(String(v))),
       isNameLike: vals.some(v => /^[가-힣]{2,4}$/.test(String(v).trim())),
       maxMoney: Math.max(...vals.map(v => cleanMoneyValue(v)), 0)
@@ -1825,6 +1827,7 @@ export function autoMapColumns(headers, rows = []) {
 
       // 2) 값 패턴 가산점 (Heuristic Data Inference)
       if (field.id === 'room_number' && stats.isRoomLike) score += 60;
+      if (field.id === 'id_number' && stats.isIdNumberLike) score += 80;
       if (field.id === 'phone' && stats.isPhoneLike) score += 75;
       if (field.id === 'name' && stats.isNameLike) score += 50;
       if (field.id === 'lease_type' && stats.isLeaseTypeLike) score += 70;
@@ -1943,6 +1946,7 @@ export function renderExcelPreviewTable() {
       <th class="py-1.5 px-2 border-r border-slate-700 text-slate-400 text-center w-8">No</th>
       <th class="py-1.5 px-2 border-r border-slate-700 text-cyan-300 text-center w-14">호실</th>
       <th class="py-1.5 px-2 border-r border-slate-700 text-slate-200">세입자</th>
+      <th class="py-1.5 px-2 border-r border-slate-700 text-slate-300 text-center">주민번호</th>
       <th class="py-1.5 px-2 border-r border-slate-700 text-slate-300 text-center">연락처</th>
       <th class="py-1.5 px-1.5 border-r border-slate-700 text-slate-300 text-center">유형</th>
       <th class="py-1.5 px-2 border-r border-slate-700 text-right">보증금</th>
@@ -1957,6 +1961,7 @@ export function renderExcelPreviewTable() {
   tbody.innerHTML = previewRows.map((row, idx) => {
     const rNum = cleanRoomNumber(row[activeColumnMapping.room_number]);
     const name = (row[activeColumnMapping.name] !== undefined ? String(row[activeColumnMapping.name]).trim() : '') || '공실';
+    const idNum = (row[activeColumnMapping.id_number] !== undefined ? String(row[activeColumnMapping.id_number]).trim() : '') || '-';
     const phone = row[activeColumnMapping.phone] || '-';
     const leaseType = row[activeColumnMapping.lease_type] || '월세';
     const deposit = cleanMoneyValue(row[activeColumnMapping.deposit], activeColumnMapping.deposit);
@@ -1970,6 +1975,7 @@ export function renderExcelPreviewTable() {
         <td class="py-1.5 px-2 border-r border-slate-800 text-center text-slate-500 text-[10px]">${idx + 1}</td>
         <td class="py-1.5 px-2 border-r border-slate-800 font-bold text-cyan-300 text-center font-mono">${rNum ? `${rNum}호` : '<span class="text-rose-400 font-normal">누락</span>'}</td>
         <td class="py-1.5 px-2 border-r border-slate-800 font-sans ${name === '공실' ? 'text-slate-500' : 'text-slate-100 font-medium'}">${name}</td>
+        <td class="py-1.5 px-2 border-r border-slate-800 text-center text-slate-400 font-mono text-[11px]">${idNum}</td>
         <td class="py-1.5 px-2 border-r border-slate-800 text-center text-slate-400 text-[11px]">${phone}</td>
         <td class="py-1.5 px-1.5 border-r border-slate-800 text-center text-slate-300 text-[11px]">${leaseType}</td>
         <td class="py-1.5 px-2 border-r border-slate-800 text-right font-mono text-slate-300">${deposit.toLocaleString()}</td>
@@ -2056,6 +2062,7 @@ export async function executeBatchImport() {
     targetRooms.push({
       room_number: rNum,
       name: (row[activeColumnMapping.name] !== undefined ? String(row[activeColumnMapping.name]).trim() : '') || '공실',
+      id_number: row[activeColumnMapping.id_number] !== undefined ? String(row[activeColumnMapping.id_number]).trim() : '',
       phone: row[activeColumnMapping.phone] !== undefined ? String(row[activeColumnMapping.phone]).trim() : '',
       lease_type: (row[activeColumnMapping.lease_type] && String(row[activeColumnMapping.lease_type]).includes('전세')) ? '전세' : '월세',
       deposit: cleanMoneyValue(row[activeColumnMapping.deposit], activeColumnMapping.deposit),

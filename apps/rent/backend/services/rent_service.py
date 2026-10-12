@@ -390,6 +390,7 @@ class RentService:
                     branch_id=branch_id,
                     room_number=r_num,
                     name=r_data.get("name") or "",
+                    id_number=r_data.get("id_number") or "",
                     phone=r_data.get("phone") or "",
                     lease_type=r_data.get("lease_type") or "월세",
                     pay_timing=r_data.get("pay_timing") or "후불",
@@ -404,7 +405,7 @@ class RentService:
                 db.add(room)
                 imported_count += 1
             else:
-                for field in ["name", "phone", "lease_type", "pay_timing", "move_in", "expiry", "move_out"]:
+                for field in ["name", "id_number", "phone", "lease_type", "pay_timing", "move_in", "expiry", "move_out"]:
                     if field in r_data and r_data[field] is not None:
                         setattr(room, field, str(r_data[field]))
                 for int_field in ["deposit", "rent", "maintenance", "clean_fee"]:
