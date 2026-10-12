@@ -303,5 +303,62 @@ class RentService:
         db.refresh(b)
         return b
 
+    def get_vat_report(self, db: Session, branch_id: str = "main", start_month: int = 1, end_month: int = 6, year: int = 2026) -> Dict[str, Any]:
+        """부가가치세 신고용 기간별(1~6월, 7~12월 등) 호실별 수납 집계 보고서"""
+        rooms = self.get_rooms(db, branch_id)
+        report_rows = []
+        total_collected = 0
+        total_supply = 0
+        total_vat = 0
+
+        months = list(range(start_month, end_month + 1))
+
+        for rNum in sorted(rooms.keys()):
+            r = rooms[rNum]
+            monthly_amounts = {}
+            room_period_total = 0
+
+            for m in months:
+                p = r.get("payments", {}).get(m, {})
+                if p.get("paid"):
+                    amt = (p.get("rent_amount") or 0) + (p.get("maintenance_amount") or 0)
+                else:
+                    amt = 0
+                monthly_amounts[m] = amt
+                room_period_total += amt
+
+            # 공급가액 및 부가세(10%) 계산
+            supply_val = round(room_period_total / 1.1)
+            vat_val = room_period_total - supply_val
+
+            total_collected += room_period_total
+            total_supply += supply_val
+            total_vat += vat_val
+
+            report_rows.append({
+                "room_number": rNum,
+                "tenant_name": r.get("name") or "공실",
+                "lease_type": r.get("lease_type") or "월세",
+                "deposit": r.get("deposit") or 0,
+                "monthly_amounts": monthly_amounts,
+                "period_total": room_period_total,
+                "supply_value": supply_val,
+                "vat_value": vat_val,
+                "status": "완납" if all(r.get("payments", {}).get(m, {}).get("paid") for m in months) else ("미납" if room_period_total == 0 else "부분완납")
+            })
+
+        return {
+            "success": True,
+            "branch_id": branch_id,
+            "year": year,
+            "start_month": start_month,
+            "end_month": end_month,
+            "months": months,
+            "total_collected": total_collected,
+            "total_supply": total_supply,
+            "total_vat": total_vat,
+            "rows": report_rows
+        }
+
 
 service = RentService()

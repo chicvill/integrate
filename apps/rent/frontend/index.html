@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>29개실 원룸 임차료 관리 시스템 - MQnet SaaS Edition</title>
+  <title>부동산 임차관리 시스템 - MQnet SaaS Edition</title>
   
   <!-- MQnet Canonical SaaS Modular Stylesheets (Cache Busting v=2.0) -->
   <link rel="stylesheet" href="./css/variables.css?v=2.0">
@@ -38,56 +38,41 @@
   <!-- Header -->
   <header class="border-b border-slate-800/80 bg-surface-900/90 backdrop-blur sticky top-0 z-30">
     <div class="max-w-6xl mx-auto px-4 py-3 sm:py-3.5 flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-500 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-cyan-950/60">
-          29
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-600 to-blue-500 flex items-center justify-center text-white text-base shadow-md shadow-cyan-950/60">
+          🏢
         </div>
-        <div>
-          <h1 class="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-1.5">
-            원룸 임차료 관리 시스템
-            <span class="text-[10px] font-semibold text-cyan-400 bg-cyan-950/70 border border-cyan-800/80 px-2 py-0.5 rounded-full">SaaS Pro</span>
-          </h1>
-          <p class="text-xs text-slate-400">101호 · 201~605호 · 701~703호 전용 관리기</p>
-        </div>
+        <h1 class="text-base sm:text-lg font-bold text-white tracking-tight">
+          부동산 임차관리
+        </h1>
       </div>
 
-      <!-- Branch Selector & Quick Actions -->
+      <!-- Quick Actions -->
       <div class="flex items-center gap-2 flex-wrap">
-        <!-- Multi-Branch Selector -->
-        <div class="flex items-center bg-surface-800 border border-slate-700 rounded-lg px-2 py-1">
-          <span class="text-xs text-slate-400 mr-1.5 font-semibold">🏢 건물:</span>
-          <select id="branchSelector" onchange="handleBranchChange()" class="bg-transparent text-cyan-300 font-bold text-xs focus:outline-none cursor-pointer">
-            <option value="main">원룸 본관 (29개실)</option>
-          </select>
-        </div>
+        <button type="button" onclick="openVatModal()" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-md shadow-cyan-950/50 transition flex items-center gap-1.5 cursor-pointer">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          부가가치세
+        </button>
 
-        <a href="./branches.html" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 transition flex items-center gap-1" title="본사 건물 및 수납 관리 센터">
-          🏛️ 본사 관제
-        </a>
-
-        <button type="button" onclick="openExpenseModal()" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 transition flex items-center gap-1 shadow-sm">
+        <button type="button" onclick="openExpenseModal()" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 transition flex items-center gap-1 shadow-sm cursor-pointer">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6"/></svg>
           오늘 지출 추가
         </button>
 
-        <button type="button" onclick="openLedgerModal()" class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 transition flex items-center gap-1">
+        <button type="button" onclick="openLedgerModal()" class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 transition flex items-center gap-1 cursor-pointer">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
           지출 장부
         </button>
 
-        <button type="button" onclick="exportCurrentRoomCSV()" class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 transition flex items-center gap-1" title="엑셀(CSV) 다운로드">
+        <button type="button" onclick="exportCurrentRoomCSV()" class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 transition flex items-center gap-1 cursor-pointer" title="호실별 엑셀(CSV) 다운로드">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
           CSV 내보내기
         </button>
 
         <a href="./manual.html" class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-surface-800 hover:bg-surface-700 text-cyan-300 border border-cyan-800/60 transition flex items-center gap-1" title="운영 매뉴얼 열기">
           <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-          매뉴얼
+          운영 매뉴얼
         </a>
-
-        <button type="button" onclick="openUpgradeModal()" class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 transition flex items-center gap-1">
-          등업 신청
-        </button>
       </div>
     </div>
   </header>
@@ -95,46 +80,43 @@
   <!-- Main Container -->
   <main id="mainContainerView" class="max-w-6xl mx-auto px-4 mt-6 space-y-6">
 
-    <!-- 0. 29 ROOMS QUICK FLOOR MAP & ROOM SELECTOR -->
-    <div class="bg-surface-900 border border-slate-800 rounded-2xl shadow-xl p-4 sm:p-5">
-      <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-800">
-        <div class="flex items-center gap-2">
-          <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
-          <h2 class="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-1.5">
-            🏢 29개실 전 호실 층별 맵
-            <span class="text-[11px] font-normal text-slate-400">(클릭 시 해당 호실로 즉시 전환)</span>
-          </h2>
-        </div>
-        <div class="flex items-center gap-3 text-xs">
-          <span class="flex items-center gap-1.5 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50"></span> 완납</span>
-          <span class="flex items-center gap-1.5 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm shadow-rose-500/50"></span> 당월 미납</span>
-          <span class="flex items-center gap-1.5 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-slate-600"></span> 공실</span>
-        </div>
-      </div>
-
-      <!-- Floor rows container (Rendered dynamically) -->
-      <div id="roomFloorMap" class="space-y-2">
-        <!-- Floor grid rows inserted via JS -->
-      </div>
-    </div>
-
     <!-- 1. CONTRACT INFORMATION CARD -->
     <div class="bg-surface-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
       <div class="px-5 py-4 bg-surface-850/70 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-3 flex-wrap">
-          <!-- Big Room Indicator Badge -->
-          <span id="cardRoomTitleBig" class="text-lg sm:text-xl font-black text-white bg-cyan-600/30 border border-cyan-500/60 px-3 py-1 rounded-xl font-mono shadow-sm">
-            101호
-          </span>
-
-          <!-- Room Dropdown -->
+          <!-- Clean Room Dropdown (Without redundant labels) -->
           <div class="flex items-center bg-cyan-950/70 border border-cyan-600/70 rounded-xl px-2.5 py-1 shadow-inner">
-            <span class="text-xs text-cyan-400 font-semibold mr-1.5 flex items-center gap-1">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-              호실:
-            </span>
-            <select id="roomSelect" onchange="handleRoomChange()" class="bg-surface-800 text-cyan-300 font-black text-base border border-cyan-700/80 rounded-lg px-2 py-0.5 focus:outline-none focus:border-cyan-400 cursor-pointer">
-              <!-- Dynamically populated -->
+            <svg class="w-4 h-4 text-cyan-400 mr-1.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            <select id="roomSelect" onchange="handleRoomChange()" class="bg-surface-800 text-cyan-300 font-bold text-base sm:text-lg border border-cyan-700/80 rounded-lg px-2 py-0.5 focus:outline-none focus:border-cyan-400 cursor-pointer min-w-[90px]">
+              <option value="101" selected>101호</option>
+              <option value="201">201호</option>
+              <option value="202">202호</option>
+              <option value="203">203호</option>
+              <option value="204">204호</option>
+              <option value="205">205호</option>
+              <option value="301">301호</option>
+              <option value="302">302호</option>
+              <option value="303">303호</option>
+              <option value="304">304호</option>
+              <option value="305">305호</option>
+              <option value="401">401호</option>
+              <option value="402">402호</option>
+              <option value="403">403호</option>
+              <option value="404">404호</option>
+              <option value="405">405호</option>
+              <option value="501">501호</option>
+              <option value="502">502호</option>
+              <option value="503">503호</option>
+              <option value="504">504호</option>
+              <option value="505">505호</option>
+              <option value="601">601호</option>
+              <option value="602">602호</option>
+              <option value="603">603호</option>
+              <option value="604">604호</option>
+              <option value="605">605호</option>
+              <option value="701">701호</option>
+              <option value="702">702호</option>
+              <option value="703">703호</option>
             </select>
           </div>
 
@@ -147,7 +129,6 @@
               <span id="cardPayTimingBadge" class="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30">후불</span>
             </div>
             <p id="cardPhoneText" class="text-xs text-slate-400 mt-0.5">연락처: 010-0000-0000</p>
-          </div>
         </div>
 
         <!-- Contract Actions -->
@@ -458,7 +439,147 @@
     </div>
   </div>
 
-  <!-- Standard ES Module Script (No Build Step) -->
-  <script type="module" src="./app.js?v=2.0"></script>
+  <!-- 5. Value-Added Tax (VAT) & Term Payment Report Modal -->
+  <div id="vatModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden items-center justify-center p-2 sm:p-4">
+    <div class="bg-surface-900 border border-slate-700/80 rounded-2xl max-w-6xl w-full p-4 sm:p-6 shadow-2xl flex flex-col max-h-[94vh] animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-800">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center font-bold">
+            📊
+          </div>
+          <div>
+            <h3 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+              부가가치세 및 기간별 호실 수납현황
+              <span id="vatCurrentPeriodLabel" class="text-xs px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-800 font-mono">2026년 1기 (1~6월)</span>
+            </h3>
+            <p class="text-xs text-slate-400">호실별 실 수납금액, 공급가액 및 부가세(10%) 산출 엑셀 집계표</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="exportVatCSV()" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-950/40 transition flex items-center gap-1.5 cursor-pointer">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            CSV 내보내기
+          </button>
+          <button type="button" onclick="closeModal('vatModal')" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-surface-800 transition text-lg font-bold">
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <!-- Period Selection Controls -->
+      <div class="bg-surface-850 border border-slate-800 rounded-xl p-3 sm:p-4 my-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <!-- Quick Period Presets -->
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <span class="text-slate-400 font-medium mr-1">기간 프리셋:</span>
+          <button type="button" onclick="setVatPeriod(1, 6, '1기 (1~6월)')" class="vat-preset-btn px-2.5 py-1 rounded-lg bg-cyan-950/80 hover:bg-cyan-900 text-cyan-300 border border-cyan-700/80 font-bold transition">1기 (1~6월)</button>
+          <button type="button" onclick="setVatPeriod(7, 12, '2기 (7~12월)')" class="vat-preset-btn px-2.5 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 font-medium transition">2기 (7~12월)</button>
+          <button type="button" onclick="setVatPeriod(1, 3, '1분기 (1~3월)')" class="vat-preset-btn px-2.5 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 font-medium transition">1분기</button>
+          <button type="button" onclick="setVatPeriod(4, 6, '2분기 (4~6월)')" class="vat-preset-btn px-2.5 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 font-medium transition">2분기</button>
+          <button type="button" onclick="setVatPeriod(7, 9, '3분기 (7~9월)')" class="vat-preset-btn px-2.5 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 font-medium transition">3분기</button>
+          <button type="button" onclick="setVatPeriod(10, 12, '4분기 (10~12월)')" class="vat-preset-btn px-2.5 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 font-medium transition">4분기</button>
+          <button type="button" onclick="setVatPeriod(1, 12, '연간 전체 (1~12월)')" class="vat-preset-btn px-2.5 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 font-medium transition">연간 (1~12월)</button>
+        </div>
+
+        <!-- Custom Month Range Selectors -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <div class="flex items-center gap-1">
+            <label class="text-slate-400">연도:</label>
+            <select id="vatYearSelect" class="bg-surface-800 border border-slate-700 text-slate-200 rounded px-2 py-1 font-bold">
+              <option value="2026" selected>2026년</option>
+              <option value="2025">2025년</option>
+              <option value="2024">2024년</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-1">
+            <select id="vatStartMonthSelect" class="bg-surface-800 border border-slate-700 text-slate-200 rounded px-2 py-1">
+              <option value="1" selected>1월</option>
+              <option value="2">2월</option>
+              <option value="3">3월</option>
+              <option value="4">4월</option>
+              <option value="5">5월</option>
+              <option value="6">6월</option>
+              <option value="7">7월</option>
+              <option value="8">8월</option>
+              <option value="9">9월</option>
+              <option value="10">10월</option>
+              <option value="11">11월</option>
+              <option value="12">12월</option>
+            </select>
+            <span class="text-slate-400">~</span>
+            <select id="vatEndMonthSelect" class="bg-surface-800 border border-slate-700 text-slate-200 rounded px-2 py-1">
+              <option value="1">1월</option>
+              <option value="2">2월</option>
+              <option value="3">3월</option>
+              <option value="4">4월</option>
+              <option value="5">5월</option>
+              <option value="6" selected>6월</option>
+              <option value="7">7월</option>
+              <option value="8">8월</option>
+              <option value="9">9월</option>
+              <option value="10">10월</option>
+              <option value="11">11월</option>
+              <option value="12">12월</option>
+            </select>
+          </div>
+          <button type="button" onclick="handleVatCustomQuery()" class="px-3 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold transition">조회</button>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards (4 Cards) -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-3 text-xs">
+        <div class="p-3 rounded-xl bg-surface-850 border border-slate-800">
+          <span class="text-slate-400 block mb-0.5">총 수납액 합계 (VAT포함)</span>
+          <span id="vatKpiTotalAmount" class="text-base sm:text-lg font-black text-white font-mono">0원</span>
+        </div>
+        <div class="p-3 rounded-xl bg-surface-850 border border-slate-800">
+          <span class="text-slate-400 block mb-0.5">공급가액 합계 (매출원가)</span>
+          <span id="vatKpiSupplyValue" class="text-base sm:text-lg font-black text-cyan-400 font-mono">0원</span>
+        </div>
+        <div class="p-3 rounded-xl bg-surface-850 border border-slate-800">
+          <span class="text-slate-400 block mb-0.5">부가가치세 합계 (10%)</span>
+          <span id="vatKpiVatAmount" class="text-base sm:text-lg font-black text-amber-400 font-mono">0원</span>
+        </div>
+        <div class="p-3 rounded-xl bg-surface-850 border border-slate-800">
+          <span class="text-slate-400 block mb-0.5">관리 호실 / 수납 건수</span>
+          <span id="vatKpiCountSummary" class="text-base sm:text-lg font-bold text-slate-200">0개실 / 0건</span>
+        </div>
+      </div>
+
+      <!-- Excel-like Spreadsheet Grid Container -->
+      <div class="flex-1 overflow-auto border border-slate-800 rounded-xl bg-surface-950 p-1 relative min-h-[260px]">
+        <table id="vatSpreadsheetTable" class="w-full text-xs text-left border-collapse font-sans">
+          <thead class="bg-surface-850 text-slate-300 font-semibold sticky top-0 z-10 border-b border-slate-700 shadow-sm" id="vatTableHead">
+            <!-- Dynamic columns based on selected month range -->
+          </thead>
+          <tbody id="vatTableBody" class="divide-y divide-slate-800/80 text-slate-200 font-mono">
+            <!-- Dynamic rows -->
+          </tbody>
+          <tfoot id="vatTableFoot" class="bg-surface-850 text-white font-bold border-t-2 border-cyan-500/60 sticky bottom-0 z-10 font-mono">
+            <!-- Dynamic total sum row -->
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-between pt-3 border-t border-slate-800 mt-2 text-xs">
+        <span class="text-slate-400">※ 부가가치세법 제29조에 의거, 공급대가 ÷ 1.1 = 공급가액, 차액을 부가가치세로 산정합니다.</span>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="exportVatCSV()" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition flex items-center gap-1 cursor-pointer">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            CSV 내보내기
+          </button>
+          <button type="button" onclick="closeModal('vatModal')" class="px-4 py-1.5 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 transition cursor-pointer">
+            닫기
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Universal Bundle Script (Supports both file:/// and http:// protocols) -->
+  <script src="./bundle.js?v=2.0"></script>
 </body>
 </html>

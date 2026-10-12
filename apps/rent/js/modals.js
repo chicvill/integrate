@@ -4,7 +4,7 @@
  */
 
 import { state, formattedToday, saveLocalFallback } from './state.js?v=2.0';
-import { apiUpdateContract, apiCreateExpense, apiRequestUpgrade } from './api.js?v=2.0';
+import { apiUpdateContract, apiCreateExpense, apiRequestUpgrade, apiGetVatReport } from './api.js?v=2.0';
 import { renderAll } from './ui.js?v=2.0';
 
 export function openModal(id) {
@@ -231,3 +231,333 @@ export async function handleUpgradeSubmit(e) {
     alert("등업 신청 실패: " + err.message);
   }
 }
+
+// ── 5. 부가가치세(VAT) 및 기간별 호실 수납 집계 ──
+export let currentVatData = null;
+export let currentVatParams = {
+  year: 2026,
+  startMonth: 1,
+  endMonth: 6,
+  label: '1기 (1~6월)'
+};
+
+export async function openVatModal() {
+  openModal('vatModal');
+  // 기본 1기 (1~6월, 2026년) 자동 조회
+  await setVatPeriod(1, 6, '1기 (1~6월)');
+}
+
+export async function setVatPeriod(startMonth, endMonth, label) {
+  currentVatParams.startMonth = Number(startMonth);
+  currentVatParams.endMonth = Number(endMonth);
+  currentVatParams.label = label;
+  currentVatParams.year = Number(document.getElementById('vatYearSelect')?.value || 2026);
+
+  // 셀렉트 박스 동기화
+  const sSelect = document.getElementById('vatStartMonthSelect');
+  const eSelect = document.getElementById('vatEndMonthSelect');
+  if (sSelect) sSelect.value = startMonth;
+  if (eSelect) eSelect.value = endMonth;
+
+  // 프리셋 버튼 active 상태 스타일 토글
+  document.querySelectorAll('.vat-preset-btn').forEach(btn => {
+    if (btn.textContent.trim() === label || (label.startsWith(btn.textContent.trim()))) {
+      btn.className = 'vat-preset-btn px-2.5 py-1 rounded-lg bg-cyan-950/80 hover:bg-cyan-900 text-cyan-300 border border-cyan-700/80 font-bold transition';
+    } else {
+      btn.className = 'vat-preset-btn px-2.5 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 font-medium transition';
+    }
+  });
+
+  await fetchAndRenderVat(currentVatParams.startMonth, currentVatParams.endMonth, currentVatParams.year, label);
+}
+
+export async function handleVatCustomQuery() {
+  const year = Number(document.getElementById('vatYearSelect')?.value || 2026);
+  const startMonth = Number(document.getElementById('vatStartMonthSelect')?.value || 1);
+  const endMonth = Number(document.getElementById('vatEndMonthSelect')?.value || 12);
+
+  if (startMonth > endMonth) {
+    alert("시작월은 종료월보다 작거나 같아야 합니다.");
+    return;
+  }
+
+  // 프리셋 버튼 active 해제
+  document.querySelectorAll('.vat-preset-btn').forEach(btn => {
+    btn.className = 'vat-preset-btn px-2.5 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 font-medium transition';
+  });
+
+  const label = `${startMonth}~${endMonth}월`;
+  currentVatParams = { year, startMonth, endMonth, label };
+  await fetchAndRenderVat(startMonth, endMonth, year, label);
+}
+
+export async function fetchAndRenderVat(startMonth, endMonth, year, label) {
+  const labelEl = document.getElementById('vatCurrentPeriodLabel');
+  if (labelEl) {
+    labelEl.textContent = `${year}년 ${label}`;
+  }
+
+  const thead = document.getElementById('vatTableHead');
+  const tbody = document.getElementById('vatTableBody');
+  const tfoot = document.getElementById('vatTableFoot');
+
+  if (tbody) {
+    tbody.innerHTML = `<tr><td colspan="15" class="py-8 text-center text-slate-400">데이터를 집계하고 있습니다...</td></tr>`;
+  }
+
+  let data = null;
+  try {
+    if (state.isOnline) {
+      data = await apiGetVatReport(startMonth, endMonth, year, state.currentBranch);
+    }
+  } catch (err) {
+    console.warn("온라인 부가세 API 호출 실패, 로컬 데이터로 대체 계산합니다:", err);
+  }
+
+  // 오프라인 fallback 또는 API 에러 시 프론트엔드 자체 계산
+  if (!data || !data.rows) {
+    data = calculateLocalVatReport(startMonth, endMonth, year);
+  }
+
+  currentVatData = data;
+  renderVatReportUI(data);
+}
+
+function calculateLocalVatReport(startMonth, endMonth, year) {
+  const months = [];
+  for (let m = startMonth; m <= endMonth; m++) months.push(m);
+
+  let total_collected = 0;
+  let total_supply = 0;
+  let total_vat = 0;
+  const rows = [];
+
+  const sortedRoomKeys = Object.keys(state.rooms || {}).sort((a, b) => Number(a) - Number(b));
+
+  for (const rNum of sortedRoomKeys) {
+    const r = state.rooms[rNum] || {};
+    const monthly_amounts = {};
+    let room_period_total = 0;
+
+    for (const m of months) {
+      const p = (r.payments && r.payments[m]) || {};
+      let amt = 0;
+      if (p.paid) {
+        amt = (p.rent_amount !== undefined ? p.rent_amount : (r.rent || 0)) + 
+              (p.maintenance_amount !== undefined ? p.maintenance_amount : (r.maintenance || 0));
+      }
+      monthly_amounts[m] = amt;
+      room_period_total += amt;
+    }
+
+    const supply_val = Math.round(room_period_total / 1.1);
+    const vat_val = room_period_total - supply_val;
+
+    total_collected += room_period_total;
+    total_supply += supply_val;
+    total_vat += vat_val;
+
+    const isAllPaid = months.every(m => r.payments && r.payments[m] && r.payments[m].paid);
+    rows.push({
+      room_number: Number(rNum),
+      tenant_name: r.name || '공실',
+      lease_type: r.lease_type || '월세',
+      deposit: r.deposit || 0,
+      monthly_amounts: monthly_amounts,
+      period_total: room_period_total,
+      supply_value: supply_val,
+      vat_value: vat_val,
+      status: isAllPaid ? '완납' : (room_period_total === 0 ? '미납' : '부분완납')
+    });
+  }
+
+  return {
+    success: true,
+    year: year,
+    start_month: startMonth,
+    end_month: endMonth,
+    months: months,
+    total_collected: total_collected,
+    total_supply: total_supply,
+    total_vat: total_vat,
+    rows: rows
+  };
+}
+
+function renderVatReportUI(data) {
+  // 1. KPI Cards
+  const kpiTotal = document.getElementById('vatKpiTotalAmount');
+  const kpiSupply = document.getElementById('vatKpiSupplyValue');
+  const kpiVat = document.getElementById('vatKpiVatAmount');
+  const kpiCount = document.getElementById('vatKpiCountSummary');
+
+  if (kpiTotal) kpiTotal.textContent = `${Number(data.total_collected || 0).toLocaleString()}원`;
+  if (kpiSupply) kpiSupply.textContent = `${Number(data.total_supply || 0).toLocaleString()}원`;
+  if (kpiVat) kpiVat.textContent = `${Number(data.total_vat || 0).toLocaleString()}원`;
+
+  const paidRoomsCount = data.rows.filter(r => r.status === '완납').length;
+  if (kpiCount) kpiCount.textContent = `${data.rows.length}개실 / ${paidRoomsCount}개실 완납`;
+
+  // 2. Table Header
+  const thead = document.getElementById('vatTableHead');
+  if (thead) {
+    let thHtml = `
+      <tr>
+        <th class="py-2.5 px-3 border border-slate-700 bg-surface-850 text-cyan-300 font-bold text-center">호실</th>
+        <th class="py-2.5 px-3 border border-slate-700 bg-surface-850 text-slate-200 text-left">임차인</th>
+        <th class="py-2.5 px-2 border border-slate-700 bg-surface-850 text-slate-300 text-center">유형</th>
+        <th class="py-2.5 px-3 border border-slate-700 bg-surface-850 text-slate-300 text-right">보증금</th>
+    `;
+    data.months.forEach(m => {
+      thHtml += `<th class="py-2.5 px-2 border border-slate-700 bg-surface-850 text-cyan-200 text-right">${m}월</th>`;
+    });
+    thHtml += `
+        <th class="py-2.5 px-3 border border-slate-700 bg-surface-850 text-amber-300 font-bold text-right">합계(VAT포함)</th>
+        <th class="py-2.5 px-3 border border-slate-700 bg-surface-850 text-cyan-300 font-bold text-right">공급가액</th>
+        <th class="py-2.5 px-3 border border-slate-700 bg-surface-850 text-emerald-300 font-bold text-right">부가가치세</th>
+        <th class="py-2.5 px-2 border border-slate-700 bg-surface-850 text-slate-300 text-center">상태</th>
+      </tr>
+    `;
+    thead.innerHTML = thHtml;
+  }
+
+  // 3. Table Body
+  const tbody = document.getElementById('vatTableBody');
+  const monthSums = {};
+  data.months.forEach(m => { monthSums[m] = 0; });
+  let totalDeposit = 0;
+
+  if (tbody) {
+    if (!data.rows || data.rows.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="${7 + data.months.length}" class="py-6 text-center text-slate-500">조회된 호실 데이터가 없습니다.</td></tr>`;
+    } else {
+      let trHtml = '';
+      data.rows.forEach(row => {
+        totalDeposit += Number(row.deposit || 0);
+
+        let statusBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">완납</span>';
+        if (row.status === '미납') {
+          statusBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] bg-rose-500/15 text-rose-300 border border-rose-500/30">미납</span>';
+        } else if (row.status === '부분완납') {
+          statusBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] bg-amber-500/15 text-amber-300 border border-amber-500/30">부분</span>';
+        }
+
+        trHtml += `
+          <tr class="hover:bg-surface-800/60 transition">
+            <td class="py-2 px-3 border border-slate-800 text-cyan-300 font-bold text-center bg-surface-900/40">${row.room_number}호</td>
+            <td class="py-2 px-3 border border-slate-800 font-sans text-slate-200 font-medium">${row.tenant_name}</td>
+            <td class="py-2 px-2 border border-slate-800 font-sans text-center text-slate-400 text-[11px]">${row.lease_type}</td>
+            <td class="py-2 px-3 border border-slate-800 text-right text-slate-300">${Number(row.deposit).toLocaleString()}원</td>
+        `;
+
+        data.months.forEach(m => {
+          const amt = (row.monthly_amounts && row.monthly_amounts[m]) || 0;
+          monthSums[m] += amt;
+          const amtText = amt > 0 ? `${amt.toLocaleString()}원` : `<span class="text-slate-600">-</span>`;
+          const amtColor = amt > 0 ? `text-slate-100` : ``;
+          trHtml += `<td class="py-2 px-2 border border-slate-800 text-right ${amtColor}">${amtText}</td>`;
+        });
+
+        trHtml += `
+            <td class="py-2 px-3 border border-slate-800 text-right font-bold text-amber-300">${Number(row.period_total).toLocaleString()}원</td>
+            <td class="py-2 px-3 border border-slate-800 text-right font-semibold text-cyan-300">${Number(row.supply_value).toLocaleString()}원</td>
+            <td class="py-2 px-3 border border-slate-800 text-right font-semibold text-emerald-300">${Number(row.vat_value).toLocaleString()}원</td>
+            <td class="py-2 px-2 border border-slate-800 text-center font-sans">${statusBadge}</td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = trHtml;
+    }
+  }
+
+  // 4. Table Footer (Total Sum Row)
+  const tfoot = document.getElementById('vatTableFoot');
+  if (tfoot) {
+    let tfHtml = `
+      <tr class="bg-surface-850 font-bold border-t-2 border-cyan-500/80">
+        <td class="py-2.5 px-3 border border-slate-700 text-center text-cyan-300 font-sans" colspan="3">전체 합계 (총계)</td>
+        <td class="py-2.5 px-3 border border-slate-700 text-right text-slate-300">${totalDeposit.toLocaleString()}원</td>
+    `;
+    data.months.forEach(m => {
+      tfHtml += `<td class="py-2.5 px-2 border border-slate-700 text-right text-cyan-200">${monthSums[m].toLocaleString()}원</td>`;
+    });
+    tfHtml += `
+        <td class="py-2.5 px-3 border border-slate-700 text-right text-amber-300 text-sm font-black">${Number(data.total_collected || 0).toLocaleString()}원</td>
+        <td class="py-2.5 px-3 border border-slate-700 text-right text-cyan-300 text-sm font-black">${Number(data.total_supply || 0).toLocaleString()}원</td>
+        <td class="py-2.5 px-3 border border-slate-700 text-right text-emerald-300 text-sm font-black">${Number(data.total_vat || 0).toLocaleString()}원</td>
+        <td class="py-2.5 px-2 border border-slate-700 text-center text-slate-400 font-sans">-</td>
+      </tr>
+    `;
+    tfoot.innerHTML = tfHtml;
+  }
+}
+
+// ── 6. 부가가치세 CSV 내보내기 ──
+export function exportVatCSV() {
+  if (!currentVatData || !currentVatData.rows || currentVatData.rows.length === 0) {
+    alert("내보낼 수납 집계 데이터가 없습니다.");
+    return;
+  }
+
+  const d = currentVatData;
+  let csv = "\uFEFF"; // UTF-8 BOM (Excel 한글 깨짐 방지)
+
+  // 상단 헤더 정보
+  csv += `부동산 임차관리 - 부가가치세 및 호실별 수납현황\n`;
+  csv += `조회기간,${d.year}년 ${d.start_month}월 ~ ${d.end_month}월 (${d.rows.length}개실)\n`;
+  csv += `총 수납액,${d.total_collected}원\n`;
+  csv += `공급가액,${d.total_supply}원\n`;
+  csv += `부가가치세(10%),${d.total_vat}원\n`;
+  csv += `출력일시,${formattedToday}\n\n`;
+
+  // 컬럼 헤더
+  let headerRow = ["호실", "임차인", "임대유형", "보증금"];
+  d.months.forEach(m => {
+    headerRow.push(`${m}월 수납액`);
+  });
+  headerRow.push("기간총합계(VAT포함)", "공급가액", "부가가치세", "수납상태");
+  csv += headerRow.join(",") + "\n";
+
+  // 데이터 행
+  const monthSums = {};
+  d.months.forEach(m => { monthSums[m] = 0; });
+  let totalDeposit = 0;
+
+  d.rows.forEach(r => {
+    totalDeposit += Number(r.deposit || 0);
+    const row = [
+      `"${r.room_number}호"`,
+      `"${r.tenant_name}"`,
+      `"${r.lease_type}"`,
+      r.deposit || 0
+    ];
+
+    d.months.forEach(m => {
+      const amt = (r.monthly_amounts && r.monthly_amounts[m]) || 0;
+      monthSums[m] += amt;
+      row.push(amt);
+    });
+
+    row.push(r.period_total, r.supply_value, r.vat_value, `"${r.status}"`);
+    csv += row.join(",") + "\n";
+  });
+
+  // 합계 행
+  const summaryRow = ["합계", `"${d.rows.length}개실"`, '""', totalDeposit];
+  d.months.forEach(m => {
+    summaryRow.push(monthSums[m]);
+  });
+  summaryRow.push(d.total_collected, d.total_supply, d.total_vat, '""');
+  csv += summaryRow.join(",") + "\n";
+
+  // CSV 파일 다운로드 생성
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `부동산_부가가치세_수납현황_${d.year}년_${d.start_month}월~${d.end_month}월_${formattedToday}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+

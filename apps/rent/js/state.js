@@ -98,16 +98,64 @@ export function saveLocalFallback() {
   }
 }
 
+export function generateDefaultSeedRooms() {
+  const DEFAULT_NAMES = ["김민준", "이서연", "박도윤", "정하은", "최지호", "강지우", "윤시우", "조서아", "임민서", "한준우", "오예은", "서지안", "신유준", "권다은", "황현우", "송지유", "안우진", "홍서현", "유동현", "고민서", "문도현", "양채원", "손정우", "배채은", "조민성", "백지아", "허성민", "남은서", "유준호"];
+  const res = {};
+
+  ROOM_NUMBERS.forEach((rNum, idx) => {
+    const isJeonse = (rNum === 701);
+    const rentVal = isJeonse ? 0 : (400000 + (rNum % 5) * 20000);
+    const maintVal = 50000;
+    const payments = {};
+
+    for (let m = 1; m <= 12; m++) {
+      const isPaid = (m <= 9); // 1~9월 완납
+      payments[m] = {
+        month: m,
+        paid: isPaid,
+        paid_date: isPaid ? `2026-0${m}-10`.replace('-010', '-10') : "",
+        rent_amount: rentVal,
+        maintenance_amount: maintVal,
+        note: isPaid ? "정상 입금" : ""
+      };
+    }
+
+    res[rNum] = {
+      room_number: rNum,
+      name: DEFAULT_NAMES[idx % DEFAULT_NAMES.length],
+      phone: `010-${2000 + idx}-${String(rNum).padStart(4, '0')}`,
+      id_number: `950${(idx % 9) + 1}01-*******`,
+      lease_type: isJeonse ? "전세" : "월세",
+      pay_timing: "후불",
+      deposit: isJeonse ? 80000000 : (5000000 + (rNum % 3) * 5000000),
+      rent: rentVal,
+      maintenance: maintVal,
+      clean_fee: 80000,
+      move_in: "2024-03-01",
+      expiry: "2026-12-31",
+      move_out: "",
+      payments: payments
+    };
+  });
+  return res;
+}
+
 export function loadLocalFallback() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       state.selectedRoom = parsed.selectedRoom || 101;
-      state.rooms = parsed.rooms || {};
+      state.rooms = parsed.rooms && Object.keys(parsed.rooms).length > 0 ? parsed.rooms : generateDefaultSeedRooms();
       state.expenses = parsed.expenses || [];
+    } else {
+      state.selectedRoom = 101;
+      state.rooms = generateDefaultSeedRooms();
+      state.expenses = [];
+      saveLocalFallback();
     }
   } catch (e) {
     console.error("Local load error:", e);
+    state.rooms = generateDefaultSeedRooms();
   }
 }

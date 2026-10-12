@@ -205,6 +205,27 @@ async def create_expense(
     return service.create_expense(db, payload, branch_id=branch_id)
 
 
+# ── 부가가치세(VAT) 기간별 수납 집계 보고서 라우트 ──
+@router.get("/vat-report")
+async def get_vat_report(
+    branch_id: str = Query("main", description="건물 식별 ID"),
+    start_month: int = Query(1, ge=1, le=12, description="시작월 (기본: 1월)"),
+    end_month: int = Query(6, ge=1, le=12, description="종료월 (기본: 6월)"),
+    year: int = Query(2026, description="정산 연도"),
+    db: Session = Depends(get_db)
+):
+    """부가가치세 신고용 기간별(1~6월, 7~12월 등) 호실별 수납 집계 엑셀 데이터"""
+    if start_month > end_month:
+        raise HTTPException(status_code=400, detail="시작월은 종료월보다 클 수 없습니다.")
+    return service.get_vat_report(
+        db,
+        branch_id=branch_id,
+        start_month=start_month,
+        end_month=end_month,
+        year=year
+    )
+
+
 # ── 계정 권한별 동적 로그인 & 등업 신청 ──
 @router.post("/auth/admin-login")
 async def admin_login(payload: AdminLoginRequest):

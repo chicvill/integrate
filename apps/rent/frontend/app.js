@@ -16,10 +16,18 @@ import {
   openLedgerModal,
   exportCurrentRoomCSV,
   openUpgradeModal,
-  handleUpgradeSubmit
+  handleUpgradeSubmit,
+  openVatModal,
+  setVatPeriod,
+  handleVatCustomQuery,
+  exportVatCSV
 } from './js/modals.js?v=2.0';
 
 // ── 전역 윈도우 핸들러 바인딩 (인라인 HTML 호출 호환) ──
+window.openVatModal = openVatModal;
+window.setVatPeriod = setVatPeriod;
+window.handleVatCustomQuery = handleVatCustomQuery;
+window.exportVatCSV = exportVatCSV;
 window.selectRoom = selectRoom;
 
 window.handleRoomChange = function() {
