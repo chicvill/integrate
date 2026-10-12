@@ -4,9 +4,9 @@
  * 백엔드(integrat.db) 실시간 동기화 및 오프라인 localStorage 폴백 지원.
  */
 
-import { apiGetRooms, apiGetExpenses, apiGetBranches } from './api.js?v=2.0';
+import { apiGetRooms, apiGetExpenses, apiGetBranches, apiGetTenantHistories } from './api.js?v=2.0';
 
-export const STORAGE_KEY = "ONEROOM_DATA_STORE_29_V4";
+export const STORAGE_KEY = "ONEROOM_DATA_STORE_29_V5";
 
 export const ROOM_NUMBERS = [
   101,
@@ -39,15 +39,19 @@ export const state = {
   selectedRoom: 101,
   rooms: {},
   expenses: [],
+  tenantHistories: [],
+  showAllPastMonths: false, // 기본 최근 6개월, 위로 스크롤/펼칠 시 1년 전까지
   isContractOpen: false,
-  isPastOpen: false,
   isOnline: false
 };
 
-// URL 쿼리 파라미터에서 branch 가져오기
+// URL 쿼리 파라미터 또는 localStorage에서 branch 가져오기
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('branch')) {
   state.currentBranch = urlParams.get('branch');
+} else {
+  const savedBranch = localStorage.getItem(`${STORAGE_KEY}_BRANCH`);
+  if (savedBranch) state.currentBranch = savedBranch;
 }
 
 /**
@@ -56,19 +60,21 @@ if (urlParams.get('branch')) {
 export async function loadInitialData() {
   try {
     // 1. 백엔드 API 호출 시도
-    const [roomsRes, expRes, branchRes] = await Promise.all([
+    const [roomsRes, expRes, branchRes, histRes] = await Promise.all([
       apiGetRooms(state.currentBranch),
       apiGetExpenses(state.currentBranch),
-      apiGetBranches()
+      apiGetBranches(),
+      apiGetTenantHistories(state.currentBranch)
     ]);
 
     state.rooms = roomsRes.rooms || {};
     state.expenses = expRes.expenses || [];
     state.branches = branchRes.branches || [];
+    state.tenantHistories = histRes.histories || [];
     state.isOnline = true;
 
     // 저장된 마지막 선택 호실 복원
-    const savedLastRoom = localStorage.getItem(`${STORAGE_KEY}_LAST_ROOM`);
+    const savedLastRoom = localStorage.getItem(`${STORAGE_KEY}_LAST_ROOM_${state.currentBranch}`);
     if (savedLastRoom && state.rooms[savedLastRoom]) {
       state.selectedRoom = parseInt(savedLastRoom, 10);
     } else {
@@ -76,7 +82,7 @@ export async function loadInitialData() {
     }
 
     saveLocalFallback();
-    console.log("✅ 백엔드 DB(integrat.db)와 실시간 동기화 완료");
+    console.log("✅ 백엔드 DB(integrat.db)와 실시간 동기화 완료 - 지점:", state.currentBranch);
   } catch (err) {
     console.warn("⚠️ 백엔드 연결 불가, 로컬 캐시(localStorage)로 폴백합니다:", err);
     state.isOnline = false;
@@ -89,10 +95,13 @@ export function saveLocalFallback() {
     const payload = {
       selectedRoom: state.selectedRoom,
       rooms: state.rooms,
-      expenses: state.expenses
+      expenses: state.expenses,
+      branches: state.branches,
+      tenantHistories: state.tenantHistories
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-    localStorage.setItem(`${STORAGE_KEY}_LAST_ROOM`, String(state.selectedRoom));
+    localStorage.setItem(`${STORAGE_KEY}_${state.currentBranch}`, JSON.stringify(payload));
+    localStorage.setItem(`${STORAGE_KEY}_LAST_ROOM_${state.currentBranch}`, String(state.selectedRoom));
+    localStorage.setItem(`${STORAGE_KEY}_BRANCH`, state.currentBranch);
   } catch (e) {
     console.error("Local save error:", e);
   }
@@ -107,16 +116,28 @@ export function generateDefaultSeedRooms() {
     const rentVal = isJeonse ? 0 : (400000 + (rNum % 5) * 20000);
     const maintVal = 50000;
     const payments = {};
+    const hasPrevTenant = (rNum === 201);
 
     for (let m = 1; m <= 12; m++) {
-      const isPaid = (m <= 9); // 1~9월 완납
+      const isPaid = (m < currentMonth);
+      let tName = DEFAULT_NAMES[idx % DEFAULT_NAMES.length];
+      let isPrev = false;
+
+      if (hasPrevTenant && m <= 6) {
+        tName = "박지훈";
+        isPrev = true;
+      }
+
       payments[m] = {
         month: m,
+        year: currentYear,
         paid: isPaid,
         paid_date: isPaid ? `2026-0${m}-10`.replace('-010', '-10') : "",
         rent_amount: rentVal,
         maintenance_amount: maintVal,
-        note: isPaid ? "정상 입금" : ""
+        note: isPaid ? (isPrev ? "이전 세입자 정상 입금 (전출)" : "정상 입금") : "",
+        tenant_name: tName,
+        is_previous_tenant: isPrev
       };
     }
 
@@ -131,8 +152,8 @@ export function generateDefaultSeedRooms() {
       rent: rentVal,
       maintenance: maintVal,
       clean_fee: 80000,
-      move_in: "2024-03-01",
-      expiry: "2026-12-31",
+      move_in: hasPrevTenant ? `${currentYear}-07-01` : "2024-03-01",
+      expiry: `${currentYear + 1}-12-31`,
       move_out: "",
       payments: payments
     };
@@ -142,16 +163,64 @@ export function generateDefaultSeedRooms() {
 
 export function loadLocalFallback() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(`${STORAGE_KEY}_${state.currentBranch}`);
     if (raw) {
       const parsed = JSON.parse(raw);
       state.selectedRoom = parsed.selectedRoom || 101;
       state.rooms = parsed.rooms && Object.keys(parsed.rooms).length > 0 ? parsed.rooms : generateDefaultSeedRooms();
       state.expenses = parsed.expenses || [];
+      state.branches = parsed.branches && parsed.branches.length > 0 ? parsed.branches : [
+        { branch_id: 'main', name: '원룸 본관 (29개실)', billing_status: 'PAID' },
+        { branch_id: 'branch_02', name: '원룸 별관 (29개실)', billing_status: 'PAID' }
+      ];
+      state.tenantHistories = parsed.tenantHistories || [
+        {
+          id: 'prev-tenant-201',
+          branch_id: state.currentBranch,
+          room_number: 201,
+          name: '박지훈',
+          id_number: '940315-1******',
+          phone: '010-9876-0201',
+          lease_type: '월세',
+          pay_timing: '후불',
+          deposit: 5000000,
+          rent: 420000,
+          maintenance: 50000,
+          clean_fee: 80000,
+          move_in: `${currentYear - 1}-07-01`,
+          expiry: `${currentYear}-06-30`,
+          move_out: `${currentYear}-06-30`,
+          retention_until: `${currentYear + 1}-06-30`
+        }
+      ];
     } else {
       state.selectedRoom = 101;
       state.rooms = generateDefaultSeedRooms();
       state.expenses = [];
+      state.branches = [
+        { branch_id: 'main', name: '원룸 본관 (29개실)', billing_status: 'PAID' },
+        { branch_id: 'branch_02', name: '원룸 별관 (29개실)', billing_status: 'PAID' }
+      ];
+      state.tenantHistories = [
+        {
+          id: 'prev-tenant-201',
+          branch_id: state.currentBranch,
+          room_number: 201,
+          name: '박지훈',
+          id_number: '940315-1******',
+          phone: '010-9876-0201',
+          lease_type: '월세',
+          pay_timing: '후불',
+          deposit: 5000000,
+          rent: 420000,
+          maintenance: 50000,
+          clean_fee: 80000,
+          move_in: `${currentYear - 1}-07-01`,
+          expiry: `${currentYear}-06-30`,
+          move_out: `${currentYear}-06-30`,
+          retention_until: `${currentYear + 1}-06-30`
+        }
+      ];
       saveLocalFallback();
     }
   } catch (e) {

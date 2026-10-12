@@ -4,8 +4,8 @@
  */
 
 import { state, formattedToday, saveLocalFallback } from './state.js?v=2.0';
-import { apiUpdateContract, apiCreateExpense, apiRequestUpgrade, apiGetVatReport } from './api.js?v=2.0';
-import { renderAll } from './ui.js?v=2.0';
+import { apiUpdateContract, apiCreateExpense, apiRequestUpgrade, apiGetVatReport, apiCreateBranch, apiGetTenantHistories } from './api.js?v=2.0';
+import { renderAll, switchBranch } from './ui.js?v=2.0';
 
 export function openModal(id) {
   const m = document.getElementById(id);
@@ -338,6 +338,7 @@ function calculateLocalVatReport(startMonth, endMonth, year) {
     const r = state.rooms[rNum] || {};
     const monthly_amounts = {};
     let room_period_total = 0;
+    const tenant_names_seen = new Set();
 
     for (const m of months) {
       const p = (r.payments && r.payments[m]) || {};
@@ -345,6 +346,7 @@ function calculateLocalVatReport(startMonth, endMonth, year) {
       if (p.paid) {
         amt = (p.rent_amount !== undefined ? p.rent_amount : (r.rent || 0)) + 
               (p.maintenance_amount !== undefined ? p.maintenance_amount : (r.maintenance || 0));
+        if (p.tenant_name) tenant_names_seen.add(p.tenant_name);
       }
       monthly_amounts[m] = amt;
       room_period_total += amt;
@@ -357,10 +359,23 @@ function calculateLocalVatReport(startMonth, endMonth, year) {
     total_supply += supply_val;
     total_vat += vat_val;
 
+    let display_name = r.name || '공실';
+    if (tenant_names_seen.size > 1) {
+      const others = Array.from(tenant_names_seen).filter(n => n !== display_name);
+      display_name = `${display_name} (전: ${others.join(', ')})`;
+    } else if (tenant_names_seen.size === 1) {
+      const only = Array.from(tenant_names_seen)[0];
+      if (only !== display_name && display_name !== '공실') {
+        display_name = `${display_name} (전: ${only})`;
+      } else if (only !== display_name && display_name === '공실') {
+        display_name = `${only} (전출)`;
+      }
+    }
+
     const isAllPaid = months.every(m => r.payments && r.payments[m] && r.payments[m].paid);
     rows.push({
       room_number: Number(rNum),
-      tenant_name: r.name || '공실',
+      tenant_name: display_name,
       lease_type: r.lease_type || '월세',
       deposit: r.deposit || 0,
       monthly_amounts: monthly_amounts,
@@ -559,5 +574,97 @@ export function exportVatCSV() {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+}
+
+// ── 전출자 1년 보존 이력 조회 모달 ──
+export async function openTenantHistoryModal() {
+  const container = document.getElementById('tenantHistoryListContainer');
+  if (!container) return;
+  container.innerHTML = '<div class="py-6 text-center text-slate-400 text-xs">전출자 이력을 조회하고 있습니다...</div>';
+  openModal('tenantHistoryModal');
+
+  try {
+    if (state.isOnline) {
+      const res = await apiGetTenantHistories(state.currentBranch);
+      state.tenantHistories = res.histories || [];
+    }
+  } catch (e) {
+    console.warn("전출자 이력 API 조회 실패, 로컬 캐시 사용:", e);
+  }
+
+  if (!state.tenantHistories || state.tenantHistories.length === 0) {
+    container.innerHTML = '<div class="py-8 text-center text-slate-500 text-xs">최근 1년 이내 전출된 세입자 이력이 없습니다.</div>';
+    return;
+  }
+
+  let html = '';
+  state.tenantHistories.forEach(h => {
+    html += `
+      <div class="p-3.5 rounded-xl bg-surface-850 border border-slate-800 text-xs space-y-2">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-2">
+            <span class="font-mono font-bold text-cyan-300 text-sm px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-800">${h.room_number}호</span>
+            <span class="font-bold text-slate-100 text-sm">${h.name}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">전출 세입자</span>
+          </div>
+          <span class="text-[11px] text-slate-400 font-mono">1년 보존기한: <strong class="text-emerald-400 font-bold">${h.retention_until || '-'}</strong></span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-slate-300 pt-2 border-t border-slate-800">
+          <div><span class="text-slate-500 block">연락처</span> ${h.phone || '-'}</div>
+          <div><span class="text-slate-500 block">임대조건</span> ${h.lease_type || '월세'} / ${Number(h.rent || 0).toLocaleString()}원</div>
+          <div><span class="text-slate-500 block">보증금</span> ${Number(h.deposit || 0).toLocaleString()}원</div>
+          <div><span class="text-slate-500 block">거주기간</span> ${h.move_in || '-'} ~ ${h.move_out || '-'}</div>
+        </div>
+      </div>
+    `;
+  });
+  container.innerHTML = html;
+}
+
+// ── 신규 부동산(건물) 추가 모달 ──
+export function openNewBranchModal() {
+  document.getElementById('newBranchId').value = `branch_${Date.now().toString().slice(-4)}`;
+  document.getElementById('newBranchName').value = '';
+  document.getElementById('newBranchAddress').value = '';
+  openModal('newBranchModal');
+}
+
+export async function handleNewBranchSubmit(e) {
+  e.preventDefault();
+  const bId = document.getElementById('newBranchId').value.trim();
+  const bName = document.getElementById('newBranchName').value.trim();
+  const bAddr = document.getElementById('newBranchAddress').value.trim();
+
+  if (!bId || !bName) {
+    alert("건물 식별 ID와 이름을 입력해주세요.");
+    return;
+  }
+
+  const payload = {
+    branch_id: bId,
+    name: bName,
+    address: bAddr,
+    fee_plan: "원룸 프리미엄 29실형",
+    monthly_fee: 150000
+  };
+
+  try {
+    if (state.isOnline) {
+      await apiCreateBranch(payload);
+    } else {
+      state.branches.push({
+        branch_id: bId,
+        name: bName,
+        address: bAddr,
+        billing_status: 'PAID'
+      });
+    }
+    saveLocalFallback();
+    closeModal('newBranchModal');
+    await switchBranch(bId);
+    alert(`신규 부동산 [${bName}]이(가) 등록되고 선택되었습니다.`);
+  } catch (err) {
+    alert("부동산 등록 실패: " + err.message);
+  }
 }
 

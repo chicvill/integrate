@@ -63,11 +63,11 @@ export async function apiUpdateContract(roomNumber, data, branchId = 'main') {
   });
 }
 
-export async function apiProcessPayment(roomNumber, month, branchId = 'main', paidDate = null, note = '정상 입금') {
+export async function apiProcessPayment(roomNumber, month, branchId = 'main', paidDate = null, note = '정상 입금', tenantName = null) {
   const base = getApiBase('rent');
   return await fetchWithAuth(`${base}/rooms/${roomNumber}/payment?branch_id=${encodeURIComponent(branchId)}`, {
     method: 'POST',
-    body: JSON.stringify({ month, paid_date: paidDate, note })
+    body: JSON.stringify({ month, paid_date: paidDate, note, tenant_name: tenantName })
   });
 }
 
@@ -90,6 +90,13 @@ export async function apiCreateExpense(data, branchId = 'main') {
     method: 'POST',
     body: JSON.stringify(data)
   });
+}
+
+// ── 전출자 1년 보존 이력 API ──
+export async function apiGetTenantHistories(branchId = 'main', roomNumber = null) {
+  const base = getApiBase('rent');
+  const roomQuery = roomNumber ? `&room_number=${roomNumber}` : '';
+  return await fetchWithAuth(`${base}/tenant-histories?branch_id=${encodeURIComponent(branchId)}${roomQuery}`);
 }
 
 // ── 다중 건물/지점 API ──

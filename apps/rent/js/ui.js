@@ -1,66 +1,399 @@
 /**
  * apps/rent/frontend/js/ui.js
- * 원룸 임차료 관리 시스템 DOM 렌더링 및 UI 유틸리티.
+ * 원룸 임차료 관리 시스템 모바일 최적화 DOM 렌더링 및 UI 슬라이드 드로어 제어.
  */
 
-import { state, FLOOR_STRUCTURE, currentMonth, formattedToday, saveLocalFallback } from './state.js?v=2.0';
+import { state, FLOOR_STRUCTURE, currentMonth, currentYear, formattedToday, saveLocalFallback, loadInitialData } from './state.js?v=2.0';
 import { apiProcessPayment, apiCancelPayment } from './api.js?v=2.0';
 
 export function selectRoom(roomNum) {
   state.selectedRoom = parseInt(roomNum, 10);
   saveLocalFallback();
+  closeRoomDrawer();
   renderAll();
 }
 
+export async function switchBranch(branchId) {
+  if (state.currentBranch === branchId) return;
+  state.currentBranch = branchId;
+  saveLocalFallback();
+  closeMenuDrawer();
+
+  // URL 업데이트 (히스토리 지원)
+  const url = new URL(window.location.href);
+  url.searchParams.set('branch', branchId);
+  window.history.pushState({}, '', url.toString());
+
+  await loadInitialData();
+  renderAll();
+}
+
+// ── 슬라이드 드로어 제어 ──
+export function openMenuDrawer() {
+  const drawer = document.getElementById('leftMenuDrawer');
+  const backdrop = document.getElementById('menuDrawerBackdrop');
+  if (drawer && backdrop) {
+    backdrop.classList.remove('hidden');
+    requestAnimationFrame(() => {
+      drawer.classList.remove('-translate-x-full');
+      drawer.classList.add('translate-x-0');
+      backdrop.classList.remove('opacity-0');
+      backdrop.classList.add('opacity-100');
+    });
+  }
+}
+
+export function closeMenuDrawer() {
+  const drawer = document.getElementById('leftMenuDrawer');
+  const backdrop = document.getElementById('menuDrawerBackdrop');
+  if (drawer && backdrop) {
+    drawer.classList.remove('translate-x-0');
+    drawer.classList.add('-translate-x-full');
+    backdrop.classList.remove('opacity-100');
+    backdrop.classList.add('opacity-0');
+    setTimeout(() => {
+      backdrop.classList.add('hidden');
+    }, 200);
+  }
+}
+
+export function toggleMenuDrawer() {
+  const drawer = document.getElementById('leftMenuDrawer');
+  if (drawer && drawer.classList.contains('-translate-x-full')) {
+    openMenuDrawer();
+  } else {
+    closeMenuDrawer();
+  }
+}
+
+export function openRoomDrawer() {
+  const drawer = document.getElementById('rightRoomDrawer');
+  const backdrop = document.getElementById('roomDrawerBackdrop');
+  if (drawer && backdrop) {
+    backdrop.classList.remove('hidden');
+    requestAnimationFrame(() => {
+      drawer.classList.remove('translate-x-full');
+      drawer.classList.add('translate-x-0');
+      backdrop.classList.remove('opacity-0');
+      backdrop.classList.add('opacity-100');
+    });
+  }
+}
+
+export function closeRoomDrawer() {
+  const drawer = document.getElementById('rightRoomDrawer');
+  const backdrop = document.getElementById('roomDrawerBackdrop');
+  if (drawer && backdrop) {
+    drawer.classList.remove('translate-x-0');
+    drawer.classList.add('translate-x-full');
+    backdrop.classList.remove('opacity-100');
+    backdrop.classList.add('opacity-0');
+    setTimeout(() => {
+      backdrop.classList.add('hidden');
+    }, 200);
+  }
+}
+
+export function toggleRoomDrawer() {
+  const drawer = document.getElementById('rightRoomDrawer');
+  if (drawer && drawer.classList.contains('translate-x-full')) {
+    openRoomDrawer();
+  } else {
+    closeRoomDrawer();
+  }
+}
+
+export function togglePastMonthsScope() {
+  state.showAllPastMonths = !state.showAllPastMonths;
+  const room = state.rooms[state.selectedRoom];
+  if (room) renderPastHistorySection(room);
+}
+
+// ── 종합 렌더링 ──
 export function renderAll() {
   const roomNum = state.selectedRoom;
   const room = state.rooms[roomNum];
   if (!room) return;
 
-  renderFloorMap();
-  renderBranchSelector();
-  renderContractSummary(room);
+  renderHeaderSummary(room);
+  renderMainRoomCard(room);
   renderCurrentMonthSection(room);
   renderPastHistorySection(room);
+  renderRightRoomDrawer();
+  renderLeftMenuDrawer();
 }
 
-export function renderBranchSelector() {
-  const sel = document.getElementById('branchSelector');
-  if (!sel) return;
+export function renderHeaderSummary(room) {
+  // 현재 활성 건물 이름 표시
+  const curBranchObj = state.branches.find(b => b.branch_id === state.currentBranch);
+  const branchName = curBranchObj ? curBranchObj.name : '원룸 본관';
 
-  sel.innerHTML = '';
-  if (state.branches.length === 0) {
-    const opt = document.createElement('option');
-    opt.value = 'main';
-    opt.textContent = '원룸 본관 (29개실)';
-    sel.appendChild(opt);
+  const branchTitleEl = document.getElementById('headerBranchName');
+  if (branchTitleEl) branchTitleEl.textContent = branchName;
+
+  const headerRoomBadge = document.getElementById('headerRoomBadge');
+  if (headerRoomBadge) headerRoomBadge.textContent = `${room.room_number}호 ▾`;
+}
+
+export function renderMainRoomCard(room) {
+  const rNum = room.room_number;
+  const isVacant = !room.name || !!room.move_out;
+  const leaseType = room.lease_type || '월세';
+  const payTiming = room.pay_timing || '후불';
+
+  // 1. 호실 및 세입자 정보
+  const cardRoomNumber = document.getElementById('cardRoomNumber');
+  if (cardRoomNumber) cardRoomNumber.textContent = `${rNum}호`;
+
+  const cardTenantName = document.getElementById('cardTenantName');
+  if (cardTenantName) cardTenantName.textContent = isVacant ? '공실 (미계약)' : `${room.name} 고객`;
+
+  const cardPhone = document.getElementById('cardPhone');
+  if (cardPhone) {
+    if (isVacant || !room.phone) {
+      cardPhone.innerHTML = `<span class="text-slate-500">연락처 없음</span>`;
+    } else {
+      cardPhone.innerHTML = `<a href="tel:${room.phone}" class="text-cyan-400 underline font-mono flex items-center gap-1 hover:text-cyan-300">📞 ${room.phone}</a>`;
+    }
+  }
+
+  // 뱃지 상태
+  const statusBadge = document.getElementById('cardStatusBadge');
+  if (statusBadge) {
+    if (isVacant) {
+      statusBadge.className = 'text-xs px-2.5 py-0.5 rounded-full font-bold bg-slate-800 text-slate-400 border border-slate-700';
+      statusBadge.textContent = '공실';
+    } else {
+      statusBadge.className = 'text-xs px-2.5 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+      statusBadge.textContent = '입주중';
+    }
+  }
+
+  const leaseBadge = document.getElementById('cardLeaseTypeBadge');
+  if (leaseBadge) {
+    leaseBadge.className = `text-xs px-2 py-0.5 rounded-md font-semibold ${leaseType === '전세' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'}`;
+    leaseBadge.textContent = leaseType;
+  }
+
+  const payTimingBadge = document.getElementById('cardPayTimingBadge');
+  if (payTimingBadge) {
+    payTimingBadge.className = 'text-xs px-2 py-0.5 rounded-md font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30';
+    payTimingBadge.textContent = payTiming;
+  }
+
+  // 보증금 / 월세 / 관리비 요약
+  const cDeposit = document.getElementById('cDeposit');
+  if (cDeposit) cDeposit.textContent = `${Number(room.deposit || 0).toLocaleString()}원`;
+
+  const cRent = document.getElementById('cRent');
+  if (cRent) cRent.textContent = leaseType === '전세' ? '0원' : `${Number(room.rent || 0).toLocaleString()}원`;
+
+  const cMaintenance = document.getElementById('cMaintenance');
+  if (cMaintenance) cMaintenance.textContent = `${Number(room.maintenance || 0).toLocaleString()}원`;
+
+  // 전입일 / 만기일 요약
+  const cPeriod = document.getElementById('cPeriod');
+  if (cPeriod) cPeriod.textContent = (room.move_in && room.expiry) ? `${room.move_in} ~ ${room.expiry}` : '-';
+}
+
+export function renderCurrentMonthSection(room) {
+  const rNum = room.room_number;
+  const isVacant = !room.name || !!room.move_out;
+  const leaseType = room.lease_type || '월세';
+  const payTiming = room.pay_timing || '후불';
+
+  if (!room.payments) room.payments = {};
+  if (!room.payments[currentMonth]) {
+    room.payments[currentMonth] = {
+      month: currentMonth,
+      year: currentYear,
+      paid: false,
+      paid_date: '',
+      rent_amount: leaseType === '전세' ? 0 : room.rent,
+      maintenance_amount: room.maintenance,
+      note: '',
+      tenant_name: room.name,
+      is_previous_tenant: false
+    };
+  }
+
+  const curPay = room.payments[currentMonth];
+  const curRent = (leaseType === '전세') ? 0 : (curPay.rent_amount !== undefined ? curPay.rent_amount : room.rent);
+  const curMaint = curPay.maintenance_amount !== undefined ? curPay.maintenance_amount : room.maintenance;
+  const curTotal = curRent + curMaint;
+
+  const curMonthTitle = document.getElementById('curMonthTitle');
+  if (curMonthTitle) curMonthTitle.textContent = `${currentMonth}월분`;
+
+  const curTotalAmount = document.getElementById('curTotalAmount');
+  if (curTotalAmount) curTotalAmount.textContent = `${Number(curTotal).toLocaleString()}원`;
+
+  const curRentDetail = document.getElementById('curRentDetail');
+  if (curRentDetail) curRentDetail.textContent = `월세 ${Number(curRent).toLocaleString()} + 관리비 ${Number(curMaint).toLocaleString()}`;
+
+  const statusBadge = document.getElementById('curMonthStatusBadge');
+  const actionArea = document.getElementById('curMonthActionArea');
+
+  if (isVacant) {
+    if (statusBadge) {
+      statusBadge.className = 'px-3 py-1 rounded-full font-black text-sm bg-slate-800 text-slate-400 border border-slate-700';
+      statusBadge.textContent = '공실 (미부과)';
+    }
+    if (actionArea) actionArea.innerHTML = `<span class="text-xs text-slate-500 py-2 block text-center">계약 등록 후 납부 가능</span>`;
+  } else if (curPay.paid) {
+    if (statusBadge) {
+      statusBadge.className = 'px-3 py-1 rounded-full font-black text-sm bg-emerald-500/25 text-emerald-300 border border-emerald-500/50 flex items-center gap-1.5';
+      statusBadge.innerHTML = `<span>✓</span> 완납 (${curPay.paid_date || formattedToday})`;
+    }
+    if (actionArea) {
+      actionArea.innerHTML = `
+        <div class="flex items-center gap-2 w-full">
+          <button type="button" disabled class="flex-1 py-3 px-4 rounded-xl text-sm font-bold bg-surface-800 text-slate-400 border border-slate-700/80 cursor-not-allowed flex items-center justify-center gap-2 opacity-80">
+            <span class="text-emerald-400 font-black">✓</span> 이번 달 납부 완료됨
+          </button>
+          <button type="button" id="btnCancelPay" class="py-3 px-3.5 rounded-xl text-xs font-semibold bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-rose-300 border border-slate-700 transition cursor-pointer">
+            납부 취소
+          </button>
+        </div>
+      `;
+      document.getElementById('btnCancelPay').onclick = () => handleCancelPayment(rNum, currentMonth);
+    }
   } else {
-    state.branches.forEach(b => {
-      const opt = document.createElement('option');
-      opt.value = b.branch_id;
-      opt.textContent = `${b.name} (${b.billing_status === 'PAID' ? '정상' : '미납'})`;
-      if (b.branch_id === state.currentBranch) opt.selected = true;
-      sel.appendChild(opt);
-    });
+    if (statusBadge) {
+      statusBadge.className = 'px-3 py-1 rounded-full font-black text-sm bg-rose-500/25 text-rose-300 border border-rose-500/50 animate-pulse';
+      statusBadge.textContent = '● 미납 (입금대기)';
+    }
+    if (actionArea) {
+      actionArea.innerHTML = `
+        <button type="button" id="btnProcessPay" class="w-full py-3.5 px-4 rounded-xl text-base font-black bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 transition shadow-lg shadow-cyan-950/60 flex items-center justify-center gap-2 cursor-pointer active:scale-98">
+          💳 ${currentMonth}월분 즉시 완납 처리 (${Number(curTotal).toLocaleString()}원)
+        </button>
+      `;
+      document.getElementById('btnProcessPay').onclick = () => handleProcessPayment(rNum, currentMonth);
+    }
   }
 }
 
-export function renderFloorMap() {
-  const container = document.getElementById('roomFloorMap');
+export function renderPastHistorySection(room) {
+  const rNum = room.room_number;
+  const tbody = document.getElementById('pastPaymentTableBody');
+  const pastScopeToggleBtn = document.getElementById('pastScopeToggleBtn');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const isJeonse = (room.lease_type === '전세');
+
+  // 월 범위 결정: 기본 최근 6개월, 확장 시 1~12월 (1년 전까지)
+  const startM = state.showAllPastMonths ? 1 : Math.max(1, currentMonth - 5);
+  const endM = currentMonth;
+
+  if (pastScopeToggleBtn) {
+    if (state.showAllPastMonths) {
+      pastScopeToggleBtn.innerHTML = `<span>⬇ 최근 6개월만 축소 보기</span>`;
+    } else {
+      pastScopeToggleBtn.innerHTML = `<span class="text-cyan-300 font-bold">⬆ 이전 세입자 포함 1년전까지 펼쳐보기</span>`;
+    }
+  }
+
+  // 역순(최근월이 맨 위)으로 렌더링하여 위로 스크롤할 때 과거 내역 확인
+  const monthsToRender = [];
+  for (let m = endM; m >= startM; m--) {
+    monthsToRender.push(m);
+  }
+
+  monthsToRender.forEach(m => {
+    const p = (room.payments && room.payments[m]) || {
+      month: m,
+      year: currentYear,
+      paid: false,
+      paid_date: '',
+      rent_amount: isJeonse ? 0 : room.rent,
+      maintenance_amount: room.maintenance,
+      note: '',
+      tenant_name: room.name,
+      is_previous_tenant: false
+    };
+
+    const rAmt = isJeonse ? 0 : (p.rent_amount !== undefined ? p.rent_amount : room.rent);
+    const mAmt = p.maintenance_amount !== undefined ? p.maintenance_amount : room.maintenance;
+    const tot = rAmt + mAmt;
+
+    const tr = document.createElement('tr');
+    tr.className = `hover:bg-surface-850/60 transition ${p.is_previous_tenant ? 'bg-amber-950/20' : ''}`;
+
+    // 세입자 표시 라벨 (전출자 1년 보존 표시)
+    let tenantLabel = '';
+    if (p.is_previous_tenant) {
+      tenantLabel = `
+        <div class="font-bold text-amber-300 flex items-center gap-1">
+          <span>${p.tenant_name || '전출 세입자'}</span>
+          <span class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1 py-0.2 rounded font-normal">전출자(1년보존)</span>
+        </div>
+      `;
+    } else {
+      tenantLabel = `
+        <div class="font-medium text-slate-200">
+          ${p.tenant_name || room.name || '공실'}
+          ${m === currentMonth ? '<span class="text-[9px] bg-cyan-500/20 text-cyan-300 px-1 py-0.2 rounded ml-0.5">당월</span>' : ''}
+        </div>
+      `;
+    }
+
+    tr.innerHTML = `
+      <td class="py-2 px-2 text-center border-r border-slate-800 font-bold text-slate-300 font-mono text-xs">
+        ${m}월
+      </td>
+      <td class="py-2 px-2.5 border-r border-slate-800 text-xs">
+        ${tenantLabel}
+      </td>
+      <td class="py-2 px-2 border-r border-slate-800 text-right font-bold text-slate-100 font-mono text-xs">
+        ${Number(tot).toLocaleString()}원
+      </td>
+      <td class="py-2 px-1.5 border-r border-slate-800 text-center">
+        <span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold ${p.paid ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">
+          ${p.paid ? '완납' : '미납'}
+        </span>
+      </td>
+      <td class="py-2 px-1.5 text-center">
+        ${p.paid ? `
+          <button type="button" class="btn-cancel-past px-2 py-0.5 rounded text-[11px] bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-rose-300 border border-slate-700 transition cursor-pointer" data-month="${m}">
+            취소
+          </button>
+        ` : `
+          <button type="button" class="btn-pay-past px-2 py-0.5 rounded text-[11px] bg-cyan-600 hover:bg-cyan-500 text-white font-semibold transition shadow-sm cursor-pointer" data-month="${m}">
+            수납
+          </button>
+        `}
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('.btn-cancel-past').forEach(btn => {
+    btn.onclick = () => handleCancelPayment(rNum, parseInt(btn.dataset.month, 10));
+  });
+  tbody.querySelectorAll('.btn-pay-past').forEach(btn => {
+    btn.onclick = () => handleProcessPayment(rNum, parseInt(btn.dataset.month, 10));
+  });
+}
+
+// ── 우측 슬라이드 바: 29개실 호실 선택 그리드 ──
+export function renderRightRoomDrawer() {
+  const container = document.getElementById('drawerFloorMap');
   if (!container) return;
   container.innerHTML = '';
 
   FLOOR_STRUCTURE.forEach(floor => {
-    const row = document.createElement('div');
-    row.className = 'flex items-center gap-2 flex-wrap sm:flex-nowrap';
+    const floorBox = document.createElement('div');
+    floorBox.className = 'mb-2.5';
 
-    const label = document.createElement('span');
-    label.className = 'text-xs font-bold text-slate-400 w-9 shrink-0 text-center py-1 bg-surface-850 rounded border border-slate-800 font-mono';
-    label.textContent = floor.label;
-    row.appendChild(label);
+    const floorHeader = document.createElement('div');
+    floorHeader.className = 'text-[11px] font-bold text-slate-400 mb-1 px-1 flex items-center justify-between font-mono';
+    floorHeader.textContent = floor.label;
+    floorBox.appendChild(floorHeader);
 
-    const roomsContainer = document.createElement('div');
-    roomsContainer.className = 'flex items-center gap-1.5 flex-1 flex-wrap';
+    const grid = document.createElement('div');
+    grid.className = 'grid grid-cols-3 sm:grid-cols-5 gap-1.5';
 
     floor.rooms.forEach(rNum => {
       const rData = state.rooms[rNum] || {};
@@ -79,251 +412,98 @@ export function renderFloorMap() {
       }
 
       if (isSelected) {
-        btn.className = 'px-2.5 py-1 text-xs font-black rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 ring-2 ring-cyan-200 shadow-md shadow-cyan-900/40 flex items-center gap-1.5 transition-all transform scale-105 cursor-pointer';
+        btn.className = 'p-2 rounded-xl bg-cyan-400 text-slate-950 font-black ring-2 ring-cyan-200 shadow-md text-left flex flex-col justify-between cursor-pointer transition';
       } else {
-        btn.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-200 border border-slate-700/80 flex items-center gap-1.5 transition hover:border-slate-500 cursor-pointer';
+        btn.className = 'p-2 rounded-xl bg-surface-800 hover:bg-surface-700 text-slate-200 border border-slate-700/80 text-left flex flex-col justify-between cursor-pointer transition hover:border-cyan-500/50';
       }
 
       btn.innerHTML = `
-        <span class="w-2 h-2 rounded-full ${dotColor}"></span>
-        <span class="font-mono">${rNum}호</span>
-        <span class="text-[10px] ${isSelected ? 'text-slate-900 font-bold' : 'text-slate-400'}">${isVacant ? '공실' : (rData.name || '')}</span>
+        <div class="flex items-center justify-between">
+          <span class="font-mono text-xs ${isSelected ? 'text-slate-950 font-black' : 'text-slate-200 font-bold'}">${rNum}호</span>
+          <span class="w-2 h-2 rounded-full ${dotColor}"></span>
+        </div>
+        <div class="text-[10px] mt-1 truncate ${isSelected ? 'text-slate-900 font-bold' : 'text-slate-400'}">
+          ${isVacant ? '공실' : (rData.name || '')}
+        </div>
       `;
 
-      roomsContainer.appendChild(btn);
+      grid.appendChild(btn);
     });
 
-    row.appendChild(roomsContainer);
-    container.appendChild(row);
+    floorBox.appendChild(grid);
+    container.appendChild(floorBox);
   });
 }
 
-export function renderContractSummary(room) {
-  const rNum = room.room_number;
-  const isVacant = !room.name || !!room.move_out;
-  const leaseType = room.lease_type || '월세';
-  const payTiming = room.pay_timing || '후불';
+// ── 좌측 슬라이드 바: 부동산 선택 및 메뉴 ──
+export function renderLeftMenuDrawer() {
+  const branchListContainer = document.getElementById('drawerBranchList');
+  if (!branchListContainer) return;
+  branchListContainer.innerHTML = '';
 
-  // 1. Large Room Badges
-  const titleBig = document.getElementById('cardRoomTitleBig');
-  if (titleBig) titleBig.textContent = `${rNum}호`;
-
-  const curBig = document.getElementById('curRoomNumberLarge');
-  if (curBig) curBig.textContent = `${rNum}호`;
-
-  const select = document.getElementById('roomSelect');
-  if (select && select.value !== String(rNum)) {
-    select.value = rNum;
-  }
-
-  // 2. Tenant Summary
-  document.getElementById('cardTenantName').textContent = isVacant ? '공실 (미계약)' : `${room.name} 고객`;
-  document.getElementById('cardPhoneText').textContent = isVacant ? '등록된 임차인 없음' : `연락처: ${room.phone || '미등록'}`;
-
-  const statusBadge = document.getElementById('cardStatusBadge');
-  if (isVacant) {
-    statusBadge.className = 'text-xs px-2.5 py-0.5 rounded-full font-semibold bg-slate-800 text-slate-400 border border-slate-700';
-    statusBadge.textContent = '공실';
-  } else {
-    statusBadge.className = 'text-xs px-2.5 py-0.5 rounded-full font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30';
-    statusBadge.textContent = '입주중';
-  }
-
-  const leaseBadge = document.getElementById('cardLeaseTypeBadge');
-  if (leaseType === '전세') {
-    leaseBadge.className = 'text-xs px-2.5 py-0.5 rounded-full font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30';
-    leaseBadge.textContent = '전세';
-  } else {
-    leaseBadge.className = 'text-xs px-2.5 py-0.5 rounded-full font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30';
-    leaseBadge.textContent = '월세';
-  }
-
-  document.getElementById('cardPayTimingBadge').textContent = payTiming;
-
-  // 3. Contract Detail Grid
-  document.getElementById('cIdNumber').textContent = isVacant ? '-' : (room.id_number || '-');
-  document.getElementById('cTypeTimingSummary').textContent = `${leaseType} / ${payTiming}`;
-  document.getElementById('cDeposit').textContent = `${Number(room.deposit || 0).toLocaleString()}원`;
-  document.getElementById('cRent').textContent = leaseType === '전세' ? '0원 (전세)' : `${Number(room.rent || 0).toLocaleString()}원`;
-  document.getElementById('cMaintenance').textContent = `${Number(room.maintenance || 0).toLocaleString()}원`;
-  document.getElementById('cCleanFee').textContent = `${Number(room.clean_fee || 0).toLocaleString()}원`;
-  document.getElementById('cPeriod').textContent = (room.move_in && room.expiry) ? `${room.move_in} ~ ${room.expiry}` : '-';
-  document.getElementById('cMoveOut').textContent = room.move_out || '해당 없음';
-}
-
-export function renderCurrentMonthSection(room) {
-  const rNum = room.room_number;
-  const isVacant = !room.name || !!room.move_out;
-  const leaseType = room.lease_type || '월세';
-  const payTiming = room.pay_timing || '후불';
-
-  if (!room.payments) room.payments = {};
-  if (!room.payments[currentMonth]) {
-    room.payments[currentMonth] = {
-      month: currentMonth,
-      paid: false,
-      paid_date: '',
-      rent_amount: leaseType === '전세' ? 0 : room.rent,
-      maintenance_amount: room.maintenance,
-      note: ''
-    };
-  }
-
-  const curPay = room.payments[currentMonth];
-  const curRent = (leaseType === '전세') ? 0 : (curPay.rent_amount !== undefined ? curPay.rent_amount : room.rent);
-  const curMaint = curPay.maintenance_amount !== undefined ? curPay.maintenance_amount : room.maintenance;
-  const curTotal = curRent + curMaint;
-
-  document.getElementById('curMonthTitle').textContent = `${currentMonth}월`;
-  document.getElementById('curTodayDate').textContent = formattedToday;
-  document.getElementById('curTimingTag').textContent = `${payTiming} (${payTiming === '선불' ? '당월 선납' : '전월분 후납'})`;
-
-  document.getElementById('curPaidDate').textContent = curPay.paid ? (curPay.paid_date || formattedToday) : '-';
-  document.getElementById('curRentAmount').textContent = `${Number(curRent).toLocaleString()}원`;
-  document.getElementById('curMaintAmount').textContent = `${Number(curMaint).toLocaleString()}원`;
-  document.getElementById('curTotalAmount').textContent = `${Number(curTotal).toLocaleString()}원`;
-
-  const statusBadge = document.getElementById('curMonthStatusBadge');
-  const actionArea = document.getElementById('curMonthActionArea');
-
-  if (isVacant) {
-    statusBadge.className = 'px-2.5 py-0.5 rounded-full font-bold text-xs bg-slate-800 text-slate-400 border border-slate-700';
-    statusBadge.textContent = '공실';
-    actionArea.innerHTML = `<span class="text-xs text-slate-500">계약 등록 후 납부 가능</span>`;
-  } else if (curPay.paid) {
-    statusBadge.className = 'px-2.5 py-0.5 rounded-full font-bold text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
-    statusBadge.textContent = '완납';
-    actionArea.innerHTML = `
-      <div class="flex items-center gap-2">
-        <button type="button" disabled class="px-4 py-2 rounded-xl text-xs font-semibold bg-surface-800 text-slate-400 border border-slate-700/80 cursor-not-allowed flex items-center gap-1.5 opacity-60">
-          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-          이번 달 납부 완료
-        </button>
-        <button type="button" id="btnCancelPay" class="px-3.5 py-2 rounded-xl text-xs bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-rose-300 border border-slate-700 transition flex items-center gap-1 cursor-pointer">
-          납부 취소
-        </button>
-      </div>
-    `;
-    document.getElementById('btnCancelPay').onclick = () => handleCancelPayment(rNum, currentMonth);
-  } else {
-    statusBadge.className = 'px-2.5 py-0.5 rounded-full font-bold text-xs bg-rose-500/20 text-rose-300 border border-rose-500/40';
-    statusBadge.textContent = '미납';
-    actionArea.innerHTML = `
-      <button type="button" id="btnProcessPay" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition shadow-lg shadow-cyan-950/60 flex items-center gap-1.5 cursor-pointer">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-        💳 이번 달(${currentMonth}월) 즉시 납부 (${payTiming})
+  // 1. 등록된 부동산 목록 렌더링
+  if (state.branches.length === 0) {
+    branchListContainer.innerHTML = `
+      <button type="button" class="w-full text-left p-2.5 rounded-xl bg-cyan-950/60 border border-cyan-500/60 text-cyan-300 font-bold text-xs flex items-center justify-between">
+        <span>🏢 원룸 본관 (29개실)</span>
+        <span class="text-xs">✓ 선택됨</span>
       </button>
     `;
-    document.getElementById('btnProcessPay').onclick = () => handleProcessPayment(rNum, currentMonth);
+  } else {
+    state.branches.forEach(b => {
+      const isSelected = (b.branch_id === state.currentBranch);
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.onclick = () => switchBranch(b.branch_id);
+
+      if (isSelected) {
+        btn.className = 'w-full text-left p-2.5 rounded-xl bg-cyan-950/70 border border-cyan-500/80 text-cyan-300 font-bold text-xs flex items-center justify-between shadow-sm cursor-pointer';
+        btn.innerHTML = `
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span>🏢</span>
+              <span>${b.name}</span>
+            </div>
+            <div class="text-[10px] text-cyan-400/80 mt-0.5">${b.address || '주소 등록됨'}</div>
+          </div>
+          <span class="text-xs font-black text-cyan-300">✓ 선택중</span>
+        `;
+      } else {
+        btn.className = 'w-full text-left p-2.5 rounded-xl bg-surface-800/80 hover:bg-surface-700/80 text-slate-300 border border-slate-700/60 text-xs flex items-center justify-between cursor-pointer transition';
+        btn.innerHTML = `
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-slate-400">🏢</span>
+              <span class="font-semibold text-slate-200">${b.name}</span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-0.5">${b.address || '주소 등록됨'}</div>
+          </div>
+          <span class="text-[11px] text-slate-500">선택 ↗</span>
+        `;
+      }
+      branchListContainer.appendChild(btn);
+    });
   }
-}
-
-export function renderPastHistorySection(room) {
-  const rNum = room.room_number;
-  const tbody = document.getElementById('pastPaymentTableBody');
-  const subtitle = document.getElementById('pastTableSubtitle');
-  if (!tbody || !subtitle) return;
-  tbody.innerHTML = '';
-
-  let moveInMonth = 1;
-  if (room.move_in) {
-    const parts = room.move_in.split('-');
-    if (parts.length >= 2) {
-      const mIn = parseInt(parts[1], 10);
-      if (!isNaN(mIn) && mIn >= 1 && mIn <= 12) moveInMonth = mIn;
-    }
-  }
-
-  const prevMonth = currentMonth - 1;
-  subtitle.textContent = `(전입 ${moveInMonth}월 ~ 전월 ${prevMonth >= 1 ? prevMonth : 0}월)`;
-
-  if (prevMonth < 1 || moveInMonth > prevMonth || !room.name) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" class="py-6 text-center text-slate-500 italic">
-          표시할 과거 납부 내역이 없습니다. (전입월이 당월이거나 전출/공실 상태)
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  const isJeonse = (room.lease_type === '전세');
-
-  for (let m = moveInMonth; m <= prevMonth; m++) {
-    const p = (room.payments && room.payments[m]) || {
-      month: m,
-      paid: false,
-      paid_date: '',
-      rent_amount: isJeonse ? 0 : room.rent,
-      maintenance_amount: room.maintenance,
-      note: ''
-    };
-
-    const rAmt = isJeonse ? 0 : (p.rent_amount !== undefined ? p.rent_amount : room.rent);
-    const mAmt = p.maintenance_amount !== undefined ? p.maintenance_amount : room.maintenance;
-    const tot = rAmt + mAmt;
-
-    const tr = document.createElement('tr');
-    tr.className = 'hover:bg-surface-850/60 transition';
-    tr.innerHTML = `
-      <td class="py-2.5 px-3 text-center border-r border-slate-800 font-bold text-slate-300">
-        ${m}월 ${m === moveInMonth ? '<span class="text-[10px] text-cyan-400 font-normal block">(전입월)</span>' : ''}
-      </td>
-      <td class="py-2.5 px-3 border-r border-slate-800 text-center text-slate-300 font-mono">
-        ${p.paid ? (p.paid_date || '-') : '-'}
-      </td>
-      <td class="py-2.5 px-3 border-r border-slate-800 text-right text-slate-300 font-mono">
-        ${Number(rAmt).toLocaleString()}
-      </td>
-      <td class="py-2.5 px-3 border-r border-slate-800 text-right text-slate-300 font-mono">
-        ${Number(mAmt).toLocaleString()}
-      </td>
-      <td class="py-2.5 px-3 border-r border-slate-800 text-right font-bold text-slate-100 font-mono">
-        ${Number(tot).toLocaleString()}
-      </td>
-      <td class="py-2.5 px-3 border-r border-slate-800 text-center">
-        <span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold ${p.paid ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">
-          ${p.paid ? '완납' : '미납'}
-        </span>
-      </td>
-      <td class="py-2.5 px-3 text-center">
-        ${p.paid ? `
-          <button type="button" class="btn-cancel-past px-2.5 py-1 rounded text-[11px] bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-rose-300 border border-slate-700 transition cursor-pointer" data-month="${m}">
-            취소
-          </button>
-        ` : `
-          <button type="button" class="btn-pay-past px-2.5 py-1 rounded text-[11px] bg-cyan-600 hover:bg-cyan-500 text-white font-semibold transition shadow-sm cursor-pointer" data-month="${m}">
-            납부
-          </button>
-        `}
-      </td>
-    `;
-    tbody.appendChild(tr);
-  }
-
-  tbody.querySelectorAll('.btn-cancel-past').forEach(btn => {
-    btn.onclick = () => handleCancelPayment(rNum, parseInt(btn.dataset.month, 10));
-  });
-  tbody.querySelectorAll('.btn-pay-past').forEach(btn => {
-    btn.onclick = () => handleProcessPayment(rNum, parseInt(btn.dataset.month, 10));
-  });
 }
 
 // ── 수납 처리 비동기 액션 ──
 export async function handleProcessPayment(roomNum, month) {
   try {
+    const room = state.rooms[roomNum];
+    const tenantName = (room && room.name) ? room.name : "공실";
+
     if (state.isOnline) {
-      const res = await apiProcessPayment(roomNum, month, state.currentBranch, formattedToday, "정상 입금");
+      const res = await apiProcessPayment(roomNum, month, state.currentBranch, formattedToday, "정상 입금", tenantName);
       state.rooms[roomNum] = res;
     } else {
       // 오프라인 폴백
-      const r = state.rooms[roomNum];
-      if (r && r.payments) {
-        if (!r.payments[month]) r.payments[month] = {};
-        r.payments[month].paid = true;
-        r.payments[month].paid_date = formattedToday;
-        r.payments[month].note = "정상 입금";
+      if (room && room.payments) {
+        if (!room.payments[month]) room.payments[month] = {};
+        room.payments[month].paid = true;
+        room.payments[month].paid_date = formattedToday;
+        room.payments[month].note = "정상 입금";
+        room.payments[month].tenant_name = tenantName;
+        room.payments[month].is_previous_tenant = false;
       }
     }
     saveLocalFallback();

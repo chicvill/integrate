@@ -4,9 +4,14 @@ shared/storage/local_storage.py
 개발 환경 또는 오프라인/단독 실행 시 사용됩니다.
 """
 import os
-import aiofiles
 import logging
 from typing import Optional
+
+try:
+    import aiofiles
+except ImportError:
+    aiofiles = None
+
 from shared.storage.base import BaseStorageService
 
 logger = logging.getLogger("mqnet.storage.local")

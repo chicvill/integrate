@@ -76,6 +76,36 @@ class PaymentInfo(BaseModel):
     rent_amount: int
     maintenance_amount: int
     note: str
+    tenant_name: Optional[str] = ""
+    is_previous_tenant: Optional[bool] = False
+
+
+class TenantHistoryResponse(BaseModel):
+    id: str
+    branch_id: str
+    room_number: int
+    name: str
+    id_number: str
+    phone: str
+    lease_type: str
+    pay_timing: str
+    deposit: int
+    rent: int
+    maintenance: int
+    clean_fee: int
+    move_in: str
+    expiry: str
+    move_out: str
+    retention_until: str
+
+    class Config:
+        from_attributes = True
+
+
+class TenantHistoryListResponse(BaseModel):
+    success: bool
+    total: int
+    histories: List[TenantHistoryResponse]
 
 
 class RoomResponse(BaseModel):
@@ -113,6 +143,7 @@ class PaymentProcessRequest(BaseModel):
     year: Optional[int] = 2026
     paid_date: Optional[str] = None
     note: Optional[str] = "정상 입금"
+    tenant_name: Optional[str] = None
 
 
 # ── 지출 장부 스키마 ──

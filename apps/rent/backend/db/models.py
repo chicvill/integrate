@@ -57,7 +57,7 @@ class RentRoom(Base, TimestampMixin):
 
 
 class RentPayment(Base, TimestampMixin):
-    """월별 임차료/관리비 수납 장부 모델"""
+    """월별 임차료/관리비 수납 장부 모델 (세입자별 추적 지원)"""
     __tablename__ = "rent_payments"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -71,6 +71,38 @@ class RentPayment(Base, TimestampMixin):
     rent_amount: Mapped[int] = mapped_column(Integer, default=0)
     maintenance_amount: Mapped[int] = mapped_column(Integer, default=0)
     note: Mapped[str] = mapped_column(String(200), default="")
+
+    # 부가세 신고 및 과거 내역 추적용 세입자 정보
+    tenant_name: Mapped[str] = mapped_column(String(100), default="", index=True)
+    tenant_id_number: Mapped[str] = mapped_column(String(50), default="")
+    is_previous_tenant: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+
+
+class RentTenantHistory(Base, TimestampMixin):
+    """전출자 및 이전 임대차 계약 이력 (전출 후 1년간 필수 보존 및 부가세 산출 연동)"""
+    __tablename__ = "rent_tenant_histories"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    branch_id: Mapped[str] = mapped_column(String(50), default="main", nullable=False, index=True)
+    room_number: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+
+    name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    id_number: Mapped[str] = mapped_column(String(50), default="")
+    phone: Mapped[str] = mapped_column(String(50), default="")
+    lease_type: Mapped[str] = mapped_column(String(20), default="월세")
+    pay_timing: Mapped[str] = mapped_column(String(20), default="후불")
+
+    deposit: Mapped[int] = mapped_column(Integer, default=5000000)
+    rent: Mapped[int] = mapped_column(Integer, default=400000)
+    maintenance: Mapped[int] = mapped_column(Integer, default=50000)
+    clean_fee: Mapped[int] = mapped_column(Integer, default=80000)
+
+    move_in: Mapped[str] = mapped_column(String(30), default="")
+    expiry: Mapped[str] = mapped_column(String(30), default="")
+    move_out: Mapped[str] = mapped_column(String(30), nullable=False, index=True)  # 전출일자
+    retention_until: Mapped[str] = mapped_column(String(30), nullable=False, index=True)  # 전출일 + 1년 (법적 보존 기한)
+
+    metadata_json: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
 
 
 class RentExpense(Base, TimestampMixin):

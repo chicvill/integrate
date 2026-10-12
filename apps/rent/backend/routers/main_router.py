@@ -8,12 +8,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from ..db.database import get_db
-from ..db.models import RentRoom, RentBranch, RentExpense, RentUpgradeRequest
+from ..db.models import RentRoom, RentBranch, RentExpense, RentUpgradeRequest, RentTenantHistory
 from ..schemas import (
     RoomUpdate, RoomResponse, RoomListResponse,
     PaymentProcessRequest,
     ExpenseCreate, ExpenseResponse, ExpenseListResponse,
     BranchCreate, BranchUpdate, BranchBillingUpdate, BranchResponse, BranchListResponse,
+    TenantHistoryResponse, TenantHistoryListResponse,
     SystemStatusResponse,
     AdminLoginRequest, UpgradeRequestPayload, UpgradeApprovePayload
 )
@@ -145,14 +146,15 @@ async def process_payment(
     branch_id: str = Query("main"),
     db: Session = Depends(get_db)
 ):
-    """임차료/관리비 납부 완납 처리"""
+    """임차료/관리비 납부 완납 처리 (세입자 정보 연동)"""
     updated = service.process_payment(
         db,
         room_number=room_number,
         month=payload.month,
         branch_id=branch_id,
         paid_date=payload.paid_date,
-        note=payload.note or "정상 입금"
+        note=payload.note or "정상 입금",
+        tenant_name=payload.tenant_name
     )
     if not updated:
         raise HTTPException(status_code=404, detail=f"{room_number}호를 찾을 수 없습니다.")
@@ -176,6 +178,22 @@ async def cancel_payment(
     if not updated:
         raise HTTPException(status_code=404, detail=f"{room_number}호를 찾을 수 없습니다.")
     return updated
+
+
+# ── 전출자 1년 보존 이력 조회 라우트 ──
+@router.get("/tenant-histories", response_model=TenantHistoryListResponse)
+async def list_tenant_histories(
+    branch_id: str = Query("main", description="건물 ID"),
+    room_number: Optional[int] = Query(None, description="특정 호실 번호 필터"),
+    db: Session = Depends(get_db)
+):
+    """전출 후 1년간 필수 보존되는 전출자 및 이전 임대차 계약 이력 조회"""
+    histories = service.list_tenant_histories(db, branch_id=branch_id, room_number=room_number)
+    return TenantHistoryListResponse(
+        success=True,
+        total=len(histories),
+        histories=histories
+    )
 
 
 # ── 지출 장부 라우트 ──
