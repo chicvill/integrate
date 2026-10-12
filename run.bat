@@ -54,13 +54,19 @@ if not exist "%BASE%.env.shared" (
 echo [OK] .env.shared found
 
 REM --- Check Python ---
-python --version > nul 2>&1
-if errorlevel 1 (
-    echo [ERROR] Python is not installed or not in PATH.
-    pause
-    exit /b 1
+py -3.14 --version > nul 2>&1
+if not errorlevel 1 (
+    for /f "delims=" %%v in ('py -3.14 --version 2^>^&1') do echo [OK] %%v (py launcher)
+    doskey python=py -3.14 $*
+) else (
+    python --version > nul 2>&1
+    if errorlevel 1 (
+        echo [ERROR] Python is not installed or not in PATH.
+        pause
+        exit /b 1
+    )
+    for /f "delims=" %%v in ('python --version 2^>^&1') do echo [OK] %%v
 )
-for /f "delims=" %%v in ('python --version 2^>^&1') do echo [OK] %%v
 
 REM --- Check and Start Docker Desktop ---
 docker info >nul 2>&1

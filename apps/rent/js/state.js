@@ -551,20 +551,15 @@ export function fillTenantPaymentsState(roomNumber = null) {
         hasPrevHist: hasPrev
       });
 
-      // 사용자가 명시적으로 취소(미납) 처리한 건은 완납으로 자동 덮어쓰지 않고 미납 유지
-      const isExplicitlyCancelled = (existing.note === "납부 취소") || (existing.paid === false && !existing.paid_date);
-      const isPaid = isExplicitlyCancelled ? false : (existing.paid !== undefined ? existing.paid : rule.paid);
-      const payNote = isExplicitlyCancelled ? "납부 취소" : (existing.note || rule.note || '');
-
       const payObj = {
         ...existing,
         month: m,
         year: y,
-        paid: isPaid,
-        paid_date: isPaid ? (existing.paid_date || `${y}-${String(m).padStart(2, '0')}-10`) : '',
+        paid: rule.paid,
+        paid_date: rule.paid ? (existing.paid_date || `${y}-${String(m).padStart(2, '0')}-10`) : '',
         rent_amount: hasPrev ? existing.rent_amount : rentVal,
         maintenance_amount: hasPrev ? existing.maintenance_amount : maintVal,
-        note: payNote,
+        note: rule.note || existing.note || '',
         tenant_name: hasPrev ? existing.tenant_name : room.name,
         is_previous_tenant: hasPrev
       };

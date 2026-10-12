@@ -136,6 +136,16 @@ export function renderHeaderSummary(room) {
 
   const headerRoomBadge = document.getElementById('headerRoomBadge');
   if (headerRoomBadge) headerRoomBadge.textContent = `${room.room_number}호 ▾`;
+
+  // 서버 온라인/오프라인 연결 상태 배너 표시 제어
+  const statusBanner = document.getElementById('serverStatusBanner');
+  if (statusBanner) {
+    if (state.isOnline) {
+      statusBanner.classList.add('hidden');
+    } else {
+      statusBanner.classList.remove('hidden');
+    }
+  }
 }
 
 export function renderMainRoomCard(room) {

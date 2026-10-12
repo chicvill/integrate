@@ -81,6 +81,22 @@
 
     </div>
   </header>
+ 
+  <!-- ── 1-1. Server Connection Status Banner (오프라인/서버 미연결 시 명확한 안내) ── -->
+  <div id="serverStatusBanner" class="hidden max-w-xl mx-auto px-3 pt-2">
+    <div class="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs flex items-center justify-between gap-2 shadow-sm">
+      <div class="flex items-center gap-2">
+        <span class="text-base shrink-0">⚠️</span>
+        <div class="min-w-0">
+          <span class="font-bold text-amber-300">백엔드 서버 미실행 (오프라인 예제 모드)</span>
+          <p class="text-[11px] text-amber-300/80 mt-0.5 leading-snug">PC를 다시 켠 후에는 <b>START_RENT.bat</b>을 실행하시면 DB에 영구 저장된 최신 임차 정보가 즉시 연동됩니다.</p>
+        </div>
+      </div>
+      <button type="button" onclick="loadInitialData().then(renderAll)" class="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold text-[11px] hover:bg-amber-400 active:scale-95 cursor-pointer whitespace-nowrap shrink-0">
+        🔄 재연결
+      </button>
+    </div>
+  </div>
 
   <!-- ── 2. Left Slide Drawer (Menu & Property Selection) ── -->
   <div id="menuDrawerBackdrop" onclick="closeMenuDrawer()" class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-40 hidden opacity-0 transition-opacity duration-200"></div>
