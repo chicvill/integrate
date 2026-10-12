@@ -415,5 +415,7 @@ export function fillTenantPaymentsState(roomNumber = null) {
     }
   });
 
-  saveState();
+  saveLocalFallback();
 }
+
+export const saveState = saveLocalFallback;

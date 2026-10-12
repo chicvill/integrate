@@ -636,8 +636,10 @@ function fillTenantPaymentsState(roomNumber = null) {
     }
   });
 
-  saveState();
+  saveLocalFallback();
 }
+
+const saveState = saveLocalFallback;
 
 /**
  * apps/rent/frontend/js/ui.js
