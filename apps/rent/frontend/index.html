@@ -523,8 +523,8 @@
         <button type="button" onclick="closeModal('vatModal')" class="text-slate-400 hover:text-white font-bold text-base">✕</button>
       </div>
 
-      <!-- Filter Controls -->
-      <div class="py-2.5 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 text-xs">
+      <!-- Filter & Compact Excel Summary Bar -->
+      <div class="py-1.5 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 text-xs">
         <div class="flex items-center gap-1.5 flex-wrap">
           <button type="button" id="vatBtn1H" onclick="setVatPeriod(1, 6, '1기 (1~6월)')" class="vat-preset-btn px-2.5 py-1 rounded-lg bg-cyan-950/80 text-cyan-300 border border-cyan-700/80 font-bold transition">1기 (1~6월)</button>
           <button type="button" id="vatBtn2H" onclick="setVatPeriod(7, 12, '2기 (7~12월)')" class="vat-preset-btn px-2.5 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 font-medium transition">2기 (7~12월)</button>
@@ -532,7 +532,7 @@
         </div>
 
         <div class="flex items-center gap-1.5">
-          <select id="vatStartMonthSelect" class="bg-surface-800 border border-slate-700 text-slate-200 rounded px-2 py-1 text-xs">
+          <select id="vatStartMonthSelect" class="bg-surface-800 border border-slate-700 text-slate-200 rounded px-2 py-0.5 text-xs">
             <option value="1" selected>1월</option>
             <option value="2">2월</option>
             <option value="3">3월</option>
@@ -547,7 +547,7 @@
             <option value="12">12월</option>
           </select>
           <span class="text-slate-400">~</span>
-          <select id="vatEndMonthSelect" class="bg-surface-800 border border-slate-700 text-slate-200 rounded px-2 py-1 text-xs">
+          <select id="vatEndMonthSelect" class="bg-surface-800 border border-slate-700 text-slate-200 rounded px-2 py-0.5 text-xs">
             <option value="1">1월</option>
             <option value="2">2월</option>
             <option value="3">3월</option>
@@ -561,57 +561,23 @@
             <option value="11">11월</option>
             <option value="12">12월</option>
           </select>
-          <button type="button" onclick="handleVatCustomQuery()" class="px-2.5 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs cursor-pointer">조회</button>
+          <button type="button" onclick="handleVatCustomQuery()" class="px-2.5 py-0.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs cursor-pointer">조회</button>
         </div>
       </div>
 
-      <!-- Target Rooms Selector (산출 대상 호실 선택 - 디폴트: 전체 선택) -->
-      <div class="py-2 px-3 bg-surface-850/80 border border-slate-800/90 rounded-xl my-2 text-xs">
-        <div class="flex items-center justify-between gap-2 flex-wrap mb-1.5">
-          <div class="flex items-center gap-2">
-            <span class="font-bold text-slate-200 flex items-center gap-1">
-              <span>🏠</span>
-              <span>산출 대상 호실</span>
-            </span>
-            <span id="vatSelectedRoomsBadge" class="text-[11px] font-semibold text-cyan-400 bg-cyan-950/70 border border-cyan-800/60 px-2 py-0.5 rounded-full">
-              전체 선택됨
-            </span>
-          </div>
-          <div class="flex items-center gap-1.5 text-xs">
-            <button type="button" onclick="selectAllVatRooms(true)" class="px-2 py-0.5 rounded bg-surface-800 hover:bg-surface-700 text-cyan-300 border border-slate-700 text-[11px] font-semibold transition cursor-pointer">
-              ✓ 전체 선택
-            </button>
-            <button type="button" onclick="selectAllVatRooms(false)" class="px-2 py-0.5 rounded bg-surface-800 hover:bg-surface-700 text-slate-400 border border-slate-700 text-[11px] font-medium transition cursor-pointer">
-              ✕ 전체 해제
-            </button>
-            <button type="button" onclick="toggleVatRoomContainer()" id="vatRoomToggleBtn" class="px-2 py-0.5 rounded bg-cyan-950/60 hover:bg-cyan-900 text-cyan-300 border border-cyan-800 text-[11px] font-medium transition cursor-pointer">
-              호실 접기 ▴
-            </button>
-          </div>
+      <!-- Compact Excel Summary Bar (카드 대신 엑셀 상단 한 줄 요약 그리드) -->
+      <div class="my-1.5 px-3 py-1.5 rounded-lg bg-surface-950 border border-slate-700/80 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs">
+        <div class="flex items-center gap-3 flex-wrap font-mono">
+          <span class="text-slate-400 font-sans">대상 호실: <strong id="vatKpiCountSummary" class="text-cyan-300 font-mono font-bold">0/0</strong></span>
+          <span class="text-slate-700">|</span>
+          <span class="text-slate-400 font-sans">합계(VAT포함): <strong id="vatKpiTotalAmount" class="text-amber-300 font-mono font-bold">0</strong></span>
+          <span class="text-slate-700">|</span>
+          <span class="text-slate-400 font-sans">공급가액: <strong id="vatKpiSupplyValue" class="text-cyan-300 font-mono font-bold">0</strong></span>
+          <span class="text-slate-700">|</span>
+          <span class="text-slate-400 font-sans">부가가치세: <strong id="vatKpiVatAmount" class="text-emerald-300 font-mono font-bold">0</strong></span>
         </div>
-        <!-- 호실 선택 칩 목록 그리드 -->
-        <div id="vatRoomCheckboxesContainer" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pt-1 pb-0.5 transition-all">
-          <!-- 동적 호실 체크박스 칩 목록 -->
-        </div>
-      </div>
-
-      <!-- KPI Summaries -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 my-2.5 text-xs">
-        <div class="p-2.5 rounded-xl bg-surface-850 border border-slate-800">
-          <span class="text-slate-400 block mb-0.5 text-[11px]">총 수납액 합계 (VAT포함)</span>
-          <span id="vatKpiTotalAmount" class="text-sm sm:text-base font-black text-white font-mono">0원</span>
-        </div>
-        <div class="p-2.5 rounded-xl bg-surface-850 border border-slate-800">
-          <span class="text-slate-400 block mb-0.5 text-[11px]">공급가액 (매출원가)</span>
-          <span id="vatKpiSupplyValue" class="text-sm sm:text-base font-black text-cyan-400 font-mono">0원</span>
-        </div>
-        <div class="p-2.5 rounded-xl bg-surface-850 border border-slate-800">
-          <span class="text-slate-400 block mb-0.5 text-[11px]">부가가치세 (10%)</span>
-          <span id="vatKpiVatAmount" class="text-sm sm:text-base font-black text-amber-400 font-mono">0원</span>
-        </div>
-        <div class="p-2.5 rounded-xl bg-surface-850 border border-slate-800">
-          <span class="text-slate-400 block mb-0.5 text-[11px]">관리 호실 / 수납 건수</span>
-          <span id="vatKpiCountSummary" class="text-sm sm:text-base font-bold text-slate-200">0개실</span>
+        <div class="text-[11px] text-slate-400 font-sans">
+          (단위: 원 / 호·원 생략)
         </div>
       </div>
 

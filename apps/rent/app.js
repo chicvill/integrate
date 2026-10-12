@@ -31,9 +31,8 @@ import {
   setVatPeriod,
   handleVatCustomQuery,
   exportVatCSV,
-  selectAllVatRooms,
-  onToggleVatRoom,
-  toggleVatRoomContainer,
+  onToggleVatRoomRow,
+  toggleAllVatRooms,
   openTenantHistoryModal,
   openNewBranchModal,
   handleNewBranchSubmit
@@ -58,9 +57,8 @@ window.openVatModal = openVatModal;
 window.setVatPeriod = setVatPeriod;
 window.handleVatCustomQuery = handleVatCustomQuery;
 window.exportVatCSV = exportVatCSV;
-window.selectAllVatRooms = selectAllVatRooms;
-window.onToggleVatRoom = onToggleVatRoom;
-window.toggleVatRoomContainer = toggleVatRoomContainer;
+window.onToggleVatRoomRow = onToggleVatRoomRow;
+window.toggleAllVatRooms = toggleAllVatRooms;
 
 window.openContractEditModal = openContractEditModal;
 window.handleContractFormSubmit = handleContractFormSubmit;

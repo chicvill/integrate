@@ -1172,7 +1172,6 @@ async function handleUpgradeSubmit(e) {
 let currentVatRawData = null; // 원본 전체 데이터
 let currentVatData = null;    // 필터링 적용된 현재 표시 데이터
 let selectedVatRooms = new Set(); // 선택된 호실 번호 목록 (디폴트: 전체)
-let isVatRoomContainerCollapsed = false;
 
 let currentVatParams = {
   year: 2026,
@@ -1194,97 +1193,35 @@ async function openVatModal() {
 function initVatRoomsSelection() {
   const allRoomKeys = Object.keys(state.rooms || {}).map(Number).sort((a, b) => a - b);
   selectedVatRooms = new Set(allRoomKeys);
-  renderVatRoomCheckboxes();
 }
 
 /**
- * 호실 선택 체크박스 칩 렌더링
+ * 테이블 행 체크박스 개별 토글
  */
-function renderVatRoomCheckboxes() {
-  const container = document.getElementById('vatRoomCheckboxesContainer');
-  const badge = document.getElementById('vatSelectedRoomsBadge');
-  const allRoomKeys = Object.keys(state.rooms || {}).map(Number).sort((a, b) => a - b);
-  const totalCount = allRoomKeys.length;
-  const selCount = selectedVatRooms.size;
-
-  if (badge) {
-    if (selCount === totalCount) {
-      badge.textContent = `전체 선택됨 (${totalCount}개실)`;
-      badge.className = "text-[11px] font-semibold text-cyan-400 bg-cyan-950/70 border border-cyan-800/60 px-2 py-0.5 rounded-full";
-    } else if (selCount === 0) {
-      badge.textContent = `선택 없음 (0개실)`;
-      badge.className = "text-[11px] font-semibold text-rose-400 bg-rose-950/70 border border-rose-800/60 px-2 py-0.5 rounded-full";
-    } else {
-      badge.textContent = `${selCount}개실 선택됨 / 총 ${totalCount}개실`;
-      badge.className = "text-[11px] font-semibold text-amber-300 bg-amber-950/70 border border-amber-800/60 px-2 py-0.5 rounded-full";
-    }
-  }
-
-  if (!container) return;
-
-  container.innerHTML = allRoomKeys.map(rNum => {
-    const isChecked = selectedVatRooms.has(rNum);
-    return `
-      <label class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs cursor-pointer select-none transition ${
-        isChecked 
-          ? 'border-cyan-600/70 bg-cyan-950/40 text-cyan-200' 
-          : 'border-slate-800 bg-surface-900/80 text-slate-400 hover:border-slate-700'
-      }">
-        <input type="checkbox" value="${rNum}" ${isChecked ? 'checked' : ''} 
-          onchange="onToggleVatRoom(${rNum}, this.checked)" 
-          class="accent-cyan-500 rounded cursor-pointer w-3.5 h-3.5">
-        <span class="font-bold">${rNum}호</span>
-      </label>
-    `;
-  }).join('');
-}
-
-/**
- * 개별 호실 체크 토글
- */
-function onToggleVatRoom(rNum, isChecked) {
+function onToggleVatRoomRow(rNum, isChecked) {
   const num = Number(rNum);
   if (isChecked) {
     selectedVatRooms.add(num);
   } else {
     selectedVatRooms.delete(num);
   }
-  renderVatRoomCheckboxes();
   applyVatRoomFilter();
 }
 
 /**
- * 전체 선택 / 전체 해제 (디폴트는 전체 선택)
+ * 테이블 헤더 마스터 체크박스 전체 토글
  */
-function selectAllVatRooms(selectAll = true) {
-  const allRoomKeys = Object.keys(state.rooms || {}).map(Number);
-  if (selectAll) {
+function toggleAllVatRooms(isChecked) {
+  const allRoomKeys = (currentVatRawData && currentVatRawData.rows && currentVatRawData.rows.length > 0)
+    ? currentVatRawData.rows.map(r => Number(r.room_number))
+    : Object.keys(state.rooms || {}).map(Number);
+
+  if (isChecked) {
     selectedVatRooms = new Set(allRoomKeys);
   } else {
-    selectedVatRooms = new Set();
+    selectedVatRooms.clear();
   }
-  renderVatRoomCheckboxes();
   applyVatRoomFilter();
-}
-
-/**
- * 호실 선택 컨테이너 접기 / 펼치기
- */
-function toggleVatRoomContainer() {
-  const container = document.getElementById('vatRoomCheckboxesContainer');
-  const btn = document.getElementById('vatRoomToggleBtn');
-  isVatRoomContainerCollapsed = !isVatRoomContainerCollapsed;
-
-  if (container) {
-    if (isVatRoomContainerCollapsed) {
-      container.classList.add('hidden');
-    } else {
-      container.classList.remove('hidden');
-    }
-  }
-  if (btn) {
-    btn.textContent = isVatRoomContainerCollapsed ? '호실 펼치기 ▾' : '호실 접기 ▴';
-  }
 }
 
 /**
@@ -1308,7 +1245,6 @@ function applyVatRoomFilter() {
 
   currentVatData = {
     ...raw,
-    rows: filteredRows,
     total_collected,
     total_supply,
     total_vat
@@ -1470,37 +1406,42 @@ function calculateLocalVatReport(startMonth, endMonth, year) {
 }
 
 function renderVatReportUI(data) {
-  // 1. KPI Cards
+  // 1. Compact Excel Summary Bar (단위 생략)
   const kpiTotal = document.getElementById('vatKpiTotalAmount');
   const kpiSupply = document.getElementById('vatKpiSupplyValue');
   const kpiVat = document.getElementById('vatKpiVatAmount');
   const kpiCount = document.getElementById('vatKpiCountSummary');
 
-  if (kpiTotal) kpiTotal.textContent = `${Number(data.total_collected || 0).toLocaleString()}원`;
-  if (kpiSupply) kpiSupply.textContent = `${Number(data.total_supply || 0).toLocaleString()}원`;
-  if (kpiVat) kpiVat.textContent = `${Number(data.total_vat || 0).toLocaleString()}원`;
+  if (kpiTotal) kpiTotal.textContent = Number(data.total_collected || 0).toLocaleString();
+  if (kpiSupply) kpiSupply.textContent = Number(data.total_supply || 0).toLocaleString();
+  if (kpiVat) kpiVat.textContent = Number(data.total_vat || 0).toLocaleString();
 
-  const paidRoomsCount = data.rows.filter(r => r.status === '완납').length;
-  if (kpiCount) kpiCount.textContent = `${data.rows.length}개실 / ${paidRoomsCount}개실 완납`;
+  const totalRoomsCount = (data.rows || []).length;
+  if (kpiCount) kpiCount.textContent = `${selectedVatRooms.size}/${totalRoomsCount}`;
+
+  const isAllSelected = selectedVatRooms.size === totalRoomsCount && totalRoomsCount > 0;
 
   // 2. Table Header
   const thead = document.getElementById('vatTableHead');
   if (thead) {
     let thHtml = `
       <tr>
-        <th class="py-2.5 px-3 border border-slate-700 bg-surface-850 text-cyan-300 font-bold text-center">호실</th>
-        <th class="py-2.5 px-3 border border-slate-700 bg-surface-850 text-slate-200 text-left">임차인</th>
-        <th class="py-2.5 px-2 border border-slate-700 bg-surface-850 text-slate-300 text-center">유형</th>
-        <th class="py-2.5 px-3 border border-slate-700 bg-surface-850 text-slate-300 text-right">보증금</th>
+        <th class="py-1.5 px-1.5 border border-slate-700 bg-surface-850 text-center w-8">
+          <input type="checkbox" id="vatMasterCheck" ${isAllSelected ? 'checked' : ''} onchange="toggleAllVatRooms(this.checked)" class="accent-cyan-500 rounded cursor-pointer w-3.5 h-3.5" title="전체 선택/해제">
+        </th>
+        <th class="py-1.5 px-2 border border-slate-700 bg-surface-850 text-cyan-300 font-bold text-center w-12">호실</th>
+        <th class="py-1.5 px-2 border border-slate-700 bg-surface-850 text-slate-200 text-left">임차인</th>
+        <th class="py-1.5 px-1 border border-slate-700 bg-surface-850 text-slate-300 text-center w-10">유형</th>
+        <th class="py-1.5 px-2 border border-slate-700 bg-surface-850 text-slate-300 text-right">보증금</th>
     `;
     data.months.forEach(m => {
-      thHtml += `<th class="py-2.5 px-2 border border-slate-700 bg-surface-850 text-cyan-200 text-right">${m}월</th>`;
+      thHtml += `<th class="py-1.5 px-1.5 border border-slate-700 bg-surface-850 text-cyan-200 text-right">${m}월</th>`;
     });
     thHtml += `
-        <th class="py-2.5 px-3 border border-slate-700 bg-surface-850 text-amber-300 font-bold text-right">합계(VAT포함)</th>
-        <th class="py-2.5 px-3 border border-slate-700 bg-surface-850 text-cyan-300 font-bold text-right">공급가액</th>
-        <th class="py-2.5 px-3 border border-slate-700 bg-surface-850 text-emerald-300 font-bold text-right">부가가치세</th>
-        <th class="py-2.5 px-2 border border-slate-700 bg-surface-850 text-slate-300 text-center">상태</th>
+        <th class="py-1.5 px-2 border border-slate-700 bg-surface-850 text-amber-300 font-bold text-right">합계(VAT)</th>
+        <th class="py-1.5 px-2 border border-slate-700 bg-surface-850 text-cyan-300 font-bold text-right">공급가액</th>
+        <th class="py-1.5 px-2 border border-slate-700 bg-surface-850 text-emerald-300 font-bold text-right">부가가치세</th>
+        <th class="py-1.5 px-1.5 border border-slate-700 bg-surface-850 text-slate-300 text-center w-12">상태</th>
       </tr>
     `;
     thead.innerHTML = thHtml;
@@ -1514,40 +1455,54 @@ function renderVatReportUI(data) {
 
   if (tbody) {
     if (!data.rows || data.rows.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="${7 + data.months.length}" class="py-6 text-center text-slate-500">조회된 호실 데이터가 없습니다.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="${8 + data.months.length}" class="py-6 text-center text-slate-500">조회된 호실 데이터가 없습니다.</td></tr>`;
     } else {
       let trHtml = '';
       data.rows.forEach(row => {
-        totalDeposit += Number(row.deposit || 0);
-
-        let statusBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">완납</span>';
-        if (row.status === '미납') {
-          statusBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] bg-rose-500/15 text-rose-300 border border-rose-500/30">미납</span>';
-        } else if (row.status === '부분완납') {
-          statusBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] bg-amber-500/15 text-amber-300 border border-amber-500/30">부분</span>';
+        const isSelected = selectedVatRooms.has(Number(row.room_number));
+        if (isSelected) {
+          totalDeposit += Number(row.deposit || 0);
         }
 
+        let statusBadge = '<span class="px-1 py-0.2 rounded text-[10px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">완납</span>';
+        if (row.status === '미납') {
+          statusBadge = '<span class="px-1 py-0.2 rounded text-[10px] bg-rose-500/15 text-rose-300 border border-rose-500/30">미납</span>';
+        } else if (row.status === '부분완납') {
+          statusBadge = '<span class="px-1 py-0.2 rounded text-[10px] bg-amber-500/15 text-amber-300 border border-amber-500/30">부분</span>';
+        }
+
+        const rowClass = isSelected 
+          ? 'hover:bg-surface-800/60 transition' 
+          : 'opacity-40 bg-slate-950/60 line-through text-slate-500 transition';
+
         trHtml += `
-          <tr class="hover:bg-surface-800/60 transition">
-            <td class="py-2 px-3 border border-slate-800 text-cyan-300 font-bold text-center bg-surface-900/40">${row.room_number}호</td>
-            <td class="py-2 px-3 border border-slate-800 font-sans text-slate-200 font-medium">${row.tenant_name}</td>
-            <td class="py-2 px-2 border border-slate-800 font-sans text-center text-slate-400 text-[11px]">${row.lease_type}</td>
-            <td class="py-2 px-3 border border-slate-800 text-right text-slate-300">${Number(row.deposit).toLocaleString()}원</td>
+          <tr class="${rowClass}">
+            <td class="py-1.5 px-1.5 border border-slate-800 text-center bg-surface-900/60">
+              <input type="checkbox" ${isSelected ? 'checked' : ''} 
+                onchange="onToggleVatRoomRow(${row.room_number}, this.checked)" 
+                class="accent-cyan-500 rounded cursor-pointer w-3.5 h-3.5">
+            </td>
+            <td class="py-1.5 px-2 border border-slate-800 text-cyan-300 font-bold text-center bg-surface-900/40 font-mono">${row.room_number}</td>
+            <td class="py-1.5 px-2 border border-slate-800 font-sans text-slate-200 font-medium">${row.tenant_name}</td>
+            <td class="py-1.5 px-1 border border-slate-800 font-sans text-center text-slate-400 text-[11px]">${row.lease_type}</td>
+            <td class="py-1.5 px-2 border border-slate-800 text-right text-slate-300 font-mono">${Number(row.deposit || 0).toLocaleString()}</td>
         `;
 
         data.months.forEach(m => {
           const amt = (row.monthly_amounts && row.monthly_amounts[m]) || 0;
-          monthSums[m] += amt;
-          const amtText = amt > 0 ? `${amt.toLocaleString()}원` : `<span class="text-slate-600">-</span>`;
+          if (isSelected) {
+            monthSums[m] += amt;
+          }
+          const amtText = amt > 0 ? Number(amt).toLocaleString() : `<span class="text-slate-600">-</span>`;
           const amtColor = amt > 0 ? `text-slate-100` : ``;
-          trHtml += `<td class="py-2 px-2 border border-slate-800 text-right ${amtColor}">${amtText}</td>`;
+          trHtml += `<td class="py-1.5 px-1.5 border border-slate-800 text-right font-mono ${amtColor}">${amtText}</td>`;
         });
 
         trHtml += `
-            <td class="py-2 px-3 border border-slate-800 text-right font-bold text-amber-300">${Number(row.period_total).toLocaleString()}원</td>
-            <td class="py-2 px-3 border border-slate-800 text-right font-semibold text-cyan-300">${Number(row.supply_value).toLocaleString()}원</td>
-            <td class="py-2 px-3 border border-slate-800 text-right font-semibold text-emerald-300">${Number(row.vat_value).toLocaleString()}원</td>
-            <td class="py-2 px-2 border border-slate-800 text-center font-sans">${statusBadge}</td>
+            <td class="py-1.5 px-2 border border-slate-800 text-right font-bold text-amber-300 font-mono">${Number(row.period_total || 0).toLocaleString()}</td>
+            <td class="py-1.5 px-2 border border-slate-800 text-right font-semibold text-cyan-300 font-mono">${Number(row.supply_value || 0).toLocaleString()}</td>
+            <td class="py-1.5 px-2 border border-slate-800 text-right font-semibold text-emerald-300 font-mono">${Number(row.vat_value || 0).toLocaleString()}</td>
+            <td class="py-1.5 px-1.5 border border-slate-800 text-center font-sans">${statusBadge}</td>
           </tr>
         `;
       });
@@ -1560,20 +1515,28 @@ function renderVatReportUI(data) {
   if (tfoot) {
     let tfHtml = `
       <tr class="bg-surface-850 font-bold border-t-2 border-cyan-500/80">
-        <td class="py-2.5 px-3 border border-slate-700 text-center text-cyan-300 font-sans" colspan="3">전체 합계 (총계)</td>
-        <td class="py-2.5 px-3 border border-slate-700 text-right text-slate-300">${totalDeposit.toLocaleString()}원</td>
+        <td class="py-2 px-1 border border-slate-700 text-center text-slate-500 font-sans">-</td>
+        <td class="py-2 px-2 border border-slate-700 text-center text-cyan-300 font-sans" colspan="3">합계 (${selectedVatRooms.size}실)</td>
+        <td class="py-2 px-2 border border-slate-700 text-right text-slate-300 font-mono">${totalDeposit.toLocaleString()}</td>
     `;
     data.months.forEach(m => {
-      tfHtml += `<td class="py-2.5 px-2 border border-slate-700 text-right text-cyan-200">${monthSums[m].toLocaleString()}원</td>`;
+      tfHtml += `<td class="py-2 px-1.5 border border-slate-700 text-right text-cyan-200 font-mono">${monthSums[m].toLocaleString()}</td>`;
     });
     tfHtml += `
-        <td class="py-2.5 px-3 border border-slate-700 text-right text-amber-300 text-sm font-black">${Number(data.total_collected || 0).toLocaleString()}원</td>
-        <td class="py-2.5 px-3 border border-slate-700 text-right text-cyan-300 text-sm font-black">${Number(data.total_supply || 0).toLocaleString()}원</td>
-        <td class="py-2.5 px-3 border border-slate-700 text-right text-emerald-300 text-sm font-black">${Number(data.total_vat || 0).toLocaleString()}원</td>
-        <td class="py-2.5 px-2 border border-slate-700 text-center text-slate-400 font-sans">-</td>
+        <td class="py-2 px-2 border border-slate-700 text-right text-amber-300 text-sm font-black font-mono">${Number(data.total_collected || 0).toLocaleString()}</td>
+        <td class="py-2 px-2 border border-slate-700 text-right text-cyan-300 text-sm font-black font-mono">${Number(data.total_supply || 0).toLocaleString()}</td>
+        <td class="py-2 px-2 border border-slate-700 text-right text-emerald-300 text-sm font-black font-mono">${Number(data.total_vat || 0).toLocaleString()}</td>
+        <td class="py-2 px-1.5 border border-slate-700 text-center text-slate-400 font-sans">-</td>
       </tr>
     `;
     tfoot.innerHTML = tfHtml;
+  }
+
+  // 5. Sync Master Checkbox indeterminate state
+  const master = document.getElementById('vatMasterCheck');
+  if (master) {
+    master.checked = isAllSelected;
+    master.indeterminate = selectedVatRooms.size > 0 && selectedVatRooms.size < totalRoomsCount;
   }
 }
 
@@ -1585,14 +1548,21 @@ function exportVatCSV() {
   }
 
   const d = currentVatData;
+  const filteredRows = d.rows.filter(r => selectedVatRooms.has(Number(r.room_number)));
+  if (filteredRows.length === 0) {
+    alert("선택된 호실이 없습니다. 내보낼 호실을 최소 1개 이상 체크해주세요.");
+    return;
+  }
+
   let csv = "\uFEFF"; // UTF-8 BOM (Excel 한글 깨짐 방지)
 
   // 상단 헤더 정보
   csv += `부동산 임차관리 - 부가가치세 및 호실별 수납현황\n`;
-  csv += `조회기간,${d.year}년 ${d.start_month}월 ~ ${d.end_month}월 (${d.rows.length}개실)\n`;
-  csv += `총 수납액,${d.total_collected}원\n`;
-  csv += `공급가액,${d.total_supply}원\n`;
-  csv += `부가가치세(10%),${d.total_vat}원\n`;
+  csv += `조회기간,${d.year}년 ${d.start_month}월 ~ ${d.end_month}월 (${filteredRows.length}개실 선택)\n`;
+  csv += `총 수납액,${d.total_collected}\n`;
+  csv += `공급가액,${d.total_supply}\n`;
+  csv += `부가가치세(10%),${d.total_vat}\n`;
+  csv += `금액단위,원 (호·원 생략)\n`;
   csv += `출력일시,${formattedToday}\n\n`;
 
   // 컬럼 헤더
@@ -1608,10 +1578,10 @@ function exportVatCSV() {
   d.months.forEach(m => { monthSums[m] = 0; });
   let totalDeposit = 0;
 
-  d.rows.forEach(r => {
+  filteredRows.forEach(r => {
     totalDeposit += Number(r.deposit || 0);
     const row = [
-      `"${r.room_number}호"`,
+      `"${r.room_number}"`,
       `"${r.tenant_name}"`,
       `"${r.lease_type}"`,
       r.deposit || 0
@@ -1628,7 +1598,7 @@ function exportVatCSV() {
   });
 
   // 합계 행
-  const summaryRow = ["합계", `"${d.rows.length}개실"`, '""', totalDeposit];
+  const summaryRow = ["합계", `"${filteredRows.length}개실"`, '""', totalDeposit];
   d.months.forEach(m => {
     summaryRow.push(monthSums[m]);
   });
@@ -1768,9 +1738,8 @@ window.openVatModal = openVatModal;
 window.setVatPeriod = setVatPeriod;
 window.handleVatCustomQuery = handleVatCustomQuery;
 window.exportVatCSV = exportVatCSV;
-window.selectAllVatRooms = selectAllVatRooms;
-window.onToggleVatRoom = onToggleVatRoom;
-window.toggleVatRoomContainer = toggleVatRoomContainer;
+window.onToggleVatRoomRow = onToggleVatRoomRow;
+window.toggleAllVatRooms = toggleAllVatRooms;
 
 window.openContractEditModal = openContractEditModal;
 window.handleContractFormSubmit = handleContractFormSubmit;
