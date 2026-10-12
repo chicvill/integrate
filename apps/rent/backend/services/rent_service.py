@@ -445,8 +445,8 @@ class RentService:
             q = q.filter(RentTenantHistory.room_number == room_number)
         return q.order_by(RentTenantHistory.move_out.desc()).all()
 
-    def get_vat_report(self, db: Session, branch_id: str = "main", start_month: int = 1, end_month: int = 6, year: int = 2026) -> Dict[str, Any]:
-        """부가가치세 신고용 기간별(1~6월, 7~12월 등) 호실별 수납 집계 보고서 (전출자 납부액 및 세입자 변경 완벽 반영)"""
+    def get_vat_report(self, db: Session, branch_id: str = "main", start_month: int = 1, end_month: int = 6, year: int = 2026, room_numbers: Optional[List[int]] = None) -> Dict[str, Any]:
+        """부가가치세 신고용 기간별(1~6월, 7~12월 등) 호실별 수납 집계 보고서 (전출자 납부액 및 선택 호실 필터링 완벽 반영)"""
         rooms = self.get_rooms(db, branch_id)
         report_rows = []
         total_collected = 0
@@ -461,7 +461,11 @@ class RentService:
         for h in histories:
             hist_map.setdefault(h.room_number, []).append(h)
 
-        for rNum in sorted(rooms.keys()):
+        target_rooms = sorted(rooms.keys())
+        if room_numbers is not None and len(room_numbers) > 0:
+            target_rooms = [r for r in target_rooms if r in room_numbers]
+
+        for rNum in target_rooms:
             r = rooms[rNum]
             monthly_amounts = {}
             room_period_total = 0

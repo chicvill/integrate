@@ -230,17 +230,27 @@ async def get_vat_report(
     start_month: int = Query(1, ge=1, le=12, description="시작월 (기본: 1월)"),
     end_month: int = Query(6, ge=1, le=12, description="종료월 (기본: 6월)"),
     year: int = Query(2026, description="정산 연도"),
+    room_numbers: Optional[str] = Query(None, description="쉼표로 구분된 대상 호실 목록 (예: 201,202)"),
     db: Session = Depends(get_db)
 ):
     """부가가치세 신고용 기간별(1~6월, 7~12월 등) 호실별 수납 집계 엑셀 데이터"""
     if start_month > end_month:
         raise HTTPException(status_code=400, detail="시작월은 종료월보다 클 수 없습니다.")
+    
+    parsed_room_numbers = None
+    if room_numbers:
+        try:
+            parsed_room_numbers = [int(r.strip()) for r in room_numbers.split(",") if r.strip().isdigit()]
+        except Exception:
+            parsed_room_numbers = None
+
     return service.get_vat_report(
         db,
         branch_id=branch_id,
         start_month=start_month,
         end_month=end_month,
-        year=year
+        year=year,
+        room_numbers=parsed_room_numbers
     )
 
 

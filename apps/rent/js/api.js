@@ -139,8 +139,12 @@ export async function apiRequestUpgrade(data) {
 }
 
 // ── 부가가치세(VAT) 기간별 수납 집계 API ──
-export async function apiGetVatReport(startMonth = 1, endMonth = 6, year = 2026, branchId = 'main') {
+export async function apiGetVatReport(startMonth = 1, endMonth = 6, year = 2026, branchId = 'main', roomNumbers = null) {
   const base = getApiBase('rent');
-  return await fetchWithAuth(`${base}/vat-report?start_month=${startMonth}&end_month=${endMonth}&year=${year}&branch_id=${encodeURIComponent(branchId)}`);
+  let url = `${base}/vat-report?start_month=${startMonth}&end_month=${endMonth}&year=${year}&branch_id=${encodeURIComponent(branchId)}`;
+  if (roomNumbers && roomNumbers.length > 0) {
+    url += `&room_numbers=${encodeURIComponent(roomNumbers.join(','))}`;
+  }
+  return await fetchWithAuth(url);
 }
 

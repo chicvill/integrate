@@ -151,9 +151,13 @@ async function apiRequestUpgrade(data) {
 }
 
 // ── 부가가치세(VAT) 기간별 수납 집계 API ──
-async function apiGetVatReport(startMonth = 1, endMonth = 6, year = 2026, branchId = 'main') {
+async function apiGetVatReport(startMonth = 1, endMonth = 6, year = 2026, branchId = 'main', roomNumbers = null) {
   const base = getApiBase('rent');
-  return await fetchWithAuth(`${base}/vat-report?start_month=${startMonth}&end_month=${endMonth}&year=${year}&branch_id=${encodeURIComponent(branchId)}`);
+  let url = `${base}/vat-report?start_month=${startMonth}&end_month=${endMonth}&year=${year}&branch_id=${encodeURIComponent(branchId)}`;
+  if (roomNumbers && roomNumbers.length > 0) {
+    url += `&room_numbers=${encodeURIComponent(roomNumbers.join(','))}`;
+  }
+  return await fetchWithAuth(url);
 }
 
 
@@ -1165,7 +1169,11 @@ async function handleUpgradeSubmit(e) {
 }
 
 // ── 5. 부가가치세(VAT) 및 기간별 호실 수납 집계 ──
-let currentVatData = null;
+let currentVatRawData = null; // 원본 전체 데이터
+let currentVatData = null;    // 필터링 적용된 현재 표시 데이터
+let selectedVatRooms = new Set(); // 선택된 호실 번호 목록 (디폴트: 전체)
+let isVatRoomContainerCollapsed = false;
+
 let currentVatParams = {
   year: 2026,
   startMonth: 1,
@@ -1174,9 +1182,139 @@ let currentVatParams = {
 };
 
 async function openVatModal() {
+  initVatRoomsSelection();
   openModal('vatModal');
   // 기본 1기 (1~6월, 2026년) 자동 조회
   await setVatPeriod(1, 6, '1기 (1~6월)');
+}
+
+/**
+ * 부가세 산출 대상 호실 초기화 (디폴트: 모든 호실 선택)
+ */
+function initVatRoomsSelection() {
+  const allRoomKeys = Object.keys(state.rooms || {}).map(Number).sort((a, b) => a - b);
+  selectedVatRooms = new Set(allRoomKeys);
+  renderVatRoomCheckboxes();
+}
+
+/**
+ * 호실 선택 체크박스 칩 렌더링
+ */
+function renderVatRoomCheckboxes() {
+  const container = document.getElementById('vatRoomCheckboxesContainer');
+  const badge = document.getElementById('vatSelectedRoomsBadge');
+  const allRoomKeys = Object.keys(state.rooms || {}).map(Number).sort((a, b) => a - b);
+  const totalCount = allRoomKeys.length;
+  const selCount = selectedVatRooms.size;
+
+  if (badge) {
+    if (selCount === totalCount) {
+      badge.textContent = `전체 선택됨 (${totalCount}개실)`;
+      badge.className = "text-[11px] font-semibold text-cyan-400 bg-cyan-950/70 border border-cyan-800/60 px-2 py-0.5 rounded-full";
+    } else if (selCount === 0) {
+      badge.textContent = `선택 없음 (0개실)`;
+      badge.className = "text-[11px] font-semibold text-rose-400 bg-rose-950/70 border border-rose-800/60 px-2 py-0.5 rounded-full";
+    } else {
+      badge.textContent = `${selCount}개실 선택됨 / 총 ${totalCount}개실`;
+      badge.className = "text-[11px] font-semibold text-amber-300 bg-amber-950/70 border border-amber-800/60 px-2 py-0.5 rounded-full";
+    }
+  }
+
+  if (!container) return;
+
+  container.innerHTML = allRoomKeys.map(rNum => {
+    const isChecked = selectedVatRooms.has(rNum);
+    return `
+      <label class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs cursor-pointer select-none transition ${
+        isChecked 
+          ? 'border-cyan-600/70 bg-cyan-950/40 text-cyan-200' 
+          : 'border-slate-800 bg-surface-900/80 text-slate-400 hover:border-slate-700'
+      }">
+        <input type="checkbox" value="${rNum}" ${isChecked ? 'checked' : ''} 
+          onchange="onToggleVatRoom(${rNum}, this.checked)" 
+          class="accent-cyan-500 rounded cursor-pointer w-3.5 h-3.5">
+        <span class="font-bold">${rNum}호</span>
+      </label>
+    `;
+  }).join('');
+}
+
+/**
+ * 개별 호실 체크 토글
+ */
+function onToggleVatRoom(rNum, isChecked) {
+  const num = Number(rNum);
+  if (isChecked) {
+    selectedVatRooms.add(num);
+  } else {
+    selectedVatRooms.delete(num);
+  }
+  renderVatRoomCheckboxes();
+  applyVatRoomFilter();
+}
+
+/**
+ * 전체 선택 / 전체 해제 (디폴트는 전체 선택)
+ */
+function selectAllVatRooms(selectAll = true) {
+  const allRoomKeys = Object.keys(state.rooms || {}).map(Number);
+  if (selectAll) {
+    selectedVatRooms = new Set(allRoomKeys);
+  } else {
+    selectedVatRooms = new Set();
+  }
+  renderVatRoomCheckboxes();
+  applyVatRoomFilter();
+}
+
+/**
+ * 호실 선택 컨테이너 접기 / 펼치기
+ */
+function toggleVatRoomContainer() {
+  const container = document.getElementById('vatRoomCheckboxesContainer');
+  const btn = document.getElementById('vatRoomToggleBtn');
+  isVatRoomContainerCollapsed = !isVatRoomContainerCollapsed;
+
+  if (container) {
+    if (isVatRoomContainerCollapsed) {
+      container.classList.add('hidden');
+    } else {
+      container.classList.remove('hidden');
+    }
+  }
+  if (btn) {
+    btn.textContent = isVatRoomContainerCollapsed ? '호실 펼치기 ▾' : '호실 접기 ▴';
+  }
+}
+
+/**
+ * 선택된 호실들로 부가세 데이터 필터링 및 화면 즉각 재계산/렌더링
+ */
+function applyVatRoomFilter() {
+  if (!currentVatRawData || !currentVatRawData.rows) return;
+
+  const raw = currentVatRawData;
+  const filteredRows = raw.rows.filter(r => selectedVatRooms.has(Number(r.room_number)));
+
+  let total_collected = 0;
+  let total_supply = 0;
+  let total_vat = 0;
+
+  filteredRows.forEach(r => {
+    total_collected += Number(r.period_total || 0);
+    total_supply += Number(r.supply_value || 0);
+    total_vat += Number(r.vat_value || 0);
+  });
+
+  currentVatData = {
+    ...raw,
+    rows: filteredRows,
+    total_collected,
+    total_supply,
+    total_vat
+  };
+
+  renderVatReportUI(currentVatData);
 }
 
 async function setVatPeriod(startMonth, endMonth, label) {
@@ -1251,8 +1389,8 @@ async function fetchAndRenderVat(startMonth, endMonth, year, label) {
     data = calculateLocalVatReport(startMonth, endMonth, year);
   }
 
-  currentVatData = data;
-  renderVatReportUI(data);
+  currentVatRawData = data;
+  applyVatRoomFilter();
 }
 
 function calculateLocalVatReport(startMonth, endMonth, year) {
@@ -1630,6 +1768,9 @@ window.openVatModal = openVatModal;
 window.setVatPeriod = setVatPeriod;
 window.handleVatCustomQuery = handleVatCustomQuery;
 window.exportVatCSV = exportVatCSV;
+window.selectAllVatRooms = selectAllVatRooms;
+window.onToggleVatRoom = onToggleVatRoom;
+window.toggleVatRoomContainer = toggleVatRoomContainer;
 
 window.openContractEditModal = openContractEditModal;
 window.handleContractFormSubmit = handleContractFormSubmit;
