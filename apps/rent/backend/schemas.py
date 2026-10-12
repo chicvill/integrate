@@ -2,7 +2,7 @@
 apps/rent/backend/schemas.py
 Pydantic v2 데이터 스키마 명세 - 원룸 임차료 관리 시스템.
 """
-from typing import Optional, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 
 
@@ -123,7 +123,7 @@ class RoomResponse(BaseModel):
     move_in: str
     expiry: str
     move_out: str
-    payments: Dict[Union[int, str], PaymentInfo] = {}
+    payments: Dict[int, PaymentInfo] = {}
 
     class Config:
         from_attributes = True
