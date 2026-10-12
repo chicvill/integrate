@@ -368,7 +368,8 @@ export function renderPastHistorySection(room) {
     };
 
     // 전입 이전 기간(이전 세입자 이력 없음) 또는 입주월 후불인데 구버전 캐시 등으로 완납되어 있던 경우 자동 보정
-    if (existingP && !existingP.is_previous_tenant) {
+    // 단, 명시적 실입금일자(paid_date)가 기록된 정상 데이터는 100% 보존
+    if (existingP && !existingP.is_previous_tenant && !existingP.paid_date) {
       if (rule.isBeforeMoveIn) {
         p.paid = false;
         p.paid_date = '';
