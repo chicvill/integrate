@@ -309,13 +309,13 @@
         </div>
       </div>
 
-      <!-- 17. 원룸 임차료 관리 시스템 (29개실) -->
+      <!-- 17. 원룸 임차료 관리 시스템 (시크빌 29개실) -->
       <div class="card" style="cursor:pointer;" onclick="if(event.target.tagName!=='BUTTON'&&event.target.tagName!=='A')window.open('/rent/','_blank')">
         <div>
           <div class="card-top"><span class="icon">🏢</span><span class="badge" style="background:rgba(6,182,212,0.15); color:#22d3ee;">34.31.10.12:9000/rent</span></div>
-          <h3>원룸 임차료 관리 시스템 (29개실)</h3>
-          <p>101호·201~605호·701~703호 전용 계약 관리, 월세/관리비 수납, 선불/후불 스케줄, 오늘 지출 장부 및 엑셀(CSV) 내보내기입니다.</p>
-          <div class="tags"><span class="tag">29개실 원룸 관리</span><span class="tag">월세 수납 장부</span><span class="tag">선불/후불 정산</span><span class="tag">지출 회계</span><span class="tag">CSV 다운로드</span><span class="tag">인쇄 매뉴얼</span></div>
+          <h3>원룸 임차료 관리 시스템 (시크빌 29개실)</h3>
+          <p>시크빌 101호·201~605호·701~703호 전용 계약 관리, 월세/관리비 수납, 선불/후불 스케줄, 지출 장부 및 엑셀(CSV) 내보내기입니다.</p>
+          <div class="tags"><span class="tag">시크빌 29개실 관리</span><span class="tag">월세 수납 장부</span><span class="tag">선불/후불 정산</span><span class="tag">지출 회계</span><span class="tag">CSV 엑셀 다운로드</span><span class="tag">영수증 보관</span></div>
         </div>
         <div class="actions" style="display:flex; gap:0.5rem;">
           <a href="/rent/" target="_blank" class="btn-main" style="flex:1.4; text-align:center; text-decoration:none; background: linear-gradient(135deg, #0891b2, #0284c7); color:white; font-weight:800; font-size:0.9rem; padding:0.75rem 0.5rem; border-radius:12px;">🏢 임차료 관리 실행 ↗</a>
@@ -334,7 +334,7 @@
           ⚙️ SHARED INFRASTRUCTURE
         </div>
         <h2 style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 800; margin-bottom: 0.75rem;">
-          14개 앱을 관통하는 <span style="background: var(--grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">7대 공통분모 모듈</span>
+          17개 앱을 관통하는 <span style="background: var(--grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">7대 공통분모 모듈</span>
         </h2>
         <p style="color: var(--text-muted); max-width: 650px; margin: 0 auto; font-size: 0.95rem;">
           각 앱이 개별 구축하지 않고 중앙 <code style="color:#a5b4fc; background:rgba(255,255,255,0.05); padding:0.15rem 0.4rem; border-radius:6px;">shared/</code> 패키지에서 재사용하는 표준 인프라입니다.
@@ -355,7 +355,7 @@
             JWT 토큰 기반 단일 로그인, 4단계 RBAC 역할 권한 (Master / Tenant / Staff / User), BCrypt 단방향 해싱.
           </p>
           <div style="font-size: 0.75rem; color: #34d399; display: flex; align-items: center; gap: 0.35rem;">
-            ✓ 전체 14개 서비스 공통 적용
+            ✓ 전체 17개 서비스 공통 적용
           </div>
         </div>
 
@@ -454,7 +454,7 @@
             </div>
           </div>
           <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 0.75rem;">
-            14개 마이크로서비스 앱 등록, 테넌트별 데이터베이스 격리, 동적 라우팅 및 기능 플래그 제어.
+            17개 마이크로서비스 앱 등록, 테넌트별 데이터베이스 격리, 동적 라우팅 및 기능 플래그 제어.
           </p>
           <div style="font-size: 0.75rem; color: #34d399; display: flex; align-items: center; gap: 0.35rem;">
             ✓ 단일 진입점 API 게이트웨이 연동
@@ -510,7 +510,9 @@
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;">모던 스마트 클락</td><td><a href="http://34.31.10.12:9000/clock/" target="_blank" style="color:#cbd5e1; text-decoration:none;"><code>http://34.31.10.12:9000/clock/</code></a></td></tr>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;">레트로 TV 비디오 부스</td><td><a href="http://34.31.10.12:9000/videobooth/" target="_blank" style="color:#cbd5e1; text-decoration:none;"><code>http://34.31.10.12:9000/videobooth/</code></a></td></tr>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;"><code style="color:#fb923c;">n8n 자동화 워크플로우</code></td><td><a href="http://34.31.10.12:5678/" target="_blank" style="color:#fb923c; text-decoration:none; font-weight:bold;"><code>http://34.31.10.12:5678/</code></a></td></tr>
-                <tr><td style="padding:0.45rem;">Grammar Quest (AI 영문법)</td><td><a href="http://34.31.10.12:9000/grammar/" target="_blank" style="color:#cbd5e1; text-decoration:none;"><code>http://34.31.10.12:9000/grammar/</code></a></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;">Grammar Quest (AI 영문법)</td><td><a href="http://34.31.10.12:9000/grammar/" target="_blank" style="color:#cbd5e1; text-decoration:none;"><code>http://34.31.10.12:9000/grammar/</code></a></td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding:0.45rem;">AI 실생활 실습 가이드</td><td><a href="http://34.31.10.12:9000/ai_guide/" target="_blank" style="color:#cbd5e1; text-decoration:none;"><code>http://34.31.10.12:9000/ai_guide/</code></a></td></tr>
+                <tr><td style="padding:0.45rem;">원룸 임차료 관리 (시크빌 29개실)</td><td><a href="http://34.31.10.12:9000/rent/" target="_blank" style="color:#22d3ee; font-weight:bold; text-decoration:none;"><code>http://34.31.10.12:9000/rent/</code></a></td></tr>
               </tbody>
             </table>
           </div>
@@ -528,7 +530,7 @@
               <div style="background: rgba(0,0,0,0.4); padding: 0.75rem 1rem; border-radius: 10px; font-family: monospace; font-size: 0.82rem; line-height: 1.6; border: 1px solid var(--border);">
                 <span style="color:#a855f7;">.\run.bat</span> <span style="color:#60a5fa;">gateway</span>  <span style="color:#64748b;"># 통합 단일 게이트웨이 (포트 9000 & 10000)</span><br>
                 <span style="color:#a855f7;">.\run.bat</span> <span style="color:#34d399;">docker</span>   <span style="color:#64748b;"># Docker Compose 9000번대 서비스 일괄 기동</span><br>
-                <span style="color:#a855f7;">.\run.bat</span> <span style="color:#f59e0b;">all</span>      <span style="color:#64748b;"># 7대 마이크로서비스 개별 창 분리 기동</span>
+                <span style="color:#a855f7;">.\run.bat</span> <span style="color:#f59e0b;">all</span>      <span style="color:#64748b;"># 17대 마이크로서비스 개별 창 분리 기동</span>
               </div>
             </div>
 

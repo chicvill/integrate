@@ -440,7 +440,7 @@ async def list_registered_apps():
 
 @app.get("/api/health/all", tags=["플랫폼"])
 async def check_all_services_health():
-    """16대 마이크로서비스 실시간 가동 상태 및 시스템 리소스 헬스체크 (표준 라이브러리 기반)"""
+    """17대 마이크로서비스 실시간 가동 상태 및 시스템 리소스 헬스체크 (표준 라이브러리 기반)"""
     import urllib.request
     import urllib.error
     import shutil

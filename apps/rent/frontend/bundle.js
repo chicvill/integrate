@@ -758,15 +758,20 @@ function fillTenantPaymentsState(roomNumber = null) {
         hasPrevHist: hasPrev
       });
 
+      // 사용자가 명시적으로 취소(미납) 처리한 건은 완납으로 자동 덮어쓰지 않고 미납 유지
+      const isExplicitlyCancelled = (existing.note === "납부 취소") || (existing.paid === false && !existing.paid_date);
+      const isPaid = isExplicitlyCancelled ? false : (existing.paid !== undefined ? existing.paid : rule.paid);
+      const payNote = isExplicitlyCancelled ? "납부 취소" : (existing.note || rule.note || '');
+
       const payObj = {
         ...existing,
         month: m,
         year: y,
-        paid: rule.paid,
-        paid_date: rule.paid ? (existing.paid_date || `${y}-${String(m).padStart(2, '0')}-10`) : '',
+        paid: isPaid,
+        paid_date: isPaid ? (existing.paid_date || `${y}-${String(m).padStart(2, '0')}-10`) : '',
         rent_amount: hasPrev ? existing.rent_amount : rentVal,
         maintenance_amount: hasPrev ? existing.maintenance_amount : maintVal,
-        note: rule.note || existing.note || '',
+        note: payNote,
         tenant_name: hasPrev ? existing.tenant_name : room.name,
         is_previous_tenant: hasPrev
       };
@@ -1475,60 +1480,80 @@ async function handleProcessPayment(roomNum, month, year = currentYear) {
     const pKey = `${year}-${month}`;
     const defaultPayDate = `${year}-${String(month).padStart(2, '0')}-10`;
 
-    if (state.isOnline) {
-      const res = await apiProcessPayment(roomNum, month, state.currentBranch, defaultPayDate, "정상 입금", tenantName, year);
-      state.rooms[roomNum] = res;
-    } else {
-      // 오프라인 폴백
-      if (room && room.payments) {
-        const payObj = {
-          month,
-          year,
-          paid: true,
-          paid_date: defaultPayDate,
-          note: "정상 입금",
-          tenant_name: tenantName,
-          is_previous_tenant: false,
-          rent_amount: room.lease_type === "전세" ? 0 : room.rent,
-          maintenance_amount: room.maintenance
-        };
+    // 1. 로컬 상태 즉시 완납 처리 및 캐시 저장
+    if (room) {
+      if (!room.payments) room.payments = {};
+      const existing = room.payments[pKey] || (year === currentYear ? room.payments[month] : {}) || {};
+      const payObj = {
+        ...existing,
+        month,
+        year,
+        paid: true,
+        paid_date: defaultPayDate,
+        note: "정상 입금",
+        tenant_name: tenantName,
+        is_previous_tenant: false,
+        rent_amount: room.lease_type === "전세" ? 0 : room.rent,
+        maintenance_amount: room.maintenance
+      };
+      room.payments[pKey] = payObj;
+      if (year === currentYear) {
         room.payments[month] = payObj;
-        room.payments[pKey] = payObj;
       }
     }
     saveLocalFallback();
     renderAll();
+
+    // 2. 백엔드 API 실시간 동기화
+    if (state.isOnline) {
+      const res = await apiProcessPayment(roomNum, month, state.currentBranch, defaultPayDate, "정상 입금", tenantName, year);
+      if (res && res.payments) {
+        state.rooms[roomNum] = res;
+        saveLocalFallback();
+        renderAll();
+      }
+    }
   } catch (err) {
-    alert("수납 처리 실패: " + err.message);
+    console.warn("수납 처리 동기화 지연 (로컬 우선 저장됨):", err);
   }
 }
 
 async function handleCancelPayment(roomNum, month, year = currentYear) {
   try {
     const pKey = `${year}-${month}`;
-    if (state.isOnline) {
-      const res = await apiCancelPayment(roomNum, month, state.currentBranch, year);
-      state.rooms[roomNum] = res;
-    } else {
-      // 오프라인 폴백
-      const r = state.rooms[roomNum];
-      if (r && r.payments) {
-        if (r.payments[month]) {
-          r.payments[month].paid = false;
-          r.payments[month].paid_date = "";
-          r.payments[month].note = "납부 취소";
-        }
-        if (r.payments[pKey]) {
-          r.payments[pKey].paid = false;
-          r.payments[pKey].paid_date = "";
-          r.payments[pKey].note = "납부 취소";
-        }
+    const room = state.rooms[roomNum];
+
+    // 1. 로컬 상태 즉시 미납(취소) 처리 및 캐시 저장
+    if (room) {
+      if (!room.payments) room.payments = {};
+      const existing = room.payments[pKey] || (year === currentYear ? room.payments[month] : {}) || {};
+      const payObj = {
+        ...existing,
+        month,
+        year,
+        paid: false,
+        paid_date: "",
+        note: "납부 취소"
+      };
+      room.payments[pKey] = payObj;
+      if (year === currentYear) {
+        room.payments[month] = payObj;
       }
     }
     saveLocalFallback();
     renderAll();
+
+    // 2. 백엔드 API 실시간 동기화
+    if (state.isOnline) {
+      const res = await apiCancelPayment(roomNum, month, state.currentBranch, year);
+      if (res && res.payments) {
+        state.rooms[roomNum] = res;
+        saveLocalFallback();
+        renderAll();
+      }
+    }
   } catch (err) {
-    alert("납부 취소 실패: " + err.message);
+    console.warn("납부 취소 동기화 지연 (로컬 우선 저장됨):", err);
   }
 }
 
