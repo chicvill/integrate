@@ -91,19 +91,19 @@ async function apiOcrImportImage(imageBase64, branchId = 'main') {
   });
 }
 
-async function apiProcessPayment(roomNumber, month, branchId = 'main', paidDate = null, note = '정상 입금', tenantName = null) {
+async function apiProcessPayment(roomNumber, month, branchId = 'main', paidDate = null, note = '정상 입금', tenantName = null, year = 2026) {
   const base = getApiBase('rent');
   return await fetchWithAuth(`${base}/rooms/${roomNumber}/payment?branch_id=${encodeURIComponent(branchId)}`, {
     method: 'POST',
-    body: JSON.stringify({ month, paid_date: paidDate, note, tenant_name: tenantName })
+    body: JSON.stringify({ month, year, paid_date: paidDate, note, tenant_name: tenantName })
   });
 }
 
-async function apiCancelPayment(roomNumber, month, branchId = 'main') {
+async function apiCancelPayment(roomNumber, month, branchId = 'main', year = 2026) {
   const base = getApiBase('rent');
   return await fetchWithAuth(`${base}/rooms/${roomNumber}/cancel-payment?branch_id=${encodeURIComponent(branchId)}`, {
     method: 'POST',
-    body: JSON.stringify({ month })
+    body: JSON.stringify({ month, year })
   });
 }
 
@@ -443,9 +443,33 @@ function generateDefaultSeedRooms() {
       phoneNum = "010-3344-5503";
     }
 
+    // 505호: 김정현 고객 (2026-06-29 전입, 월세 290,000원, 관리비 150,000원, 후불)
+    if (rNum === 505) {
+      tenantName = "김정현";
+      phoneNum = "010-4499-5505";
+      rentVal = 290000;
+      maintVal = 150000;
+      moveInDate = `${currentYear}-06-29`;
+      expiryDate = `${currentYear + 1}-06-28`;
+      depositVal = 5000000;
+    }
+
     const payments = {};
     for (let m = 1; m <= 12; m++) {
-      const isPaid = (m <= currentMonth);
+      let isPaid = false;
+      const inY = parseInt(moveInDate.split('-')[0], 10);
+      const inM = parseInt(moveInDate.split('-')[1], 10);
+      const isBefore = (currentYear < inY) || (currentYear === inY && m < inM);
+      const isMoveIn = (currentYear === inY && m === inM);
+      if (isBefore) {
+        isPaid = false;
+      } else if (isMoveIn) {
+        isPaid = false; // 월세/후불 입주월은 익월 수납이므로 미납
+      } else if (m <= currentMonth) {
+        isPaid = true;
+      } else {
+        isPaid = false;
+      }
 
       payments[m] = {
         month: m,
@@ -454,7 +478,7 @@ function generateDefaultSeedRooms() {
         paid_date: isPaid ? `2026-${String(m).padStart(2, '0')}-10` : "",
         rent_amount: rentVal,
         maintenance_amount: maintVal,
-        note: isPaid ? "정상 입금" : "",
+        note: isPaid ? "정상 입금" : (isMoveIn ? "입주월 (후불 익월 납부)" : ""),
         tenant_name: tenantName,
         is_previous_tenant: false
       };
@@ -566,6 +590,22 @@ function loadLocalFallback() {
       }
     }
 
+    // 505호 세입자 정보 검증 및 김정현(2026-06-29 전입, 월세/후불) 보정
+    if (state.rooms && state.rooms[505]) {
+      const r505 = state.rooms[505];
+      if (r505.name !== "김정현" || r505.move_in !== `${currentYear}-06-29`) {
+        r505.name = "김정현";
+        r505.phone = "010-4499-5505";
+        r505.rent = 290000;
+        r505.maintenance = 150000;
+        r505.deposit = 5000000;
+        r505.lease_type = "월세";
+        r505.pay_timing = "후불";
+        r505.move_in = `${currentYear}-06-29`;
+        r505.expiry = `${currentYear + 1}-06-28`;
+      }
+    }
+
     // 전입일부터 현재까지의 납부 내역 자동 보정 동기화 (구버전 캐시 자동 치유)
     fillTenantPaymentsState();
   } catch (e) {
@@ -583,47 +623,105 @@ function fillTenantPaymentsState(roomNumber = null) {
     const isJeonse = (room.lease_type === '전세');
     const rentVal = isJeonse ? 0 : (room.rent || 0);
     const maintVal = room.maintenance || 0;
+    const isPostpaid = (room.pay_timing === '후불' || !room.pay_timing);
+    const isMonthly = (room.lease_type === '월세' || !room.lease_type);
 
-    let moveInMonth = 1;
+    let inYear = currentYear;
+    let inMonth = 1;
     if (room.move_in) {
       try {
         const parts = room.move_in.split('-');
-        const yr = parseInt(parts[0], 10);
-        const mo = parseInt(parts[1], 10);
-        if (yr === currentYear) moveInMonth = mo;
-        else if (yr < currentYear) moveInMonth = 1;
-        else moveInMonth = 13;
+        inYear = parseInt(parts[0], 10);
+        inMonth = parseInt(parts[1], 10);
       } catch (e) {
-        moveInMonth = 1;
+        inYear = currentYear;
+        inMonth = 1;
       }
     }
 
     if (!room.payments) room.payments = {};
 
-    for (let m = 1; m <= 12; m++) {
-      const existing = room.payments[m] || {};
-      if (m < moveInMonth) {
-        // 전입 이전: 기존 전출자 정보 유지
-      } else if (m >= moveInMonth && m <= currentMonth) {
-        // 전입월부터 현재월(10월)까지 현재 세입자 정보로 완납 채우기
-        room.payments[m] = {
+    // 롤링 12개월(2026.10 ~ 2025.11) + 당해 미래월(2026.11, 2026.12)
+    const periods = [];
+    for (let i = 0; i < 12; i++) {
+      let m = currentMonth - i;
+      let y = currentYear;
+      if (m <= 0) {
+        m += 12;
+        y -= 1;
+      }
+      periods.push({ year: y, month: m });
+    }
+    for (let mFuture = currentMonth + 1; mFuture <= 12; mFuture++) {
+      if (!periods.some(p => p.year === currentYear && p.month === mFuture)) {
+        periods.push({ year: currentYear, month: mFuture });
+      }
+    }
+
+    periods.forEach(({ year: y, month: m }) => {
+      const pKey = `${y}-${m}`;
+      const existing = room.payments[pKey] || (y === currentYear ? room.payments[m] : {}) || {};
+
+      const isBeforeMoveIn = (y < inYear) || (y === inYear && m < inMonth);
+      const isMoveInMonth = (y === inYear && m === inMonth);
+      const isFuture = (y > currentYear) || (y === currentYear && m > currentMonth);
+
+      if (isBeforeMoveIn) {
+        // 전입 이전: 이전 세입자 기록이 있으면 유지, 없으면 미납
+        const hasPrev = existing.is_previous_tenant && existing.tenant_name;
+        const payObj = {
           ...existing,
           month: m,
-          year: currentYear,
+          year: y,
+          paid: hasPrev ? !!existing.paid : false,
+          paid_date: hasPrev ? (existing.paid_date || '') : '',
+          rent_amount: hasPrev ? existing.rent_amount : rentVal,
+          maintenance_amount: hasPrev ? existing.maintenance_amount : maintVal,
+          note: hasPrev ? existing.note : '전입 이전 (기록 없음/미납)',
+          tenant_name: hasPrev ? existing.tenant_name : room.name,
+          is_previous_tenant: hasPrev
+        };
+        room.payments[pKey] = payObj;
+        if (y === currentYear) room.payments[m] = payObj;
+      } else if (isMoveInMonth) {
+        // 입주월: 월세/후불인 경우 익월 납부이므로 입주월은 미납 처리!
+        const isPaidMoveIn = !(isMonthly && isPostpaid);
+        const payObj = {
+          ...existing,
+          month: m,
+          year: y,
+          paid: isPaidMoveIn,
+          paid_date: isPaidMoveIn ? (existing.paid_date || `${y}-${String(m).padStart(2, '0')}-10`) : '',
+          rent_amount: rentVal,
+          maintenance_amount: maintVal,
+          note: isPaidMoveIn ? '입주월 정상 입금 (선불)' : '입주월 (후불 익월 납부)',
+          tenant_name: room.name,
+          is_previous_tenant: false
+        };
+        room.payments[pKey] = payObj;
+        if (y === currentYear) room.payments[m] = payObj;
+      } else if (!isFuture) {
+        // 입주월 익월 ~ 현재월까지: 현 세입자 정상 완납
+        const payObj = {
+          ...existing,
+          month: m,
+          year: y,
           paid: true,
-          paid_date: existing.paid_date || `2026-${String(m).padStart(2, '0')}-10`,
+          paid_date: existing.paid_date || `${y}-${String(m).padStart(2, '0')}-10`,
           rent_amount: rentVal,
           maintenance_amount: maintVal,
           note: existing.note || "정상 입금",
           tenant_name: room.name,
           is_previous_tenant: false
         };
+        room.payments[pKey] = payObj;
+        if (y === currentYear) room.payments[m] = payObj;
       } else {
-        // 미래 월 (11, 12월): 현재 세입자 미납 대기
-        room.payments[m] = {
+        // 미래 월: 미납 대기
+        const payObj = {
           ...existing,
           month: m,
-          year: currentYear,
+          year: y,
           paid: false,
           paid_date: "",
           rent_amount: rentVal,
@@ -632,8 +730,10 @@ function fillTenantPaymentsState(roomNumber = null) {
           tenant_name: room.name,
           is_previous_tenant: false
         };
+        room.payments[pKey] = payObj;
+        if (y === currentYear) room.payments[m] = payObj;
       }
-    }
+    });
   });
 
   saveLocalFallback();
@@ -943,21 +1043,63 @@ function renderPastHistorySection(room) {
   tbody.innerHTML = '';
   const isJeonse = (room.lease_type === '전세');
 
-  // 최근 1년간의 기록 (12개월 전체를 최근월부터 역순 렌더링)
-  const monthsToRender = [];
-  for (let m = 12; m >= 1; m--) {
-    monthsToRender.push(m);
+  // ── 방안 A: 롤링 12개월 (현재 2026.10 기준 직전 12개월: 2026.10 ~ 2025.11) ──
+  const rollingMonths = [];
+  for (let i = 0; i < 12; i++) {
+    let m = currentMonth - i;
+    let y = currentYear;
+    if (m <= 0) {
+      m += 12;
+      y -= 1;
+    }
+    rollingMonths.push({ year: y, month: m });
   }
 
-  monthsToRender.forEach(m => {
-    const p = (room.payments && room.payments[m]) || {
+  rollingMonths.forEach(item => {
+    const y = item.year;
+    const m = item.month;
+    const pKey = `${y}-${m}`;
+
+    // 결제 데이터 조회 (연도-월 키 우선, 당해연도 월 키, 없으면 기본 객체)
+    const existingP = (room.payments && (room.payments[pKey] || (y === currentYear ? room.payments[m] : null)));
+
+    // 전입일 및 계약조건 기반 판정
+    let isPastPaid = false;
+    let isBeforeMoveIn = false;
+    let isMoveInMonth = false;
+    const isPostpaid = (room.pay_timing === '후불' || !room.pay_timing);
+    const isMonthly = (room.lease_type === '월세' || !room.lease_type);
+    const isFuture = (y > currentYear) || (y === currentYear && m > currentMonth);
+
+    if (room.name && room.move_in) {
+      try {
+        const inYear = parseInt(room.move_in.substring(0, 4), 10);
+        const inMonth = parseInt(room.move_in.substring(5, 7), 10);
+        if (y < inYear || (y === inYear && m < inMonth)) {
+          isBeforeMoveIn = true;
+          isPastPaid = false; // 이전 세입자 기록 없으면 미납
+        } else if (y === inYear && m === inMonth) {
+          isMoveInMonth = true;
+          // 월세/후불인 경우 익월 납부이므로 입주월은 미납!
+          isPastPaid = !(isMonthly && isPostpaid);
+        } else if (!isFuture) {
+          isPastPaid = true; // 입주월 익월부터 현재월까지 완납
+        } else {
+          isPastPaid = false; // 미래월 미납
+        }
+      } catch (e) {
+        isPastPaid = false;
+      }
+    }
+
+    const p = existingP || {
       month: m,
-      year: currentYear,
-      paid: false,
-      paid_date: '',
+      year: y,
+      paid: isPastPaid,
+      paid_date: isPastPaid ? `${y}-${String(m).padStart(2, '0')}-10` : '',
       rent_amount: isJeonse ? 0 : room.rent,
       maintenance_amount: room.maintenance,
-      note: '',
+      note: isPastPaid ? '정상 입금' : (isMoveInMonth ? '입주월 (후불 익월 납부)' : ''),
       tenant_name: room.name,
       is_previous_tenant: false
     };
@@ -971,8 +1113,9 @@ function renderPastHistorySection(room) {
     if (room.name && room.move_in) {
       try {
         const inYear = parseInt(room.move_in.substring(0, 4), 10);
-        if (inYear < currentYear) {
-          // 2022년 등 과거부터 계속 살고 있는 경우 구 세입자명 오염 방지 및 계약 금액 동기화
+        const inMonth = parseInt(room.move_in.substring(5, 7), 10);
+        if (y > inYear || (y === inYear && m >= inMonth)) {
+          // 전입일 이후 기간: 현재 세입자 정보 및 최신 계약 금액으로 일치
           displayName = room.name;
           isPrev = false;
           rAmt = isJeonse ? 0 : room.rent;
@@ -1003,15 +1146,31 @@ function renderPastHistorySection(room) {
       `;
     }
 
+    // 납부일자 표시 (은행 거래내역 확인용: 완납 시 날짜 표시 및 클릭하여 실입금일 수정 지원)
+    let payDateHtml = '';
+    if (p.paid) {
+      const displayDate = p.paid_date || `${y}-${String(m).padStart(2, '0')}-10`;
+      payDateHtml = `
+        <button type="button" class="btn-change-paydate inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-900/90 hover:bg-cyan-950/80 text-cyan-300 hover:text-cyan-200 border border-slate-700/80 hover:border-cyan-500/60 font-mono text-[11px] font-semibold transition cursor-pointer shadow-xs whitespace-nowrap" title="클릭하여 은행 실입금일자로 수정" data-year="${y}" data-month="${m}" data-date="${displayDate}">
+          <span class="text-[10px] opacity-70">📅</span><span>${displayDate}</span>
+        </button>
+      `;
+    } else {
+      payDateHtml = `<span class="text-slate-600 font-mono text-[11px]">-</span>`;
+    }
+
     tr.innerHTML = `
-      <td class="py-2 px-2 text-center border-r border-slate-800 font-bold text-slate-300 font-mono text-xs whitespace-nowrap">
-        ${m}월
+      <td class="py-2 px-2 text-center border-r border-slate-800 font-bold font-mono text-xs whitespace-nowrap">
+        <span class="text-[10px] text-slate-400">${y}.</span><span class="text-xs text-white">${String(m).padStart(2, '0')}월</span>
       </td>
       <td class="py-2 px-2.5 border-r border-slate-800 text-xs whitespace-nowrap">
         ${tenantLabel}
       </td>
       <td class="py-2 px-2 border-r border-slate-800 text-right font-bold text-slate-100 font-mono text-xs whitespace-nowrap">
         ${Number(tot).toLocaleString()}원
+      </td>
+      <td class="py-2 px-2 border-r border-slate-800 text-center whitespace-nowrap">
+        ${payDateHtml}
       </td>
       <td class="py-2 px-1.5 border-r border-slate-800 text-center whitespace-nowrap">
         <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap ${p.paid ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">
@@ -1020,11 +1179,11 @@ function renderPastHistorySection(room) {
       </td>
       <td class="py-2 px-2 text-center whitespace-nowrap">
         ${p.paid ? `
-          <button type="button" class="btn-cancel-past inline-block px-1.5 py-0.5 rounded text-[10px] font-normal bg-slate-800/80 hover:bg-rose-950/50 text-slate-400 hover:text-rose-300 border border-slate-700/60 hover:border-rose-500/40 transition whitespace-nowrap cursor-pointer shadow-xs" data-month="${m}">
+          <button type="button" class="btn-cancel-past inline-block px-1.5 py-0.5 rounded text-[10px] font-normal bg-slate-800/80 hover:bg-rose-950/50 text-slate-400 hover:text-rose-300 border border-slate-700/60 hover:border-rose-500/40 transition whitespace-nowrap cursor-pointer shadow-xs" data-year="${y}" data-month="${m}">
             취소
           </button>
         ` : `
-          <button type="button" class="btn-pay-past inline-block px-2 py-0.5 rounded text-[11px] bg-cyan-600 hover:bg-cyan-500 text-white font-bold transition shadow-xs whitespace-nowrap cursor-pointer" data-month="${m}">
+          <button type="button" class="btn-pay-past inline-block px-2 py-0.5 rounded text-[11px] bg-cyan-600 hover:bg-cyan-500 text-white font-bold transition shadow-xs whitespace-nowrap cursor-pointer" data-year="${y}" data-month="${m}">
             수납
           </button>
         `}
@@ -1033,16 +1192,29 @@ function renderPastHistorySection(room) {
     tbody.appendChild(tr);
   });
 
+  tbody.querySelectorAll('.btn-change-paydate').forEach(btn => {
+    btn.onclick = async (e) => {
+      e.stopPropagation();
+      const yr = parseInt(btn.dataset.year, 10);
+      const mo = parseInt(btn.dataset.month, 10);
+      const curDate = btn.dataset.date || `${yr}-${String(mo).padStart(2, '0')}-10`;
+      const newDate = window.prompt(`[${rNum}호 ${yr}년 ${mo}월분]\n은행 거래내역상 실제 입금일자를 입력하세요 (YYYY-MM-DD):`, curDate);
+      if (newDate && newDate.trim() && newDate.trim() !== curDate) {
+        await handleChangePaymentDate(rNum, mo, yr, newDate.trim());
+      }
+    };
+  });
+
   tbody.querySelectorAll('.btn-cancel-past').forEach(btn => {
     btn.onclick = (e) => {
       e.stopPropagation();
-      handleCancelPayment(rNum, parseInt(btn.dataset.month, 10));
+      handleCancelPayment(rNum, parseInt(btn.dataset.month, 10), parseInt(btn.dataset.year || currentYear, 10));
     };
   });
   tbody.querySelectorAll('.btn-pay-past').forEach(btn => {
     btn.onclick = (e) => {
       e.stopPropagation();
-      handleProcessPayment(rNum, parseInt(btn.dataset.month, 10));
+      handleProcessPayment(rNum, parseInt(btn.dataset.month, 10), parseInt(btn.dataset.year || currentYear, 10));
     };
   });
 }
@@ -1157,23 +1329,32 @@ function renderLeftMenuDrawer() {
 }
 
 // ── 수납 처리 비동기 액션 ──
-async function handleProcessPayment(roomNum, month) {
+async function handleProcessPayment(roomNum, month, year = currentYear) {
   try {
     const room = state.rooms[roomNum];
     const tenantName = (room && room.name) ? room.name : "공실";
+    const pKey = `${year}-${month}`;
+    const defaultPayDate = `${year}-${String(month).padStart(2, '0')}-10`;
 
     if (state.isOnline) {
-      const res = await apiProcessPayment(roomNum, month, state.currentBranch, formattedToday, "정상 입금", tenantName);
+      const res = await apiProcessPayment(roomNum, month, state.currentBranch, defaultPayDate, "정상 입금", tenantName, year);
       state.rooms[roomNum] = res;
     } else {
       // 오프라인 폴백
       if (room && room.payments) {
-        if (!room.payments[month]) room.payments[month] = {};
-        room.payments[month].paid = true;
-        room.payments[month].paid_date = formattedToday;
-        room.payments[month].note = "정상 입금";
-        room.payments[month].tenant_name = tenantName;
-        room.payments[month].is_previous_tenant = false;
+        const payObj = {
+          month,
+          year,
+          paid: true,
+          paid_date: defaultPayDate,
+          note: "정상 입금",
+          tenant_name: tenantName,
+          is_previous_tenant: false,
+          rent_amount: room.lease_type === "전세" ? 0 : room.rent,
+          maintenance_amount: room.maintenance
+        };
+        room.payments[month] = payObj;
+        room.payments[pKey] = payObj;
       }
     }
     saveLocalFallback();
@@ -1183,24 +1364,66 @@ async function handleProcessPayment(roomNum, month) {
   }
 }
 
-async function handleCancelPayment(roomNum, month) {
+async function handleCancelPayment(roomNum, month, year = currentYear) {
   try {
+    const pKey = `${year}-${month}`;
     if (state.isOnline) {
-      const res = await apiCancelPayment(roomNum, month, state.currentBranch);
+      const res = await apiCancelPayment(roomNum, month, state.currentBranch, year);
       state.rooms[roomNum] = res;
     } else {
       // 오프라인 폴백
       const r = state.rooms[roomNum];
-      if (r && r.payments && r.payments[month]) {
-        r.payments[month].paid = false;
-        r.payments[month].paid_date = "";
-        r.payments[month].note = "납부 취소";
+      if (r && r.payments) {
+        if (r.payments[month]) {
+          r.payments[month].paid = false;
+          r.payments[month].paid_date = "";
+          r.payments[month].note = "납부 취소";
+        }
+        if (r.payments[pKey]) {
+          r.payments[pKey].paid = false;
+          r.payments[pKey].paid_date = "";
+          r.payments[pKey].note = "납부 취소";
+        }
       }
     }
     saveLocalFallback();
     renderAll();
   } catch (err) {
     alert("납부 취소 실패: " + err.message);
+  }
+}
+
+// ── 은행 거래내역 대조용 실입금일자 수정 액션 ──
+async function handleChangePaymentDate(roomNum, month, year, newDate) {
+  try {
+    const room = state.rooms[roomNum];
+    const tenantName = (room && room.name) ? room.name : "공실";
+    const pKey = `${year}-${month}`;
+
+    if (state.isOnline) {
+      const res = await apiProcessPayment(roomNum, month, state.currentBranch, newDate, "은행 확인 입금", tenantName, year);
+      if (res) state.rooms[roomNum] = res;
+    }
+
+    // 로컬 상태 즉시 동기화
+    if (room && room.payments) {
+      const existing = room.payments[pKey] || (year === currentYear ? room.payments[month] : {}) || {};
+      const payObj = {
+        ...existing,
+        month,
+        year,
+        paid: true,
+        paid_date: newDate,
+        note: existing.note || "정상 입금",
+        tenant_name: existing.tenant_name || tenantName
+      };
+      room.payments[pKey] = payObj;
+      if (year === currentYear) room.payments[month] = payObj;
+    }
+    saveLocalFallback();
+    renderAll();
+  } catch (err) {
+    alert("납부일자 수정 실패: " + err.message);
   }
 }
 

@@ -178,7 +178,8 @@ async def process_payment(
         branch_id=branch_id,
         paid_date=payload.paid_date,
         note=payload.note or "정상 입금",
-        tenant_name=payload.tenant_name
+        tenant_name=payload.tenant_name,
+        year=payload.year
     )
     if not updated:
         raise HTTPException(status_code=404, detail=f"{room_number}호를 찾을 수 없습니다.")
@@ -197,7 +198,8 @@ async def cancel_payment(
         db,
         room_number=room_number,
         month=payload.month,
-        branch_id=branch_id
+        branch_id=branch_id,
+        year=payload.year
     )
     if not updated:
         raise HTTPException(status_code=404, detail=f"{room_number}호를 찾을 수 없습니다.")

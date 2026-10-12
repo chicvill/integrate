@@ -79,19 +79,19 @@ export async function apiOcrImportImage(imageBase64, branchId = 'main') {
   });
 }
 
-export async function apiProcessPayment(roomNumber, month, branchId = 'main', paidDate = null, note = '정상 입금', tenantName = null) {
+export async function apiProcessPayment(roomNumber, month, branchId = 'main', paidDate = null, note = '정상 입금', tenantName = null, year = 2026) {
   const base = getApiBase('rent');
   return await fetchWithAuth(`${base}/rooms/${roomNumber}/payment?branch_id=${encodeURIComponent(branchId)}`, {
     method: 'POST',
-    body: JSON.stringify({ month, paid_date: paidDate, note, tenant_name: tenantName })
+    body: JSON.stringify({ month, year, paid_date: paidDate, note, tenant_name: tenantName })
   });
 }
 
-export async function apiCancelPayment(roomNumber, month, branchId = 'main') {
+export async function apiCancelPayment(roomNumber, month, branchId = 'main', year = 2026) {
   const base = getApiBase('rent');
   return await fetchWithAuth(`${base}/rooms/${roomNumber}/cancel-payment?branch_id=${encodeURIComponent(branchId)}`, {
     method: 'POST',
-    body: JSON.stringify({ month })
+    body: JSON.stringify({ month, year })
   });
 }
 
