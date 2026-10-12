@@ -604,25 +604,9 @@
         </div>
       </div>
 
-      <!-- Compact Excel Summary Bar (카드 대신 엑셀 상단 한 줄 요약 그리드) -->
-      <div class="my-1.5 px-3 py-1.5 rounded-lg bg-surface-950 border border-slate-700/80 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs">
-        <div class="flex items-center gap-3 flex-wrap font-mono">
-          <span class="text-slate-400 font-sans">대상 호실: <strong id="vatKpiCountSummary" class="text-cyan-300 font-mono font-bold">0/0</strong></span>
-          <span class="text-slate-700">|</span>
-          <span class="text-slate-400 font-sans">합계(VAT포함): <strong id="vatKpiTotalAmount" class="text-amber-300 font-mono font-bold">0</strong></span>
-          <span class="text-slate-700">|</span>
-          <span class="text-slate-400 font-sans">공급가액: <strong id="vatKpiSupplyValue" class="text-cyan-300 font-mono font-bold">0</strong></span>
-          <span class="text-slate-700">|</span>
-          <span class="text-slate-400 font-sans">부가가치세: <strong id="vatKpiVatAmount" class="text-emerald-300 font-mono font-bold">0</strong></span>
-        </div>
-        <div class="text-[11px] text-slate-400 font-sans">
-          (단위: 원 / 호·원 생략)
-        </div>
-      </div>
-
       <!-- Spreadsheet Grid -->
-      <div class="flex-1 overflow-auto border border-slate-800 rounded-xl bg-surface-950 p-1 min-h-[220px]">
-        <table id="vatSpreadsheetTable" class="w-full text-xs text-left border-collapse">
+      <div class="flex-1 overflow-auto border border-slate-800 rounded-xl bg-surface-950 p-1 min-h-[220px] mt-2">
+        <table id="vatSpreadsheetTable" class="w-full min-w-[850px] text-xs text-left border-collapse whitespace-nowrap">
           <thead class="bg-surface-850 text-slate-300 font-semibold sticky top-0 z-10 border-b border-slate-700" id="vatTableHead"></thead>
           <tbody id="vatTableBody" class="divide-y divide-slate-800/80 text-slate-200 font-mono"></tbody>
           <tfoot id="vatTableFoot" class="bg-surface-850 text-white font-bold border-t-2 border-cyan-500/60 sticky bottom-0 z-10 font-mono"></tfoot>

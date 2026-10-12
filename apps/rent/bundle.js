@@ -1526,22 +1526,22 @@ function renderVatReportUI(data) {
   if (thead) {
     let thHtml = `
       <tr>
-        <th class="py-1.5 px-1.5 border border-slate-700 bg-surface-850 text-center w-8">
+        <th class="py-2 px-1.5 border border-slate-700 bg-surface-850 text-center w-8 min-w-[32px] whitespace-nowrap">
           <input type="checkbox" id="vatMasterCheck" ${isAllSelected ? 'checked' : ''} onchange="toggleAllVatRooms(this.checked)" class="accent-cyan-500 rounded cursor-pointer w-3.5 h-3.5" title="전체 선택/해제">
         </th>
-        <th class="py-1.5 px-2 border border-slate-700 bg-surface-850 text-cyan-300 font-bold text-center w-12">호실</th>
-        <th class="py-1.5 px-2 border border-slate-700 bg-surface-850 text-slate-200 text-left">임차인</th>
-        <th class="py-1.5 px-1 border border-slate-700 bg-surface-850 text-slate-300 text-center w-10">유형</th>
-        <th class="py-1.5 px-2 border border-slate-700 bg-surface-850 text-slate-300 text-right">보증금</th>
+        <th class="py-2 px-2 border border-slate-700 bg-surface-850 text-cyan-300 font-bold text-center w-12 min-w-[48px] whitespace-nowrap">호실</th>
+        <th class="py-2 px-3 border border-slate-700 bg-surface-850 text-slate-200 text-left min-w-[125px] whitespace-nowrap">임차인</th>
+        <th class="py-2 px-2 border border-slate-700 bg-surface-850 text-slate-300 text-center min-w-[56px] whitespace-nowrap">유형</th>
+        <th class="py-2 px-2.5 border border-slate-700 bg-surface-850 text-slate-300 text-right min-w-[85px] whitespace-nowrap">보증금</th>
     `;
     data.months.forEach(m => {
-      thHtml += `<th class="py-1.5 px-1.5 border border-slate-700 bg-surface-850 text-cyan-200 text-right">${m}월</th>`;
+      thHtml += `<th class="py-2 px-2 border border-slate-700 bg-surface-850 text-cyan-200 text-right min-w-[70px] whitespace-nowrap">${m}월</th>`;
     });
     thHtml += `
-        <th class="py-1.5 px-2 border border-slate-700 bg-surface-850 text-amber-300 font-bold text-right">합계(VAT)</th>
-        <th class="py-1.5 px-2 border border-slate-700 bg-surface-850 text-cyan-300 font-bold text-right">공급가액</th>
-        <th class="py-1.5 px-2 border border-slate-700 bg-surface-850 text-emerald-300 font-bold text-right">부가가치세</th>
-        <th class="py-1.5 px-1.5 border border-slate-700 bg-surface-850 text-slate-300 text-center w-12">상태</th>
+        <th class="py-2 px-2.5 border border-slate-700 bg-surface-850 text-amber-300 font-bold text-right min-w-[95px] whitespace-nowrap">합계(VAT)</th>
+        <th class="py-2 px-2.5 border border-slate-700 bg-surface-850 text-cyan-300 font-bold text-right min-w-[90px] whitespace-nowrap">공급가액</th>
+        <th class="py-2 px-2.5 border border-slate-700 bg-surface-850 text-emerald-300 font-bold text-right min-w-[85px] whitespace-nowrap">부가가치세</th>
+        <th class="py-2 px-2 border border-slate-700 bg-surface-850 text-slate-300 text-center min-w-[52px] whitespace-nowrap">상태</th>
       </tr>
     `;
     thead.innerHTML = thHtml;
@@ -1555,7 +1555,7 @@ function renderVatReportUI(data) {
 
   if (tbody) {
     if (!data.rows || data.rows.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="${8 + data.months.length}" class="py-6 text-center text-slate-500">조회된 호실 데이터가 없습니다.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="${8 + data.months.length}" class="py-6 text-center text-slate-500 whitespace-nowrap">조회된 호실 데이터가 없습니다.</td></tr>`;
     } else {
       let trHtml = '';
       data.rows.forEach(row => {
@@ -1564,11 +1564,11 @@ function renderVatReportUI(data) {
           totalDeposit += Number(row.deposit || 0);
         }
 
-        let statusBadge = '<span class="px-1 py-0.2 rounded text-[10px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">완납</span>';
+        let statusBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 whitespace-nowrap">완납</span>';
         if (row.status === '미납') {
-          statusBadge = '<span class="px-1 py-0.2 rounded text-[10px] bg-rose-500/15 text-rose-300 border border-rose-500/30">미납</span>';
+          statusBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] bg-rose-500/15 text-rose-300 border border-rose-500/30 whitespace-nowrap">미납</span>';
         } else if (row.status === '부분완납') {
-          statusBadge = '<span class="px-1 py-0.2 rounded text-[10px] bg-amber-500/15 text-amber-300 border border-amber-500/30">부분</span>';
+          statusBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] bg-amber-500/15 text-amber-300 border border-amber-500/30 whitespace-nowrap">부분</span>';
         }
 
         const rowClass = isSelected 
@@ -1577,15 +1577,15 @@ function renderVatReportUI(data) {
 
         trHtml += `
           <tr class="${rowClass}">
-            <td class="py-1.5 px-1.5 border border-slate-800 text-center bg-surface-900/60">
+            <td class="py-1.5 px-1.5 border border-slate-800 text-center bg-surface-900/60 whitespace-nowrap">
               <input type="checkbox" ${isSelected ? 'checked' : ''} 
                 onchange="onToggleVatRoomRow(${row.room_number}, this.checked)" 
                 class="accent-cyan-500 rounded cursor-pointer w-3.5 h-3.5">
             </td>
-            <td class="py-1.5 px-2 border border-slate-800 text-cyan-300 font-bold text-center bg-surface-900/40 font-mono">${row.room_number}</td>
-            <td class="py-1.5 px-2 border border-slate-800 font-sans text-slate-200 font-medium">${row.tenant_name}</td>
-            <td class="py-1.5 px-1 border border-slate-800 font-sans text-center text-slate-400 text-[11px]">${row.lease_type}</td>
-            <td class="py-1.5 px-2 border border-slate-800 text-right text-slate-300 font-mono">${Number(row.deposit || 0).toLocaleString()}</td>
+            <td class="py-1.5 px-2 border border-slate-800 text-cyan-300 font-bold text-center bg-surface-900/40 font-mono whitespace-nowrap">${row.room_number}</td>
+            <td class="py-1.5 px-3 border border-slate-800 font-sans text-slate-200 font-medium whitespace-nowrap">${row.tenant_name}</td>
+            <td class="py-1.5 px-2 border border-slate-800 font-sans text-center text-slate-300 text-xs whitespace-nowrap">${row.lease_type}</td>
+            <td class="py-1.5 px-2.5 border border-slate-800 text-right text-slate-300 font-mono whitespace-nowrap">${Number(row.deposit || 0).toLocaleString()}</td>
         `;
 
         data.months.forEach(m => {
@@ -1595,14 +1595,14 @@ function renderVatReportUI(data) {
           }
           const amtText = amt > 0 ? Number(amt).toLocaleString() : `<span class="text-slate-600">-</span>`;
           const amtColor = amt > 0 ? `text-slate-100` : ``;
-          trHtml += `<td class="py-1.5 px-1.5 border border-slate-800 text-right font-mono ${amtColor}">${amtText}</td>`;
+          trHtml += `<td class="py-1.5 px-2 border border-slate-800 text-right font-mono whitespace-nowrap ${amtColor}">${amtText}</td>`;
         });
 
         trHtml += `
-            <td class="py-1.5 px-2 border border-slate-800 text-right font-bold text-amber-300 font-mono">${Number(row.period_total || 0).toLocaleString()}</td>
-            <td class="py-1.5 px-2 border border-slate-800 text-right font-semibold text-cyan-300 font-mono">${Number(row.supply_value || 0).toLocaleString()}</td>
-            <td class="py-1.5 px-2 border border-slate-800 text-right font-semibold text-emerald-300 font-mono">${Number(row.vat_value || 0).toLocaleString()}</td>
-            <td class="py-1.5 px-1.5 border border-slate-800 text-center font-sans">${statusBadge}</td>
+            <td class="py-1.5 px-2.5 border border-slate-800 text-right font-bold text-amber-300 font-mono whitespace-nowrap">${Number(row.period_total || 0).toLocaleString()}</td>
+            <td class="py-1.5 px-2.5 border border-slate-800 text-right font-semibold text-cyan-300 font-mono whitespace-nowrap">${Number(row.supply_value || 0).toLocaleString()}</td>
+            <td class="py-1.5 px-2.5 border border-slate-800 text-right font-semibold text-emerald-300 font-mono whitespace-nowrap">${Number(row.vat_value || 0).toLocaleString()}</td>
+            <td class="py-1.5 px-2 border border-slate-800 text-center font-sans whitespace-nowrap">${statusBadge}</td>
           </tr>
         `;
       });
@@ -1615,18 +1615,18 @@ function renderVatReportUI(data) {
   if (tfoot) {
     let tfHtml = `
       <tr class="bg-surface-850 font-bold border-t-2 border-cyan-500/80">
-        <td class="py-2 px-1 border border-slate-700 text-center text-slate-500 font-sans">-</td>
-        <td class="py-2 px-2 border border-slate-700 text-center text-cyan-300 font-sans" colspan="3">합계 (${selectedVatRooms.size}실)</td>
-        <td class="py-2 px-2 border border-slate-700 text-right text-slate-300 font-mono">${totalDeposit.toLocaleString()}</td>
+        <td class="py-2 px-1.5 border border-slate-700 text-center text-slate-500 font-sans whitespace-nowrap">-</td>
+        <td class="py-2 px-2 border border-slate-700 text-center text-cyan-300 font-sans whitespace-nowrap" colspan="3">합계 (${selectedVatRooms.size}실)</td>
+        <td class="py-2 px-2.5 border border-slate-700 text-right text-slate-300 font-mono whitespace-nowrap">${totalDeposit.toLocaleString()}</td>
     `;
     data.months.forEach(m => {
-      tfHtml += `<td class="py-2 px-1.5 border border-slate-700 text-right text-cyan-200 font-mono">${monthSums[m].toLocaleString()}</td>`;
+      tfHtml += `<td class="py-2 px-2 border border-slate-700 text-right text-cyan-200 font-mono whitespace-nowrap">${monthSums[m].toLocaleString()}</td>`;
     });
     tfHtml += `
-        <td class="py-2 px-2 border border-slate-700 text-right text-amber-300 text-sm font-black font-mono">${Number(data.total_collected || 0).toLocaleString()}</td>
-        <td class="py-2 px-2 border border-slate-700 text-right text-cyan-300 text-sm font-black font-mono">${Number(data.total_supply || 0).toLocaleString()}</td>
-        <td class="py-2 px-2 border border-slate-700 text-right text-emerald-300 text-sm font-black font-mono">${Number(data.total_vat || 0).toLocaleString()}</td>
-        <td class="py-2 px-1.5 border border-slate-700 text-center text-slate-400 font-sans">-</td>
+        <td class="py-2 px-2.5 border border-slate-700 text-right text-amber-300 text-sm font-black font-mono whitespace-nowrap">${Number(data.total_collected || 0).toLocaleString()}</td>
+        <td class="py-2 px-2.5 border border-slate-700 text-right text-cyan-300 text-sm font-black font-mono whitespace-nowrap">${Number(data.total_supply || 0).toLocaleString()}</td>
+        <td class="py-2 px-2.5 border border-slate-700 text-right text-emerald-300 text-sm font-black font-mono whitespace-nowrap">${Number(data.total_vat || 0).toLocaleString()}</td>
+        <td class="py-2 px-2 border border-slate-700 text-center text-slate-400 font-sans whitespace-nowrap">-</td>
       </tr>
     `;
     tfoot.innerHTML = tfHtml;
