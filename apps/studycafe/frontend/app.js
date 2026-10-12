@@ -7,7 +7,8 @@ import {
   isSameDayTicket,
   isActiveNonSameDayTicket,
   isFixedSeatManagedTicket,
-  isLmsAllowed
+  isLmsAllowed,
+  hasValidActiveTicket
 } from './js/state.js?v=2.3';
 import {
   CURRENT_BRANCH, fetchBranches,
@@ -513,8 +514,54 @@ function updateNavTabsAccess() {
   }
 }
 
+// ── 5-1. 학생 회원 스터디카페 현장 사용권 유효성 검증 ────────
+/**
+ * 🎯 [비즈니스 표준] 스터디카페 학생 이용권 세션 유효성 판정:
+ * - 관리자: 전면 허용 (14일 세션 상시 유지)
+ * - 학생(Student):
+ *   ① selfstudy(셀프스터디 PPH 진도/리포트): 사용권 유무와 무관하게 14일 자동 로그인 계속 유지!
+ *   ② studycafe 현장 시설(seats: 좌석 배정, door: 출입문): 유효 사용권(hasValidActiveTicket)이 있을 때만 허용!
+ *      사용권 만료 시 즉시 현장 좌석 퇴실 처리 및 '이용권 구매' 화면으로 전환.
+ */
+export function validateStudentStudycafeSession(targetTabId = state.activeTab) {
+  const user = state.currentUser;
+  if (!user) return true;
+
+  // 1. 관리자(점주/실장/직원)는 항상 통과
+  const isAdmin = user.role === 'admin' || user.role === 'owner' || user.role === 'manager' || user.is_admin;
+  if (isAdmin) return true;
+
+  // 2. 학생인 경우:
+  // 🌟 [핵심 예외] selfstudy(자기주도학습 진도 관리)는 사용권 만료와 무관하게 상시 열람 허용!
+  if (targetTabId === 'selfstudy') {
+    return true;
+  }
+
+  // 3. studycafe 현장 시설(seats, door) 이용 시 유효 이용권 검사
+  if (targetTabId === 'seats' || targetTabId === 'door') {
+    const hasValidTicket = hasValidActiveTicket(state.activeTicket);
+    if (!hasValidTicket) {
+      if (state.mySeat) {
+        leaveSeat(state.mySeat.seat_number).then(() => {
+          state.mySeat = null;
+          refreshSeats();
+        }).catch(() => {});
+      }
+      showToast('⚠️ [이용권 만료] 스터디카페 현장 이용권이 만료되어 좌석 배정이 제한됩니다. 이용권을 먼저 충전해 주세요. (단, 셀프스터디 학습 진도는 열람 가능)', 'warning', 6000);
+      return false;
+    }
+  }
+
+  return true;
+}
+
 // ── 6. 탭 전환 제어 ───────────────────────────────────────
 function switchTab(tabId) {
+  // 🎯 학생의 스터디카페 현장 시설 이용 시 유효 이용권 검증 (selfstudy 제외)
+  if ((tabId === 'seats' || tabId === 'door') && !validateStudentStudycafeSession(tabId)) {
+    tabId = 'tickets'; // 이용권 충전 화면으로 강제 전환!
+  }
+
   state.activeTab = tabId;
 
   // 🎯 당일권/정기권 회원이 LMS 탭 클릭 시 친절한 차단 모달 노출
@@ -706,6 +753,7 @@ async function init() {
   // 🎯 키오스크 45초 유휴 복귀 감시 & 청소년 22시 보호 감시 가동
   setupKioskWatchdog();
   setupMinorShutdownMonitor();
+  setupStudentTicketWatchdog();
 }
 
 // ── 10. 키오스크 45초 유휴 복귀 (Idle Timeout Watchdog) ──────
@@ -850,4 +898,35 @@ async function checkKioskEmergencyStatus() {
   }
 }
 
+// ── 13. 학생 이용권 만료 실시간 감시 (Ticket Watchdog) ───────
+function setupStudentTicketWatchdog() {
+  setInterval(async () => {
+    if (!state.currentUser) return;
+    const user = state.currentUser;
+    const isAdmin = user.role === 'admin' || user.role === 'owner' || user.role === 'manager' || user.is_admin;
+    if (isAdmin) return; // 관리자(점주)는 통과
+
+    // 🌟 selfstudy(셀프스터디 PPH 학습 진도표) 탭 이용 중인 경우는 세션 유지 허용!
+    if (state.activeTab === 'selfstudy') return;
+
+    // 이용권 실시간 갱신 확인
+    await checkMyTicket();
+
+    // 현장 시설 이용 중 이용권 만료 판정
+    const isValid = hasValidActiveTicket(state.activeTicket);
+    if (!isValid && (state.activeTab === 'seats' || state.activeTab === 'door' || state.mySeat)) {
+      if (state.mySeat) {
+        try {
+          await leaveSeat(state.mySeat.seat_number);
+          state.mySeat = null;
+          await refreshSeats();
+        } catch (e) {}
+      }
+      showToast('⌛ [이용권 시간 만료] 스터디카페 현장 이용 시간이 모두 소진되었습니다. 이용권을 충전해 주세요. (단, 셀프스터디 진도표는 계속 이용 가능)', 'warning', 8000);
+      switchTab('tickets');
+    }
+  }, 60000); // 1분 주기
+}
+
 init();
+

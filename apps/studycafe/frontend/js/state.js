@@ -44,6 +44,23 @@ export function isSameDayTicket(ticket) {
   return false;
 }
 
+/** 🎯 스터디카페 현장 이용권 실시간 유효성 엄격 판정 (잔여시간 및 만료일) */
+export function hasValidActiveTicket(ticket) {
+  if (!ticket) return false;
+  if (ticket.is_active === false) return false;
+  if (ticket.is_held) return false;
+
+  const now = new Date();
+  if (ticket.valid_until) {
+    const validUntil = new Date(ticket.valid_until);
+    if (validUntil < now) return false;
+  }
+  if (ticket.remaining_minutes !== undefined && ticket.remaining_minutes !== null) {
+    if (ticket.remaining_minutes <= 0) return false;
+  }
+  return true;
+}
+
 /** 🎯 당일권이 아닌 회원으로 유효 사용기간 중인 이용권 판정 (정기권, 기간권, 관리형 패스) */
 export function isActiveNonSameDayTicket(ticket) {
   if (!ticket || !ticket.is_active) return false;
