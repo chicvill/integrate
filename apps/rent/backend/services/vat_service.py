@@ -154,6 +154,7 @@ class VatService:
             report_rows.append({
                 "room_number": rNum,
                 "tenant_name": display_name,
+                "id_number": r.get("id_number") or "",
                 "lease_type": r.get("lease_type") or "월세",
                 "deposit": r.get("deposit") or 0,
                 "monthly_amounts": monthly_amounts,

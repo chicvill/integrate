@@ -226,6 +226,21 @@ async def fill_tenant_payments(
     return service.fill_tenant_payments(db, branch_id=branch_id, room_number=room_number)
 
 
+@router.post("/payments/matrix-import")
+@router.post("/branches/{branch_id}/payments/matrix-import")
+async def batch_import_payment_matrix(
+    payload: Dict[str, Any] = Body(...),
+    branch_id: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """월별 수납장부 매트릭스(연도-월별 실입금일/금액) 일괄 등록 및 동기화"""
+    target_branch = branch_id or payload.get("branch_id") or "main"
+    matrix_rooms = payload.get("rooms") or payload.get("matrix_rooms") or []
+    if not isinstance(matrix_rooms, list):
+        raise HTTPException(status_code=400, detail="rooms 배열 데이터가 필요합니다.")
+    return service.batch_import_monthly_matrix(db, branch_id=target_branch, matrix_rooms=matrix_rooms)
+
+
 # ── 전출자 1년 보존 이력 조회 라우트 ──
 @router.get("/tenant-histories", response_model=TenantHistoryListResponse)
 async def list_tenant_histories(

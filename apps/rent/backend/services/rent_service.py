@@ -338,6 +338,9 @@ class RentService:
                 db.add(hist)
 
         for field, val in data.model_dump(exclude_unset=True).items():
+            if field == "id_number" and not val and room.id_number:
+                # 폼에서 주민번호를 비워둔 채 수정 제출 시, 기존에 안전하게 등록된 주민번호 유실 방지
+                continue
             setattr(room, field, val)
 
         # 계약된 월세/관리비 변경 시 미납 월들의 예정 금액도 동기화
@@ -405,9 +408,17 @@ class RentService:
                 db.add(room)
                 imported_count += 1
             else:
-                for field in ["name", "id_number", "phone", "lease_type", "pay_timing", "move_in", "expiry", "move_out"]:
+                for field in ["name", "phone", "lease_type", "pay_timing", "move_in", "expiry", "move_out"]:
                     if field in r_data and r_data[field] is not None:
-                        setattr(room, field, str(r_data[field]))
+                        val_str = str(r_data[field]).strip()
+                        if field == "name" and not val_str and room.name:
+                            continue
+                        setattr(room, field, val_str)
+
+                # 주민번호 보호: 엑셀 파일에 주민번호 컬럼이 없거나 빈값이어도 기존 DB의 주민번호 덮어쓰기/삭제 방지
+                incoming_id = str(r_data.get("id_number") or "").strip()
+                if incoming_id:
+                    room.id_number = incoming_id
                 for int_field in ["deposit", "rent", "maintenance", "clean_fee"]:
                     if int_field in r_data and r_data[int_field] is not None:
                         try:
@@ -441,6 +452,13 @@ class RentService:
             "total_count": imported_count + updated_count,
             "rooms": updated_rooms
         }
+
+    def batch_import_monthly_matrix(self, db: Session, branch_id: str, matrix_rooms: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """월별 임차료/관리비 수납 장부 매트릭스 일괄 등록/동기화"""
+        self.ensure_default_seed(db, branch_id)
+        res = PaymentService.batch_import_monthly_matrix(db, branch_id=branch_id, matrix_rooms=matrix_rooms)
+        res["rooms"] = self.get_rooms(db, branch_id)
+        return res
 
     def ocr_import_image(self, image_base64: str) -> Dict[str, Any]:
         """엑셀 캡처 이미지로부터 Vision AI를 통해 표 데이터 추출"""

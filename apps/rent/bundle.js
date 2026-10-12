@@ -114,7 +114,9 @@ const paymentsApi = {
   process: (roomNumber, month, branchId = 'main', paidDate = null, note = '정상 입금', tenantName = null, year = 2026) =>
     http.post(`/rooms/${roomNumber}/payment`, { month, year, paid_date: paidDate, note, tenant_name: tenantName }, { branch_id: branchId }),
   cancel: (roomNumber, month, branchId = 'main', year = 2026) =>
-    http.post(`/rooms/${roomNumber}/cancel-payment`, { month, year }, { branch_id: branchId })
+    http.post(`/rooms/${roomNumber}/cancel-payment`, { month, year }, { branch_id: branchId }),
+  matrixImport: (matrixRooms, branchId = 'main') =>
+    http.post('/payments/matrix-import', { rooms: matrixRooms }, { branch_id: branchId })
 };
 
 const expensesApi = {
@@ -187,6 +189,7 @@ const apiFillTenantPayments = roomsApi.fillPayments;
 
 const apiProcessPayment = paymentsApi.process;
 const apiCancelPayment = paymentsApi.cancel;
+const apiBatchImportPaymentMatrix = paymentsApi.matrixImport;
 
 const apiGetExpenses = expensesApi.list;
 const apiCreateExpense = expensesApi.create;
@@ -943,6 +946,17 @@ function renderMainRoomCard(room) {
 
   const cardTenantName = document.getElementById('cardTenantName');
   if (cardTenantName) cardTenantName.textContent = isVacant ? '공실 (미계약)' : `${room.name} 고객`;
+
+  const cardIdNumber = document.getElementById('cardIdNumber');
+  if (cardIdNumber) {
+    if (isVacant) {
+      cardIdNumber.innerHTML = `<span class="text-slate-500">-</span>`;
+    } else if (!room.id_number) {
+      cardIdNumber.innerHTML = `<span class="text-amber-400 font-normal">주민번호 미등록</span>`;
+    } else {
+      cardIdNumber.innerHTML = `<span class="text-slate-400 font-normal text-[11px]">주민:</span> <span class="text-cyan-300 font-mono font-medium">${room.id_number}</span>`;
+    }
+  }
 
   const cardPhone = document.getElementById('cardPhone');
   if (cardPhone) {
@@ -2060,6 +2074,7 @@ function exportCurrentRoomCSV() {
   let csv = "\uFEFF"; // UTF-8 BOM
   csv += `호실,${rNum}호\n`;
   csv += `임차인,${r.name || '공실'}\n`;
+  csv += `주민등록번호,${r.id_number || ''}\n`;
   csv += `임차유형,${r.lease_type || '월세'}\n`;
   csv += `납부방식,${r.pay_timing || '후불'}\n`;
   csv += `전화번호,${r.phone || ''}\n`;
@@ -2511,7 +2526,10 @@ function renderVatReportUI(data) {
                 class="accent-cyan-500 rounded cursor-pointer w-3.5 h-3.5">
             </td>
             <td class="py-1.5 px-2 border border-slate-800 text-cyan-300 font-bold text-center bg-surface-900/40 font-mono whitespace-nowrap">${row.room_number}</td>
-            <td class="py-1.5 px-3 border border-slate-800 font-sans text-slate-200 font-medium whitespace-nowrap">${row.tenant_name}</td>
+            <td class="py-1.5 px-3 border border-slate-800 font-sans text-slate-200 font-medium whitespace-nowrap">
+              <div>${row.tenant_name}</div>
+              ${(row.id_number || (state.rooms[row.room_number] && state.rooms[row.room_number].id_number)) ? `<div class="text-[10px] text-slate-400 font-mono">주민: ${row.id_number || state.rooms[row.room_number].id_number}</div>` : ''}
+            </td>
             <td class="py-1.5 px-2 border border-slate-800 font-sans text-center text-slate-300 text-xs whitespace-nowrap">${row.lease_type}</td>
             <td class="py-1.5 px-2.5 border border-slate-800 text-right text-slate-300 font-mono whitespace-nowrap">${Number(row.deposit || 0).toLocaleString()}</td>
         `;
@@ -2594,7 +2612,7 @@ function exportVatCSV() {
   csv += `출력일시,${formattedToday}\n\n`;
 
   // 컬럼 헤더
-  let headerRow = ["호실", "임차인", "임대유형", "보증금"];
+  let headerRow = ["호실", "임차인", "주민(사업자)번호", "임대유형", "보증금"];
   d.months.forEach(m => {
     headerRow.push(`${m}월 수납액`);
   });
@@ -2611,6 +2629,7 @@ function exportVatCSV() {
     const row = [
       `"${r.room_number}"`,
       `"${r.tenant_name}"`,
+      `"${r.id_number || (state.rooms[r.room_number] ? state.rooms[r.room_number].id_number : '') || '-'}"`,
       `"${r.lease_type}"`,
       r.deposit || 0
     ];
@@ -2677,7 +2696,8 @@ async function openTenantHistoryModal() {
           </div>
           <span class="text-[11px] text-slate-400 font-mono">1년 보존기한: <strong class="text-emerald-400 font-bold">${h.retention_until || '-'}</strong></span>
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-slate-300 pt-2 border-t border-slate-800">
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-[11px] text-slate-300 pt-2 border-t border-slate-800">
+          <div><span class="text-slate-500 block">주민번호</span> <span class="font-mono text-cyan-300">${h.id_number || '-'}</span></div>
           <div><span class="text-slate-500 block">연락처</span> ${h.phone || '-'}</div>
           <div><span class="text-slate-500 block">임대조건</span> ${h.lease_type || '월세'} / ${Number(h.rent || 0).toLocaleString()}원</div>
           <div><span class="text-slate-500 block">보증금</span> ${Number(h.deposit || 0).toLocaleString()}원</div>
@@ -2755,22 +2775,22 @@ const SYSTEM_FIELDS = [
 const TEMPLATE_PRESETS = [
   {
     id: 'standard',
-    title: '표준 임대차 계약 대장',
+    title: '표준 임대차 계약 대장 (주민번호 포함)',
     badge: '원룸/오피스텔',
-    desc: '호실, 세입자, 연락처, 보증금, 월세, 관리비 등 표준 규격',
+    desc: '호실, 세입자, 주민번호, 연락처, 보증금, 월세, 관리비 등 표준 규격',
     filename: '표준_원룸오피스텔_임대차대장.csv',
-    csv: "\uFEFF호실,세입자,연락처,임대유형,보증금,월세,관리비,납부방식,계약시작일,계약종료일,비고\n" +
-         "101,홍길동,010-1234-5678,월세,5000000,480000,50000,후불,2026-01-01,2027-01-01,관리실 협의\n" +
-         "201,장지아,010-9876-5432,월세,5000000,480000,50000,후불,2026-03-01,2027-03-01,남향 채광 양호\n" +
-         "202,이민준,010-3333-4444,전세,65000000,0,50000,선불,2025-06-01,2027-06-01,전세 보증보험 가입\n" +
-         "203,박수현,010-5555-6666,월세,5000000,500000,50000,후불,2026-02-15,2027-02-15,반려동물 협의\n" +
-         "301,김도윤,010-7777-8888,월세,10000000,450000,50000,후불,2026-04-01,2027-04-01,직장인",
+    csv: "\uFEFF호실,세입자,주민번호,연락처,임대유형,보증금,월세,관리비,납부방식,계약시작일,계약종료일,비고\n" +
+         "101,홍길동,910512-1******,010-1234-5678,월세,5000000,480000,50000,후불,2026-01-01,2027-01-01,관리실 협의\n" +
+         "201,장지아,960319-2******,010-9876-5432,월세,5000000,480000,50000,후불,2026-03-01,2027-03-01,남향 채광 양호\n" +
+         "202,이민준,930512-1******,010-3333-4444,전세,65000000,0,50000,선불,2025-06-01,2027-06-01,전세 보증보험 가입\n" +
+         "203,박수현,940512-2******,010-5555-6666,월세,5000000,500000,50000,후불,2026-02-15,2027-02-15,반려동물 협의\n" +
+         "301,김도윤,970512-1******,010-7777-8888,월세,10000000,450000,50000,후불,2026-04-01,2027-04-01,직장인",
     sampleRows: [
-      { "호실": "101", "세입자": "홍길동", "연락처": "010-1234-5678", "임대유형": "월세", "보증금": "5000000", "월세": "480000", "관리비": "50000", "납부방식": "후불", "계약시작일": "2026-01-01", "계약종료일": "2027-01-01", "비고": "관리실 협의" },
-      { "호실": "201", "세입자": "장지아", "연락처": "010-9876-5432", "임대유형": "월세", "보증금": "5000000", "월세": "480000", "관리비": "50000", "납부방식": "후불", "계약시작일": "2026-03-01", "계약종료일": "2027-03-01", "비고": "남향 채광 양호" },
-      { "호실": "202", "세입자": "이민준", "연락처": "010-3333-4444", "임대유형": "전세", "보증금": "65000000", "월세": "0", "관리비": "50000", "납부방식": "선불", "계약시작일": "2025-06-01", "계약종료일": "2027-06-01", "비고": "전세 보증보험 가입" },
-      { "호실": "203", "세입자": "박수현", "연락처": "010-5555-6666", "임대유형": "월세", "보증금": "5000000", "월세": "500000", "관리비": "50000", "납부방식": "후불", "계약시작일": "2026-02-15", "계약종료일": "2027-02-15", "비고": "반려동물 협의" },
-      { "호실": "301", "세입자": "김도윤", "연락처": "010-7777-8888", "임대유형": "월세", "보증금": "10000000", "월세": "450000", "관리비": "50000", "납부방식": "후불", "계약시작일": "2026-04-01", "계약종료일": "2027-04-01", "비고": "직장인" }
+      { "호실": "101", "세입자": "홍길동", "주민번호": "910512-1******", "연락처": "010-1234-5678", "임대유형": "월세", "보증금": "5000000", "월세": "480000", "관리비": "50000", "납부방식": "후불", "계약시작일": "2026-01-01", "계약종료일": "2027-01-01", "비고": "관리실 협의" },
+      { "호실": "201", "세입자": "장지아", "주민번호": "960319-2******", "연락처": "010-9876-5432", "임대유형": "월세", "보증금": "5000000", "월세": "480000", "관리비": "50000", "납부방식": "후불", "계약시작일": "2026-03-01", "계약종료일": "2027-03-01", "비고": "남향 채광 양호" },
+      { "호실": "202", "세입자": "이민준", "주민번호": "930512-1******", "연락처": "010-3333-4444", "임대유형": "전세", "보증금": "65000000", "월세": "0", "관리비": "50000", "납부방식": "선불", "계약시작일": "2025-06-01", "계약종료일": "2027-06-01", "비고": "전세 보증보험 가입" },
+      { "호실": "203", "세입자": "박수현", "주민번호": "940512-2******", "연락처": "010-5555-6666", "임대유형": "월세", "보증금": "5000000", "월세": "500000", "관리비": "50000", "납부방식": "후불", "계약시작일": "2026-02-15", "계약종료일": "2027-02-15", "비고": "반려동물 협의" },
+      { "호실": "301", "세입자": "김도윤", "주민번호": "970512-1******", "연락처": "010-7777-8888", "임대유형": "월세", "보증금": "10000000", "월세": "450000", "관리비": "50000", "납부방식": "후불", "계약시작일": "2026-04-01", "계약종료일": "2027-04-01", "비고": "직장인" }
     ]
   },
   {
@@ -2822,6 +2842,14 @@ const TEMPLATE_PRESETS = [
       { "호실번호": "304호", "입주청년이름": "신태양", "휴대폰번호": "010-2468-1357", "전월세구분": "월세", "전세보증금": "5000000", "월임대료": "460000", "관리비": "50000", "수납구분": "후불", "거주개시일": "2026-02-01", "퇴거예정일": "2027-01-31", "보증보험가입여부": "청년월세지원 대상" },
       { "호실번호": "305호", "입주청년이름": "한바다", "휴대폰번호": "010-9876-1234", "전월세구분": "전세", "전세보증금": "72000000", "월임대료": "0", "관리비": "50000", "수납구분": "선불", "거주개시일": "2025-09-01", "퇴거예정일": "2027-08-31", "보증보험가입여부": "HF 청년버팀목" }
     ]
+  },
+  {
+    id: 'monthly_matrix_2026',
+    title: '2026년도 월별 수납장부 매트릭스',
+    badge: '실수납 대장',
+    desc: '29개실 호실, 성명, 선/후, 2025.12~2026.10월 월일/금액 매트릭스 수납 대장',
+    filename: '2026년도_월별_수납내역_매트릭스대장.tsv',
+    rawText: "호실\t성명\t선/후\t2025.12\t\t1월\t\t2월\t\t3월\t\t4월\t\t5월\t\t6월\t\t7월\t\t8월\t\t9월\t\t10월\t\n\t\t\t월일\t금액\t월일\t금액\t월일\t금액\t월일\t금액\t월일\t금액\t월일\t금액\t월일\t금액\t월일\t금액\t월일\t금액\t월일\t금액\t월일\t금액\n101\t배종봉\t후불\t12. 3\t250,000\t1. 3\t250,000\t2. 3\t250,000\t3. 3\t250,000\t4. 3\t250,000\t5. 3\t250,000\t6. 3\t250,000\t7. 2\t250,000\t8. 3\t250,000\t9. 2\t250,000\t10. 3\t250,000\n201\t정민준\t후불\t12. 21\t44,000\t1. 22\t440,000\t2. 23\t440,000\t3. 13\t440,000\t4. 19\t440,000\t5. 15\t440,000\t6. 15\t440,000\t7. 20\t440,000\t8. 20\t440,000\t9. 21\t440,000\t\t\n202\t안동기\t선불\t2026-1-29\t1,760,000\t2. 24\t440,000\t2. 24\t440,000\t8. 13\t440,000\t8. 13\t440,000\t8. 13\t440,000\t8. 13\t440,000\t8. 13\t440,000\t10. 8\t440000\t10. 8\t440,000\t10. 8\t440000\n203\t이광훈\t후불\t11:35\t440,000\t1. 25\t440,000\t2. 23\t440,000\t3. 25\t440,000\t4. 25\t440,000\t5. 25\t440,000\t6. 24\t440,000\t7. 24\t440,000\t8. 23\t440,000\t9. 24\t440,000\t\t\n204\t주예란\t후불\t12. 3\t440,000\t1. 2\t440,000\t2. 3\t440,000\t3. 3\t440,000\t4. 3\t440,000\t5. 4\t440,000\t6. 4\t440,000\t7. 3\t440,000\t8. 3\t440,000\t9. 4\t440,000\t10. 3\t440,000\n205\t서재민\t후불\t12. 22\t400,000\t1. 23\t400,000\t2. 21\t400,000\t3. 22\t400,000\t4. 21\t400,000\t5. 20\t400,000\t6. 21\t400,000\t7. 21\t400,000\t8. 21\t400,000\t9. 22\t400,000\t\t\n301\t성민병원\t후불\t12. 28\t440,000\t1. 28\t440,000\t2. 27\t440,000\t3. 28\t440,000\t4. 28\t440,000\t5. 30\t440,000\t6. 30\t440,000\t7. 28\t440,000\t8. 28\t440,000\t9. 28\t440,000\t\t\n302\t김지영\t후불\t12. 21\t150,000\t1. 18\t150,000\t2. 19\t150,000\t3. 18\t150,000\t4. 19\t150,000\t5. 19\t150,000\t6. 18\t150,000\t7. 19\t150,000\t8. 19\t150,000\t9. 17\t150,000\t\t\n303\t김진수\t후불\t12. 13\t440,000\t1. 12\t440,000\t2. 13\t440,000\t3. 13\t440,000\t4. 16\t440,000\t5. 16\t440,000\t6. 12\t440,000\t7. 13\t440,000\t8. 13\t440,000\t9. 14\t440,000\t\t\n304\t노송병원\t후불\t1. 8\t390,000\t1. 8\t390,000\t2. 20\t390,000\t3. 4\t390,000\t4. 2\t390,000\t5. 4\t390,000\t6. 2\t390,000\t7. 6\t390,000\t8. 3\t390,000\t9. 2\t390,000\t10. 1\t390,000\n305\t정우메탈\t후불\t12. 15\t440,000\t1. 15\t440,000\t2. 13\t440,000\t3:16\t440,000\t4. 15\t440,000\t5. 15\t440,000\t6. 15\t440,000\t7. 15\t440,000\t8. 14\t440,000\t9. 15\t440,000\t\t\n401\t이정도\t후불\t12. 15\t440,000\t1. 15\t440,000\t2. 13\t440,000\t3. 13\t440,000\t4. 16\t440,000\t5. 15\t440,000\t6. 15\t440,000\t7. 15\t440,000\t8. 14\t440,000\t9. 15\t440,000\t\t\n402\t한윤철\t선불\t12. 28\t440,000\t1. 28\t440,000\t2. 28\t440,000\t3. 28\t440,000\t4. 28\t440,000\t5. 28\t440,000\t6. 28\t440,000\t7. 28\t440,000\t8. 28\t440,000\t9. 28\t440,000\t\t\n403\t김정두\t후불\t전입 12/19\t\t1. 20\t440,000\t2. 19\t440,000\t3. 20\t440,000\t4. 19\t440,000\t5. 19\t440,000\t6. 19\t440,000\t7. 19\t440,000\t8. 19\t440,000\t9. 19\t440,000\t\t\n404\t이종진\t후불\t12. 23\t440,000\t1. 24\t440,000\t2. 24\t440,000\t3. 23\t440,000\t4. 23\t440,000\t5. 24\t440,000\t전출6/4\t\t7. 7\t440,000\t8. 6\t440,000\t9. 7\t440,000\t10. 6\t440,000\n405\t김병현\t후불\t12. 25\t450,000\t1. 25\t450,000\t2. 25\t450,000\t전출3/2\t\t4. 9\t440,000\t5. 8\t440000\t6. 8\t440,000\t7. 5\t440,000\t8. 4\t440000\t9. 4\t440,000\t10-5\t440,000\n501\t김민규\t후불\t12. 31\t500,000\t2. 1\t440,000\t3. 1\t440,000\t3. 31\t440,000\t5. 2\t440,000\t5. 31\t440,000\t6. 30\t440,000\t8. 2\t440,000\t8. 28\t440,000\t9. 30\t440,000\t\t\n502\t강홍식\t반선불\t12. 15\t440,000\t115\t440,000\t2. 15\t440,000\t3. 15\t440,000\t4. 15\t440,000\t5. 15\t440,000\t6. 15\t440,000\t7. 15\t440,000\t8. 15\t440,000\t9. 15\t440,000\t\t\n503\t강백찬\t후불\t12. 24\t440,000\t1. 24\t440,000\t2. 19\t440,000\t3. 23\t440,000\t4. 18\t440,000\t5. 19\t440,000\t6. 18\t440,000\t7. 20\t440,000\t8. 22\t440,000\t9-23\t440,000\t\t\n504\t이수현\t후불\t12. 1\t440,000\t1. 1\t440,000\t2. 1\t440,000\t3. 1\t440,000\t4. 1\t440000\t5. 1\t440,000\t6. 1\t440,000\t7. 1\t440,000\t8. 19\t440,000\t9. 1\t440,000\t10. 1\t440,000\n505\t김정현\t선불\t12. 26\t400,000\t1. 26\t400,000\t2. 26\t400,000\t3. 26\t400,000\t4. 26\t400000\t5. 26\t400,000\t전출6/26\t440,000\t7. 29\t440,000\t8. 17\t440,000\t9. 27\t440,000\t\t\n601\t노우영\t후불\t12. 23\t440,000\t1. 23\t440,000\t2. 24\t440,000\t3. 23\t440,000\t4. 23\t440,000\t5. 23\t440,000\t6. 23\t440,000\t7. 23\t440,000\t8. 23\t440,000\t9. 23\t440,000\t\t\n602\t박정자\t후불\t12. 1\t440,000\t1. 2\t440,000\t2. 2\t440000\t3. 3\t440,000\t4. 1\t440,000\t5. 4\t440,000\t6. 2\t440,000\t7. 1\t440,000\t8. 3\t440,000\t9. 1\t440,000\t10. 1\t440,000\n603\t김수현\t후불\t12. 28\t440,000\t1. 27\t440,000\t2. 27\t440,000\t3. 28\t440,000\t4. 27\t440,000\t5. 27\t440,000\t6. 27\t440,000\t7. 27\t440,000\t8. 27\t440,000\t9. 27\t440,000\t\t\n604\t김동주\t후불\t12. 15\t440,000\t1. 14\t440,000\t2. 13\t440,000\t3. 13\t440,000\t4. 15\t440,000\t5. 13\t440,000\t6. 15\t440,000\t7. 16\t440,000\t8. 16\t440,000\t9. 15\t440,000\t\t\n605\t배은미\t후불\t12. 26\t390,000\t1. 26\t390,000\t2. 25\t390,000\t3. 25\t390,000\t4. 26\t390,000\t5. 25\t390,000\t6. 25\t390,000\t7. 26\t390,000\t8. 26\t390,000\t9. 26\t390,000\t\t\n701\t주인세대\t후불\t\t주인\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\n702\t이범주\t후불\t12. 5\t540,000\t1. 5\t540,000\t2. 5\t540,000\t3. 6\t540,000\t4. 5\t540,000\t5. 6\t540,000\t6. 6\t540,000\t7. 6\t540,000\t8. 6\t540,000\t9. 6\t540,000\t105\t540,000\n703\t김상호\t후불\t12. 6\t400,000\t1/23전입\t\t2. 24\t440,000\t3. 23\t440,000\t4. 23\t440,000\t5. 26\t440,000\t6. 23\t440000\t7. 23\t440,000\t8. 25\t440,000\t9. 23\t440,000\t\t"
   }
 ];
 
@@ -2829,8 +2857,182 @@ let selectedPresetId = 'standard';
 let importedRawRows = [];
 let detectedHeaders = [];
 let activeColumnMapping = {};
+let activePaymentMatrixRooms = null;
 let aiConfidenceScore = 0;
 let aiCleaningStats = { roomCleaned: 0, moneyCleaned: 0, phoneCleaned: 0, dateCleaned: 0 };
+
+function isPaymentMatrixText(text) {
+  if (!text) return false;
+  return (/호실/i.test(text) && /성명|세입자|선\/후/i.test(text) && /\d{1,2}월/i.test(text) && /월일|금액/i.test(text));
+}
+
+function parsePaymentMatrixText(text) {
+  if (!isPaymentMatrixText(text)) return null;
+  const lines = text.split(/\r\n|\n|\r/).filter(l => l.trim().length > 0);
+  if (lines.length < 3) return null;
+
+  const monthsSpec = [
+    { year: 2025, month: 12, label: "25.12" },
+    { year: 2026, month: 1, label: "1월" },
+    { year: 2026, month: 2, label: "2월" },
+    { year: 2026, month: 3, label: "3월" },
+    { year: 2026, month: 4, label: "4월" },
+    { year: 2026, month: 5, label: "5월" },
+    { year: 2026, month: 6, label: "6월" },
+    { year: 2026, month: 7, label: "7월" },
+    { year: 2026, month: 8, label: "8월" },
+    { year: 2026, month: 9, label: "9월" },
+    { year: 2026, month: 10, label: "10월" },
+  ];
+
+  const parseMoney = (val) => {
+    if (!val) return 0;
+    const s = String(val).replace(/[^0-9]/g, '');
+    return s ? parseInt(s, 10) : 0;
+  };
+
+  const parseDate = (dStr, y, m) => {
+    if (!dStr) return '';
+    const s = String(dStr).trim();
+    if (!s || s === '-' || s.includes('전출') || s.includes('전입') || s.includes('주인')) return '';
+    
+    const m1 = s.match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})$/);
+    if (m1) return `${m1[1]}-${String(m1[2]).padStart(2, '0')}-${String(m1[3]).padStart(2, '0')}`;
+
+    const m2 = s.match(/^(\d{1,2})[.\s/-]+(\d{1,2})$/);
+    if (m2) return `${y}-${String(m2[1]).padStart(2, '0')}-${String(m2[2]).padStart(2, '0')}`;
+
+    const m3 = s.match(/^(\d{1,2})(\d{2})$/);
+    if (m3) return `${y}-${String(m3[1]).padStart(2, '0')}-${String(m3[2]).padStart(2, '0')}`;
+
+    return `${y}-${String(m).padStart(2, '0')}-10`;
+  };
+
+  const rooms = [];
+
+  for (let i = 2; i < lines.length; i++) {
+    const parts = lines[i].split('\t');
+    if (parts.length < 3) continue;
+    const rNum = parseInt(parts[0].replace(/[^0-9]/g, ''), 10);
+    if (!rNum || isNaN(rNum) || rNum < 100 || rNum > 999) continue;
+
+    const name = parts[1].trim();
+    const timing = parts[2].trim() || '후불';
+
+    let colIdx = 3;
+    const payments = [];
+    let totalRoomPaid = 0;
+
+    monthsSpec.forEach(spec => {
+      const rawDate = colIdx < parts.length ? parts[colIdx].trim() : '';
+      const rawAmt = (colIdx + 1) < parts.length ? parts[colIdx + 1].trim() : '';
+      colIdx += 2;
+
+      const amt = parseMoney(rawAmt);
+      let note = '';
+      if (rawDate.includes('전입') || rawAmt.includes('전입')) note = rawDate || rawAmt;
+      else if (rawDate.includes('전출') || rawAmt.includes('전출')) note = rawDate || rawAmt;
+      else if (rawDate.includes('주인') || rawAmt.includes('주인')) note = '주인세대 거주';
+
+      const isPaid = amt > 0;
+      const pDate = isPaid ? parseDate(rawDate, spec.year, spec.month) : '';
+      if (isPaid) totalRoomPaid += amt;
+
+      payments.push({
+        year: spec.year,
+        month: spec.month,
+        label: spec.label,
+        paid: isPaid,
+        paid_date: pDate,
+        amount: amt,
+        note: note
+      });
+    });
+
+    rooms.push({
+      room_number: rNum,
+      name: name,
+      pay_timing: timing,
+      total_paid: totalRoomPaid,
+      payments: payments
+    });
+  }
+
+  return rooms;
+}
+
+function toggleDirectPasteBox(forceState) {
+  const box = document.getElementById('directPasteBox');
+  if (!box) return;
+  const isCurrentlyHidden = box.classList.contains('hidden');
+  const shouldShow = (forceState !== undefined) ? forceState : isCurrentlyHidden;
+  if (shouldShow) {
+    box.classList.remove('hidden');
+    const ta = document.getElementById('directPasteTextarea');
+    if (ta) ta.focus();
+  } else {
+    box.classList.add('hidden');
+  }
+}
+window.toggleDirectPasteBox = toggleDirectPasteBox;
+
+function processDirectPastedText() {
+  const ta = document.getElementById('directPasteTextarea');
+  if (!ta || !ta.value.trim()) {
+    alert("붙여넣은 텍스트가 없습니다. 입력창에 엑셀 데이터를 붙여넣어주세요.");
+    return;
+  }
+  const text = ta.value.trim();
+  if (isPaymentMatrixText(text)) {
+    const matrixRooms = parsePaymentMatrixText(text);
+    if (matrixRooms && matrixRooms.length > 0) {
+      processParsedPaymentMatrix(matrixRooms, "직접 붙여넣은 2026 월별 수납장부");
+      toggleDirectPasteBox(false);
+      return;
+    }
+  }
+
+  const rows = parseClipboardSpreadsheetText(text);
+  if (rows && rows.length > 0) {
+    processParsedExcelRows(rows, "직접 붙여넣은 엑셀 표");
+    toggleDirectPasteBox(false);
+  } else {
+    alert("유효한 표 데이터를 추출할 수 없습니다. 엑셀에서 셀 범위를 복사하여 붙여넣었는지 확인해주세요.");
+  }
+}
+window.processDirectPastedText = processDirectPastedText;
+
+function processParsedPaymentMatrix(matrixRooms, sourceName = "월별 수납장부 매트릭스") {
+  if (!matrixRooms || matrixRooms.length === 0) {
+    alert("유효한 수납 데이터가 없습니다.");
+    return;
+  }
+
+  activePaymentMatrixRooms = matrixRooms;
+  importedRawRows = [];
+  detectedHeaders = [];
+  activeColumnMapping = {};
+
+  const statusText = document.getElementById('excelFileStatusText');
+  if (statusText) {
+    statusText.innerHTML = `✓ <strong>[${sourceName}]</strong> 총 <span class="text-emerald-400 font-bold">${matrixRooms.length}개실</span> (2025.12~2026.10월 실입금일/금액) 매트릭스가 완벽히 분석되었습니다!`;
+  }
+
+  const aiBox = document.getElementById('aiMappingContainer');
+  if (aiBox) aiBox.classList.add('hidden');
+
+  renderExcelPreviewTable();
+
+  const prevBox = document.getElementById('excelPreviewContainer');
+  if (prevBox) prevBox.classList.remove('hidden');
+
+  const execBtn = document.getElementById('btnExecuteBatchImport');
+  if (execBtn) {
+    execBtn.disabled = false;
+    execBtn.textContent = `🚀 ${matrixRooms.length}개실 월별 수납장부 일괄 반영 실행`;
+  }
+}
+window.processParsedPaymentMatrix = processParsedPaymentMatrix;
 
 function openExcelImportModal() {
   const targetLabel = document.getElementById('importTargetBranchName');
@@ -2843,6 +3045,7 @@ function openExcelImportModal() {
   importedRawRows = [];
   detectedHeaders = [];
   activeColumnMapping = {};
+  activePaymentMatrixRooms = null;
   aiConfidenceScore = 0;
   aiCleaningStats = { roomCleaned: 0, moneyCleaned: 0, phoneCleaned: 0, dateCleaned: 0 };
 
@@ -2924,7 +3127,9 @@ function downloadTemplatePreset(presetId, e) {
     e.preventDefault();
   }
   const preset = TEMPLATE_PRESETS.find(p => p.id === presetId) || TEMPLATE_PRESETS[0];
-  const blob = new Blob([preset.csv], { type: 'text/csv;charset=utf-8;' });
+  const fileContent = preset.csv || preset.rawText || '';
+  const isTsv = (preset.filename || '').endsWith('.tsv');
+  const blob = new Blob([fileContent], { type: isTsv ? 'text/tab-separated-values;charset=utf-8;' : 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.setAttribute("href", url);
@@ -2946,6 +3151,11 @@ function loadTemplatePresetDemo(presetId, e) {
   renderTemplatePresetsUI();
 
   const preset = TEMPLATE_PRESETS.find(p => p.id === presetId) || TEMPLATE_PRESETS[0];
+  if (preset.id === 'monthly_matrix_2026' && preset.rawText) {
+    const matrix = parsePaymentMatrixText(preset.rawText);
+    processParsedPaymentMatrix(matrix, preset.title);
+    return;
+  }
   processParsedExcelRows(preset.sampleRows, `${preset.title} 예시 데이터`);
 }
 
@@ -3135,6 +3345,13 @@ async function handleClipboardPasteClick() {
           const blob = await item.getType('text/plain');
           const text = await blob.text();
           if (text && text.trim()) {
+            if (isPaymentMatrixText(text)) {
+              const matrix = parsePaymentMatrixText(text);
+              if (matrix && matrix.length > 0) {
+                processParsedPaymentMatrix(matrix, "클립보드 월별 수납장부 (Ctrl+V)");
+                return;
+              }
+            }
             const parsed = parseClipboardSpreadsheetText(text);
             if (parsed && parsed.length > 0) {
               processParsedExcelRows(parsed, "클립보드 엑셀 복사 데이터");
@@ -3208,6 +3425,14 @@ function handleGlobalPasteForOcr(e) {
   // 3. 엑셀 텍스트(TSV/CSV) 확인
   const text = e.clipboardData && e.clipboardData.getData('text/plain');
   if (text && text.trim().length > 0) {
+    if (isPaymentMatrixText(text)) {
+      const matrix = parsePaymentMatrixText(text);
+      if (matrix && matrix.length > 0) {
+        e.preventDefault();
+        processParsedPaymentMatrix(matrix, "클립보드 월별 수납장부 (Ctrl+V)");
+        return;
+      }
+    }
     const parsed = parseClipboardSpreadsheetText(text);
     if (parsed && parsed.length > 0) {
       e.preventDefault();
@@ -3550,7 +3775,67 @@ function renderExcelPreviewTable() {
   const countBadge = document.getElementById('excelParsedCountBadge');
   if (!thead || !tbody) return;
 
-  // 사용자의 요청: 5개 제한을 없애고 붙여넣은 전체 데이터 모두 표시
+  // 1. 월별 수납장부 매트릭스 모드인 경우
+  if (activePaymentMatrixRooms && activePaymentMatrixRooms.length > 0) {
+    const totalCount = activePaymentMatrixRooms.length;
+    if (countBadge) countBadge.textContent = `총 ${totalCount}개 호실 (2025.12 ~ 2026.10월 수납 매트릭스)`;
+
+    thead.innerHTML = `
+      <tr class="bg-surface-850 border-b border-slate-700 text-[11px] sticky top-0 z-10">
+        <th class="py-1.5 px-2 border-r border-slate-700 text-slate-400 text-center w-8">No</th>
+        <th class="py-1.5 px-2 border-r border-slate-700 text-cyan-300 text-center w-12">호실</th>
+        <th class="py-1.5 px-2 border-r border-slate-700 text-slate-200 min-w-[70px]">세입자</th>
+        <th class="py-1.5 px-1.5 border-r border-slate-700 text-center w-10">선/후</th>
+        <th class="py-1.5 px-1.5 border-r border-slate-700 text-center text-slate-300 text-[10px]">25.12</th>
+        <th class="py-1.5 px-1.5 border-r border-slate-700 text-center text-slate-300 text-[10px]">1월</th>
+        <th class="py-1.5 px-1.5 border-r border-slate-700 text-center text-slate-300 text-[10px]">2월</th>
+        <th class="py-1.5 px-1.5 border-r border-slate-700 text-center text-slate-300 text-[10px]">3월</th>
+        <th class="py-1.5 px-1.5 border-r border-slate-700 text-center text-slate-300 text-[10px]">4월</th>
+        <th class="py-1.5 px-1.5 border-r border-slate-700 text-center text-slate-300 text-[10px]">5월</th>
+        <th class="py-1.5 px-1.5 border-r border-slate-700 text-center text-slate-300 text-[10px]">6월</th>
+        <th class="py-1.5 px-1.5 border-r border-slate-700 text-center text-slate-300 text-[10px]">7월</th>
+        <th class="py-1.5 px-1.5 border-r border-slate-700 text-center text-slate-300 text-[10px]">8월</th>
+        <th class="py-1.5 px-1.5 border-r border-slate-700 text-center text-slate-300 text-[10px]">9월</th>
+        <th class="py-1.5 px-1.5 border-r border-slate-700 text-center text-slate-300 text-[10px]">10월</th>
+        <th class="py-1.5 px-2 text-right text-emerald-400 font-bold min-w-[85px]">완납합계</th>
+      </tr>
+    `;
+
+    tbody.innerHTML = activePaymentMatrixRooms.map((r, idx) => {
+      const monthCols = r.payments.map(p => {
+        if (p.paid) {
+          const dShort = p.paid_date ? p.paid_date.slice(5) : '';
+          return `
+            <td class="py-1 px-1 border-r border-slate-800 text-center text-[10px] font-mono">
+              <span class="text-emerald-300 font-semibold block">${(p.amount / 10000).toFixed(0)}만</span>
+              <span class="text-slate-500 text-[9px] block">${dShort}</span>
+            </td>
+          `;
+        } else {
+          const noteText = p.note ? `<span class="text-amber-400 text-[9px] block truncate max-w-[42px]">${p.note}</span>` : '<span class="text-slate-600 block">-</span>';
+          return `
+            <td class="py-1 px-1 border-r border-slate-800 text-center text-[10px] bg-slate-900/40">
+              ${noteText}
+            </td>
+          `;
+        }
+      }).join('');
+
+      return `
+        <tr class="hover:bg-surface-800/60 border-b border-slate-800/50">
+          <td class="py-1.5 px-1.5 border-r border-slate-800 text-center text-slate-500 text-[10px]">${idx + 1}</td>
+          <td class="py-1.5 px-1.5 border-r border-slate-800 font-bold text-cyan-300 text-center font-mono text-xs">${r.room_number}호</td>
+          <td class="py-1.5 px-2 border-r border-slate-800 text-slate-100 font-medium text-xs whitespace-nowrap">${r.name || '공실'}</td>
+          <td class="py-1.5 px-1 border-r border-slate-800 text-center text-[10px] text-slate-400">${r.pay_timing}</td>
+          ${monthCols}
+          <td class="py-1.5 px-2 text-right font-mono font-bold text-emerald-300 text-xs">${Number(r.total_paid || 0).toLocaleString()}원</td>
+        </tr>
+      `;
+    }).join('');
+    return;
+  }
+
+  // 2. 표준 계약대장 모드
   const previewRows = importedRawRows;
   const totalCount = importedRawRows.length;
   if (countBadge) countBadge.textContent = `총 ${totalCount}개 호실 매핑 (전체 ${totalCount}행 표시)`;
@@ -3664,6 +3949,65 @@ function cleanDateValue(val) {
  * 엑셀 데이터 일괄 등록 실행
  */
 async function executeBatchImport() {
+  if (activePaymentMatrixRooms && activePaymentMatrixRooms.length > 0) {
+    const confirmMsg = `총 ${activePaymentMatrixRooms.length}개 호실의 2025.12 ~ 2026.10월 월별 수납 내역을 현재 건물에 일괄 반영하시겠습니까?`;
+    if (!confirm(confirmMsg)) return;
+
+    let serverSynced = false;
+    let serverWarning = '';
+
+    try {
+      if (state.isOnline) {
+        try {
+          await apiBatchImportPaymentMatrix(activePaymentMatrixRooms, state.currentBranch);
+          serverSynced = true;
+        } catch (errApi) {
+          console.warn("서버 수납장부 매트릭스 전송 지연:", errApi);
+          serverWarning = errApi.message || '서버 응답 지연';
+        }
+      }
+
+      // 로컬 state.rooms 동기화
+      activePaymentMatrixRooms.forEach(pm => {
+        const room = state.rooms[pm.room_number];
+        if (room) {
+          if (pm.name && !room.name) room.name = pm.name;
+          if (pm.pay_timing) room.pay_timing = pm.pay_timing;
+          if (!room.payments) room.payments = {};
+          pm.payments.forEach(p => {
+            const payObj = {
+              month: p.month,
+              year: p.year,
+              paid: p.paid,
+              paid_date: p.paid_date,
+              rent_amount: room.lease_type === '전세' ? 0 : (p.paid ? (p.amount - Math.min(room.maintenance, p.amount)) : room.rent),
+              maintenance_amount: p.paid ? Math.min(room.maintenance, p.amount) : room.maintenance,
+              note: p.note,
+              tenant_name: pm.name || room.name,
+              is_previous_tenant: false
+            };
+            room.payments[p.month] = payObj;
+            room.payments[`${p.year}-${p.month}`] = payObj;
+          });
+        }
+      });
+
+      saveLocalFallback();
+      closeModal('excelImportModal');
+      renderAll();
+
+      if (serverSynced) {
+        alert(`🎉 총 ${activePaymentMatrixRooms.length}개 호실의 2025.12~2026.10월 월별 수납장부가 실서버 DB에 성공적으로 일괄 반영되었습니다!`);
+      } else {
+        alert(`⚡ 총 ${activePaymentMatrixRooms.length}개 호실의 수납장부가 화면 및 브라우저에 안전하게 저장되었습니다.\n(서버 일시 지연: ${serverWarning})`);
+      }
+      activePaymentMatrixRooms = null;
+    } catch (err) {
+      alert("수납장부 일괄 등록 오류: " + err.message);
+    }
+    return;
+  }
+
   if (!activeColumnMapping.room_number) {
     alert("호실 번호에 해당하는 엑셀 컬럼을 선택해주세요.");
     return;
@@ -3674,18 +4018,23 @@ async function executeBatchImport() {
     const rNum = cleanRoomNumber(row[activeColumnMapping.room_number]);
     if (!rNum) return;
 
+    const incomingId = (row[activeColumnMapping.id_number] !== undefined ? String(row[activeColumnMapping.id_number]).trim() : '');
+    const existingRoom = state.rooms[rNum];
+    // 기존 호실에 등록된 주민번호가 있고 엑셀에 주민번호가 없거나 비어있는 경우 기존 주민번호 보존!
+    const finalId = incomingId || (existingRoom && existingRoom.id_number ? existingRoom.id_number : '');
+
     targetRooms.push({
       room_number: rNum,
-      name: (row[activeColumnMapping.name] !== undefined ? String(row[activeColumnMapping.name]).trim() : '') || '공실',
-      id_number: row[activeColumnMapping.id_number] !== undefined ? String(row[activeColumnMapping.id_number]).trim() : '',
-      phone: row[activeColumnMapping.phone] !== undefined ? String(row[activeColumnMapping.phone]).trim() : '',
-      lease_type: (row[activeColumnMapping.lease_type] && String(row[activeColumnMapping.lease_type]).includes('전세')) ? '전세' : '월세',
-      deposit: cleanMoneyValue(row[activeColumnMapping.deposit], activeColumnMapping.deposit),
-      rent: cleanMoneyValue(row[activeColumnMapping.rent], activeColumnMapping.rent),
-      maintenance: cleanMoneyValue(row[activeColumnMapping.maintenance], activeColumnMapping.maintenance),
+      name: (row[activeColumnMapping.name] !== undefined ? String(row[activeColumnMapping.name]).trim() : '') || (existingRoom ? existingRoom.name : '공실'),
+      id_number: finalId,
+      phone: (row[activeColumnMapping.phone] !== undefined ? String(row[activeColumnMapping.phone]).trim() : '') || (existingRoom ? existingRoom.phone : ''),
+      lease_type: (row[activeColumnMapping.lease_type] && String(row[activeColumnMapping.lease_type]).includes('전세')) ? '전세' : (row[activeColumnMapping.lease_type] ? '월세' : (existingRoom ? existingRoom.lease_type : '월세')),
+      deposit: cleanMoneyValue(row[activeColumnMapping.deposit], activeColumnMapping.deposit) || (existingRoom ? existingRoom.deposit : 0),
+      rent: cleanMoneyValue(row[activeColumnMapping.rent], activeColumnMapping.rent) || (existingRoom ? existingRoom.rent : 0),
+      maintenance: cleanMoneyValue(row[activeColumnMapping.maintenance], activeColumnMapping.maintenance) || (existingRoom ? existingRoom.maintenance : 0),
       pay_timing: (row[activeColumnMapping.pay_timing] && String(row[activeColumnMapping.pay_timing]).includes('선불')) ? '선불' : '후불',
-      move_in: cleanDateValue(row[activeColumnMapping.move_in]),
-      expiry: cleanDateValue(row[activeColumnMapping.expiry]),
+      move_in: cleanDateValue(row[activeColumnMapping.move_in]) || (existingRoom ? existingRoom.move_in : ''),
+      expiry: cleanDateValue(row[activeColumnMapping.expiry]) || (existingRoom ? existingRoom.expiry : ''),
       memo: row[activeColumnMapping.memo] || ''
     });
   });
@@ -3718,6 +4067,7 @@ async function executeBatchImport() {
       state.rooms[tr.room_number] = {
         ...existing,
         ...tr,
+        id_number: tr.id_number || (existing && existing.id_number ? existing.id_number : ''),
         room_number: tr.room_number,
         branch_id: state.currentBranch
       };
@@ -3758,11 +4108,11 @@ function downloadSampleExcelTemplate(e) {
   }
 
   let csv = "\uFEFF"; // UTF-8 BOM
-  csv += "호실,세입자,연락처,임대유형,보증금,월세,관리비,납부방식,계약시작일,계약종료일,비고\n";
-  csv += "101,홍길동,010-1234-5678,월세,5000000,480000,50000,후불,2026-01-01,2027-01-01,관리실 협의\n";
-  csv += "201,장지아,010-9876-5432,월세,5000000,480000,50000,후불,2026-03-01,2027-03-01,\n";
-  csv += "202,이민준,010-3333-4444,전세,65000000,0,50000,선불,2025-06-01,2027-06-01,전세 계약\n";
-  csv += "203,박수현,010-5555-6666,월세,5000000,500000,50000,후불,2026-02-15,2027-02-15,\n";
+  csv += "호실,세입자,주민번호,연락처,임대유형,보증금,월세,관리비,납부방식,계약시작일,계약종료일,비고\n";
+  csv += "101,홍길동,910512-1******,010-1234-5678,월세,5000000,480000,50000,후불,2026-01-01,2027-01-01,관리실 협의\n";
+  csv += "201,장지아,960319-2******,010-9876-5432,월세,5000000,480000,50000,후불,2026-03-01,2027-03-01,\n";
+  csv += "202,이민준,930512-1******,010-3333-4444,전세,65000000,0,50000,선불,2025-06-01,2027-06-01,전세 계약\n";
+  csv += "203,박수현,940512-2******,010-5555-6666,월세,5000000,500000,50000,후불,2026-02-15,2027-02-15,\n";
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -3785,16 +4135,16 @@ function exportAllRoomsCSV(e) {
 
   const branchName = ((state.branches || []).find(b => b.branch_id === state.currentBranch)?.name) || state.currentBranch;
   let csv = "\uFEFF"; // UTF-8 BOM
-  csv += "호실,세입자,연락처,임대유형,보증금,월세,관리비,납부방식,전입일,만기일,당월(3월)수납상태,수납일시,비고\n";
+  csv += `호실,세입자,주민번호,연락처,임대유형,보증금,월세,관리비,납부방식,전입일,만기일,당월(${currentMonth}월)수납상태,수납일시,비고\n`;
 
   const roomNums = Object.keys(state.rooms).map(Number).sort((a, b) => a - b);
   roomNums.forEach(rNum => {
     const r = state.rooms[rNum];
-    const p3 = (r.payments && r.payments[3]) || {};
-    const statusText = p3.status === 'PAID' ? '완납' : (p3.status === 'PARTIAL' ? '부분납' : (p3.status === 'UNPAID' ? '미납' : '미납'));
-    const paidAt = p3.paid_date || '-';
+    const pCur = (r.payments && r.payments[currentMonth]) || {};
+    const statusText = pCur.paid ? '완납' : '미납';
+    const paidAt = pCur.paid_date || '-';
 
-    csv += `"${rNum}","${r.name || '공실'}","${r.phone || '-'}","${r.lease_type || '월세'}",${r.deposit || 0},${r.rent || 0},${r.maintenance || 0},"${r.pay_timing || '후불'}","${r.move_in || '-'}","${r.expiry || '-'}","${statusText}","${paidAt}","${r.memo || ''}"\n`;
+    csv += `"${rNum}","${r.name || '공실'}","${r.id_number || '-'}","${r.phone || '-'}","${r.lease_type || '월세'}",${r.deposit || 0},${r.rent || 0},${r.maintenance || 0},"${r.pay_timing || '후불'}","${r.move_in || '-'}","${r.expiry || '-'}","${statusText}","${paidAt}","${r.memo || ''}"\n`;
   });
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });

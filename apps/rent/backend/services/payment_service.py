@@ -273,3 +273,100 @@ class PaymentService:
             db.commit()
             return True
         return False
+
+    @staticmethod
+    def batch_import_monthly_matrix(
+        db: Session,
+        branch_id: str,
+        matrix_rooms: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """월별 수납장부 매트릭스 일괄 등록/갱신"""
+        updated_records = 0
+        rooms_db = {r.room_number: r for r in db.query(RentRoom).filter(RentRoom.branch_id == branch_id).all()}
+
+        for item in matrix_rooms:
+            try:
+                r_num = int(item.get("room_number") or 0)
+            except Exception:
+                continue
+            if not r_num:
+                continue
+
+            room = rooms_db.get(r_num)
+            def_rent = room.rent if room else 400000
+            def_maint = room.maintenance if room else 50000
+            t_name = item.get("name") or (room.name if room else "")
+            t_id = (room.id_number if room else "")
+
+            if room:
+                if item.get("name") and not room.name:
+                    room.name = str(item["name"])
+                if item.get("pay_timing"):
+                    room.pay_timing = str(item["pay_timing"])
+
+            for p in item.get("payments", []):
+                try:
+                    y = int(p.get("year") or 2026)
+                    m = int(p.get("month") or 1)
+                except Exception:
+                    continue
+
+                is_paid = bool(p.get("paid"))
+                p_date = str(p.get("paid_date") or "")
+                total_amt = int(p.get("amount") or 0)
+                note = str(p.get("note") or "")
+
+                if is_paid:
+                    if room and room.lease_type == "전세":
+                        m_amt = total_amt
+                        r_amt = 0
+                    else:
+                        m_amt = min(def_maint, total_amt) if def_maint > 0 else 0
+                        r_amt = total_amt - m_amt
+                else:
+                    r_amt = def_rent
+                    m_amt = def_maint
+
+                existing_pay = db.query(RentPayment).filter(
+                    RentPayment.branch_id == branch_id,
+                    RentPayment.room_number == r_num,
+                    RentPayment.year == y,
+                    RentPayment.month == m
+                ).first()
+
+                if existing_pay:
+                    existing_pay.paid = is_paid
+                    existing_pay.paid_date = p_date
+                    existing_pay.rent_amount = r_amt
+                    existing_pay.maintenance_amount = m_amt
+                    if note:
+                        existing_pay.note = note
+                    if t_name:
+                        existing_pay.tenant_name = t_name
+                    if t_id:
+                        existing_pay.tenant_id_number = t_id
+                else:
+                    new_pay = RentPayment(
+                        branch_id=branch_id,
+                        room_number=r_num,
+                        year=y,
+                        month=m,
+                        paid=is_paid,
+                        paid_date=p_date,
+                        rent_amount=r_amt,
+                        maintenance_amount=m_amt,
+                        note=note,
+                        tenant_name=t_name,
+                        tenant_id_number=t_id,
+                        is_previous_tenant=False
+                    )
+                    db.add(new_pay)
+                updated_records += 1
+
+        db.commit()
+        return {
+            "success": True,
+            "branch_id": branch_id,
+            "total_rooms": len(matrix_rooms),
+            "updated_records": updated_records
+        }

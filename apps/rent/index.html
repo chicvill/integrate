@@ -264,8 +264,9 @@
             <span id="cardLeaseTypeBadge" class="text-xs px-2 py-0.5 rounded-md font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30">월세</span>
             <span id="cardPayTimingBadge" class="text-xs px-2 py-0.5 rounded-md font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30">후불</span>
           </div>
-          <div class="flex items-center gap-2 mt-1">
+          <div class="flex items-center flex-wrap gap-2 mt-1">
             <h2 id="cardTenantName" class="text-base sm:text-lg font-bold text-white tracking-tight">홍길동 고객</h2>
+            <span id="cardIdNumber" class="text-xs px-2 py-0.5 rounded bg-surface-850 text-slate-300 font-mono border border-slate-700/80">주민: -</span>
             <span id="cardPhone" class="text-xs text-slate-400 font-mono">010-0000-0000</span>
           </div>
         </div>
@@ -801,9 +802,27 @@
             <button type="button" id="btnClipboardPasteAction" onclick="handleClipboardPasteClick()" class="px-3 py-1.5 rounded-lg bg-indigo-900/60 hover:bg-indigo-800/80 text-indigo-200 font-semibold border border-indigo-600/60 text-xs flex items-center gap-1.5 cursor-pointer transition shadow-sm active:scale-95" title="클립보드에 복사된 엑셀 표 범위(텍스트)나 캡처 이미지를 즉시 가져와 자동 매핑합니다">
               <span>📋</span> Ctrl+V 캡처/엑셀 붙여넣기
             </button>
+            <button type="button" onclick="toggleDirectPasteBox()" class="px-3 py-1.5 rounded-lg bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 font-semibold border border-amber-700/60 text-xs flex items-center gap-1.5 cursor-pointer transition shadow-sm active:scale-95" title="엑셀이나 메신저에서 복사한 텍스트를 직접 붙여넣어 즉시 분석합니다">
+              <span>📝</span> 텍스트 직접 붙여넣기
+            </button>
             <button type="button" onclick="downloadSampleExcelTemplate(event)" class="px-2.5 py-1.5 rounded-lg bg-emerald-950/50 hover:bg-emerald-900 text-emerald-300 font-medium border border-emerald-800/60 text-xs flex items-center gap-1 cursor-pointer transition shadow-sm active:scale-95">
               <span>📥</span> 표준 양식 다운로드
             </button>
+          </div>
+        </div>
+
+        <!-- 텍스트 직접 붙여넣기 상자 (토글 가능) -->
+        <div id="directPasteBox" class="hidden p-3 rounded-xl bg-surface-900 border border-amber-600/50 space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-amber-300 flex items-center gap-1">
+              <span>📝</span> 엑셀 표 / 월별 수납내역 텍스트 붙여넣기
+            </span>
+            <span class="text-[11px] text-slate-400">Ctrl+A 전체 복사 후 아래 입력창에 Ctrl+V 하세요.</span>
+          </div>
+          <textarea id="directPasteTextarea" rows="4" placeholder="호실&#9;성명&#9;선/후&#9;2025.12... 등 엑셀 셀 복사 텍스트를 여기에 붙여넣으세요" class="w-full bg-surface-950 border border-slate-700 rounded-lg p-2 text-slate-200 font-mono text-xs focus:border-amber-500 focus:outline-none"></textarea>
+          <div class="flex justify-end gap-2">
+            <button type="button" onclick="toggleDirectPasteBox(false)" class="px-3 py-1 text-slate-400 hover:text-white rounded bg-surface-800 text-xs cursor-pointer">닫기</button>
+            <button type="button" onclick="processDirectPastedText()" class="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs shadow cursor-pointer transition">⚡ 데이터 분석 및 표 변환</button>
           </div>
         </div>
 

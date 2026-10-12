@@ -161,6 +161,17 @@ export function renderMainRoomCard(room) {
   const cardTenantName = document.getElementById('cardTenantName');
   if (cardTenantName) cardTenantName.textContent = isVacant ? '공실 (미계약)' : `${room.name} 고객`;
 
+  const cardIdNumber = document.getElementById('cardIdNumber');
+  if (cardIdNumber) {
+    if (isVacant) {
+      cardIdNumber.innerHTML = `<span class="text-slate-500">-</span>`;
+    } else if (!room.id_number) {
+      cardIdNumber.innerHTML = `<span class="text-amber-400 font-normal">주민번호 미등록</span>`;
+    } else {
+      cardIdNumber.innerHTML = `<span class="text-slate-400 font-normal text-[11px]">주민:</span> <span class="text-cyan-300 font-mono font-medium">${room.id_number}</span>`;
+    }
+  }
+
   const cardPhone = document.getElementById('cardPhone');
   if (cardPhone) {
     if (isVacant || !room.phone) {

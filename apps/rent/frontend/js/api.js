@@ -102,7 +102,9 @@ export const paymentsApi = {
   process: (roomNumber, month, branchId = 'main', paidDate = null, note = '정상 입금', tenantName = null, year = 2026) =>
     http.post(`/rooms/${roomNumber}/payment`, { month, year, paid_date: paidDate, note, tenant_name: tenantName }, { branch_id: branchId }),
   cancel: (roomNumber, month, branchId = 'main', year = 2026) =>
-    http.post(`/rooms/${roomNumber}/cancel-payment`, { month, year }, { branch_id: branchId })
+    http.post(`/rooms/${roomNumber}/cancel-payment`, { month, year }, { branch_id: branchId }),
+  matrixImport: (matrixRooms, branchId = 'main') =>
+    http.post('/payments/matrix-import', { rooms: matrixRooms }, { branch_id: branchId })
 };
 
 export const expensesApi = {
@@ -175,6 +177,7 @@ export const apiFillTenantPayments = roomsApi.fillPayments;
 
 export const apiProcessPayment = paymentsApi.process;
 export const apiCancelPayment = paymentsApi.cancel;
+export const apiBatchImportPaymentMatrix = paymentsApi.matrixImport;
 
 export const apiGetExpenses = expensesApi.list;
 export const apiCreateExpense = expensesApi.create;
