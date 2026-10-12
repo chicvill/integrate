@@ -91,14 +91,42 @@
   </header>
 
   <!-- Main Container -->
-  <main class="max-w-6xl mx-auto px-4 mt-6 space-y-6">
+  <main id="mainContainerView" class="max-w-6xl mx-auto px-4 mt-6 space-y-6">
+
+    <!-- 0. 29 ROOMS QUICK FLOOR MAP & ROOM SELECTOR -->
+    <div class="bg-surface-900 border border-slate-800 rounded-2xl shadow-xl p-4 sm:p-5">
+      <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+          <h2 class="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-1.5">
+            🏢 29개실 전 호실 층별 맵
+            <span class="text-[11px] font-normal text-slate-400">(클릭 시 해당 호실로 즉시 전환)</span>
+          </h2>
+        </div>
+        <div class="flex items-center gap-3 text-xs">
+          <span class="flex items-center gap-1.5 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50"></span> 완납</span>
+          <span class="flex items-center gap-1.5 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm shadow-rose-500/50"></span> 당월 미납</span>
+          <span class="flex items-center gap-1.5 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-slate-600"></span> 공실</span>
+        </div>
+      </div>
+
+      <!-- Floor rows container (Rendered dynamically) -->
+      <div id="roomFloorMap" class="space-y-2">
+        <!-- Floor grid rows inserted via JS -->
+      </div>
+    </div>
 
     <!-- 1. CONTRACT INFORMATION CARD (DROPDOWN AT FRONT) -->
     <div class="bg-surface-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
       <!-- Card Top Bar: Dropdown + Badges + Edit/Toggle -->
       <div class="px-5 py-4 bg-surface-850/70 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-3 flex-wrap">
-          <!-- Room Dropdown (Placed at the very front) -->
+          <!-- Big Room Indicator Badge -->
+          <span id="cardRoomTitleBig" class="text-lg sm:text-xl font-black text-white bg-cyan-600/30 border border-cyan-500/60 px-3 py-1 rounded-xl font-mono shadow-sm">
+            101호
+          </span>
+
+          <!-- Room Dropdown -->
           <div class="flex items-center bg-cyan-950/70 border border-cyan-600/70 rounded-xl px-2.5 py-1 shadow-inner">
             <span class="text-xs text-cyan-400 font-semibold mr-1.5 flex items-center gap-1">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
@@ -187,7 +215,8 @@
       <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-800">
         <div class="flex items-center gap-2.5">
           <span class="w-3 h-3 rounded-full bg-cyan-400 animate-pulse"></span>
-          <h3 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+          <h3 class="text-base sm:text-lg font-bold text-white flex items-center gap-2 flex-wrap">
+            <span id="curRoomNumberLarge" class="text-base sm:text-lg font-black text-cyan-300 bg-cyan-950/90 border border-cyan-700/80 px-2.5 py-0.5 rounded-lg font-mono shadow-sm">101호</span>
             <span id="curMonthTitle" class="text-cyan-400">10월</span> 납부 현황
             <span class="text-xs px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-800 font-normal">현재월</span>
             <span id="curTimingTag" class="text-xs px-2 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-800 font-normal">후불</span>
@@ -579,11 +608,20 @@
       const leaseType = room.leaseType || '월세';
       const payTiming = room.payTiming || '후불';
 
-      // 1. Header Dropdown Sync
+      // 1. Floor Map & Header Dropdown Sync
+      renderFloorMap();
+
       const select = document.getElementById('roomSelect');
       if (select && select.value !== String(roomNum)) {
         select.value = roomNum;
       }
+
+      // Large Room Badge Displays
+      const titleBig = document.getElementById('cardRoomTitleBig');
+      if (titleBig) titleBig.textContent = `${roomNum}호`;
+
+      const curBig = document.getElementById('curRoomNumberLarge');
+      if (curBig) curBig.textContent = `${roomNum}호`;
 
       // 2. Contract Header Summary
       document.getElementById('cardTenantName').textContent = isVacant ? '공실 (미계약)' : `${room.name} 고객`;
@@ -819,10 +857,79 @@
       renderMainView();
     }
 
+    function selectRoom(roomNum) {
+      appState.selectedRoom = parseInt(roomNum, 10);
+      saveState();
+      renderMainView();
+    }
+
     function handleRoomChange() {
       const selVal = document.getElementById('roomSelect').value;
-      appState.selectedRoom = parseInt(selVal, 10);
-      renderMainView();
+      selectRoom(selVal);
+    }
+
+    function renderFloorMap() {
+      const container = document.getElementById('roomFloorMap');
+      if (!container) return;
+      container.innerHTML = '';
+
+      // Group 29 rooms by floor
+      const floors = [
+        { label: '7층', rooms: [701, 702, 703] },
+        { label: '6층', rooms: [601, 602, 603, 604, 605] },
+        { label: '5층', rooms: [501, 502, 503, 504, 505] },
+        { label: '4층', rooms: [401, 402, 403, 404, 405] },
+        { label: '3층', rooms: [301, 302, 303, 304, 305] },
+        { label: '2층', rooms: [201, 202, 203, 204, 205] },
+        { label: '1층', rooms: [101] }
+      ];
+
+      floors.forEach(floor => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 flex-wrap sm:flex-nowrap';
+
+        const label = document.createElement('span');
+        label.className = 'text-xs font-bold text-slate-400 w-9 shrink-0 text-center py-1 bg-surface-850 rounded border border-slate-800 font-mono';
+        label.textContent = floor.label;
+        row.appendChild(label);
+
+        const roomsContainer = document.createElement('div');
+        roomsContainer.className = 'flex items-center gap-1.5 flex-1 flex-wrap';
+
+        floor.rooms.forEach(rNum => {
+          const rData = appState.rooms[rNum] || {};
+          const isSelected = (rNum === appState.selectedRoom);
+          const isVacant = !rData.name || !!rData.moveOut;
+          const curPay = (rData.payments && rData.payments[currentMonth]) || {};
+          const isPaid = !isVacant && !!curPay.paid;
+
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.onclick = () => selectRoom(rNum);
+
+          let dotColor = 'bg-slate-500'; // 공실
+          if (!isVacant) {
+            dotColor = isPaid ? 'bg-emerald-400' : 'bg-rose-400 animate-pulse';
+          }
+
+          if (isSelected) {
+            btn.className = 'px-2.5 py-1 text-xs font-black rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 ring-2 ring-cyan-200 shadow-md shadow-cyan-900/40 flex items-center gap-1.5 transition-all transform scale-105 cursor-pointer';
+          } else {
+            btn.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-200 border border-slate-700/80 flex items-center gap-1.5 transition hover:border-slate-500 cursor-pointer';
+          }
+
+          btn.innerHTML = `
+            <span class="w-2 h-2 rounded-full ${dotColor}"></span>
+            <span class="font-mono">${rNum}호</span>
+            <span class="text-[10px] ${isSelected ? 'text-slate-900 font-bold' : 'text-slate-400'}">${isVacant ? '공실' : (rData.name || '')}</span>
+          `;
+
+          roomsContainer.appendChild(btn);
+        });
+
+        row.appendChild(roomsContainer);
+        container.appendChild(row);
+      });
     }
 
     // -------------------------------------------------------------
