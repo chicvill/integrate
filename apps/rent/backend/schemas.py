@@ -123,7 +123,7 @@ class RoomResponse(BaseModel):
     move_in: str
     expiry: str
     move_out: str
-    payments: Dict[int, PaymentInfo] = {}
+    payments: Dict[Any, PaymentInfo] = {}
 
     class Config:
         from_attributes = True
