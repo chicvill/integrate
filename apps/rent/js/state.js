@@ -197,31 +197,28 @@ export function generateDefaultSeedRooms() {
 
   ROOM_NUMBERS.forEach((rNum, idx) => {
     const isJeonse = (rNum === 701);
-    const rentVal = isJeonse ? 0 : (400000 + (rNum % 5) * 20000);
-    const maintVal = 50000;
+    let rentVal = isJeonse ? 0 : (400000 + (rNum % 5) * 20000);
+    let maintVal = 50000;
+    let tenantName = DEFAULT_NAMES[idx % DEFAULT_NAMES.length];
+    let phoneNum = `010-${2000 + idx}-${String(rNum).padStart(4, '0')}`;
+    let moveInDate = "2024-03-01";
+    let expiryDate = `${currentYear + 1}-12-31`;
+    let depositVal = isJeonse ? 80000000 : (5000000 + (rNum % 3) * 5000000);
+
+    // 201호: 정민준 고객 (2022-03-19 전입하여 현재까지 계속 거주 중)
+    if (rNum === 201) {
+      tenantName = "정민준";
+      phoneNum = "010-5578-5358";
+      rentVal = 290000;
+      maintVal = 150000;
+      moveInDate = "2022-03-19";
+      expiryDate = "2023-03-18";
+      depositVal = 5000000;
+    }
+
     const payments = {};
-    const hasPrevTenant = (rNum === 201);
-
     for (let m = 1; m <= 12; m++) {
-      let isPaid = false;
-      let tName = DEFAULT_NAMES[idx % DEFAULT_NAMES.length];
-      let isPrev = false;
-
-      if (hasPrevTenant && m <= 6) {
-        tName = "박지훈";
-        isPrev = true;
-        isPaid = true;
-      } else if (hasPrevTenant) {
-        // 201호: 전입월(7월)부터 현재월(10월)까지 이서연 완납
-        isPaid = (m <= currentMonth);
-        tName = DEFAULT_NAMES[idx % DEFAULT_NAMES.length];
-        isPrev = false;
-      } else {
-        // 일반 세입자: 전입월부터 현재월(10월)까지 완납
-        isPaid = (m <= currentMonth);
-        tName = DEFAULT_NAMES[idx % DEFAULT_NAMES.length];
-        isPrev = false;
-      }
+      const isPaid = (m <= currentMonth);
 
       payments[m] = {
         month: m,
@@ -230,25 +227,25 @@ export function generateDefaultSeedRooms() {
         paid_date: isPaid ? `2026-${String(m).padStart(2, '0')}-10` : "",
         rent_amount: rentVal,
         maintenance_amount: maintVal,
-        note: isPaid ? (isPrev ? "이전 세입자 정상 입금 (전출)" : "정상 입금") : "",
-        tenant_name: tName,
-        is_previous_tenant: isPrev
+        note: isPaid ? "정상 입금" : "",
+        tenant_name: tenantName,
+        is_previous_tenant: false
       };
     }
 
     res[rNum] = {
       room_number: rNum,
-      name: DEFAULT_NAMES[idx % DEFAULT_NAMES.length],
-      phone: `010-${2000 + idx}-${String(rNum).padStart(4, '0')}`,
-      id_number: `950${(idx % 9) + 1}01-*******`,
+      name: tenantName,
+      phone: phoneNum,
+      id_number: `960${(idx % 9) + 1}01-*******`,
       lease_type: isJeonse ? "전세" : "월세",
       pay_timing: "후불",
-      deposit: isJeonse ? 80000000 : (5000000 + (rNum % 3) * 5000000),
+      deposit: depositVal,
       rent: rentVal,
       maintenance: maintVal,
       clean_fee: 80000,
-      move_in: hasPrevTenant ? `${currentYear}-07-01` : "2024-03-01",
-      expiry: `${currentYear + 1}-12-31`,
+      move_in: moveInDate,
+      expiry: expiryDate,
       move_out: "",
       payments: payments
     };
@@ -317,6 +314,20 @@ export function loadLocalFallback() {
         }
       ];
       saveLocalFallback();
+    }
+
+    // 201호 세입자 정보 검증 및 정민준(2022-03-19 전입) 보정
+    if (state.rooms && state.rooms[201]) {
+      const r201 = state.rooms[201];
+      if (r201.name === "이서연" || r201.name === "정민준" || !r201.name) {
+        r201.name = "정민준";
+        r201.phone = "010-5578-5358";
+        r201.rent = 290000;
+        r201.maintenance = 150000;
+        r201.deposit = 5000000;
+        r201.move_in = "2022-03-19";
+        r201.expiry = "2023-03-18";
+      }
     }
 
     // 전입일부터 현재까지의 납부 내역 자동 보정 동기화 (구버전 캐시 자동 치유)

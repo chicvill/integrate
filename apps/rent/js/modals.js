@@ -3,8 +3,8 @@
  * 원룸 임차료 관리 시스템 모달 팝업 및 계약/지출 폼 제어 모듈.
  */
 
-import { state, formattedToday, saveLocalFallback, setAuthUser, clearAuthUser, getAuthSessionInfo, touchAuthSession } from './state.js?v=2.0';
-import { apiUpdateContract, apiCreateExpense, apiRequestUpgrade, apiGetVatReport, apiGetVatSettings, apiSaveVatSettings, apiCreateBranch, apiGetTenantHistories, apiBatchImportRooms, apiOcrImportImage, apiAdminLogin } from './api.js?v=2.0';
+import { state, formattedToday, saveLocalFallback, setAuthUser, clearAuthUser, getAuthSessionInfo, touchAuthSession, fillTenantPaymentsState } from './state.js?v=2.0';
+import { apiUpdateContract, apiCreateExpense, apiRequestUpgrade, apiGetVatReport, apiGetVatSettings, apiSaveVatSettings, apiCreateBranch, apiGetTenantHistories, apiBatchImportRooms, apiOcrImportImage, apiAdminLogin, apiFillTenantPayments } from './api.js?v=2.0';
 import { renderAll, switchBranch } from './ui.js?v=2.0';
 
 export function openModal(id) {
@@ -86,10 +86,18 @@ export async function handleContractFormSubmit(e) {
     if (state.isOnline) {
       const res = await apiUpdateContract(rNum, payload, state.currentBranch);
       state.rooms[rNum] = res;
+      try {
+        await apiFillTenantPayments(rNum, state.currentBranch);
+      } catch (errApi) {
+        console.warn("apiFillTenantPayments 실패:", errApi);
+      }
     } else {
       // 오프라인 로컬 반영
       Object.assign(room, payload);
     }
+
+    // 계약 정보 변경 시 과거 납부 내역 전체를 새 계약 정보 및 새 세입자명으로 즉시 동기화
+    fillTenantPaymentsState(rNum);
     saveLocalFallback();
     closeModal('contractModal');
     renderAll();

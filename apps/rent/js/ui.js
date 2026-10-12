@@ -319,26 +319,43 @@ export function renderPastHistorySection(room) {
       is_previous_tenant: false
     };
 
-    const rAmt = isJeonse ? 0 : (p.rent_amount !== undefined ? p.rent_amount : room.rent);
-    const mAmt = p.maintenance_amount !== undefined ? p.maintenance_amount : room.maintenance;
+    // 현 세입자가 과거(예: 2022년 전입)부터 계속 살고 있는 경우 세입자명 및 금액 스마트 보정
+    let displayName = p.tenant_name;
+    let isPrev = !!p.is_previous_tenant;
+    let rAmt = isJeonse ? 0 : (p.rent_amount !== undefined ? p.rent_amount : room.rent);
+    let mAmt = p.maintenance_amount !== undefined ? p.maintenance_amount : room.maintenance;
+
+    if (room.name && room.move_in) {
+      try {
+        const inYear = parseInt(room.move_in.substring(0, 4), 10);
+        if (inYear < currentYear) {
+          // 2022년 등 과거부터 계속 살고 있는 경우 구 세입자명 오염 방지 및 계약 금액 동기화
+          displayName = room.name;
+          isPrev = false;
+          rAmt = isJeonse ? 0 : room.rent;
+          mAmt = room.maintenance;
+        }
+      } catch (e) {}
+    }
+
     const tot = rAmt + mAmt;
 
     const tr = document.createElement('tr');
-    tr.className = `hover:bg-surface-850/60 transition ${p.is_previous_tenant ? 'bg-amber-950/25' : ''}`;
+    tr.className = `hover:bg-surface-850/60 transition ${isPrev ? 'bg-amber-950/25' : ''}`;
 
     // 세입자 표시 라벨 (전출자 1년 보존 표시)
     let tenantLabel = '';
-    if (p.is_previous_tenant) {
+    if (isPrev) {
       tenantLabel = `
         <div class="font-bold text-amber-300 flex items-center gap-1 whitespace-nowrap">
-          <span>${p.tenant_name || '전출 세입자'}</span>
+          <span>${displayName || '전출 세입자'}</span>
           <span class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1 py-0.2 rounded font-normal whitespace-nowrap">전출(1년)</span>
         </div>
       `;
     } else {
       tenantLabel = `
         <div class="font-medium text-slate-200 whitespace-nowrap">
-          ${p.tenant_name || room.name || '공실'}
+          ${displayName || room.name || '공실'}
         </div>
       `;
     }

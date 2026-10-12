@@ -44,65 +44,43 @@ class RentService:
             rent_amt = 0 if is_jeonse else (380000 + ((rNum // 100) * 10000))
             deposit_amt = 70000000 if is_jeonse else 5000000
 
-            # 201호: 이전 세입자 "박지훈"이 1~6월 거주 및 완납 후 6월 30일 전출, 현 세입자 "이서연"이 7월 1일 전입
-            has_prev_tenant = is_main and (rNum == 201)
+            # 201호: 정민준 고객 (2022-03-19 전입하여 현재까지 계속 거주 중, 월세 290,000원, 관리비 150,000원)
+            if rNum == 201:
+                name = "정민준"
+                rent_amt = 290000
+                maint_amt = 150000
+                phone_num = "010-5578-5358"
+                move_in_val = "2022-03-19"
+                expiry_val = "2023-03-18"
+            else:
+                maint_amt = 50000
+                phone_num = "" if is_vacant else f"010-2{str(idx).zfill(3)}-{str(rNum).zfill(4)}"
+                move_in_val = "" if is_vacant else f"{cur_year}-01-15"
+                expiry_val = "" if is_vacant else f"{cur_year + 1}-01-14"
 
             room = RentRoom(
                 branch_id=branch_id,
                 room_number=rNum,
                 name=name,
                 id_number="" if is_vacant else f"9{(idx % 9) + 1}0512-1******",
-                phone="" if is_vacant else f"010-2{str(idx).zfill(3)}-{str(rNum).zfill(4)}",
+                phone=phone_num,
                 lease_type=lease_type,
                 pay_timing=pay_timing,
                 deposit=deposit_amt,
                 rent=rent_amt,
-                maintenance=50000,
+                maintenance=maint_amt,
                 clean_fee=80000,
-                move_in=f"{cur_year}-07-01" if has_prev_tenant else ("" if is_vacant else f"{cur_year}-01-15"),
-                expiry="" if is_vacant else f"{cur_year + 1}-01-14",
+                move_in=move_in_val,
+                expiry=expiry_val,
                 move_out=""
             )
             db.add(room)
-
-            if has_prev_tenant:
-                # 201호 전출자 이력 1년 보관 생성 (전출일 2026-06-30 -> 보존기한 2027-06-30)
-                move_out_date = f"{cur_year}-06-30"
-                retention_date = f"{cur_year + 1}-06-30"
-                hist = RentTenantHistory(
-                    branch_id=branch_id,
-                    room_number=rNum,
-                    name="박지훈",
-                    id_number="940315-1******",
-                    phone="010-9876-0201",
-                    lease_type="월세",
-                    pay_timing="후불",
-                    deposit=5000000,
-                    rent=rent_amt,
-                    maintenance=50000,
-                    clean_fee=80000,
-                    move_in=f"{cur_year - 1}-07-01",
-                    expiry=f"{cur_year}-06-30",
-                    move_out=move_out_date,
-                    retention_until=retention_date
-                )
-                db.add(hist)
 
             # 1~12월 납부 기록
             for m in range(1, 13):
                 # 전입일부터 현재(cur_month)까지 납부 내역 완납 처리
                 is_past_paid = (not is_vacant) and (m <= cur_month)
                 
-                # 세입자 배정
-                if has_prev_tenant and m <= 6:
-                    t_name = "박지훈"
-                    t_prev = True
-                    p_note = "이전 세입자 정상 입금 (전출)"
-                else:
-                    t_name = name
-                    t_prev = False
-                    p_note = "정상 입금" if is_past_paid else ""
-
                 pay = RentPayment(
                     branch_id=branch_id,
                     room_number=rNum,
@@ -111,11 +89,11 @@ class RentService:
                     paid=is_past_paid,
                     paid_date=f"{cur_year}-{str(m).zfill(2)}-10" if is_past_paid else "",
                     rent_amount=rent_amt,
-                    maintenance_amount=50000,
-                    note=p_note,
-                    tenant_name=t_name,
+                    maintenance_amount=maint_amt,
+                    note="정상 입금" if is_past_paid else "",
+                    tenant_name=name,
                     tenant_id_number="" if is_vacant else f"9{(idx % 9) + 1}0512-1******",
-                    is_previous_tenant=t_prev
+                    is_previous_tenant=False
                 )
                 db.add(pay)
 
@@ -245,10 +223,11 @@ class RentService:
 
         old_name = room.name
         new_name = data.name if data.name is not None else old_name
-        is_move_out = bool(data.move_out) or (old_name and new_name and old_name != new_name) or (old_name and not new_name)
-
-        # 전출자 아카이빙 (전출일로부터 1년간 DB 보존)
-        if is_move_out and old_name:
+        
+        # 전출자 아카이빙: 명시적인 move_out이 있거나, 퇴실하여 공실이 된 경우에만 수행
+        # (현 세입자 정보 수정이나 과거부터 거주 중인 세입자 등록 시에는 이전 세입자 강제 덮어쓰기 방지)
+        is_explicit_move_out = bool(data.move_out) or (old_name and not new_name)
+        if is_explicit_move_out and old_name:
             move_out_date = data.move_out or datetime.now().strftime("%Y-%m-%d")
             try:
                 dt_out = datetime.strptime(move_out_date, "%Y-%m-%d")
@@ -266,6 +245,7 @@ class RentService:
 
             if not existing_hist:
                 hist = RentTenantHistory(
+                    id=str(uuid.uuid4()),
                     branch_id=branch_id,
                     room_number=room_number,
                     name=old_name,
@@ -283,18 +263,6 @@ class RentService:
                     retention_until=retention_until
                 )
                 db.add(hist)
-
-            # 이전 세입자가 납부한 과거 기록을 is_previous_tenant = True로 태깅
-            cur_month = datetime.now().month
-            past_payments = db.query(RentPayment).filter(
-                RentPayment.branch_id == branch_id,
-                RentPayment.room_number == room_number,
-                RentPayment.month < cur_month
-            ).all()
-            for p in past_payments:
-                if not p.tenant_name or p.tenant_name == old_name:
-                    p.tenant_name = old_name
-                    p.is_previous_tenant = True
 
         for field, val in data.model_dump(exclude_unset=True).items():
             setattr(room, field, val)

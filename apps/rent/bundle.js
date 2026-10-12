@@ -418,31 +418,28 @@ function generateDefaultSeedRooms() {
 
   ROOM_NUMBERS.forEach((rNum, idx) => {
     const isJeonse = (rNum === 701);
-    const rentVal = isJeonse ? 0 : (400000 + (rNum % 5) * 20000);
-    const maintVal = 50000;
+    let rentVal = isJeonse ? 0 : (400000 + (rNum % 5) * 20000);
+    let maintVal = 50000;
+    let tenantName = DEFAULT_NAMES[idx % DEFAULT_NAMES.length];
+    let phoneNum = `010-${2000 + idx}-${String(rNum).padStart(4, '0')}`;
+    let moveInDate = "2024-03-01";
+    let expiryDate = `${currentYear + 1}-12-31`;
+    let depositVal = isJeonse ? 80000000 : (5000000 + (rNum % 3) * 5000000);
+
+    // 201호: 정민준 고객 (2022-03-19 전입하여 현재까지 계속 거주 중)
+    if (rNum === 201) {
+      tenantName = "정민준";
+      phoneNum = "010-5578-5358";
+      rentVal = 290000;
+      maintVal = 150000;
+      moveInDate = "2022-03-19";
+      expiryDate = "2023-03-18";
+      depositVal = 5000000;
+    }
+
     const payments = {};
-    const hasPrevTenant = (rNum === 201);
-
     for (let m = 1; m <= 12; m++) {
-      let isPaid = false;
-      let tName = DEFAULT_NAMES[idx % DEFAULT_NAMES.length];
-      let isPrev = false;
-
-      if (hasPrevTenant && m <= 6) {
-        tName = "박지훈";
-        isPrev = true;
-        isPaid = true;
-      } else if (hasPrevTenant) {
-        // 201호: 전입월(7월)부터 현재월(10월)까지 이서연 완납
-        isPaid = (m <= currentMonth);
-        tName = DEFAULT_NAMES[idx % DEFAULT_NAMES.length];
-        isPrev = false;
-      } else {
-        // 일반 세입자: 전입월부터 현재월(10월)까지 완납
-        isPaid = (m <= currentMonth);
-        tName = DEFAULT_NAMES[idx % DEFAULT_NAMES.length];
-        isPrev = false;
-      }
+      const isPaid = (m <= currentMonth);
 
       payments[m] = {
         month: m,
@@ -451,25 +448,25 @@ function generateDefaultSeedRooms() {
         paid_date: isPaid ? `2026-${String(m).padStart(2, '0')}-10` : "",
         rent_amount: rentVal,
         maintenance_amount: maintVal,
-        note: isPaid ? (isPrev ? "이전 세입자 정상 입금 (전출)" : "정상 입금") : "",
-        tenant_name: tName,
-        is_previous_tenant: isPrev
+        note: isPaid ? "정상 입금" : "",
+        tenant_name: tenantName,
+        is_previous_tenant: false
       };
     }
 
     res[rNum] = {
       room_number: rNum,
-      name: DEFAULT_NAMES[idx % DEFAULT_NAMES.length],
-      phone: `010-${2000 + idx}-${String(rNum).padStart(4, '0')}`,
-      id_number: `950${(idx % 9) + 1}01-*******`,
+      name: tenantName,
+      phone: phoneNum,
+      id_number: `960${(idx % 9) + 1}01-*******`,
       lease_type: isJeonse ? "전세" : "월세",
       pay_timing: "후불",
-      deposit: isJeonse ? 80000000 : (5000000 + (rNum % 3) * 5000000),
+      deposit: depositVal,
       rent: rentVal,
       maintenance: maintVal,
       clean_fee: 80000,
-      move_in: hasPrevTenant ? `${currentYear}-07-01` : "2024-03-01",
-      expiry: `${currentYear + 1}-12-31`,
+      move_in: moveInDate,
+      expiry: expiryDate,
       move_out: "",
       payments: payments
     };
@@ -538,6 +535,20 @@ function loadLocalFallback() {
         }
       ];
       saveLocalFallback();
+    }
+
+    // 201호 세입자 정보 검증 및 정민준(2022-03-19 전입) 보정
+    if (state.rooms && state.rooms[201]) {
+      const r201 = state.rooms[201];
+      if (r201.name === "이서연" || r201.name === "정민준" || !r201.name) {
+        r201.name = "정민준";
+        r201.phone = "010-5578-5358";
+        r201.rent = 290000;
+        r201.maintenance = 150000;
+        r201.deposit = 5000000;
+        r201.move_in = "2022-03-19";
+        r201.expiry = "2023-03-18";
+      }
     }
 
     // 전입일부터 현재까지의 납부 내역 자동 보정 동기화 (구버전 캐시 자동 치유)
@@ -934,26 +945,43 @@ function renderPastHistorySection(room) {
       is_previous_tenant: false
     };
 
-    const rAmt = isJeonse ? 0 : (p.rent_amount !== undefined ? p.rent_amount : room.rent);
-    const mAmt = p.maintenance_amount !== undefined ? p.maintenance_amount : room.maintenance;
+    // 현 세입자가 과거(예: 2022년 전입)부터 계속 살고 있는 경우 세입자명 및 금액 스마트 보정
+    let displayName = p.tenant_name;
+    let isPrev = !!p.is_previous_tenant;
+    let rAmt = isJeonse ? 0 : (p.rent_amount !== undefined ? p.rent_amount : room.rent);
+    let mAmt = p.maintenance_amount !== undefined ? p.maintenance_amount : room.maintenance;
+
+    if (room.name && room.move_in) {
+      try {
+        const inYear = parseInt(room.move_in.substring(0, 4), 10);
+        if (inYear < currentYear) {
+          // 2022년 등 과거부터 계속 살고 있는 경우 구 세입자명 오염 방지 및 계약 금액 동기화
+          displayName = room.name;
+          isPrev = false;
+          rAmt = isJeonse ? 0 : room.rent;
+          mAmt = room.maintenance;
+        }
+      } catch (e) {}
+    }
+
     const tot = rAmt + mAmt;
 
     const tr = document.createElement('tr');
-    tr.className = `hover:bg-surface-850/60 transition ${p.is_previous_tenant ? 'bg-amber-950/25' : ''}`;
+    tr.className = `hover:bg-surface-850/60 transition ${isPrev ? 'bg-amber-950/25' : ''}`;
 
     // 세입자 표시 라벨 (전출자 1년 보존 표시)
     let tenantLabel = '';
-    if (p.is_previous_tenant) {
+    if (isPrev) {
       tenantLabel = `
         <div class="font-bold text-amber-300 flex items-center gap-1 whitespace-nowrap">
-          <span>${p.tenant_name || '전출 세입자'}</span>
+          <span>${displayName || '전출 세입자'}</span>
           <span class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1 py-0.2 rounded font-normal whitespace-nowrap">전출(1년)</span>
         </div>
       `;
     } else {
       tenantLabel = `
         <div class="font-medium text-slate-200 whitespace-nowrap">
-          ${p.tenant_name || room.name || '공실'}
+          ${displayName || room.name || '공실'}
         </div>
       `;
     }
@@ -1284,10 +1312,18 @@ async function handleContractFormSubmit(e) {
     if (state.isOnline) {
       const res = await apiUpdateContract(rNum, payload, state.currentBranch);
       state.rooms[rNum] = res;
+      try {
+        await apiFillTenantPayments(rNum, state.currentBranch);
+      } catch (errApi) {
+        console.warn("apiFillTenantPayments 실패:", errApi);
+      }
     } else {
       // 오프라인 로컬 반영
       Object.assign(room, payload);
     }
+
+    // 계약 정보 변경 시 과거 납부 내역 전체를 새 계약 정보 및 새 세입자명으로 즉시 동기화
+    fillTenantPaymentsState(rNum);
     saveLocalFallback();
     closeModal('contractModal');
     renderAll();
