@@ -39,6 +39,11 @@ import {
   handleNewBranchSubmit,
   openExcelImportModal,
   handleExcelFileSelect,
+  triggerFileInputClick,
+  handleClipboardPasteClick,
+  handleExcelDragOver,
+  handleExcelDragLeave,
+  handleExcelDrop,
   onMappingFieldChange,
   executeBatchImport,
   downloadSampleExcelTemplate,
@@ -81,6 +86,11 @@ window.saveVatTargetRoomsSetting = saveVatTargetRoomsSetting;
 
 window.openExcelImportModal = openExcelImportModal;
 window.handleExcelFileSelect = handleExcelFileSelect;
+window.triggerFileInputClick = triggerFileInputClick;
+window.handleClipboardPasteClick = handleClipboardPasteClick;
+window.handleExcelDragOver = handleExcelDragOver;
+window.handleExcelDragLeave = handleExcelDragLeave;
+window.handleExcelDrop = handleExcelDrop;
 window.onMappingFieldChange = onMappingFieldChange;
 window.executeBatchImport = executeBatchImport;
 window.downloadSampleExcelTemplate = downloadSampleExcelTemplate;

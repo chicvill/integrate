@@ -1064,25 +1064,268 @@ export function loadTemplatePresetDemo(presetId, e) {
 }
 
 /**
- * 전역 클립보드 붙여넣기(Ctrl+V) 이벤트 리스너 (화면 캡처 이미지 즉시 인식)
+ * 파일 탐색기 열기
+ */
+export function triggerFileInputClick() {
+  const input = document.getElementById('excelFileInput');
+  if (input) {
+    input.value = '';
+    input.click();
+  }
+}
+window.triggerFileInputClick = triggerFileInputClick;
+
+/**
+ * 드롭존 드래그앤드롭 이벤트 핸들러
+ */
+export function handleExcelDragOver(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const zone = document.getElementById('excelDropZone');
+  if (zone) zone.classList.add('border-cyan-400', 'bg-cyan-950/20');
+}
+window.handleExcelDragOver = handleExcelDragOver;
+
+export function handleExcelDragLeave(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const zone = document.getElementById('excelDropZone');
+  if (zone) zone.classList.remove('border-cyan-400', 'bg-cyan-950/20');
+}
+window.handleExcelDragLeave = handleExcelDragLeave;
+
+export function handleExcelDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const zone = document.getElementById('excelDropZone');
+  if (zone) zone.classList.remove('border-cyan-400', 'bg-cyan-950/20');
+
+  const files = e.dataTransfer && e.dataTransfer.files;
+  if (files && files.length > 0) {
+    handleExcelFileSelect({ target: { files: [files[0]] } });
+  }
+}
+window.handleExcelDrop = handleExcelDrop;
+
+/**
+ * HTML <table> 구조를 JSON 행 배열로 파싱 (엑셀 셀 범위 복사 시 text/html 지원)
+ */
+export function parseHTMLTable(htmlText) {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, 'text/html');
+    const table = doc.querySelector('table');
+    if (!table) return null;
+
+    const trs = Array.from(table.querySelectorAll('tr'));
+    if (trs.length < 2) return null;
+
+    const headerCells = Array.from(trs[0].querySelectorAll('th, td')).map(c => c.textContent.trim());
+    if (headerCells.length === 0 || headerCells.every(h => !h)) return null;
+
+    const rows = [];
+    for (let i = 1; i < trs.length; i++) {
+      const cells = Array.from(trs[i].querySelectorAll('td, th')).map(c => c.textContent.trim());
+      if (cells.length === 0 || cells.every(c => !c)) continue;
+      const obj = {};
+      headerCells.forEach((h, idx) => {
+        const key = h || `열_${idx + 1}`;
+        obj[key] = cells[idx] !== undefined ? cells[idx] : '';
+      });
+      rows.push(obj);
+    }
+    return rows;
+  } catch (err) {
+    console.warn('[VAT] HTML table parse error:', err);
+    return null;
+  }
+}
+
+/**
+ * 클립보드 텍스트(TSV/CSV/공백 구분)를 JSON 행 배열로 파싱
+ */
+export function parseClipboardSpreadsheetText(text) {
+  if (!text || !text.trim()) return [];
+
+  const lines = text.split(/\r\n|\n|\r/).map(l => l.trim()).filter(l => l.length > 0);
+  if (lines.length === 0) return [];
+
+  let delim = '\t';
+  if (!lines[0].includes('\t')) {
+    if (lines[0].includes(',')) delim = ',';
+    else if (lines[0].includes(';')) delim = ';';
+    else if (lines[0].includes('|')) delim = '|';
+    else delim = /\s{2,}/;
+  }
+
+  const splitLine = (line) => {
+    if (delim instanceof RegExp) {
+      return line.split(delim).map(s => s.trim());
+    }
+    const res = [];
+    let cur = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') {
+        inQuotes = !inQuotes;
+      } else if (c === delim && !inQuotes) {
+        res.push(cur.trim().replace(/^"|"$/g, ''));
+        cur = '';
+      } else {
+        cur += c;
+      }
+    }
+    res.push(cur.trim().replace(/^"|"$/g, ''));
+    return res;
+  };
+
+  const firstCells = splitLine(lines[0]);
+  if (firstCells.length === 0) return [];
+
+  const isHeader = isNaN(Number(firstCells[0])) || firstCells.some(c => /호실|방|이름|세입자|임차인|보증금|월세|차임|관리비|연락처|유형/i.test(c));
+
+  let headers = [];
+  let startIdx = 1;
+
+  if (isHeader && lines.length > 1) {
+    headers = firstCells.map((h, i) => h.trim() || `열_${i + 1}`);
+    startIdx = 1;
+  } else {
+    const defaultHeaders = ["호실", "세입자", "보증금", "월세", "관리비", "연락처", "임대유형"];
+    headers = firstCells.map((_, i) => defaultHeaders[i] || `열_${i + 1}`);
+    startIdx = 0;
+  }
+
+  const rows = [];
+  for (let i = startIdx; i < lines.length; i++) {
+    const vals = splitLine(lines[i]);
+    if (vals.length === 0 || vals.every(v => !v)) continue;
+    const obj = {};
+    headers.forEach((h, idx) => {
+      obj[h] = vals[idx] !== undefined ? vals[idx] : '';
+    });
+    rows.push(obj);
+  }
+
+  return rows;
+}
+
+/**
+ * 붙여넣기 버튼 클릭 핸들러: navigator.clipboard API를 통해 엑셀 범위 또는 캡처 이미지 즉시 획득
+ */
+export async function handleClipboardPasteClick() {
+  const statusText = document.getElementById('excelFileStatusText');
+  if (statusText) statusText.textContent = "클립보드 데이터 확인 중...";
+
+  if (navigator.clipboard && navigator.clipboard.read) {
+    try {
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        const imgType = item.types.find(t => t.startsWith('image/'));
+        if (imgType) {
+          const blob = await item.getType(imgType);
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            processImageOcr(e.target.result, "클립보드 화면 캡처 이미지");
+          };
+          reader.readAsDataURL(blob);
+          return;
+        }
+
+        if (item.types.includes('text/html')) {
+          const blob = await item.getType('text/html');
+          const html = await blob.text();
+          if (html.includes('<table') || html.includes('<tr')) {
+            const parsed = parseHTMLTable(html);
+            if (parsed && parsed.length > 0) {
+              processParsedExcelRows(parsed, "클립보드 엑셀 표");
+              return;
+            }
+          }
+        }
+
+        if (item.types.includes('text/plain')) {
+          const blob = await item.getType('text/plain');
+          const text = await blob.text();
+          if (text && text.trim()) {
+            const parsed = parseClipboardSpreadsheetText(text);
+            if (parsed && parsed.length > 0) {
+              processParsedExcelRows(parsed, "클립보드 엑셀 복사 데이터");
+              return;
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[VAT] navigator.clipboard.read 거부/실패:', err);
+    }
+  }
+
+  if (navigator.clipboard && navigator.clipboard.readText) {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text && text.trim()) {
+        const parsed = parseClipboardSpreadsheetText(text);
+        if (parsed && parsed.length > 0) {
+          processParsedExcelRows(parsed, "클립보드 엑셀 복사 데이터");
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('[VAT] navigator.clipboard.readText 거부/실패:', err);
+    }
+  }
+
+  if (statusText) {
+    statusText.innerHTML = '💡 <strong>이 창에서 키보드로 [Ctrl + V]</strong>를 누르시면 복사된 엑셀 표나 캡처가 즉시 매핑됩니다!';
+  }
+}
+window.handleClipboardPasteClick = handleClipboardPasteClick;
+
+/**
+ * 전역 클립보드 붙여넣기(Ctrl+V) 이벤트 리스너 (화면 캡처 이미지 및 엑셀 셀 범위 텍스트 모두 지원)
  */
 export function handleGlobalPasteForOcr(e) {
   const modal = document.getElementById('excelImportModal');
   if (!modal || modal.classList.contains('hidden')) return;
 
+  // 1. 캡처 이미지 아이템 확인
   const items = e.clipboardData && e.clipboardData.items;
-  if (!items) return;
+  if (items) {
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.indexOf('image') !== -1) {
+        e.preventDefault();
+        const blob = item.getAsFile();
+        const reader = new FileReader();
+        reader.onload = (loadEvent) => {
+          processImageOcr(loadEvent.target.result, "클립보드 캡처 이미지 (Ctrl+V)");
+        };
+        reader.readAsDataURL(blob);
+        return;
+      }
+    }
+  }
 
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-    if (item.type.indexOf('image') !== -1) {
+  // 2. 엑셀 HTML 표 확인
+  const html = e.clipboardData && e.clipboardData.getData('text/html');
+  if (html && (html.includes('<table') || html.includes('<tr'))) {
+    const parsed = parseHTMLTable(html);
+    if (parsed && parsed.length > 0) {
       e.preventDefault();
-      const blob = item.getAsFile();
-      const reader = new FileReader();
-      reader.onload = (loadEvent) => {
-        processImageOcr(loadEvent.target.result, "클립보드 캡처 이미지 (Ctrl+V)");
-      };
-      reader.readAsDataURL(blob);
+      processParsedExcelRows(parsed, "클립보드 엑셀 표 (Ctrl+V)");
+      return;
+    }
+  }
+
+  // 3. 엑셀 텍스트(TSV/CSV) 확인
+  const text = e.clipboardData && e.clipboardData.getData('text/plain');
+  if (text && text.trim().length > 0) {
+    const parsed = parseClipboardSpreadsheetText(text);
+    if (parsed && parsed.length > 0) {
+      e.preventDefault();
+      processParsedExcelRows(parsed, "클립보드 엑셀 복사 데이터 (Ctrl+V)");
       return;
     }
   }

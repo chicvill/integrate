@@ -668,27 +668,28 @@
           </div>
         </div>
 
-        <!-- Step 1: 파일 업로드 & 화면 캡처 클립보드 붙여넣기 존 -->
-        <div class="p-3.5 rounded-xl border-2 border-dashed border-slate-700 hover:border-cyan-500/60 bg-surface-950/60 transition text-center flex flex-col items-center justify-center gap-2 cursor-pointer relative" id="excelDropZone">
-          <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv, image/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" onchange="handleExcelFileSelect(event)">
+        <!-- Step 1: 파일 업로드 & 엑셀 범위 / 화면 캡처 클립보드 붙여넣기 존 -->
+        <div class="p-4 rounded-xl border-2 border-dashed border-slate-700 hover:border-cyan-500/60 bg-surface-950/60 transition text-center flex flex-col items-center justify-center gap-2 relative" id="excelDropZone" ondragover="handleExcelDragOver(event)" ondragleave="handleExcelDragLeave(event)" ondrop="handleExcelDrop(event)">
+          <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv, image/*" class="hidden" onchange="handleExcelFileSelect(event)">
           <div class="flex items-center gap-2 text-2xl">
             <span>📂</span>
+            <span>📋</span>
             <span>📸</span>
           </div>
           <div>
-            <div class="font-bold text-sm text-slate-200">엑셀 파일(.xlsx, .csv) 또는 화면 캡처 이미지(PNG, JPG)를 선택하세요</div>
+            <div class="font-bold text-sm text-slate-200">엑셀 범위 복사본, 화면 캡처, 또는 파일(.xlsx, .csv)을 등록하세요</div>
             <div class="text-[11px] text-slate-400 mt-0.5" id="excelFileStatusText">
-              💡 <strong>화면 캡처(Win+Shift+S) 후 이 창에서 바로 [Ctrl + V]</strong>를 누르면 AI가 즉시 표를 분석합니다!
+              💡 엑셀 셀 범위를 복사(Ctrl+C)하거나 화면 캡처(Win+Shift+S) 후 <strong>여기서 바로 [Ctrl + V]</strong>를 누르면 자동 매핑됩니다!
             </div>
           </div>
           <div class="flex items-center gap-2 mt-1 flex-wrap justify-center">
-            <span class="px-3 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-cyan-300 font-semibold border border-slate-700 text-xs">
-              내 컴퓨터에서 파일/이미지 찾기
-            </span>
-            <span class="px-2.5 py-1 rounded-lg bg-indigo-950/60 text-indigo-300 font-semibold border border-indigo-700/60 text-xs flex items-center gap-1">
-              <span>📋</span> Ctrl+V 캡처 붙여넣기
-            </span>
-            <button type="button" onclick="downloadSampleExcelTemplate(event)" class="px-2.5 py-1 rounded-lg bg-emerald-950/50 hover:bg-emerald-900 text-emerald-300 font-medium border border-emerald-800/60 text-xs flex items-center gap-1 z-10 cursor-pointer">
+            <button type="button" onclick="triggerFileInputClick()" class="px-3 py-1.5 rounded-lg bg-surface-800 hover:bg-surface-700 text-cyan-300 font-semibold border border-slate-700 text-xs flex items-center gap-1 cursor-pointer transition shadow-sm active:scale-95">
+              <span>📂</span> 내 컴퓨터에서 파일/이미지 찾기
+            </button>
+            <button type="button" id="btnClipboardPasteAction" onclick="handleClipboardPasteClick()" class="px-3 py-1.5 rounded-lg bg-indigo-900/60 hover:bg-indigo-800/80 text-indigo-200 font-semibold border border-indigo-600/60 text-xs flex items-center gap-1.5 cursor-pointer transition shadow-sm active:scale-95" title="클립보드에 복사된 엑셀 표 범위(텍스트)나 캡처 이미지를 즉시 가져와 자동 매핑합니다">
+              <span>📋</span> Ctrl+V 캡처/엑셀 붙여넣기
+            </button>
+            <button type="button" onclick="downloadSampleExcelTemplate(event)" class="px-2.5 py-1.5 rounded-lg bg-emerald-950/50 hover:bg-emerald-900 text-emerald-300 font-medium border border-emerald-800/60 text-xs flex items-center gap-1 cursor-pointer transition shadow-sm active:scale-95">
               <span>📥</span> 표준 양식 다운로드
             </button>
           </div>
