@@ -49,11 +49,17 @@ def get_database_url() -> str:
                             break
             except Exception:
                 pass
-    if url:
+    # 원격 DB(PostgreSQL/MySQL 등)가 명시된 경우 우선 반환
+    if url and not url.startswith("sqlite"):
         return url
+
+    # SQLite인 경우: Docker 영구 볼륨(/media)이 존재하면 컨테이너 재부팅/재배포 시 데이터 보존을 위해 영구 볼륨 우선 사용
     media_path = os.getenv("MEDIA_STORAGE_PATH", os.getenv("MEDIA_PATH", "/media"))
     if os.path.exists(media_path):
         return f"sqlite:///{os.path.join(media_path, 'integrat.db')}"
+
+    if url:
+        return url
     return "sqlite:///./integrat.db"
 
 
