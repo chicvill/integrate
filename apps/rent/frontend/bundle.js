@@ -746,9 +746,13 @@ function renderCurrentMonthSection(room) {
   }
 
   const curPay = room.payments[currentMonth];
-  const curRent = (leaseType === '전세') ? 0 : (curPay.rent_amount !== undefined ? curPay.rent_amount : room.rent);
-  const curMaint = curPay.maintenance_amount !== undefined ? curPay.maintenance_amount : room.maintenance;
-  const curTotal = curRent + curMaint;
+  const curRent = (leaseType === '전세') 
+    ? 0 
+    : (curPay.paid ? (curPay.rent_amount !== undefined ? curPay.rent_amount : room.rent) : (room.rent !== undefined ? room.rent : curPay.rent_amount));
+  const curMaint = curPay.paid 
+    ? (curPay.maintenance_amount !== undefined ? curPay.maintenance_amount : room.maintenance) 
+    : (room.maintenance !== undefined ? room.maintenance : curPay.maintenance_amount);
+  const curTotal = (Number(curRent) || 0) + (Number(curMaint) || 0);
 
   const curMonthTitle = document.getElementById('curMonthTitle');
   if (curMonthTitle) curMonthTitle.textContent = `${currentMonth}월분`;

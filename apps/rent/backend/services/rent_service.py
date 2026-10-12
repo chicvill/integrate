@@ -364,6 +364,16 @@ class RentService:
                             pass
                 updated_count += 1
 
+            # 계약 금액 변경 시 아직 미납된 납부 장부 금액도 최신 계약에 맞춰 자동 동기화
+            unpaid_payments = db.query(RentPayment).filter(
+                RentPayment.branch_id == branch_id,
+                RentPayment.room_number == r_num,
+                RentPayment.paid == False
+            ).all()
+            for p in unpaid_payments:
+                p.rent_amount = 0 if room.lease_type == "전세" else room.rent
+                p.maintenance_amount = room.maintenance
+
         db.commit()
         updated_rooms = self.get_rooms(db, branch_id)
         return {
