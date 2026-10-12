@@ -281,6 +281,18 @@
 
     </section>
 
+    <!-- ── Quick Operational Expense Bar (오늘 지출 등록 & 장부 바로가기) ── -->
+    <div class="grid grid-cols-2 gap-2">
+      <button type="button" onclick="openExpenseModal()" class="py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500/20 to-amber-600/10 hover:from-amber-500/30 hover:to-amber-600/20 text-amber-300 border border-amber-500/40 font-bold flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer active:scale-98">
+        <span class="text-base">💰</span>
+        <span>오늘 지출 등록</span>
+      </button>
+      <button type="button" onclick="openLedgerModal()" class="py-2.5 px-3 rounded-xl bg-surface-850 hover:bg-surface-800 text-slate-200 border border-slate-700/80 font-bold flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer active:scale-98">
+        <span class="text-base">📒</span>
+        <span>지출 장부 내역</span>
+      </button>
+    </div>
+
     <!-- ── CARD 2: 당월 납부 현황 (스크롤 없이 시원한 초대형 폰트 & 원터치 완납) ── -->
     <section class="bg-gradient-to-b from-surface-900 to-surface-850 border-2 border-cyan-500/60 rounded-2xl p-4 shadow-2xl relative overflow-hidden">
       
