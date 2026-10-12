@@ -416,6 +416,30 @@ function getRollingPeriods(curYear = currentYear, curMonth = currentMonth, count
   return periods;
 }
 
+function parseDateComponents(val) {
+  if (!val) return null;
+  const s = String(val).trim();
+  const m = s.match(/(\d{4})\s*[-./년\s]\s*(\d{1,2})\s*[-./월\s]\s*(\d{1,2})/);
+  if (m) {
+    const y = parseInt(m[1], 10);
+    const mo = parseInt(m[2], 10);
+    const d = parseInt(m[3], 10);
+    if (!isNaN(y) && !isNaN(mo) && !isNaN(d)) {
+      return { year: y, month: mo, day: d, formatted: `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}` };
+    }
+  }
+  const m2 = s.match(/(\d{4})(\d{2})(\d{2})/);
+  if (m2) {
+    const y = parseInt(m2[1], 10);
+    const mo = parseInt(m2[2], 10);
+    const d = parseInt(m2[3], 10);
+    if (!isNaN(y) && !isNaN(mo) && !isNaN(d)) {
+      return { year: y, month: mo, day: d, formatted: `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}` };
+    }
+  }
+  return null;
+}
+
 function evaluatePaymentRule({ year, month, inYear, inMonth, leaseType = '월세', payTiming = '후불', curYear = currentYear, curMonth = currentMonth, hasPrevHist = false }) {
   const isBeforeMoveIn = (year < inYear) || (year === inYear && month < inMonth);
   const isMoveInMonth = (year === inYear && month === inMonth);
@@ -488,6 +512,17 @@ function generateDefaultSeedRooms() {
       depositVal = 5000000;
     }
 
+    // 404호: 이종진 고객 (2026-06-08 전입, 월세 290,000원, 관리비 150,000원, 보증금 5,000,000원, 후불)
+    if (rNum === 404) {
+      tenantName = "이종진";
+      phoneNum = "010-2345-4404";
+      rentVal = 290000;
+      maintVal = 150000;
+      moveInDate = `${currentYear}-06-08`;
+      expiryDate = `${currentYear + 1}-06-07`;
+      depositVal = 5000000;
+    }
+
     // 503호: 김백찬 고객
     if (rNum === 503) {
       tenantName = "김백찬";
@@ -505,8 +540,9 @@ function generateDefaultSeedRooms() {
       depositVal = 5000000;
     }
 
-    const inY = parseInt(moveInDate.split('-')[0], 10);
-    const inM = parseInt(moveInDate.split('-')[1], 10);
+    const dtComp = parseDateComponents(moveInDate) || { year: currentYear, month: 1 };
+    const inY = dtComp.year;
+    const inM = dtComp.month;
     const payments = {};
     for (let m = 1; m <= 12; m++) {
       const rule = evaluatePaymentRule({
@@ -640,6 +676,22 @@ function loadLocalFallback() {
       }
     }
 
+    // 404호 세입자 정보 검증 및 이종진(2026-06-08 전입, 월세/후불) 보정
+    if (state.rooms && state.rooms[404]) {
+      const r404 = state.rooms[404];
+      if (r404.name !== "이종진" || !r404.move_in || r404.move_in.indexOf("06") === -1) {
+        r404.name = "이종진";
+        r404.phone = "010-2345-4404";
+        r404.rent = 290000;
+        r404.maintenance = 150000;
+        r404.deposit = 5000000;
+        r404.lease_type = "월세";
+        r404.pay_timing = "후불";
+        r404.move_in = `${currentYear}-06-08`;
+        r404.expiry = `${currentYear + 1}-06-07`;
+      }
+    }
+
     // 505호 세입자 정보 검증 및 김정현(2026-06-29 전입, 월세/후불) 보정
     if (state.rooms && state.rooms[505]) {
       const r505 = state.rooms[505];
@@ -677,13 +729,10 @@ function fillTenantPaymentsState(roomNumber = null) {
     let inYear = currentYear;
     let inMonth = 1;
     if (room.move_in) {
-      try {
-        const parts = room.move_in.split('-');
-        inYear = parseInt(parts[0], 10);
-        inMonth = parseInt(parts[1], 10);
-      } catch (e) {
-        inYear = currentYear;
-        inMonth = 1;
+      const dtComp = parseDateComponents(room.move_in);
+      if (dtComp) {
+        inYear = dtComp.year;
+        inMonth = dtComp.month;
       }
     }
 
@@ -926,6 +975,16 @@ function renderMainRoomCard(room) {
   // 전입일 / 만기일 요약
   const cPeriod = document.getElementById('cPeriod');
   if (cPeriod) cPeriod.textContent = (room.move_in && room.expiry) ? `${room.move_in} ~ ${room.expiry}` : '-';
+
+  const periodTypeTag = document.getElementById('cardPeriodTypeTag');
+  if (periodTypeTag) {
+    periodTypeTag.textContent = `${leaseType} · ${payTiming}`;
+    periodTypeTag.className = `text-[10px] px-1.5 py-0.5 rounded font-semibold border ${
+      leaseType === '전세' 
+        ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' 
+        : 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30'
+    }`;
+  }
 }
 
 function renderCurrentMonthSection(room) {
@@ -1055,10 +1114,11 @@ function renderPastHistorySection(room) {
     let inYear = currentYear;
     let inMonth = 1;
     if (room.name && room.move_in) {
-      try {
-        inYear = parseInt(room.move_in.substring(0, 4), 10);
-        inMonth = parseInt(room.move_in.substring(5, 7), 10);
-      } catch (e) {}
+      const dtComp = parseDateComponents(room.move_in);
+      if (dtComp) {
+        inYear = dtComp.year;
+        inMonth = dtComp.month;
+      }
     }
 
     const rule = evaluatePaymentRule({
@@ -1073,7 +1133,7 @@ function renderPastHistorySection(room) {
       hasPrevHist: Boolean(existingP?.is_previous_tenant)
     });
 
-    const p = existingP || {
+    let p = existingP ? { ...existingP } : {
       month: m,
       year: y,
       paid: rule.paid,
@@ -1085,6 +1145,19 @@ function renderPastHistorySection(room) {
       is_previous_tenant: false
     };
 
+    // 전입 이전 기간(이전 세입자 이력 없음) 또는 입주월 후불인데 구버전 캐시 등으로 완납되어 있던 경우 자동 보정
+    if (existingP && !existingP.is_previous_tenant) {
+      if (rule.isBeforeMoveIn) {
+        p.paid = false;
+        p.paid_date = '';
+        p.note = rule.note;
+      } else if (rule.isMoveInMonth && !rule.paid && (p.note === '정상 입금' || !p.note)) {
+        p.paid = false;
+        p.paid_date = '';
+        p.note = rule.note;
+      }
+    }
+
     // 현 세입자가 과거(예: 2022년 전입)부터 계속 살고 있는 경우 세입자명 및 금액 스마트 보정
     let displayName = p.tenant_name;
     let isPrev = !!p.is_previous_tenant;
@@ -1092,17 +1165,15 @@ function renderPastHistorySection(room) {
     let mAmt = p.maintenance_amount !== undefined ? p.maintenance_amount : room.maintenance;
 
     if (room.name && room.move_in) {
-      try {
-        const inYear = parseInt(room.move_in.substring(0, 4), 10);
-        const inMonth = parseInt(room.move_in.substring(5, 7), 10);
-        if (y > inYear || (y === inYear && m >= inMonth)) {
-          // 전입일 이후 기간: 현재 세입자 정보 및 최신 계약 금액으로 일치
+      const dtComp = parseDateComponents(room.move_in);
+      if (dtComp) {
+        if (y > dtComp.year || (y === dtComp.year && m >= dtComp.month)) {
           displayName = room.name;
           isPrev = false;
           rAmt = isJeonse ? 0 : room.rent;
           mAmt = room.maintenance;
         }
-      } catch (e) {}
+      }
     }
 
     const tot = rAmt + mAmt;
@@ -3199,18 +3270,8 @@ function cleanMoneyValue(val, headerName = '') {
  */
 function cleanDateValue(val) {
   if (val === undefined || val === null || val === '') return '';
-  // 이미 YYYY-MM-DD 형식인 경우
   const str = String(val).trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
-
-  // 2026.03.01 or 2026/03/01 or 20260301
-  const dotSlashMatch = str.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})$/);
-  if (dotSlashMatch) {
-    const y = dotSlashMatch[1];
-    const m = String(dotSlashMatch[2]).padStart(2, '0');
-    const d = String(dotSlashMatch[3]).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  }
 
   // 엑셀 시리얼 넘버인 경우 (예: 46083)
   const num = Number(str);
@@ -3223,6 +3284,12 @@ function cleanDateValue(val) {
     } catch (e) {
       return str;
     }
+  }
+
+  // 지능형 정제 (2026. 6. 8, 2026/06/08, 2026.06.08, 2026년 6월 8일 등)
+  const comp = parseDateComponents(str);
+  if (comp) {
+    return comp.formatted;
   }
 
   return str;
@@ -3246,11 +3313,11 @@ async function executeBatchImport() {
       room_number: rNum,
       name: (row[activeColumnMapping.name] !== undefined ? String(row[activeColumnMapping.name]).trim() : '') || '공실',
       phone: row[activeColumnMapping.phone] !== undefined ? String(row[activeColumnMapping.phone]).trim() : '',
-      lease_type: row[activeColumnMapping.lease_type] || '월세',
+      lease_type: (row[activeColumnMapping.lease_type] && String(row[activeColumnMapping.lease_type]).includes('전세')) ? '전세' : '월세',
       deposit: cleanMoneyValue(row[activeColumnMapping.deposit], activeColumnMapping.deposit),
       rent: cleanMoneyValue(row[activeColumnMapping.rent], activeColumnMapping.rent),
       maintenance: cleanMoneyValue(row[activeColumnMapping.maintenance], activeColumnMapping.maintenance),
-      pay_timing: row[activeColumnMapping.pay_timing] || '후불',
+      pay_timing: (row[activeColumnMapping.pay_timing] && String(row[activeColumnMapping.pay_timing]).includes('선불')) ? '선불' : '후불',
       move_in: cleanDateValue(row[activeColumnMapping.move_in]),
       expiry: cleanDateValue(row[activeColumnMapping.expiry]),
       memo: row[activeColumnMapping.memo] || ''

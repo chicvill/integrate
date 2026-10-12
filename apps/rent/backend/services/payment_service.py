@@ -5,11 +5,32 @@ apps/rent/backend/services/payment_service.py
 - 세입자 전입일 기준 자동 동기화
 - 수납(실입금일자 지정) 및 수납 취소 처리
 """
+import re
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Tuple, cast
 from sqlalchemy.orm import Session
 
 from ..db.models import RentRoom, RentPayment, RentTenantHistory
+
+
+def parse_date_to_dt(val: Any) -> Optional[datetime]:
+    """다양한 날짜 포맷 (YYYY-MM-DD, YYYY. M. D, YYYY/MM/DD, YYYY.MM.DD 등)을 안전하게 datetime 객체로 변환"""
+    if not val:
+        return None
+    s = str(val).strip()
+    m = re.search(r'(\d{4})\s*[-./년\s]\s*(\d{1,2})\s*[-./월\s]\s*(\d{1,2})', s)
+    if m:
+        try:
+            return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        except Exception:
+            pass
+    m2 = re.search(r'(\d{4})(\d{2})(\d{2})', s)
+    if m2:
+        try:
+            return datetime(int(m2.group(1)), int(m2.group(2)), int(m2.group(3)))
+        except Exception:
+            pass
+    return None
 
 
 def get_rolling_periods(cur_year: int, cur_month: int, count: int = 12) -> List[Tuple[int, int]]:
@@ -95,13 +116,8 @@ class PaymentService:
             if not r.name:
                 continue
 
-            # 전입일 파싱 (YYYY-MM-DD)
-            dt_in: Optional[datetime] = None
-            if r.move_in:
-                try:
-                    dt_in = datetime.strptime(str(r.move_in)[:10], "%Y-%m-%d")
-                except Exception:
-                    dt_in = None
+            # 전입일 파싱 (다양한 포맷 대응)
+            dt_in: Optional[datetime] = parse_date_to_dt(r.move_in)
 
             # 전출자 이력 조회 (전입 이전 기록 배정용)
             prev_hist = db.query(RentTenantHistory).filter(

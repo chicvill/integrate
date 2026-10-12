@@ -211,6 +211,30 @@ export function getRollingPeriods(curYear = currentYear, curMonth = currentMonth
   return periods;
 }
 
+export function parseDateComponents(val) {
+  if (!val) return null;
+  const s = String(val).trim();
+  const m = s.match(/(\d{4})\s*[-./년\s]\s*(\d{1,2})\s*[-./월\s]\s*(\d{1,2})/);
+  if (m) {
+    const y = parseInt(m[1], 10);
+    const mo = parseInt(m[2], 10);
+    const d = parseInt(m[3], 10);
+    if (!isNaN(y) && !isNaN(mo) && !isNaN(d)) {
+      return { year: y, month: mo, day: d, formatted: `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}` };
+    }
+  }
+  const m2 = s.match(/(\d{4})(\d{2})(\d{2})/);
+  if (m2) {
+    const y = parseInt(m2[1], 10);
+    const mo = parseInt(m2[2], 10);
+    const d = parseInt(m2[3], 10);
+    if (!isNaN(y) && !isNaN(mo) && !isNaN(d)) {
+      return { year: y, month: mo, day: d, formatted: `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}` };
+    }
+  }
+  return null;
+}
+
 export function evaluatePaymentRule({ year, month, inYear, inMonth, leaseType = '월세', payTiming = '후불', curYear = currentYear, curMonth = currentMonth, hasPrevHist = false }) {
   const isBeforeMoveIn = (year < inYear) || (year === inYear && month < inMonth);
   const isMoveInMonth = (year === inYear && month === inMonth);
@@ -283,6 +307,17 @@ export function generateDefaultSeedRooms() {
       depositVal = 5000000;
     }
 
+    // 404호: 이종진 고객 (2026-06-08 전입, 월세 290,000원, 관리비 150,000원, 보증금 5,000,000원, 후불)
+    if (rNum === 404) {
+      tenantName = "이종진";
+      phoneNum = "010-2345-4404";
+      rentVal = 290000;
+      maintVal = 150000;
+      moveInDate = `${currentYear}-06-08`;
+      expiryDate = `${currentYear + 1}-06-07`;
+      depositVal = 5000000;
+    }
+
     // 503호: 김백찬 고객
     if (rNum === 503) {
       tenantName = "김백찬";
@@ -300,8 +335,9 @@ export function generateDefaultSeedRooms() {
       depositVal = 5000000;
     }
 
-    const inY = parseInt(moveInDate.split('-')[0], 10);
-    const inM = parseInt(moveInDate.split('-')[1], 10);
+    const dtComp = parseDateComponents(moveInDate) || { year: currentYear, month: 1 };
+    const inY = dtComp.year;
+    const inM = dtComp.month;
     const payments = {};
     for (let m = 1; m <= 12; m++) {
       const rule = evaluatePaymentRule({
@@ -435,6 +471,22 @@ export function loadLocalFallback() {
       }
     }
 
+    // 404호 세입자 정보 검증 및 이종진(2026-06-08 전입, 월세/후불) 보정
+    if (state.rooms && state.rooms[404]) {
+      const r404 = state.rooms[404];
+      if (r404.name !== "이종진" || !r404.move_in || r404.move_in.indexOf("06") === -1) {
+        r404.name = "이종진";
+        r404.phone = "010-2345-4404";
+        r404.rent = 290000;
+        r404.maintenance = 150000;
+        r404.deposit = 5000000;
+        r404.lease_type = "월세";
+        r404.pay_timing = "후불";
+        r404.move_in = `${currentYear}-06-08`;
+        r404.expiry = `${currentYear + 1}-06-07`;
+      }
+    }
+
     // 505호 세입자 정보 검증 및 김정현(2026-06-29 전입, 월세/후불) 보정
     if (state.rooms && state.rooms[505]) {
       const r505 = state.rooms[505];
@@ -472,13 +524,10 @@ export function fillTenantPaymentsState(roomNumber = null) {
     let inYear = currentYear;
     let inMonth = 1;
     if (room.move_in) {
-      try {
-        const parts = room.move_in.split('-');
-        inYear = parseInt(parts[0], 10);
-        inMonth = parseInt(parts[1], 10);
-      } catch (e) {
-        inYear = currentYear;
-        inMonth = 1;
+      const dtComp = parseDateComponents(room.move_in);
+      if (dtComp) {
+        inYear = dtComp.year;
+        inMonth = dtComp.month;
       }
     }
 

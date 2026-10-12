@@ -3,7 +3,7 @@
  * 원룸 임차료 관리 시스템 모바일 최적화 DOM 렌더링 및 UI 슬라이드 드로어 제어.
  */
 
-import { state, FLOOR_STRUCTURE, currentMonth, currentYear, formattedToday, saveLocalFallback, loadInitialData, fillTenantPaymentsState, evaluatePaymentRule } from './state.js?v=2.0';
+import { state, FLOOR_STRUCTURE, currentMonth, currentYear, formattedToday, saveLocalFallback, loadInitialData, fillTenantPaymentsState, evaluatePaymentRule, parseDateComponents } from './state.js?v=2.0';
 import { apiProcessPayment, apiCancelPayment, apiFillTenantPayments, apiGetRooms } from './api.js?v=2.0';
 
 export function selectRoom(roomNum) {
@@ -194,6 +194,16 @@ export function renderMainRoomCard(room) {
   // 전입일 / 만기일 요약
   const cPeriod = document.getElementById('cPeriod');
   if (cPeriod) cPeriod.textContent = (room.move_in && room.expiry) ? `${room.move_in} ~ ${room.expiry}` : '-';
+
+  const periodTypeTag = document.getElementById('cardPeriodTypeTag');
+  if (periodTypeTag) {
+    periodTypeTag.textContent = `${leaseType} · ${payTiming}`;
+    periodTypeTag.className = `text-[10px] px-1.5 py-0.5 rounded font-semibold border ${
+      leaseType === '전세' 
+        ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' 
+        : 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30'
+    }`;
+  }
 }
 
 export function renderCurrentMonthSection(room) {
@@ -323,10 +333,11 @@ export function renderPastHistorySection(room) {
     let inYear = currentYear;
     let inMonth = 1;
     if (room.name && room.move_in) {
-      try {
-        inYear = parseInt(room.move_in.substring(0, 4), 10);
-        inMonth = parseInt(room.move_in.substring(5, 7), 10);
-      } catch (e) {}
+      const dtComp = parseDateComponents(room.move_in);
+      if (dtComp) {
+        inYear = dtComp.year;
+        inMonth = dtComp.month;
+      }
     }
 
     const rule = evaluatePaymentRule({
@@ -341,7 +352,7 @@ export function renderPastHistorySection(room) {
       hasPrevHist: Boolean(existingP?.is_previous_tenant)
     });
 
-    const p = existingP || {
+    let p = existingP ? { ...existingP } : {
       month: m,
       year: y,
       paid: rule.paid,
@@ -353,6 +364,19 @@ export function renderPastHistorySection(room) {
       is_previous_tenant: false
     };
 
+    // 전입 이전 기간(이전 세입자 이력 없음) 또는 입주월 후불인데 구버전 캐시 등으로 완납되어 있던 경우 자동 보정
+    if (existingP && !existingP.is_previous_tenant) {
+      if (rule.isBeforeMoveIn) {
+        p.paid = false;
+        p.paid_date = '';
+        p.note = rule.note;
+      } else if (rule.isMoveInMonth && !rule.paid && (p.note === '정상 입금' || !p.note)) {
+        p.paid = false;
+        p.paid_date = '';
+        p.note = rule.note;
+      }
+    }
+
     // 현 세입자가 과거(예: 2022년 전입)부터 계속 살고 있는 경우 세입자명 및 금액 스마트 보정
     let displayName = p.tenant_name;
     let isPrev = !!p.is_previous_tenant;
@@ -360,17 +384,15 @@ export function renderPastHistorySection(room) {
     let mAmt = p.maintenance_amount !== undefined ? p.maintenance_amount : room.maintenance;
 
     if (room.name && room.move_in) {
-      try {
-        const inYear = parseInt(room.move_in.substring(0, 4), 10);
-        const inMonth = parseInt(room.move_in.substring(5, 7), 10);
-        if (y > inYear || (y === inYear && m >= inMonth)) {
-          // 전입일 이후 기간: 현재 세입자 정보 및 최신 계약 금액으로 일치
+      const dtComp = parseDateComponents(room.move_in);
+      if (dtComp) {
+        if (y > dtComp.year || (y === dtComp.year && m >= dtComp.month)) {
           displayName = room.name;
           isPrev = false;
           rAmt = isJeonse ? 0 : room.rent;
           mAmt = room.maintenance;
         }
-      } catch (e) {}
+      }
     }
 
     const tot = rAmt + mAmt;

@@ -3,7 +3,7 @@
  * 원룸 임차료 관리 시스템 모달 팝업 및 계약/지출 폼 제어 모듈.
  */
 
-import { state, formattedToday, saveLocalFallback, setAuthUser, clearAuthUser, getAuthSessionInfo, touchAuthSession, fillTenantPaymentsState } from './state.js?v=2.0';
+import { state, formattedToday, saveLocalFallback, setAuthUser, clearAuthUser, getAuthSessionInfo, touchAuthSession, fillTenantPaymentsState, parseDateComponents } from './state.js?v=2.0';
 import { apiUpdateContract, apiCreateExpense, apiRequestUpgrade, apiGetVatReport, apiGetVatSettings, apiSaveVatSettings, apiCreateBranch, apiGetTenantHistories, apiBatchImportRooms, apiOcrImportImage, apiAdminLogin, apiFillTenantPayments } from './api.js?v=2.0';
 import { renderAll, switchBranch } from './ui.js?v=2.0';
 
@@ -1752,18 +1752,8 @@ function cleanMoneyValue(val, headerName = '') {
  */
 function cleanDateValue(val) {
   if (val === undefined || val === null || val === '') return '';
-  // 이미 YYYY-MM-DD 형식인 경우
   const str = String(val).trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
-
-  // 2026.03.01 or 2026/03/01 or 20260301
-  const dotSlashMatch = str.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})$/);
-  if (dotSlashMatch) {
-    const y = dotSlashMatch[1];
-    const m = String(dotSlashMatch[2]).padStart(2, '0');
-    const d = String(dotSlashMatch[3]).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  }
 
   // 엑셀 시리얼 넘버인 경우 (예: 46083)
   const num = Number(str);
@@ -1776,6 +1766,12 @@ function cleanDateValue(val) {
     } catch (e) {
       return str;
     }
+  }
+
+  // 지능형 정제 (2026. 6. 8, 2026/06/08, 2026.06.08, 2026년 6월 8일 등)
+  const comp = parseDateComponents(str);
+  if (comp) {
+    return comp.formatted;
   }
 
   return str;
@@ -1799,11 +1795,11 @@ export async function executeBatchImport() {
       room_number: rNum,
       name: (row[activeColumnMapping.name] !== undefined ? String(row[activeColumnMapping.name]).trim() : '') || '공실',
       phone: row[activeColumnMapping.phone] !== undefined ? String(row[activeColumnMapping.phone]).trim() : '',
-      lease_type: row[activeColumnMapping.lease_type] || '월세',
+      lease_type: (row[activeColumnMapping.lease_type] && String(row[activeColumnMapping.lease_type]).includes('전세')) ? '전세' : '월세',
       deposit: cleanMoneyValue(row[activeColumnMapping.deposit], activeColumnMapping.deposit),
       rent: cleanMoneyValue(row[activeColumnMapping.rent], activeColumnMapping.rent),
       maintenance: cleanMoneyValue(row[activeColumnMapping.maintenance], activeColumnMapping.maintenance),
-      pay_timing: row[activeColumnMapping.pay_timing] || '후불',
+      pay_timing: (row[activeColumnMapping.pay_timing] && String(row[activeColumnMapping.pay_timing]).includes('선불')) ? '선불' : '후불',
       move_in: cleanDateValue(row[activeColumnMapping.move_in]),
       expiry: cleanDateValue(row[activeColumnMapping.expiry]),
       memo: row[activeColumnMapping.memo] || ''

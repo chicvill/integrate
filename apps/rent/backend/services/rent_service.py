@@ -55,6 +55,15 @@ class RentService:
                 phone_num = "010-5578-5358"
                 move_in_val = "2022-03-19"
                 expiry_val = "2023-03-18"
+            elif rNum == 404:
+                # 404호: 이종진 고객 (2026-06-08 전입, 월세 290,000원, 관리비 150,000원, 보증금 5,000,000원, 후불)
+                name = "이종진"
+                rent_amt = 290000
+                maint_amt = 150000
+                deposit_amt = 5000000
+                phone_num = "010-2345-4404"
+                move_in_val = f"{cur_year}-06-08"
+                expiry_val = f"{cur_year + 1}-06-07"
             elif rNum == 503:
                 name = "김백찬"
                 phone_num = "010-3344-5503"
