@@ -137,7 +137,7 @@ export async function handleExpenseFormSubmit(e) {
     }
     saveLocalFallback();
     closeModal('expenseModal');
-    openLedgerModal();
+    renderAll();
   } catch (err) {
     alert("지출 등록 실패: " + err.message);
   }

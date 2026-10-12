@@ -190,12 +190,12 @@ class RentService:
                 self._seed_branch_rooms(db, branch_id, is_main=(branch_id == "main"))
             return
 
-        # 1. 제1부동산: 원룸 본관
+        # 1. 제1부동산: 시크빌
         b1 = db.query(RentBranch).filter(RentBranch.branch_id == "main").first()
         if not b1:
             b1 = RentBranch(
                 branch_id="main",
-                name="원룸 본관 (29개실)",
+                name="시크빌 (29개실)",
                 contact_phone="010-2345-6789",
                 address="서울특별시 강남구 테헤란로 123",
                 fee_plan="원룸 프리미엄 29실형",

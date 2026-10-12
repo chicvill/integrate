@@ -59,12 +59,19 @@
         <span class="text-xs font-bold sm:inline hidden">메뉴</span>
       </button>
 
-      <!-- Center: Active Property / Building Switcher -->
-      <button type="button" onclick="openMenuDrawer()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-850 hover:bg-surface-800 border border-cyan-500/40 text-cyan-300 transition cursor-pointer shadow-inner active:scale-95" title="부동산 변경">
-        <span class="text-sm">🏢</span>
-        <span id="headerBranchName" class="text-xs sm:text-sm font-bold tracking-tight truncate max-w-[150px] sm:max-w-[200px]">원룸 본관</span>
-        <span class="text-[10px] text-cyan-400/80 font-mono">▾</span>
-      </button>
+      <!-- Center: Active Property / Building Switcher + 지출 등록 버튼 -->
+      <div class="flex items-center gap-1.5 min-w-0">
+        <button type="button" onclick="openMenuDrawer()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-surface-850 hover:bg-surface-800 border border-cyan-500/40 text-cyan-300 transition cursor-pointer shadow-inner active:scale-95" title="부동산 변경">
+          <span class="text-sm">🏢</span>
+          <span id="headerBranchName" class="text-xs sm:text-sm font-bold tracking-tight truncate max-w-[100px] sm:max-w-[140px]">시크빌</span>
+          <span class="text-[10px] text-cyan-400/80 font-mono">▾</span>
+        </button>
+
+        <button type="button" onclick="openExpenseModal()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 font-bold text-xs transition cursor-pointer shadow-sm active:scale-95 whitespace-nowrap" title="지출 등록">
+          <span class="text-xs">💰</span>
+          <span>지출 등록</span>
+        </button>
+      </div>
 
       <!-- Right: Room Selector Drawer Button -->
       <button type="button" onclick="openRoomDrawer()" class="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black text-xs sm:text-sm border border-cyan-400/30 transition flex items-center gap-1 shadow-md shadow-cyan-950/60 cursor-pointer active:scale-95" title="호실 선택">
@@ -281,18 +288,6 @@
 
     </section>
 
-    <!-- ── Quick Operational Expense Bar (오늘 지출 등록 & 장부 바로가기) ── -->
-    <div class="grid grid-cols-2 gap-2">
-      <button type="button" onclick="openExpenseModal()" class="py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500/20 to-amber-600/10 hover:from-amber-500/30 hover:to-amber-600/20 text-amber-300 border border-amber-500/40 font-bold flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer active:scale-98">
-        <span class="text-base">💰</span>
-        <span>오늘 지출 등록</span>
-      </button>
-      <button type="button" onclick="openLedgerModal()" class="py-2.5 px-3 rounded-xl bg-surface-850 hover:bg-surface-800 text-slate-200 border border-slate-700/80 font-bold flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer active:scale-98">
-        <span class="text-base">📒</span>
-        <span>지출 장부 내역</span>
-      </button>
-    </div>
-
     <!-- ── CARD 2: 당월 납부 현황 (스크롤 없이 시원한 초대형 폰트 & 원터치 완납) ── -->
     <section class="bg-gradient-to-b from-surface-900 to-surface-850 border-2 border-cyan-500/60 rounded-2xl p-4 shadow-2xl relative overflow-hidden">
       
@@ -365,6 +360,50 @@
           <tbody id="pastPaymentTableBody" class="divide-y divide-slate-800">
             <!-- Dynamic rows rendered by JS (최근 1년치 기록) -->
           </tbody>
+        </table>
+      </div>
+
+    </section>
+
+    <!-- ── CARD 4: 건물 운영 지출 장부 (엑셀 규격: 일자 | 적요 | 금액 | 합계) ── -->
+    <section class="bg-surface-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+      
+      <!-- Card Header -->
+      <div class="px-3.5 py-3 bg-surface-850/80 flex items-center justify-between gap-2 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <span class="text-base">📒</span>
+          <div>
+            <h3 class="text-xs sm:text-sm font-bold text-white tracking-tight flex items-center gap-1.5">
+              <span>지출 장부 내역</span>
+              <span class="text-[11px] text-cyan-400 font-normal">(시크빌 운영 경비)</span>
+            </h3>
+            <span class="text-[11px] text-slate-400">엑셀 장부 규격 (일자 · 적요 · 금액 · 합계)</span>
+          </div>
+        </div>
+        <!-- Right Badges -->
+        <div class="flex items-center gap-1.5">
+          <span class="text-[11px] text-slate-400 sm:inline hidden">누적 합계:</span>
+          <span id="expenseLedgerTotalBadge" class="text-xs font-mono font-bold text-amber-400 bg-amber-950/60 border border-amber-800/60 px-2.5 py-1 rounded-xl">0원</span>
+        </div>
+      </div>
+
+      <!-- Excel-like Table Container -->
+      <div class="overflow-x-auto p-1 bg-surface-950/60 max-h-80 overflow-y-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead class="sticky top-0 z-10">
+            <tr class="bg-surface-850 text-slate-300 border-b border-slate-700 text-[11px] font-semibold whitespace-nowrap">
+              <th class="py-2.5 px-3 text-center border-r border-slate-700 w-28 whitespace-nowrap">일자</th>
+              <th class="py-2.5 px-3 text-left border-r border-slate-700 min-w-[140px] whitespace-nowrap">적요 (항목 / 비고)</th>
+              <th class="py-2.5 px-3 text-right border-r border-slate-700 w-28 whitespace-nowrap">금액</th>
+              <th class="py-2.5 px-3 text-right w-28 whitespace-nowrap">합계</th>
+            </tr>
+          </thead>
+          <tbody id="expenseLedgerTableBody" class="divide-y divide-slate-800/60 font-mono">
+            <!-- Dynamic rows rendered by JS -->
+          </tbody>
+          <tfoot id="expenseLedgerTableFoot" class="bg-surface-850/90 text-slate-200 border-t-2 border-slate-700 text-[11px] font-bold sticky bottom-0">
+            <!-- Summary total row rendered by JS -->
+          </tfoot>
         </table>
       </div>
 

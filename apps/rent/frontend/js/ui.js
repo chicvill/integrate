@@ -119,6 +119,7 @@ export function renderAll() {
   renderMainRoomCard(room);
   renderCurrentMonthSection(room);
   renderPastHistorySection(room);
+  renderExpenseLedgerSection();
   renderRightRoomDrawer();
   renderLeftMenuDrawer();
 }
@@ -126,10 +127,12 @@ export function renderAll() {
 export function renderHeaderSummary(room) {
   // 현재 활성 건물 이름 표시
   const curBranchObj = state.branches.find(b => b.branch_id === state.currentBranch);
-  const branchName = curBranchObj ? curBranchObj.name : '원룸 본관';
+  const branchName = curBranchObj ? curBranchObj.name : '시크빌';
 
   const branchTitleEl = document.getElementById('headerBranchName');
-  if (branchTitleEl) branchTitleEl.textContent = branchName;
+  if (branchTitleEl) {
+    branchTitleEl.textContent = (state.currentBranch === 'main' ? '시크빌' : branchName);
+  }
 
   const headerRoomBadge = document.getElementById('headerRoomBadge');
   if (headerRoomBadge) headerRoomBadge.textContent = `${room.room_number}호 ▾`;
@@ -490,6 +493,75 @@ export function renderPastHistorySection(room) {
   });
 }
 
+// ── 지출 장부 내역 표 렌더링 (엑셀 규격: 일자 | 적요 | 금액 | 합계) ──
+export function renderExpenseLedgerSection() {
+  const tbody = document.getElementById('expenseLedgerTableBody');
+  const tfoot = document.getElementById('expenseLedgerTableFoot');
+  const totalSumBadge = document.getElementById('expenseLedgerTotalBadge');
+  if (!tbody) return;
+
+  tbody.innerHTML = '';
+  if (tfoot) tfoot.innerHTML = '';
+  const expenses = state.expenses || [];
+
+  if (expenses.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="py-6 text-center text-slate-500 text-xs font-sans">
+          등록된 지출 내역이 없습니다. 상단 <b>[💰 지출 등록]</b> 버튼으로 경비를 등록하세요.
+        </td>
+      </tr>
+    `;
+    if (totalSumBadge) totalSumBadge.textContent = '0원';
+    return;
+  }
+
+  // 시간순 정렬로 누적 합계 계산
+  const sorted = [...expenses].sort((a, b) => {
+    const diff = (a.date || '').localeCompare(b.date || '');
+    if (diff !== 0) return diff;
+    return String(a.id || '').localeCompare(String(b.id || ''));
+  });
+
+  let running = 0;
+  const withRunning = sorted.map(exp => {
+    running += Number(exp.amount || 0);
+    return { ...exp, runningTotal: running };
+  });
+
+  // 최신 지출이 상단에 오도록 역순 표시 (누적합계는 발생시점 기준 정확히 유지)
+  const displayList = [...withRunning].reverse();
+
+  displayList.forEach(exp => {
+    const tr = document.createElement('tr');
+    tr.className = 'border-b border-slate-800/60 hover:bg-surface-850/60 transition text-xs';
+    const noteText = exp.note ? ` <span class="text-[11px] text-slate-400">(${exp.note})</span>` : '';
+    tr.innerHTML = `
+      <td class="py-2.5 px-3 text-center text-slate-300 font-mono whitespace-nowrap">${exp.date || '-'}</td>
+      <td class="py-2.5 px-3 text-left font-sans text-slate-200">${exp.item || '-'}${noteText}</td>
+      <td class="py-2.5 px-3 text-right font-mono font-bold text-amber-400 whitespace-nowrap">${Number(exp.amount || 0).toLocaleString()}원</td>
+      <td class="py-2.5 px-3 text-right font-mono font-bold text-cyan-400 whitespace-nowrap">${Number(exp.runningTotal || 0).toLocaleString()}원</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // 테이블 푸터 요약 행 (합계)
+  if (tfoot) {
+    tfoot.innerHTML = `
+      <tr>
+        <td class="py-2.5 px-3 text-center border-r border-slate-700 text-slate-300 font-bold">합계</td>
+        <td class="py-2.5 px-3 text-left border-r border-slate-700 text-slate-400 font-sans">총 ${expenses.length}건 지출 누계</td>
+        <td class="py-2.5 px-3 text-right border-r border-slate-700 text-amber-400 font-mono font-bold">${running.toLocaleString()}원</td>
+        <td class="py-2.5 px-3 text-right text-cyan-400 font-mono font-bold">${running.toLocaleString()}원</td>
+      </tr>
+    `;
+  }
+
+  if (totalSumBadge) {
+    totalSumBadge.textContent = `${running.toLocaleString()}원`;
+  }
+}
+
 // ── 우측 슬라이드 바: 29개실 호실 선택 그리드 ──
 export function renderRightRoomDrawer() {
   const container = document.getElementById('drawerFloorMap');
@@ -558,7 +630,7 @@ export function renderLeftMenuDrawer() {
   if (state.branches.length === 0) {
     branchListContainer.innerHTML = `
       <button type="button" class="w-full text-left p-2.5 rounded-xl bg-cyan-950/60 border border-cyan-500/60 text-cyan-300 font-bold text-xs flex items-center justify-between">
-        <span>🏢 원룸 본관 (29개실)</span>
+        <span>🏢 시크빌 (29개실)</span>
         <span class="text-xs">✓ 선택됨</span>
       </button>
     `;

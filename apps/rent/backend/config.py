@@ -13,7 +13,7 @@ class RentConfig(BaseConfig):
     PORT: int = int(os.getenv("PORT", "9015"))
 
     DEFAULT_BRANCH_ID: str = "main"
-    DEFAULT_BRANCH_NAME: str = "원룸 본관 (29개실)"
+    DEFAULT_BRANCH_NAME: str = "시크빌 (29개실)"
 
     @property
     def STORAGE_DIR(self) -> str:
