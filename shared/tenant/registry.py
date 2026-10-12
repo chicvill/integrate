@@ -189,6 +189,24 @@ APP_REGISTRY: Dict[str, Dict[str, Any]] = {
             "A4 PDF 인쇄 최적화 매뉴얼",
         ],
     },
+    "rent": {
+        "app_id": "rent",
+        "app_name": "원룸 임차료 관리 시스템",
+        "icon": "🏢",
+        "category": "estate",
+        "description": "101호·201~605호·701~703호 총 29개실 전용 임대차 계약, 월세 수납 및 지출 장부 관리",
+        "backend_port": 9015,
+        "route_path": "/rent",
+        "modules": ["core", "utils"],
+        "features": [
+            "29개실 전 호실 계약 관리",
+            "월세/관리비/청소비 수납",
+            "선불/후불 납부 스케줄링",
+            "오늘 지출 추가 및 지출 장부",
+            "엑셀(CSV) 내보내기",
+            "A4 인쇄 최적화 운영 매뉴얼",
+        ],
+    },
 }
 
 

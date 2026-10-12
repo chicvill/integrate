@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>29개실 원룸 임차료 관리 시스템</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            surface: {
+              950: '#090d16',
+              900: '#0f172a',
+              850: '#15203b',
+              800: '#1e293b',
+              700: '#334155',
+              600: '#475569'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    /* Transitions */
+    .collapse-content {
+      transition: max-height 0.28s ease-in-out, opacity 0.2s ease-in-out;
+      overflow: hidden;
+    }
+    .collapse-hidden {
+      max-height: 0 !important;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .collapse-open {
+      max-height: 1200px;
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="bg-surface-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-cyan-500 selection:text-slate-900 pb-16">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800/80 bg-surface-900/90 backdrop-blur sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 py-3 sm:py-3.5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-500 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-cyan-950/60">
+          29
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-1.5">
+            원룸 임차료 관리 시스템
+            <span class="text-[10px] font-semibold text-cyan-400 bg-cyan-950/70 border border-cyan-800/80 px-2 py-0.5 rounded-full">29개실</span>
+          </h1>
+          <p class="text-xs text-slate-400">101호 · 201~605호 · 701~703호 전용 관리기</p>
+        </div>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <button type="button" onclick="openExpenseModal()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 transition flex items-center gap-1.5 shadow-sm">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6"/></svg>
+          오늘 지출 추가
+        </button>
+
+        <button type="button" onclick="openLedgerModal()" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 transition flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          지출 장부
+        </button>
+
+        <button type="button" onclick="exportCurrentRoomCSV()" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 transition flex items-center gap-1.5" title="엑셀(CSV) 다운로드">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          CSV 내보내기
+        </button>
+
+        <a href="./manual.html" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-surface-800 hover:bg-surface-700 text-cyan-300 border border-cyan-800/60 transition flex items-center gap-1.5" title="운영 매뉴얼 열기">
+          <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+          운영 매뉴얼
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-6xl mx-auto px-4 mt-6 space-y-6">
+
+    <!-- 1. CONTRACT INFORMATION CARD (DROPDOWN AT FRONT) -->
+    <div class="bg-surface-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+      <!-- Card Top Bar: Dropdown + Badges + Edit/Toggle -->
+      <div class="px-5 py-4 bg-surface-850/70 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3 flex-wrap">
+          <!-- Room Dropdown (Placed at the very front) -->
+          <div class="flex items-center bg-cyan-950/70 border border-cyan-600/70 rounded-xl px-2.5 py-1 shadow-inner">
+            <span class="text-xs text-cyan-400 font-semibold mr-1.5 flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+              호실:
+            </span>
+            <select id="roomSelect" onchange="handleRoomChange()" class="bg-surface-800 text-cyan-300 font-black text-base border border-cyan-700/80 rounded-lg px-2 py-0.5 focus:outline-none focus:border-cyan-400 cursor-pointer">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+
+          <!-- Tenant Name & Type Badges -->
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h2 id="cardTenantName" class="text-base sm:text-lg font-bold text-white tracking-tight">홍길동 고객</h2>
+              <span id="cardStatusBadge" class="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">입주중</span>
+              <span id="cardLeaseTypeBadge" class="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30">월세</span>
+              <span id="cardPayTimingBadge" class="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30">후불</span>
+            </div>
+            <p id="cardPhoneText" class="text-xs text-slate-400 mt-0.5">연락처: 010-0000-0000</p>
+          </div>
+        </div>
+
+        <!-- Contract Actions: Edit Modal & Accordion Toggle -->
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="openContractEditModal()" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+            수정
+          </button>
+          <button type="button" id="toggleContractBtn" onclick="toggleContractAccordion()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-cyan-950/60 hover:bg-cyan-900/60 text-cyan-300 border border-cyan-800/80 transition flex items-center gap-1.5">
+            <span id="contractToggleText">계약내용 펼치기</span>
+            <svg id="contractToggleArrow" class="w-3.5 h-3.5 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Collapsible Contract Details Grid (Default Hidden) -->
+      <div id="contractAccordionBody" class="collapse-content collapse-hidden px-5 py-5 bg-surface-900 border-t border-slate-800/80">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 text-xs">
+          
+          <div class="p-3 rounded-xl bg-surface-850/80 border border-slate-800">
+            <span class="text-slate-400 block mb-1">식별키 / 생년월일</span>
+            <span id="cIdNumber" class="text-sm font-semibold text-slate-100">950101-*******</span>
+          </div>
+
+          <div class="p-3 rounded-xl bg-surface-850/80 border border-slate-800">
+            <span class="text-slate-400 block mb-1">임차 형태 / 정산</span>
+            <span id="cTypeTimingSummary" class="text-sm font-semibold text-cyan-300">월세 / 후불</span>
+          </div>
+
+          <div class="p-3 rounded-xl bg-surface-850/80 border border-slate-800">
+            <span class="text-slate-400 block mb-1">보증금</span>
+            <span id="cDeposit" class="text-sm font-bold text-amber-400">5,000,000원</span>
+          </div>
+
+          <div class="p-3 rounded-xl bg-surface-850/80 border border-slate-800">
+            <span class="text-slate-400 block mb-1">월 임차료 (월세)</span>
+            <span id="cRent" class="text-sm font-bold text-cyan-400">400,000원</span>
+          </div>
+
+          <div class="p-3 rounded-xl bg-surface-850/80 border border-slate-800">
+            <span class="text-slate-400 block mb-1">월 관리비</span>
+            <span id="cMaintenance" class="text-sm font-bold text-indigo-400">50,000원</span>
+          </div>
+
+          <div class="p-3 rounded-xl bg-surface-850/80 border border-slate-800">
+            <span class="text-slate-400 block mb-1">청소비 (입퇴실시)</span>
+            <span id="cCleanFee" class="text-sm font-semibold text-slate-200">80,000원</span>
+          </div>
+
+          <div class="p-3 rounded-xl bg-surface-850/80 border border-slate-800">
+            <span class="text-slate-400 block mb-1">전입일 / 만기일</span>
+            <span id="cPeriod" class="text-sm font-semibold text-slate-200">2024-03-01 ~ 2025-02-28</span>
+          </div>
+
+          <div class="p-3 rounded-xl bg-surface-850/80 border border-slate-800">
+            <span class="text-slate-400 block mb-1">전출일</span>
+            <span id="cMoveOut" class="text-sm font-semibold text-rose-300">해당 없음</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. CURRENT MONTH STATUS (PROMINENT CARD) -->
+    <div class="bg-gradient-to-b from-surface-900 to-surface-850 border-2 border-cyan-500/50 rounded-2xl shadow-2xl p-5 relative overflow-hidden">
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-800">
+        <div class="flex items-center gap-2.5">
+          <span class="w-3 h-3 rounded-full bg-cyan-400 animate-pulse"></span>
+          <h3 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+            <span id="curMonthTitle" class="text-cyan-400">10월</span> 납부 현황
+            <span class="text-xs px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-800 font-normal">현재월</span>
+            <span id="curTimingTag" class="text-xs px-2 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-800 font-normal">후불</span>
+          </h3>
+        </div>
+        <div class="flex items-center gap-3 text-xs">
+          <span class="text-slate-400">오늘 일자: <strong id="curTodayDate" class="text-slate-200 font-mono">2026-10-12</strong></span>
+          <span id="curMonthStatusBadge" class="px-2.5 py-0.5 rounded-full font-bold text-xs bg-rose-500/20 text-rose-300 border border-rose-500/40">미납</span>
+        </div>
+      </div>
+
+      <!-- Current Month Breakdown Grid -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 my-4">
+        <div class="bg-surface-800/90 rounded-xl p-3 border border-slate-700/80">
+          <span class="text-xs text-slate-400 block">납부 처리일</span>
+          <span id="curPaidDate" class="text-sm font-bold text-slate-100 font-mono mt-0.5 block">-</span>
+        </div>
+        <div class="bg-surface-800/90 rounded-xl p-3 border border-slate-700/80">
+          <span class="text-xs text-slate-400 block">임차료 (월세)</span>
+          <span id="curRentAmount" class="text-sm font-bold text-cyan-400 mt-0.5 block">0원</span>
+        </div>
+        <div class="bg-surface-800/90 rounded-xl p-3 border border-slate-700/80">
+          <span class="text-xs text-slate-400 block">관리비</span>
+          <span id="curMaintAmount" class="text-sm font-bold text-indigo-400 mt-0.5 block">0원</span>
+        </div>
+        <div class="bg-cyan-950/50 rounded-xl p-3 border border-cyan-600/40">
+          <span class="text-xs text-cyan-400 block font-semibold">당월 청구 합계</span>
+          <span id="curTotalAmount" class="text-base sm:text-lg font-black text-white mt-0.5 block">0원</span>
+        </div>
+      </div>
+
+      <!-- Action Button Area (Pay / Disabled / Cancel) -->
+      <div id="curMonthActionArea" class="flex items-center justify-end gap-2 pt-2">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- 3. PAST PAYMENT HISTORY (MOVE-IN MONTH TO PREVIOUS MONTH, COLLAPSIBLE) -->
+    <div class="bg-surface-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+      <div class="px-5 py-4 bg-surface-850/70 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <h3 class="text-sm sm:text-base font-bold text-white">
+            과거 납부 내역
+            <span id="pastTableSubtitle" class="text-xs font-normal text-slate-400 ml-1.5">(전입월 ~ 전월)</span>
+          </h3>
+        </div>
+        <button type="button" id="togglePastBtn" onclick="togglePastAccordion()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 transition flex items-center gap-1.5">
+          <span id="pastToggleText">과거 내역 펼치기</span>
+          <svg id="pastToggleArrow" class="w-3.5 h-3.5 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+      </div>
+
+      <!-- Accordion Body: Spreadsheet Table (Default Hidden) -->
+      <div id="pastAccordionBody" class="collapse-content collapse-hidden">
+        <div class="overflow-x-auto p-4">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-surface-800 text-slate-400 border border-slate-700 uppercase tracking-wider font-semibold">
+                <th class="py-2.5 px-3 text-center border-r border-slate-700 w-16">회차(월)</th>
+                <th class="py-2.5 px-3 border-r border-slate-700 text-center">납부 일자</th>
+                <th class="py-2.5 px-3 border-r border-slate-700 text-right">임차료 (원)</th>
+                <th class="py-2.5 px-3 border-r border-slate-700 text-right">관리비 (원)</th>
+                <th class="py-2.5 px-3 border-r border-slate-700 text-right font-bold text-slate-200">합계 (원)</th>
+                <th class="py-2.5 px-3 border-r border-slate-700 text-center w-20">상태</th>
+                <th class="py-2.5 px-3 text-center w-28">처리</th>
+              </tr>
+            </thead>
+            <tbody id="pastPaymentTableBody" class="divide-y divide-slate-800 font-mono">
+              <!-- Dynamically populated rows from move-in month to previous month -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL: CONTRACT EDIT -->
+  <div id="contractModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="bg-surface-900 border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl p-5 sm:p-6 text-slate-100 max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+        <h3 class="text-base font-bold text-white flex items-center gap-1.5">
+          <span id="modalRoomTitle" class="text-cyan-400">101호</span> 계약 정보 수정
+        </h3>
+        <button type="button" onclick="closeModal('contractModal')" class="text-slate-400 hover:text-white text-xl p-1">&times;</button>
+      </div>
+
+      <form onsubmit="handleContractFormSubmit(event)" class="space-y-3.5 text-xs">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">임차 유형</label>
+            <select id="formLeaseType" onchange="handleLeaseTypeChangeInForm()" class="w-full bg-surface-800 border border-slate-700 rounded-lg px-2.5 py-2 text-white focus:outline-none focus:border-cyan-400">
+              <option value="월세">월세 (기본)</option>
+              <option value="전세">전세</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">납부 방식</label>
+            <select id="formPayTiming" class="w-full bg-surface-800 border border-slate-700 rounded-lg px-2.5 py-2 text-white focus:outline-none focus:border-cyan-400">
+              <option value="후불">후불 (기본)</option>
+              <option value="선불">선불</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">성명</label>
+            <input type="text" id="formName" placeholder="입주자 성명" class="w-full bg-surface-800 border border-slate-700 rounded-lg px-2.5 py-2 text-white focus:outline-none focus:border-cyan-400">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">생년월일 / 식별번호</label>
+            <input type="text" id="formIdNumber" placeholder="950101-*******" class="w-full bg-surface-800 border border-slate-700 rounded-lg px-2.5 py-2 text-white focus:outline-none focus:border-cyan-400">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">연락처</label>
+          <input type="text" id="formPhone" placeholder="010-0000-0000" class="w-full bg-surface-800 border border-slate-700 rounded-lg px-2.5 py-2 text-white focus:outline-none focus:border-cyan-400">
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">보증금 (원)</label>
+            <input type="number" id="formDeposit" step="10000" class="w-full bg-surface-800 border border-slate-700 rounded-lg px-2.5 py-2 text-white focus:outline-none focus:border-cyan-400">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">월 임차료 (원)</label>
+            <input type="number" id="formRent" step="10000" class="w-full bg-surface-800 border border-slate-700 rounded-lg px-2.5 py-2 text-white focus:outline-none focus:border-cyan-400">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">월 관리비 (원)</label>
+            <input type="number" id="formMaintenance" step="1000" class="w-full bg-surface-800 border border-slate-700 rounded-lg px-2.5 py-2 text-white focus:outline-none focus:border-cyan-400">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">전입일</label>
+            <input type="date" id="formMoveIn" class="w-full bg-surface-800 border border-slate-700 rounded-lg px-2 py-2 text-white focus:outline-none focus:border-cyan-400">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">만기일</label>
+            <input type="date" id="formExpiry" class="w-full bg-surface-800 border border-slate-700 rounded-lg px-2 py-2 text-white focus:outline-none focus:border-cyan-400">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">전출일 (공실시 입력)</label>
+            <input type="date" id="formMoveOut" class="w-full bg-surface-800 border border-slate-700 rounded-lg px-2 py-2 text-white focus:outline-none focus:border-cyan-400">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">청소비 (원)</label>
+          <input type="number" id="formCleanFee" step="10000" class="w-full bg-surface-800 border border-slate-700 rounded-lg px-2.5 py-2 text-white focus:outline-none focus:border-cyan-400">
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeModal('contractModal')" class="px-4 py-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 transition">취소</button>
+          <button type="submit" class="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold transition">저장하기</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD EXPENSE -->
+  <div id="expenseModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="bg-surface-900 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl p-5 text-slate-100">
+      <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+        <h3 class="text-base font-bold text-white flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6"/></svg>
+          오늘 지출 항목 추가
+        </h3>
+        <button type="button" onclick="closeModal('expenseModal')" class="text-slate-400 hover:text-white text-xl p-1">&times;</button>
+      </div>
+
+      <form onsubmit="handleExpenseFormSubmit(event)" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">지출 항목</label>
+          <input type="text" id="expItem" required placeholder="예: 복도 센서등 교체, 정화조 청소" class="w-full bg-surface-800 border border-slate-700 rounded-lg px-2.5 py-2 text-white focus:outline-none focus:border-amber-400">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">금액 (원)</label>
+          <input type="number" id="expAmount" required min="0" step="1000" placeholder="50000" class="w-full bg-surface-800 border border-slate-700 rounded-lg px-2.5 py-2 text-white focus:outline-none focus:border-amber-400">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">비고 / 영수증 정보</label>
+          <input type="text" id="expNote" placeholder="영수증 보관 완료, 기사 방문" class="w-full bg-surface-800 border border-slate-700 rounded-lg px-2.5 py-2 text-white focus:outline-none focus:border-amber-400">
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeModal('expenseModal')" class="px-4 py-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 transition">취소</button>
+          <button type="submit" class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition">지출 등록</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: EXPENSE LEDGER -->
+  <div id="ledgerModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="bg-surface-900 border border-slate-700 rounded-2xl w-full max-w-xl shadow-2xl p-5 text-slate-100 max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+        <h3 class="text-base font-bold text-white flex items-center gap-1.5">
+          건물 유지보수 지출 장부
+          <span id="ledgerTotalSumBadge" class="text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-mono">합계: 0원</span>
+        </h3>
+        <button type="button" onclick="closeModal('ledgerModal')" class="text-slate-400 hover:text-white text-xl p-1">&times;</button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto space-y-2 pr-1" id="ledgerListContainer">
+        <!-- Rendered list of expenses -->
+      </div>
+
+      <div class="flex items-center justify-end pt-3 mt-3 border-t border-slate-800">
+        <button type="button" onclick="closeModal('ledgerModal')" class="px-4 py-1.5 text-xs rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 transition">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // -------------------------------------------------------------
+    // 1. Core 29 Rooms Definitions
+    // -------------------------------------------------------------
+    const ROOM_NUMBERS = [
+      101,
+      201, 202, 203, 204, 205,
+      301, 302, 303, 304, 305,
+      401, 402, 403, 404, 405,
+      501, 502, 503, 504, 505,
+      601, 602, 603, 604, 605,
+      701, 702, 703
+    ];
+
+    const STORAGE_KEY = "ONEROOM_DATA_STORE_29_V3";
+
+    // Application Reference Dates
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth() + 1; // 1 ~ 12
+    const formattedToday = today.toISOString().split('T')[0];
+
+    // Accordion State Management
+    let isContractOpen = false;
+    let isPastOpen = false;
+
+    // Data State
+    let appState = {
+      selectedRoom: 101,
+      rooms: {},
+      expenses: []
+    };
+
+    // -------------------------------------------------------------
+    // 2. Data Initialization
+    // -------------------------------------------------------------
+    function createInitialData() {
+      const rooms = {};
+      const sampleNames = ["김민준", "이서연", "박도윤", "정하은", "최지우", "강예준", "조수아", "윤시우", "장지아", "임서진"];
+
+      ROOM_NUMBERS.forEach((room, idx) => {
+        const isVacant = (room === 204 || room === 502);
+        const name = isVacant ? '' : (sampleNames[idx % sampleNames.length] || `입주자_${room}`);
+        const defaultRent = (room === 702) ? 0 : (380000 + (Math.floor(room / 100) * 10000));
+        const isJeonse = (room === 702);
+        const leaseType = isJeonse ? '전세' : '월세';
+        const payTiming = (room === 303) ? '선불' : '후불'; // Default is 후불
+        const moveInDate = isVacant ? '' : `${currentYear}-01-15`;
+
+        // 1~12 Months payment records
+        const payments = {};
+        for (let m = 1; m <= 12; m++) {
+          const isPaidInPast = !isVacant && (m < currentMonth);
+          payments[m] = {
+            paid: isPaidInPast,
+            paidDate: isPaidInPast ? `${currentYear}-${String(m).padStart(2, '0')}-10` : '',
+            rent: defaultRent,
+            maintenance: 50000,
+            note: isPaidInPast ? '정상 입금' : ''
+          };
+        }
+
+        rooms[room] = {
+          room: room,
+          name: name,
+          idNumber: isVacant ? '' : `9${(idx % 9) + 1}0512-1******`,
+          phone: isVacant ? '' : `010-2${String(idx).padStart(3, '0')}-${String(room).padStart(4, '0')}`,
+          leaseType: leaseType,
+          payTiming: payTiming,
+          deposit: isJeonse ? 70000000 : 5000000,
+          rent: defaultRent,
+          maintenance: 50000,
+          cleanFee: 80000,
+          moveIn: moveInDate,
+          expiry: isVacant ? '' : `${currentYear + 1}-01-14`,
+          moveOut: '',
+          payments: payments
+        };
+      });
+
+      const sampleExpenses = [
+        { id: 1, date: formattedToday, item: "복도 3층 센서등 LED 교체", amount: 25000, note: "관리실 영수증" },
+        { id: 2, date: formattedToday, item: "공용 계단 주간 정기 청소용품", amount: 18000, note: "다이소 영수증" }
+      ];
+
+      return {
+        selectedRoom: 101,
+        rooms: rooms,
+        expenses: sampleExpenses
+      };
+    }
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          appState = JSON.parse(saved);
+          // Safety verification of rooms
+          if (!appState.rooms || Object.keys(appState.rooms).length === 0) {
+            appState = createInitialData();
+          }
+        } else {
+          appState = createInitialData();
+          saveState();
+        }
+      } catch (e) {
+        console.error("Storage load error:", e);
+        appState = createInitialData();
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      } catch (e) {
+        console.error("Storage save error:", e);
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 3. UI Helpers & Accordion Functions
+    // -------------------------------------------------------------
+    function toggleContractAccordion() {
+      isContractOpen = !isContractOpen;
+      const body = document.getElementById('contractAccordionBody');
+      const text = document.getElementById('contractToggleText');
+      const arrow = document.getElementById('contractToggleArrow');
+
+      if (isContractOpen) {
+        body.classList.remove('collapse-hidden');
+        body.classList.add('collapse-open');
+        text.textContent = '계약내용 접기';
+        arrow.classList.add('rotate-180');
+      } else {
+        body.classList.remove('collapse-open');
+        body.classList.add('collapse-hidden');
+        text.textContent = '계약내용 펼치기';
+        arrow.classList.remove('rotate-180');
+      }
+    }
+
+    function togglePastAccordion() {
+      isPastOpen = !isPastOpen;
+      const body = document.getElementById('pastAccordionBody');
+      const text = document.getElementById('pastToggleText');
+      const arrow = document.getElementById('pastToggleArrow');
+
+      if (isPastOpen) {
+        body.classList.remove('collapse-hidden');
+        body.classList.add('collapse-open');
+        text.textContent = '과거 내역 접기';
+        arrow.classList.add('rotate-180');
+      } else {
+        body.classList.remove('collapse-open');
+        body.classList.add('collapse-hidden');
+        text.textContent = '과거 내역 펼치기';
+        arrow.classList.remove('rotate-180');
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 4. View Rendering
+    // -------------------------------------------------------------
+    function renderMainView() {
+      const roomNum = appState.selectedRoom;
+      const room = appState.rooms[roomNum];
+      if (!room) return;
+
+      const isVacant = !room.name || !!room.moveOut;
+      const leaseType = room.leaseType || '월세';
+      const payTiming = room.payTiming || '후불';
+
+      // 1. Header Dropdown Sync
+      const select = document.getElementById('roomSelect');
+      if (select && select.value !== String(roomNum)) {
+        select.value = roomNum;
+      }
+
+      // 2. Contract Header Summary
+      document.getElementById('cardTenantName').textContent = isVacant ? '공실 (미계약)' : `${room.name} 고객`;
+      document.getElementById('cardPhoneText').textContent = isVacant ? '등록된 임차인 없음' : `연락처: ${room.phone || '미등록'}`;
+      
+      const statusBadge = document.getElementById('cardStatusBadge');
+      if (isVacant) {
+        statusBadge.className = 'text-xs px-2.5 py-0.5 rounded-full font-semibold bg-slate-800 text-slate-400 border border-slate-700';
+        statusBadge.textContent = '공실';
+      } else {
+        statusBadge.className = 'text-xs px-2.5 py-0.5 rounded-full font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30';
+        statusBadge.textContent = '입주중';
+      }
+
+      const leaseBadge = document.getElementById('cardLeaseTypeBadge');
+      if (leaseType === '전세') {
+        leaseBadge.className = 'text-xs px-2.5 py-0.5 rounded-full font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30';
+        leaseBadge.textContent = '전세';
+      } else {
+        leaseBadge.className = 'text-xs px-2.5 py-0.5 rounded-full font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30';
+        leaseBadge.textContent = '월세';
+      }
+
+      const timingBadge = document.getElementById('cardPayTimingBadge');
+      timingBadge.textContent = payTiming;
+
+      // 3. Contract Detail Grid
+      document.getElementById('cIdNumber').textContent = isVacant ? '-' : (room.idNumber || '-');
+      document.getElementById('cTypeTimingSummary').textContent = `${leaseType} / ${payTiming}`;
+      document.getElementById('cDeposit').textContent = `${Number(room.deposit || 0).toLocaleString()}원`;
+      document.getElementById('cRent').textContent = leaseType === '전세' ? '0원 (전세)' : `${Number(room.rent || 0).toLocaleString()}원`;
+      document.getElementById('cMaintenance').textContent = `${Number(room.maintenance || 0).toLocaleString()}원`;
+      document.getElementById('cCleanFee').textContent = `${Number(room.cleanFee || 0).toLocaleString()}원`;
+      document.getElementById('cPeriod').textContent = (room.moveIn && room.expiry) ? `${room.moveIn} ~ ${room.expiry}` : '-';
+      document.getElementById('cMoveOut').textContent = room.moveOut || '해당 없음';
+
+      // 4. Current Month Status Rendering
+      renderCurrentMonthSection(room);
+
+      // 5. Past Payment History Table (Move-in Month to Prev Month)
+      renderPastHistorySection(room);
+    }
+
+    function renderCurrentMonthSection(room) {
+      const roomNum = room.room;
+      const isVacant = !room.name || !!room.moveOut;
+      const leaseType = room.leaseType || '월세';
+      const payTiming = room.payTiming || '후불';
+
+      // Safety check for payment object
+      if (!room.payments[currentMonth]) {
+        room.payments[currentMonth] = {
+          paid: false,
+          paidDate: '',
+          rent: leaseType === '전세' ? 0 : room.rent,
+          maintenance: room.maintenance,
+          note: ''
+        };
+      }
+
+      const curPayment = room.payments[currentMonth];
+      const curRent = (leaseType === '전세') ? 0 : (curPayment.rent !== undefined ? curPayment.rent : room.rent);
+      const curMaint = curPayment.maintenance !== undefined ? curPayment.maintenance : room.maintenance;
+      const curTotal = curRent + curMaint;
+
+      document.getElementById('curMonthTitle').textContent = `${currentMonth}월`;
+      document.getElementById('curTodayDate').textContent = formattedToday;
+      document.getElementById('curTimingTag').textContent = `${payTiming} (${payTiming === '선불' ? '당월 선납' : '전월분 후납'})`;
+
+      document.getElementById('curPaidDate').textContent = curPayment.paid ? (curPayment.paidDate || formattedToday) : '-';
+      document.getElementById('curRentAmount').textContent = `${Number(curRent).toLocaleString()}원`;
+      document.getElementById('curMaintAmount').textContent = `${Number(curMaint).toLocaleString()}원`;
+      document.getElementById('curTotalAmount').textContent = `${Number(curTotal).toLocaleString()}원`;
+
+      const statusBadge = document.getElementById('curMonthStatusBadge');
+      const actionArea = document.getElementById('curMonthActionArea');
+
+      if (isVacant) {
+        statusBadge.className = 'px-2.5 py-0.5 rounded-full font-bold text-xs bg-slate-800 text-slate-400 border border-slate-700';
+        statusBadge.textContent = '공실';
+        actionArea.innerHTML = `<span class="text-xs text-slate-500">계약 등록 후 납부 가능</span>`;
+      } else if (curPayment.paid) {
+        // 완납 상태: 즉시 납부 버튼 disabled 처리 & 납부 취소 버튼 제공
+        statusBadge.className = 'px-2.5 py-0.5 rounded-full font-bold text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+        statusBadge.textContent = '완납';
+
+        actionArea.innerHTML = `
+          <div class="flex items-center gap-2">
+            <button type="button" disabled class="px-4 py-2 rounded-xl text-xs font-semibold bg-surface-800 text-slate-400 border border-slate-700/80 cursor-not-allowed flex items-center gap-1.5 opacity-60">
+              <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              이번 달 납부 완료
+            </button>
+            <button type="button" onclick="cancelPayment(${roomNum}, ${currentMonth})" class="px-3.5 py-2 rounded-xl text-xs bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-rose-300 border border-slate-700 transition flex items-center gap-1">
+              납부 취소
+            </button>
+          </div>
+        `;
+      } else {
+        // 미납 상태: 활성화된 즉시 납부 버튼 노출
+        statusBadge.className = 'px-2.5 py-0.5 rounded-full font-bold text-xs bg-rose-500/20 text-rose-300 border border-rose-500/40';
+        statusBadge.textContent = '미납';
+
+        actionArea.innerHTML = `
+          <button type="button" onclick="processPayment(${roomNum}, ${currentMonth})" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition shadow-lg shadow-cyan-950/60 flex items-center gap-1.5 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            💳 이번 달(${currentMonth}월) 즉시 납부 (${payTiming})
+          </button>
+        `;
+      }
+    }
+
+    function renderPastHistorySection(room) {
+      const roomNum = room.room;
+      const tbody = document.getElementById('pastPaymentTableBody');
+      const subtitle = document.getElementById('pastTableSubtitle');
+      tbody.innerHTML = '';
+
+      // Determine move-in month
+      let moveInMonth = 1;
+      if (room.moveIn) {
+        const parts = room.moveIn.split('-');
+        if (parts.length >= 2) {
+          const mIn = parseInt(parts[1], 10);
+          if (!isNaN(mIn) && mIn >= 1 && mIn <= 12) {
+            moveInMonth = mIn;
+          }
+        }
+      }
+
+      const prevMonth = currentMonth - 1;
+      subtitle.textContent = `(전입 ${moveInMonth}월 ~ 전월 ${prevMonth >= 1 ? prevMonth : 0}월)`;
+
+      if (prevMonth < 1 || moveInMonth > prevMonth || !room.name) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="py-6 text-center text-slate-500 italic">
+              표시할 과거 납부 내역이 없습니다. (전입월이 당월이거나 전출/공실 상태)
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      const isJeonse = (room.leaseType === '전세');
+
+      for (let m = moveInMonth; m <= prevMonth; m++) {
+        if (!room.payments[m]) {
+          room.payments[m] = {
+            paid: false,
+            paidDate: '',
+            rent: isJeonse ? 0 : room.rent,
+            maintenance: room.maintenance,
+            note: ''
+          };
+        }
+
+        const p = room.payments[m];
+        const rAmt = isJeonse ? 0 : (p.rent !== undefined ? p.rent : room.rent);
+        const mAmt = p.maintenance !== undefined ? p.maintenance : room.maintenance;
+        const tot = rAmt + mAmt;
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-surface-850/60 transition';
+
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 text-center border-r border-slate-800 font-bold text-slate-300">
+            ${m}월 ${m === moveInMonth ? '<span class="text-[10px] text-cyan-400 font-normal block">(전입월)</span>' : ''}
+          </td>
+          <td class="py-2.5 px-3 border-r border-slate-800 text-center text-slate-300 font-mono">
+            ${p.paid ? (p.paidDate || '-') : '-'}
+          </td>
+          <td class="py-2.5 px-3 border-r border-slate-800 text-right text-slate-300">
+            ${Number(rAmt).toLocaleString()}
+          </td>
+          <td class="py-2.5 px-3 border-r border-slate-800 text-right text-slate-300">
+            ${Number(mAmt).toLocaleString()}
+          </td>
+          <td class="py-2.5 px-3 border-r border-slate-800 text-right font-bold text-slate-100">
+            ${Number(tot).toLocaleString()}
+          </td>
+          <td class="py-2.5 px-3 border-r border-slate-800 text-center">
+            <span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold ${p.paid ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">
+              ${p.paid ? '완납' : '미납'}
+            </span>
+          </td>
+          <td class="py-2.5 px-3 text-center">
+            ${p.paid ? `
+              <button type="button" onclick="cancelPayment(${roomNum}, ${m})" class="px-2.5 py-1 rounded text-[11px] bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-rose-300 border border-slate-700 transition">
+                취소
+              </button>
+            ` : `
+              <button type="button" onclick="processPayment(${roomNum}, ${m})" class="px-2.5 py-1 rounded text-[11px] bg-cyan-600 hover:bg-cyan-500 text-white font-semibold transition shadow-sm">
+                납부
+              </button>
+            `}
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 5. Payment Actions (Process & Cancel)
+    // -------------------------------------------------------------
+    function processPayment(roomNum, month) {
+      const room = appState.rooms[roomNum];
+      if (!room) return;
+
+      if (!room.payments[month]) {
+        room.payments[month] = {};
+      }
+
+      room.payments[month].paid = true;
+      room.payments[month].paidDate = formattedToday;
+      room.payments[month].rent = (room.leaseType === '전세') ? 0 : room.rent;
+      room.payments[month].maintenance = room.maintenance;
+      room.payments[month].note = '정상 입금';
+
+      saveState();
+      renderMainView();
+    }
+
+    function cancelPayment(roomNum, month) {
+      const room = appState.rooms[roomNum];
+      if (!room || !room.payments[month]) return;
+
+      room.payments[month].paid = false;
+      room.payments[month].paidDate = '';
+      room.payments[month].note = '납부 취소';
+
+      saveState();
+      renderMainView();
+    }
+
+    function handleRoomChange() {
+      const selVal = document.getElementById('roomSelect').value;
+      appState.selectedRoom = parseInt(selVal, 10);
+      renderMainView();
+    }
+
+    // -------------------------------------------------------------
+    // 6. Contract Modal Handlers
+    // -------------------------------------------------------------
+    function openContractEditModal() {
+      const roomNum = appState.selectedRoom;
+      const room = appState.rooms[roomNum];
+      if (!room) return;
+
+      document.getElementById('modalRoomTitle').textContent = `${roomNum}호`;
+      document.getElementById('formLeaseType').value = room.leaseType || '월세';
+      document.getElementById('formPayTiming').value = room.payTiming || '후불';
+      document.getElementById('formName').value = room.name || '';
+      document.getElementById('formIdNumber').value = room.idNumber || '';
+      document.getElementById('formPhone').value = room.phone || '';
+      document.getElementById('formDeposit').value = room.deposit || 0;
+      document.getElementById('formRent').value = room.rent || 0;
+      document.getElementById('formMaintenance').value = room.maintenance || 0;
+      document.getElementById('formCleanFee').value = room.cleanFee || 0;
+      document.getElementById('formMoveIn').value = room.moveIn || '';
+      document.getElementById('formExpiry').value = room.expiry || '';
+      document.getElementById('formMoveOut').value = room.moveOut || '';
+
+      handleLeaseTypeChangeInForm();
+      openModal('contractModal');
+    }
+
+    function handleLeaseTypeChangeInForm() {
+      const leaseType = document.getElementById('formLeaseType').value;
+      const rentInput = document.getElementById('formRent');
+      if (leaseType === '전세') {
+        rentInput.value = 0;
+        rentInput.disabled = true;
+        rentInput.classList.add('opacity-50');
+      } else {
+        rentInput.disabled = false;
+        rentInput.classList.remove('opacity-50');
+      }
+    }
+
+    function handleContractFormSubmit(e) {
+      e.preventDefault();
+      const roomNum = appState.selectedRoom;
+      const room = appState.rooms[roomNum];
+      if (!room) return;
+
+      const leaseType = document.getElementById('formLeaseType').value;
+      room.leaseType = leaseType;
+      room.payTiming = document.getElementById('formPayTiming').value;
+      room.name = document.getElementById('formName').value.trim();
+      room.idNumber = document.getElementById('formIdNumber').value.trim();
+      room.phone = document.getElementById('formPhone').value.trim();
+      room.deposit = Number(document.getElementById('formDeposit').value || 0);
+      room.rent = leaseType === '전세' ? 0 : Number(document.getElementById('formRent').value || 0);
+      room.maintenance = Number(document.getElementById('formMaintenance').value || 0);
+      room.cleanFee = Number(document.getElementById('formCleanFee').value || 0);
+      room.moveIn = document.getElementById('formMoveIn').value;
+      room.expiry = document.getElementById('formExpiry').value;
+      room.moveOut = document.getElementById('formMoveOut').value;
+
+      saveState();
+      closeModal('contractModal');
+      renderMainView();
+    }
+
+    // -------------------------------------------------------------
+    // 7. Expense Ledger & CSV Export
+    // -------------------------------------------------------------
+    function openExpenseModal() {
+      document.getElementById('expItem').value = '';
+      document.getElementById('expAmount').value = '';
+      document.getElementById('expNote').value = '';
+      openModal('expenseModal');
+    }
+
+    function handleExpenseFormSubmit(e) {
+      e.preventDefault();
+      const item = document.getElementById('expItem').value.trim();
+      const amount = Number(document.getElementById('expAmount').value || 0);
+      const note = document.getElementById('expNote').value.trim();
+
+      appState.expenses.unshift({
+        id: Date.now(),
+        date: formattedToday,
+        item: item,
+        amount: amount,
+        note: note
+      });
+
+      saveState();
+      closeModal('expenseModal');
+      openLedgerModal();
+    }
+
+    function openLedgerModal() {
+      const container = document.getElementById('ledgerListContainer');
+      const badge = document.getElementById('ledgerTotalSumBadge');
+      container.innerHTML = '';
+
+      let totalSum = 0;
+      if (appState.expenses.length === 0) {
+        container.innerHTML = '<div class="py-8 text-center text-slate-500 text-xs">등록된 지출 내역이 없습니다.</div>';
+      } else {
+        appState.expenses.forEach(exp => {
+          totalSum += Number(exp.amount || 0);
+          const div = document.createElement('div');
+          div.className = 'p-3 rounded-xl bg-surface-850 border border-slate-800 flex items-center justify-between text-xs';
+          div.innerHTML = `
+            <div>
+              <div class="font-bold text-slate-200">${exp.item}</div>
+              <div class="text-[11px] text-slate-400 mt-0.5">${exp.date} · ${exp.note || '비고 없음'}</div>
+            </div>
+            <div class="text-right">
+              <span class="font-bold text-amber-400 font-mono text-sm">${Number(exp.amount).toLocaleString()}원</span>
+            </div>
+          `;
+          container.appendChild(div);
+        });
+      }
+
+      badge.textContent = `합계: ${totalSum.toLocaleString()}원`;
+      openModal('ledgerModal');
+    }
+
+    function exportCurrentRoomCSV() {
+      const rNum = appState.selectedRoom;
+      const r = appState.rooms[rNum];
+      if (!r) return;
+
+      let csv = "\uFEFF"; // UTF-8 BOM
+      csv += `호실,${rNum}호\n`;
+      csv += `임차인,${r.name || '공실'}\n`;
+      csv += `임차유형,${r.leaseType || '월세'}\n`;
+      csv += `납부방식,${r.payTiming || '후불'}\n`;
+      csv += `전화번호,${r.phone || ''}\n`;
+      csv += `보증금,${r.deposit || 0}\n`;
+      csv += `월세,${r.rent || 0}\n`;
+      csv += `관리비,${r.maintenance || 0}\n`;
+      csv += `계약기간,${r.moveIn || ''} ~ ${r.expiry || ''}\n\n`;
+
+      csv += "월,납부여부,납부일자,임차료,관리비,합계\n";
+      for (let m = 1; m <= 12; m++) {
+        const p = r.payments[m] || {};
+        const isPaid = p.paid ? "완납" : "미납";
+        const date = p.paidDate || "";
+        const rent = p.rent !== undefined ? p.rent : r.rent;
+        const maint = p.maintenance !== undefined ? p.maintenance : r.maintenance;
+        const sum = rent + maint;
+        csv += `${m}월,${isPaid},${date},${rent},${maint},${sum}\n`;
+      }
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `원룸_${rNum}호_납부내역_${formattedToday}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Modal Helpers
+    function openModal(id) {
+      const modal = document.getElementById(id);
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+    }
+
+    function closeModal(id) {
+      const modal = document.getElementById(id);
+      if (modal) {
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 8. Bootstrap Application
+    // -------------------------------------------------------------
+    window.onload = function() {
+      loadState();
+
+      // Populate 29 Rooms dropdown
+      const select = document.getElementById('roomSelect');
+      select.innerHTML = '';
+      ROOM_NUMBERS.forEach(room => {
+        const opt = document.createElement('option');
+        opt.value = room;
+        opt.textContent = `${room}호`;
+        select.appendChild(opt);
+      });
+
+      // Render initial view
+      renderMainView();
+    };
+  </script>
+</body>
+</html>

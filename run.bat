@@ -28,6 +28,8 @@ REM    Port 9010 - Teto vs Egen Face Analyzer
 REM    Port 9011 - Ironman Gesture Game
 REM    Port 9012 - Modern Smart Clock
 REM    Port 9013 - Retro TV VideoBooth
+REM    Port 9014 - Grammar Quest
+REM    Port 9015 - Rent Management (29-Room)
 REM ============================================================
 
 set "BASE=%~dp0"
@@ -36,8 +38,8 @@ if "%MODE%"=="" set "MODE=gateway"
 
 echo.
 echo ======================================================
-echo    MQnet 14 Multi-SaaS Integrated Platform
-echo    Unified Port Layout: 9000 ~ 9013
+echo    MQnet 17 Multi-SaaS Integrated Platform
+echo    Unified Port Layout: 9000 ~ 9015
 echo ======================================================
 echo.
 

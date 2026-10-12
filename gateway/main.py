@@ -153,6 +153,7 @@ async def subdomain_host_router_middleware(request: Request, call_next):
             "filebrowser.chicvill.store": "/filebrowser/",
             "photos.chicvill.store": "/photos/",
             "gallery.chicvill.store": "/photos/",
+            "rent.chicvill.store": "/rent/",
         }
         if host in subdomain_routes:
             return RedirectResponse(url=subdomain_routes[host], status_code=307)
@@ -371,6 +372,11 @@ if os.path.exists(ai_guide_dir):
     app.mount("/ai_guide", NoCacheStaticFiles(directory=ai_guide_dir, html=True), name="ai_guide_app")
     app.mount("/ai-guide", NoCacheStaticFiles(directory=ai_guide_dir, html=True), name="ai_guide_alias")
 
+# ── 29개실 원룸 임차료 관리 시스템 (Rent Management) ──
+rent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "rent"))
+if os.path.exists(rent_dir):
+    app.mount("/rent", NoCacheStaticFiles(directory=rent_dir, html=True), name="rent_app")
+
 gateway_static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "static"))
 if os.path.exists(gateway_static_dir):
     app.mount("/static", StaticFiles(directory=gateway_static_dir), name="gateway_static")
@@ -455,6 +461,7 @@ async def check_all_services_health():
         {"id": "n8n_deposit", "name": "농협 입금 알림판", "port": 3000, "url": f"http://{host_ip}:3000/"},
         {"id": "grammar", "name": "Grammar Quest (AI 영문법)", "port": 9014, "url": "http://127.0.0.1:9000/grammar/"},
         {"id": "ai_guide", "name": "AI 실생활 실습 가이드", "port": 9000, "url": "http://127.0.0.1:9000/ai_guide/"},
+        {"id": "rent", "name": "원룸 임차료 관리 (29개실)", "port": 9015, "url": "http://127.0.0.1:9000/rent/"},
     ]
 
     def ping_sync(s: dict) -> dict:
