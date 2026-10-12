@@ -25,8 +25,16 @@ import {
   handleContractFormSubmit,
   handleLeaseTypeChangeInForm,
   openExpenseModal,
-  handleExpenseFormSubmit,
-  openLedgerModal,
+  renderModalExpenseTable,
+  handleModalAmountInput,
+  handleModalReceiptImageUpload,
+  previewCurrentReceiptImage,
+  removeCurrentReceiptImage,
+  viewReceiptImage,
+  handleAddNewExpenseRow,
+  closeExpenseModalWithSave,
+  deleteExpenseRow,
+  exportExpenseLedgerExcel,
   exportCurrentRoomCSV,
   openVatModal,
   setVatPeriod,
@@ -107,8 +115,16 @@ window.handleContractFormSubmit = handleContractFormSubmit;
 window.handleLeaseTypeChangeInForm = handleLeaseTypeChangeInForm;
 
 window.openExpenseModal = openExpenseModal;
-window.handleExpenseFormSubmit = handleExpenseFormSubmit;
-window.openLedgerModal = openLedgerModal;
+window.renderModalExpenseTable = renderModalExpenseTable;
+window.handleModalAmountInput = handleModalAmountInput;
+window.handleModalReceiptImageUpload = handleModalReceiptImageUpload;
+window.previewCurrentReceiptImage = previewCurrentReceiptImage;
+window.removeCurrentReceiptImage = removeCurrentReceiptImage;
+window.viewReceiptImage = viewReceiptImage;
+window.handleAddNewExpenseRow = handleAddNewExpenseRow;
+window.closeExpenseModalWithSave = closeExpenseModalWithSave;
+window.deleteExpenseRow = deleteExpenseRow;
+window.exportExpenseLedgerExcel = exportExpenseLedgerExcel;
 window.exportCurrentRoomCSV = exportCurrentRoomCSV;
 
 window.openTenantHistoryModal = openTenantHistoryModal;

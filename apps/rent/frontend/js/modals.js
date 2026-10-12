@@ -4,7 +4,7 @@
  */
 
 import { state, formattedToday, saveLocalFallback, setAuthUser, clearAuthUser, getAuthSessionInfo, touchAuthSession, fillTenantPaymentsState, parseDateComponents } from './state.js?v=2.0';
-import { apiUpdateContract, apiCreateExpense, apiRequestUpgrade, apiGetVatReport, apiGetVatSettings, apiSaveVatSettings, apiCreateBranch, apiGetTenantHistories, apiBatchImportRooms, apiOcrImportImage, apiAdminLogin, apiFillTenantPayments } from './api.js?v=2.0';
+import { apiUpdateContract, apiCreateExpense, apiDeleteExpense, apiRequestUpgrade, apiGetVatReport, apiGetVatSettings, apiSaveVatSettings, apiCreateBranch, apiGetTenantHistories, apiBatchImportRooms, apiOcrImportImage, apiAdminLogin, apiFillTenantPayments } from './api.js?v=2.0';
 import { renderAll, switchBranch } from './ui.js?v=2.0';
 
 export function openModal(id) {
@@ -106,72 +106,334 @@ export async function handleContractFormSubmit(e) {
   }
 }
 
-// ── 지출 모달 & 장부 ──
+// ── 지출 모달 & 엑셀 장부 제어 ──
+let currentReceiptPhotoBase64 = '';
+
 export function openExpenseModal() {
-  document.getElementById('expItem').value = '';
-  document.getElementById('expAmount').value = '';
-  document.getElementById('expNote').value = '';
+  currentReceiptPhotoBase64 = '';
+  const dateInput = document.getElementById('newExpDate');
+  const itemInput = document.getElementById('newExpItem');
+  const amountInput = document.getElementById('newExpAmount');
+  const receiptTypeInput = document.getElementById('newExpReceiptType');
+  const receiptNoteInput = document.getElementById('newExpReceiptNote');
+  const receiptFileInput = document.getElementById('newExpReceiptFileInput');
+
+  if (dateInput) dateInput.value = formattedToday;
+  if (itemInput) itemInput.value = '';
+  if (amountInput) amountInput.value = '';
+  if (receiptTypeInput) receiptTypeInput.value = '카드';
+  if (receiptNoteInput) receiptNoteInput.value = '';
+  if (receiptFileInput) receiptFileInput.value = '';
+  removeCurrentReceiptImage();
+
+  renderModalExpenseTable();
   openModal('expenseModal');
 }
 
-export async function handleExpenseFormSubmit(e) {
-  e.preventDefault();
-  const item = document.getElementById('expItem').value.trim();
-  const amount = Number(document.getElementById('expAmount').value || 0);
-  const note = document.getElementById('expNote').value.trim();
+export function renderModalExpenseTable() {
+  const tbody = document.getElementById('modalExpenseTableBody');
+  const tfoot = document.getElementById('modalExpenseTableFoot');
+  const branchBadge = document.getElementById('modalExpenseBranchBadge');
+  const totalSumBadge = document.getElementById('modalExpenseTotalSumBadge');
+  if (!tbody) return;
+  tbody.innerHTML = '';
 
-  const payload = {
-    date: formattedToday,
-    item: item,
-    amount: amount,
-    note: note
-  };
+  const branchObj = state.branches.find(b => b.branch_id === state.currentBranch);
+  const branchName = branchObj ? branchObj.name : '시크빌';
+  if (branchBadge) branchBadge.textContent = branchName;
 
-  try {
-    if (state.isOnline) {
-      const res = await apiCreateExpense(payload, state.currentBranch);
-      state.expenses.unshift(res);
-    } else {
-      payload.id = Date.now().toString();
-      state.expenses.unshift(payload);
-    }
-    saveLocalFallback();
-    closeModal('expenseModal');
-    renderAll();
-  } catch (err) {
-    alert("지출 등록 실패: " + err.message);
-  }
-}
+  const expenses = (state.expenses || []).filter(e => !e.branch_id || e.branch_id === state.currentBranch);
 
-export function openLedgerModal() {
-  const container = document.getElementById('ledgerListContainer');
-  const badge = document.getElementById('ledgerTotalSumBadge');
-  if (!container || !badge) return;
-  container.innerHTML = '';
+  // 시간순 정렬로 누적 합계 계산
+  const sorted = [...expenses].sort((a, b) => {
+    const diff = (a.date || '').localeCompare(b.date || '');
+    if (diff !== 0) return diff;
+    return String(a.id || '').localeCompare(String(b.id || ''));
+  });
 
-  let totalSum = 0;
-  if (state.expenses.length === 0) {
-    container.innerHTML = '<div class="py-8 text-center text-slate-500 text-xs">등록된 지출 내역이 없습니다.</div>';
+  let running = 0;
+  const withRunning = sorted.map((exp, idx) => {
+    running += Number(exp.amount || 0);
+    return { ...exp, runningTotal: running, rowIdx: idx + 1 };
+  });
+
+  window._modalExpenseBaseSum = running;
+
+  if (withRunning.length === 0) {
+    const emptyTr = document.createElement('tr');
+    emptyTr.innerHTML = `
+      <td colspan="6" class="py-5 text-center text-slate-500 text-xs font-sans">
+        등록된 지출 내역이 없습니다. 아래 빈칸에서 일자, 적요, 금액, 영수증을 입력 후 <b>[➕ 추가]</b>를 누르세요.
+      </td>
+    `;
+    tbody.appendChild(emptyTr);
   } else {
-    state.expenses.forEach(exp => {
-      totalSum += Number(exp.amount || 0);
-      const div = document.createElement('div');
-      div.className = 'p-3 rounded-xl bg-surface-850 border border-slate-800 flex items-center justify-between text-xs';
-      div.innerHTML = `
-        <div>
-          <div class="font-bold text-slate-200">${exp.item}</div>
-          <div class="text-[11px] text-slate-400 mt-0.5">${exp.date} · ${exp.note || '비고 없음'}</div>
-        </div>
-        <div class="text-right">
-          <span class="font-bold text-amber-400 font-mono text-sm">${Number(exp.amount).toLocaleString()}원</span>
-        </div>
+    // 최신 항목이 상단에 오도록 역순 표시하되, 행 누적합계는 발생시점 기준 완벽 유지
+    const displayList = [...withRunning].reverse();
+    displayList.forEach(exp => {
+      const tr = document.createElement('tr');
+      tr.className = 'border-b border-slate-800/60 hover:bg-surface-850/60 transition text-xs';
+
+      const noteText = exp.note ? ` <span class="text-[10px] text-slate-400 font-sans">(${exp.note})</span>` : '';
+      const rType = exp.receipt_type || '영수증';
+      const isPhoto = exp.receipt_info && (exp.receipt_info.startsWith('data:image/') || exp.receipt_info.startsWith('http'));
+
+      const photoBtn = isPhoto
+        ? `<button type="button" onclick="viewReceiptImage('${exp.id}')" class="ml-1 px-1.5 py-0.5 rounded bg-cyan-950 border border-cyan-500/60 text-[10px] text-cyan-300 font-bold hover:bg-cyan-900 cursor-pointer shadow-xs active:scale-95" title="영수증 사진 확대">📷 보기</button>`
+        : '';
+
+      tr.innerHTML = `
+        <td class="py-2.5 px-3 text-center text-slate-300 font-mono whitespace-nowrap border-r border-slate-800">${exp.date || '-'}</td>
+        <td class="py-2.5 px-3 text-left font-sans text-slate-200 border-r border-slate-800">${exp.item || '-'}${noteText}</td>
+        <td class="py-2.5 px-3 text-right font-mono font-bold text-amber-400 whitespace-nowrap border-r border-slate-800">${Number(exp.amount || 0).toLocaleString()}원</td>
+        <td class="py-2.5 px-3 text-center border-r border-slate-800 whitespace-nowrap">
+          <span class="inline-flex items-center gap-1">
+            <span class="px-1.5 py-0.5 rounded bg-surface-800 border border-slate-700 text-[10px] text-slate-300 font-sans">${rType}</span>
+            ${photoBtn}
+          </span>
+        </td>
+        <td class="py-2.5 px-3 text-right font-mono font-bold text-cyan-400 whitespace-nowrap border-r border-slate-800">${Number(exp.runningTotal || 0).toLocaleString()}원</td>
+        <td class="py-2 px-1 text-center whitespace-nowrap">
+          <button type="button" onclick="deleteExpenseRow('${exp.id}')" class="p-1 rounded text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 transition cursor-pointer" title="삭제">🗑️</button>
+        </td>
       `;
-      container.appendChild(div);
+      tbody.appendChild(tr);
     });
   }
 
-  badge.textContent = `합계: ${totalSum.toLocaleString()}원`;
-  openModal('ledgerModal');
+  // 테이블 푸터 요약 행
+  if (tfoot) {
+    tfoot.innerHTML = `
+      <tr>
+        <td class="py-2.5 px-3 text-center border-r border-slate-700 text-slate-300 font-bold">합계</td>
+        <td class="py-2.5 px-3 text-left border-r border-slate-700 text-slate-400 font-sans">총 ${withRunning.length}건 지출 누계</td>
+        <td class="py-2.5 px-3 text-right border-r border-slate-700 text-amber-400 font-mono font-bold">${running.toLocaleString()}원</td>
+        <td class="py-2.5 px-3 text-center border-r border-slate-700 text-slate-400 text-[10px]">-</td>
+        <td class="py-2.5 px-3 text-right border-r border-slate-700 text-cyan-400 font-mono font-bold">${running.toLocaleString()}원</td>
+        <td class="py-2.5 px-1 text-center"></td>
+      </tr>
+    `;
+  }
+
+  if (totalSumBadge) {
+    totalSumBadge.textContent = `${running.toLocaleString()}원`;
+  }
+
+  handleModalAmountInput();
+}
+
+export function handleModalAmountInput() {
+  const base = window._modalExpenseBaseSum || 0;
+  const inputAmt = Number(document.getElementById('newExpAmount')?.value || 0);
+  const total = base + inputAmt;
+
+  const display = document.getElementById('newExpRunningTotalDisplay');
+  if (display) {
+    display.textContent = `${total.toLocaleString()}원`;
+  }
+
+  const topBadge = document.getElementById('modalExpenseTotalSumBadge');
+  if (topBadge) {
+    topBadge.textContent = `${total.toLocaleString()}원`;
+  }
+}
+
+export function handleModalReceiptImageUpload(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    alert('이미지 파일(JPG, PNG 등)만 첨부할 수 있습니다.');
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    alert('영수증 사진은 5MB 이하 파일만 첨부 가능합니다.');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    currentReceiptPhotoBase64 = evt.target.result;
+    const thumbBox = document.getElementById('newExpReceiptThumbBox');
+    const thumbImg = document.getElementById('newExpReceiptThumbImg');
+    if (thumbBox && thumbImg) {
+      thumbImg.src = currentReceiptPhotoBase64;
+      thumbBox.classList.remove('hidden');
+      thumbBox.classList.add('flex');
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+export function previewCurrentReceiptImage() {
+  if (!currentReceiptPhotoBase64) return;
+  const modalImg = document.getElementById('receiptViewerImg');
+  const modalTitle = document.getElementById('receiptViewerTitle');
+  if (modalImg) modalImg.src = currentReceiptPhotoBase64;
+  if (modalTitle) modalTitle.textContent = '📷 첨부된 영수증 미리보기';
+  openModal('receiptViewerModal');
+}
+
+export function removeCurrentReceiptImage() {
+  currentReceiptPhotoBase64 = '';
+  const fileInput = document.getElementById('newExpReceiptFileInput');
+  if (fileInput) fileInput.value = '';
+  const thumbBox = document.getElementById('newExpReceiptThumbBox');
+  if (thumbBox) {
+    thumbBox.classList.remove('flex');
+    thumbBox.classList.add('hidden');
+  }
+}
+
+export function viewReceiptImage(expenseId) {
+  const exp = (state.expenses || []).find(e => String(e.id) === String(expenseId));
+  if (!exp || !exp.receipt_info) {
+    alert('등록된 영수증 이미지가 없습니다.');
+    return;
+  }
+  const modalImg = document.getElementById('receiptViewerImg');
+  const modalTitle = document.getElementById('receiptViewerTitle');
+  if (modalImg) modalImg.src = exp.receipt_info;
+  if (modalTitle) modalTitle.textContent = `📷 ${exp.item} (${exp.date}) 영수증`;
+  openModal('receiptViewerModal');
+}
+
+export async function handleAddNewExpenseRow() {
+  const dateInput = document.getElementById('newExpDate');
+  const itemInput = document.getElementById('newExpItem');
+  const amountInput = document.getElementById('newExpAmount');
+  const receiptTypeInput = document.getElementById('newExpReceiptType');
+  const receiptNoteInput = document.getElementById('newExpReceiptNote');
+
+  const dateVal = (dateInput?.value || formattedToday).trim();
+  const itemVal = (itemInput?.value || '').trim();
+  const amountVal = Number(amountInput?.value || 0);
+  const receiptTypeVal = (receiptTypeInput?.value || '카드').trim();
+  const receiptNoteVal = (receiptNoteInput?.value || '').trim();
+
+  if (!itemVal) {
+    alert('지출 적요(항목명 또는 사용처)를 입력해주세요.');
+    itemInput?.focus();
+    return false;
+  }
+  if (!amountVal || amountVal <= 0) {
+    alert('지출 금액을 0원보다 크게 입력해주세요.');
+    amountInput?.focus();
+    return false;
+  }
+
+  const payload = {
+    date: dateVal,
+    item: itemVal,
+    amount: amountVal,
+    note: receiptNoteVal,
+    receipt_type: receiptTypeVal,
+    receipt_info: currentReceiptPhotoBase64 || receiptNoteVal
+  };
+
+  try {
+    let created;
+    if (state.isOnline) {
+      created = await apiCreateExpense(payload, state.currentBranch);
+    } else {
+      created = {
+        ...payload,
+        id: 'exp_' + Date.now(),
+        branch_id: state.currentBranch
+      };
+    }
+    state.expenses.unshift(created);
+    saveLocalFallback();
+
+    // 입력 필드 초기화 (다음 행 연속 입력 대기)
+    if (itemInput) itemInput.value = '';
+    if (amountInput) amountInput.value = '';
+    if (receiptNoteInput) receiptNoteInput.value = '';
+    removeCurrentReceiptImage();
+
+    renderModalExpenseTable();
+    renderAll();
+
+    itemInput?.focus();
+    return true;
+  } catch (err) {
+    alert('지출 등록 실패: ' + err.message);
+    return false;
+  }
+}
+
+export async function closeExpenseModalWithSave() {
+  const itemInput = document.getElementById('newExpItem');
+  const amountInput = document.getElementById('newExpAmount');
+  const itemVal = (itemInput?.value || '').trim();
+  const amountVal = Number(amountInput?.value || 0);
+
+  // 빈칸에 입력 중인 내용이 있으면 자동 저장 후 닫기
+  if (itemVal && amountVal > 0) {
+    await handleAddNewExpenseRow();
+  }
+
+  closeModal('expenseModal');
+  renderAll();
+}
+
+export async function deleteExpenseRow(expenseId) {
+  if (!confirm('해당 지출 내역을 삭제하시겠습니까?')) return;
+  try {
+    if (state.isOnline) {
+      await apiDeleteExpense(expenseId, state.currentBranch);
+    }
+    state.expenses = (state.expenses || []).filter(e => String(e.id) !== String(expenseId));
+    saveLocalFallback();
+    renderModalExpenseTable();
+    renderAll();
+  } catch (err) {
+    alert('지출 내역 삭제 실패: ' + err.message);
+  }
+}
+
+export function exportExpenseLedgerExcel() {
+  const branchObj = state.branches.find(b => b.branch_id === state.currentBranch);
+  const branchName = branchObj ? branchObj.name : '시크빌';
+  const expenses = (state.expenses || []).filter(e => !e.branch_id || e.branch_id === state.currentBranch);
+
+  if (expenses.length === 0) {
+    alert("내보낼 지출 장부 내역이 없습니다.");
+    return;
+  }
+
+  const sorted = [...expenses].sort((a, b) => {
+    const diff = (a.date || '').localeCompare(b.date || '');
+    if (diff !== 0) return diff;
+    return String(a.id || '').localeCompare(String(b.id || ''));
+  });
+
+  let running = 0;
+  let csv = "\uFEFF"; // UTF-8 BOM for Excel
+  csv += `건물명,${branchName}\n`;
+  csv += `보고서명,지출 장부 내역\n`;
+  csv += `출력일자,${formattedToday}\n`;
+  csv += `총 지출건수,${sorted.length}건\n\n`;
+
+  csv += "순번,일자,적요 (항목/사용처),금액,영수증구분,영수증정보/메모,누적합계\n";
+  sorted.forEach((exp, idx) => {
+    running += Number(exp.amount || 0);
+    const itemSafe = `"${(exp.item || '').replace(/"/g, '""')}"`;
+    const receiptTypeSafe = `"${(exp.receipt_type || '영수증').replace(/"/g, '""')}"`;
+    const receiptInfoSafe = `"${(exp.note || (exp.receipt_info && exp.receipt_info.startsWith('data:') ? '사진첨부' : exp.receipt_info) || '').replace(/"/g, '""')}"`;
+    csv += `${idx + 1},${exp.date || ''},${itemSafe},${Number(exp.amount || 0)},${receiptTypeSafe},${receiptInfoSafe},${running}\n`;
+  });
+
+  csv += `\n합계,,총 ${sorted.length}건,${running},,,${running}\n`;
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `${branchName.replace(/\s+/g, '_')}_지출장부내역_${formattedToday}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 // ── CSV 엑셀 내보내기 ──

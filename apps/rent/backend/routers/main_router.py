@@ -279,8 +279,22 @@ async def create_expense(
     branch_id: str = Query("main"),
     db: Session = Depends(get_db)
 ):
-    """오늘 지출 추가"""
+    """지출 항목 추가"""
     return service.create_expense(db, payload, branch_id=branch_id)
+
+
+@router.delete("/expenses/{expense_id}")
+async def delete_expense(
+    expense_id: str,
+    branch_id: str = Query("main"),
+    db: Session = Depends(get_db)
+):
+    """지출 항목 삭제"""
+    deleted = service.delete_expense(db, expense_id=expense_id, branch_id=branch_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="해당 지출 내역을 찾을 수 없습니다.")
+    return {"success": True, "message": "지출 내역이 삭제되었습니다."}
+
 
 
 # ── 부가가치세(VAT) 기간별 수납 집계 보고서 라우트 ──

@@ -380,10 +380,16 @@
             <span class="text-[11px] text-slate-400">엑셀 장부 규격 (일자 · 적요 · 금액 · 합계)</span>
           </div>
         </div>
-        <!-- Right Badges -->
-        <div class="flex items-center gap-1.5">
-          <span class="text-[11px] text-slate-400 sm:inline hidden">누적 합계:</span>
-          <span id="expenseLedgerTotalBadge" class="text-xs font-mono font-bold text-amber-400 bg-amber-950/60 border border-amber-800/60 px-2.5 py-1 rounded-xl">0원</span>
+        <!-- Right Badges & Actions -->
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="exportExpenseLedgerExcel()" class="px-2.5 py-1 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/40 border border-emerald-500/50 text-emerald-300 font-bold text-xs flex items-center gap-1 transition cursor-pointer active:scale-95" title="지출 장부 엑셀(CSV) 다운로드">
+            <span>📊</span>
+            <span>엑셀 내보내기</span>
+          </button>
+          <div class="flex items-center gap-1">
+            <span class="text-[11px] text-slate-400 sm:inline hidden">누적 합계:</span>
+            <span id="expenseLedgerTotalBadge" class="text-xs font-mono font-bold text-amber-400 bg-amber-950/60 border border-amber-800/60 px-2.5 py-1 rounded-xl">0원</span>
+          </div>
         </div>
       </div>
 
@@ -395,6 +401,7 @@
               <th class="py-2.5 px-3 text-center border-r border-slate-700 w-28 whitespace-nowrap">일자</th>
               <th class="py-2.5 px-3 text-left border-r border-slate-700 min-w-[140px] whitespace-nowrap">적요 (항목 / 비고)</th>
               <th class="py-2.5 px-3 text-right border-r border-slate-700 w-28 whitespace-nowrap">금액</th>
+              <th class="py-2.5 px-3 text-center border-r border-slate-700 w-32 whitespace-nowrap">영수증</th>
               <th class="py-2.5 px-3 text-right w-28 whitespace-nowrap">합계</th>
             </tr>
           </thead>
@@ -500,55 +507,135 @@
     </div>
   </div>
 
-  <!-- 2. Expense Modal -->
-  <div id="expenseModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-50 hidden items-center justify-center p-3">
-    <div class="bg-surface-900 border border-slate-800 rounded-2xl max-w-sm w-full p-4 shadow-2xl">
-      <div class="flex items-center justify-between pb-2 border-b border-slate-800">
-        <h3 class="text-sm font-bold text-white flex items-center gap-1.5">💰 오늘 지출 추가</h3>
-        <button type="button" onclick="closeModal('expenseModal')" class="text-slate-400 hover:text-white font-bold">✕</button>
+  <!-- 2. 지출 장부 내역 및 지출 등록 모달 (Excel-style) -->
+  <div id="expenseModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-50 hidden items-center justify-center p-2 sm:p-4">
+    <div class="bg-surface-900 border border-slate-700/80 rounded-2xl max-w-4xl w-full p-4 sm:p-5 shadow-2xl flex flex-col max-h-[92vh]">
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">📒</span>
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+              <span>지출 장부 내역 및 등록</span>
+              <span id="modalExpenseBranchBadge" class="text-xs text-cyan-400 font-normal bg-cyan-950/60 border border-cyan-800/60 px-2 py-0.5 rounded-md">시크빌</span>
+            </h3>
+            <p class="text-[11px] text-slate-400">엑셀 장부 규격 (일자 · 적요 · 금액 · 영수증 · 누계) | 하단 빈칸에서 즉시 입력</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="text-right">
+            <span class="text-[10px] text-slate-400 block">총 누적 합계</span>
+            <span id="modalExpenseTotalSumBadge" class="text-sm sm:text-base text-amber-400 font-bold font-mono">0원</span>
+          </div>
+          <button type="button" onclick="closeExpenseModalWithSave()" class="w-8 h-8 rounded-lg bg-surface-800 hover:bg-surface-750 text-slate-400 hover:text-white flex items-center justify-center font-bold text-base cursor-pointer">✕</button>
+        </div>
       </div>
 
-      <form onsubmit="handleExpenseFormSubmit(event)" class="space-y-3 mt-3 text-xs">
-        <div>
-          <label class="block text-slate-400 mb-1">지출 항목명</label>
-          <input type="text" id="expItem" required placeholder="예: 3층 센서등 LED 교체" class="w-full bg-surface-800 border border-slate-700 rounded-lg p-2 text-slate-200">
-        </div>
-        <div>
-          <label class="block text-slate-400 mb-1">지출 금액 (원)</label>
-          <input type="number" id="expAmount" required step="100" placeholder="예: 25000" class="w-full bg-surface-800 border border-slate-700 rounded-lg p-2 text-slate-200 font-mono">
-        </div>
-        <div>
-          <label class="block text-slate-400 mb-1">비고 (영수증 메모 등)</label>
-          <input type="text" id="expNote" placeholder="예: 관리실 영수증 보관" class="w-full bg-surface-800 border border-slate-700 rounded-lg p-2 text-slate-200">
-        </div>
+      <!-- Excel Table Container -->
+      <div class="flex-1 overflow-x-auto overflow-y-auto my-3 border border-slate-800 rounded-xl bg-surface-950/70">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead class="sticky top-0 z-20">
+            <tr class="bg-surface-850 text-slate-300 border-b border-slate-700 text-[11px] font-semibold whitespace-nowrap">
+              <th class="py-2.5 px-3 text-center border-r border-slate-700 w-28 whitespace-nowrap">일자</th>
+              <th class="py-2.5 px-3 text-left border-r border-slate-700 min-w-[160px] whitespace-nowrap">적요 (항목 / 사용처)</th>
+              <th class="py-2.5 px-3 text-right border-r border-slate-700 w-28 whitespace-nowrap">금액</th>
+              <th class="py-2.5 px-3 text-center border-r border-slate-700 min-w-[160px] whitespace-nowrap">영수증 정보 (카드/현금/사진)</th>
+              <th class="py-2.5 px-3 text-right border-r border-slate-700 w-28 whitespace-nowrap">누계</th>
+              <th class="py-2.5 px-2 text-center w-14 whitespace-nowrap">관리</th>
+            </tr>
+          </thead>
+          <tbody id="modalExpenseTableBody" class="divide-y divide-slate-800/60 font-mono">
+            <!-- Dynamic existing rows rendered by JS -->
+          </tbody>
+          <!-- 맨 아래 빈칸 입력행 (하단에 고정 또는 마지막 행) -->
+          <tbody id="modalExpenseInputBody" class="bg-surface-850/95 border-t-2 border-cyan-500/60 font-sans">
+            <tr class="bg-cyan-950/20">
+              <!-- 일자 -->
+              <td class="p-2 border-r border-slate-700 text-center">
+                <input type="date" id="newExpDate" class="w-full bg-surface-900 border border-slate-600 rounded px-1.5 py-1 text-xs text-white font-mono focus:border-cyan-400">
+              </td>
+              <!-- 적요 -->
+              <td class="p-2 border-r border-slate-700">
+                <input type="text" id="newExpItem" placeholder="적요 입력 (예: 복도등 교체)" class="w-full bg-surface-900 border border-slate-600 rounded px-2 py-1 text-xs text-white placeholder-slate-500 focus:border-cyan-400">
+              </td>
+              <!-- 금액 -->
+              <td class="p-2 border-r border-slate-700">
+                <input type="number" id="newExpAmount" step="100" placeholder="0" oninput="handleModalAmountInput()" class="w-full bg-surface-900 border border-amber-500/60 rounded px-2 py-1 text-xs text-amber-300 font-mono text-right font-bold focus:border-amber-400">
+              </td>
+              <!-- 영수증 -->
+              <td class="p-2 border-r border-slate-700">
+                <div class="flex flex-col gap-1">
+                  <div class="flex items-center gap-1">
+                    <select id="newExpReceiptType" class="bg-surface-900 border border-slate-600 rounded px-1.5 py-1 text-[11px] text-cyan-300 font-sans">
+                      <option value="카드">💳 카드</option>
+                      <option value="현금영수증">🧾 현금영수증</option>
+                      <option value="세금계산서">📄 세금계산서</option>
+                      <option value="간이영수증">📝 간이영수증</option>
+                      <option value="영수증사진">📷 영수증사진</option>
+                      <option value="기타">기타</option>
+                    </select>
+                    <input type="file" id="newExpReceiptFileInput" accept="image/*" class="hidden" onchange="handleModalReceiptImageUpload(event)">
+                    <button type="button" onclick="document.getElementById('newExpReceiptFileInput').click()" class="px-2 py-1 bg-surface-750 hover:bg-surface-700 border border-slate-600 rounded text-[11px] text-slate-300 flex items-center gap-1 cursor-pointer whitespace-nowrap active:scale-95" title="영수증 사진 첨부">
+                      <span>📷 첨부</span>
+                    </button>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <input type="text" id="newExpReceiptNote" placeholder="메모/승인번호" class="w-full bg-surface-900 border border-slate-600 rounded px-1.5 py-0.5 text-[10px] text-slate-300 placeholder-slate-500">
+                    <div id="newExpReceiptThumbBox" class="hidden items-center gap-1">
+                      <img id="newExpReceiptThumbImg" src="" alt="영수증" class="w-5 h-5 rounded object-cover border border-cyan-400 cursor-pointer" onclick="previewCurrentReceiptImage()">
+                      <button type="button" onclick="removeCurrentReceiptImage()" class="text-rose-400 hover:text-rose-300 font-bold text-[10px]" title="사진 삭제">✕</button>
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <!-- 누계 (실시간 자동 계산) -->
+              <td class="p-2 border-r border-slate-700 text-right">
+                <span id="newExpRunningTotalDisplay" class="font-mono font-bold text-cyan-400 text-xs whitespace-nowrap">0원</span>
+              </td>
+              <!-- 추가 버튼 -->
+              <td class="p-2 text-center">
+                <button type="button" onclick="handleAddNewExpenseRow()" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-xs whitespace-nowrap shadow cursor-pointer active:scale-95" title="한 줄 추가">
+                  ➕ 추가
+                </button>
+              </td>
+            </tr>
+          </tbody>
+          <tfoot id="modalExpenseTableFoot" class="bg-surface-850 text-slate-200 border-t-2 border-slate-700 text-[11px] font-bold sticky bottom-0">
+          </tfoot>
+        </table>
+      </div>
 
-        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
-          <button type="button" onclick="closeModal('expenseModal')" class="px-3.5 py-1.5 rounded-xl bg-surface-800 text-slate-300">취소</button>
-          <button type="submit" class="px-4 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold">등록</button>
+      <!-- Footer Action Bar -->
+      <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
+        <button type="button" onclick="exportExpenseLedgerExcel()" class="px-3 py-1.5 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/40 border border-emerald-500/50 text-emerald-300 font-bold flex items-center gap-1 active:scale-95 cursor-pointer" title="엑셀(CSV) 파일로 저장">
+          <span>📊</span>
+          <span>엑셀 내보내기</span>
+        </button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="handleAddNewExpenseRow()" class="px-3.5 py-1.5 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/40 border border-emerald-500/50 text-emerald-300 font-bold flex items-center gap-1 active:scale-95 cursor-pointer">
+            <span>➕</span>
+            <span>한 줄 추가</span>
+          </button>
+          <button type="button" onclick="closeExpenseModalWithSave()" class="px-4 py-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold shadow-md active:scale-95 cursor-pointer">
+            저장 후 닫기
+          </button>
         </div>
-      </form>
+      </div>
     </div>
   </div>
 
-  <!-- 3. Ledger Modal -->
-  <div id="ledgerModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-50 hidden items-center justify-center p-3">
-    <div class="bg-surface-900 border border-slate-800 rounded-2xl max-w-lg w-full p-4 shadow-2xl flex flex-col max-h-[85vh]">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-        <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-1.5">📒 건물 운영 지출 장부</h3>
-        <button type="button" onclick="closeModal('ledgerModal')" class="text-slate-400 hover:text-white font-bold">✕</button>
+  <!-- 3. 영수증 원본 사진 뷰어 모달 -->
+  <div id="receiptViewerModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-xs z-60 hidden items-center justify-center p-3">
+    <div class="bg-surface-900 border border-slate-700 rounded-2xl max-w-lg w-full p-4 shadow-2xl flex flex-col max-h-[90vh]">
+      <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+        <h4 id="receiptViewerTitle" class="text-sm font-bold text-white flex items-center gap-1.5">📷 영수증 원본</h4>
+        <button type="button" onclick="closeModal('receiptViewerModal')" class="text-slate-400 hover:text-white font-bold text-sm">✕</button>
       </div>
-
-      <div class="py-2 flex items-center justify-between border-b border-slate-800/80 text-xs">
-        <span class="text-slate-400">지출 누적 합계</span>
-        <span id="ledgerTotalSumBadge" class="text-amber-400 font-bold font-mono text-sm">0원</span>
+      <div class="flex-1 overflow-auto p-2 flex items-center justify-center">
+        <img id="receiptViewerImg" src="" alt="영수증 원본" class="max-h-[70vh] rounded-lg object-contain shadow">
       </div>
-
-      <div id="ledgerListContainer" class="flex-1 overflow-y-auto space-y-2 py-3">
-        <!-- Rendered by JS -->
-      </div>
-
       <div class="pt-2 border-t border-slate-800 flex justify-end">
-        <button type="button" onclick="closeModal('ledgerModal')" class="px-4 py-1.5 rounded-xl bg-surface-800 text-slate-300 text-xs">닫기</button>
+        <button type="button" onclick="closeModal('receiptViewerModal')" class="px-3.5 py-1.5 rounded-xl bg-surface-800 text-slate-300 text-xs">닫기</button>
       </div>
     </div>
   </div>

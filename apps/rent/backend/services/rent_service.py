@@ -552,12 +552,25 @@ class RentService:
             date=data.date,
             item=data.item,
             amount=data.amount,
-            note=data.note or ""
+            note=data.note or "",
+            receipt_type=data.receipt_type or "",
+            receipt_info=data.receipt_info or ""
         )
         db.add(exp)
         db.commit()
         db.refresh(exp)
         return exp
+
+    def delete_expense(self, db: Session, expense_id: str, branch_id: str = "main") -> bool:
+        exp = db.query(RentExpense).filter(
+            RentExpense.id == expense_id,
+            RentExpense.branch_id == branch_id
+        ).first()
+        if exp:
+            db.delete(exp)
+            db.commit()
+            return True
+        return False
 
     def list_branches(self, db: Session, active_only: bool = False) -> List[RentBranch]:
         self.ensure_default_seed(db)

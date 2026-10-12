@@ -152,6 +152,8 @@ class ExpenseCreate(BaseModel):
     item: str
     amount: int
     note: Optional[str] = ""
+    receipt_type: Optional[str] = ""
+    receipt_info: Optional[str] = ""
 
 
 class ExpenseResponse(BaseModel):
@@ -161,6 +163,8 @@ class ExpenseResponse(BaseModel):
     item: str
     amount: int
     note: str
+    receipt_type: Optional[str] = ""
+    receipt_info: Optional[str] = ""
 
     class Config:
         from_attributes = True

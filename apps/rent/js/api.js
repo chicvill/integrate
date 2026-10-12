@@ -107,7 +107,8 @@ export const paymentsApi = {
 
 export const expensesApi = {
   list: (branchId = 'main') => http.get('/expenses', { branch_id: branchId }),
-  create: (data, branchId = 'main') => http.post('/expenses', data, { branch_id: branchId })
+  create: (data, branchId = 'main') => http.post('/expenses', data, { branch_id: branchId }),
+  delete: (expenseId, branchId = 'main') => http.delete(`/expenses/${expenseId}`, { branch_id: branchId })
 };
 
 export const historiesApi = {
@@ -177,6 +178,7 @@ export const apiCancelPayment = paymentsApi.cancel;
 
 export const apiGetExpenses = expensesApi.list;
 export const apiCreateExpense = expensesApi.create;
+export const apiDeleteExpense = expensesApi.delete;
 
 export const apiGetTenantHistories = historiesApi.list;
 

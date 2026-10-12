@@ -115,6 +115,8 @@ class RentExpense(Base, TimestampMixin):
     item: Mapped[str] = mapped_column(String(200), nullable=False)
     amount: Mapped[int] = mapped_column(Integer, default=0)
     note: Mapped[str] = mapped_column(String(200), default="")
+    receipt_type: Mapped[str] = mapped_column(String(50), default="")
+    receipt_info: Mapped[str] = mapped_column(Text, default="")
 
 
 class RentUpgradeRequest(Base, TimestampMixin):

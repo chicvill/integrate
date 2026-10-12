@@ -507,7 +507,7 @@ export function renderExpenseLedgerSection() {
   if (expenses.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="4" class="py-6 text-center text-slate-500 text-xs font-sans">
+        <td colspan="5" class="py-6 text-center text-slate-500 text-xs font-sans">
           등록된 지출 내역이 없습니다. 상단 <b>[💰 지출 등록]</b> 버튼으로 경비를 등록하세요.
         </td>
       </tr>
@@ -536,10 +536,22 @@ export function renderExpenseLedgerSection() {
     const tr = document.createElement('tr');
     tr.className = 'border-b border-slate-800/60 hover:bg-surface-850/60 transition text-xs';
     const noteText = exp.note ? ` <span class="text-[11px] text-slate-400">(${exp.note})</span>` : '';
+    const rType = exp.receipt_type || '영수증';
+    const isPhoto = exp.receipt_info && (exp.receipt_info.startsWith('data:image/') || exp.receipt_info.startsWith('http'));
+    const photoBtn = isPhoto
+      ? `<button type="button" onclick="viewReceiptImage('${exp.id}')" class="ml-1 px-1.5 py-0.5 rounded bg-cyan-950 border border-cyan-500/60 text-[10px] text-cyan-300 font-bold hover:bg-cyan-900 cursor-pointer shadow-xs active:scale-95" title="영수증 사진 확대">📷 보기</button>`
+      : '';
+
     tr.innerHTML = `
       <td class="py-2.5 px-3 text-center text-slate-300 font-mono whitespace-nowrap">${exp.date || '-'}</td>
       <td class="py-2.5 px-3 text-left font-sans text-slate-200">${exp.item || '-'}${noteText}</td>
       <td class="py-2.5 px-3 text-right font-mono font-bold text-amber-400 whitespace-nowrap">${Number(exp.amount || 0).toLocaleString()}원</td>
+      <td class="py-2.5 px-3 text-center whitespace-nowrap">
+        <span class="inline-flex items-center gap-1">
+          <span class="px-1.5 py-0.5 rounded bg-surface-800 border border-slate-700 text-[10px] text-slate-300 font-sans">${rType}</span>
+          ${photoBtn}
+        </span>
+      </td>
       <td class="py-2.5 px-3 text-right font-mono font-bold text-cyan-400 whitespace-nowrap">${Number(exp.runningTotal || 0).toLocaleString()}원</td>
     `;
     tbody.appendChild(tr);
@@ -552,6 +564,7 @@ export function renderExpenseLedgerSection() {
         <td class="py-2.5 px-3 text-center border-r border-slate-700 text-slate-300 font-bold">합계</td>
         <td class="py-2.5 px-3 text-left border-r border-slate-700 text-slate-400 font-sans">총 ${expenses.length}건 지출 누계</td>
         <td class="py-2.5 px-3 text-right border-r border-slate-700 text-amber-400 font-mono font-bold">${running.toLocaleString()}원</td>
+        <td class="py-2.5 px-3 text-center border-r border-slate-700 text-slate-400 text-[10px]">-</td>
         <td class="py-2.5 px-3 text-right text-cyan-400 font-mono font-bold">${running.toLocaleString()}원</td>
       </tr>
     `;
