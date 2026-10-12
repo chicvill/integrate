@@ -280,7 +280,7 @@ export function renderCurrentMonthSection(room) {
     if (actionArea) actionArea.innerHTML = `<span class="text-xs text-slate-500 py-2 block text-center">계약 등록 후 납부 가능</span>`;
   } else if (curPay.paid) {
     if (statusBadge) {
-      statusBadge.className = 'px-3 py-1 rounded-full font-black text-sm bg-emerald-500/25 text-emerald-300 border border-emerald-500/50 flex items-center gap-1.5';
+      statusBadge.className = 'px-2 py-0.5 sm:px-3 sm:py-1 rounded-full font-bold text-[11px] sm:text-xs bg-emerald-500/25 text-emerald-300 border border-emerald-500/50 flex items-center gap-1 shrink-0';
       statusBadge.innerHTML = `<span>✓</span> 완납 (${curPay.paid_date || formattedToday})`;
     }
     if (actionArea) {
@@ -322,10 +322,10 @@ export function renderPastHistorySection(room) {
   if (accordionBody && pastToggleBtnText) {
     if (state.isPastOpen) {
       accordionBody.classList.remove('hidden');
-      pastToggleBtnText.textContent = '과거 내역 접기 ▴';
+      pastToggleBtnText.textContent = '내역 접기 ▴';
     } else {
       accordionBody.classList.add('hidden');
-      pastToggleBtnText.textContent = '과거 내역 펼치기 (최근 1년) ▾';
+      pastToggleBtnText.textContent = '내역 펼치기 ▾';
       tbody.innerHTML = '';
       return;
     }
