@@ -216,6 +216,12 @@ export function generateDefaultSeedRooms() {
       depositVal = 5000000;
     }
 
+    // 503호: 김백찬 고객
+    if (rNum === 503) {
+      tenantName = "김백찬";
+      phoneNum = "010-3344-5503";
+    }
+
     const payments = {};
     for (let m = 1; m <= 12; m++) {
       const isPaid = (m <= currentMonth);
@@ -327,6 +333,15 @@ export function loadLocalFallback() {
         r201.deposit = 5000000;
         r201.move_in = "2022-03-19";
         r201.expiry = "2023-03-18";
+      }
+    }
+
+    // 503호 세입자 정보 검증 및 김백찬 보정
+    if (state.rooms && state.rooms[503]) {
+      const r503 = state.rooms[503];
+      if (r503.name === "장지아" || r503.name === "김백찬" || !r503.name) {
+        r503.name = "김백찬";
+        if (!r503.phone) r503.phone = "010-3344-5503";
       }
     }
 

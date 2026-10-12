@@ -1670,29 +1670,31 @@ export function renderExcelPreviewTable() {
   const countBadge = document.getElementById('excelParsedCountBadge');
   if (!thead || !tbody) return;
 
-  const previewRows = importedRawRows.slice(0, 5);
+  // 사용자의 요청: 5개 제한을 없애고 붙여넣은 전체 데이터 모두 표시
+  const previewRows = importedRawRows;
   const totalCount = importedRawRows.length;
-  if (countBadge) countBadge.textContent = `총 ${totalCount}개 행 중 5행 미리보기`;
+  if (countBadge) countBadge.textContent = `총 ${totalCount}개 호실 매핑 (전체 ${totalCount}행 표시)`;
 
   // 테이블 헤더
   thead.innerHTML = `
-    <tr class="bg-surface-850 border-b border-slate-700 text-[11px]">
-      <th class="py-1 px-2 border-r border-slate-700 text-cyan-300 text-center w-12">호실</th>
-      <th class="py-1 px-2 border-r border-slate-700 text-slate-200">세입자</th>
-      <th class="py-1 px-2 border-r border-slate-700 text-slate-300 text-center">연락처</th>
-      <th class="py-1 px-1.5 border-r border-slate-700 text-slate-300 text-center">유형</th>
-      <th class="py-1 px-2 border-r border-slate-700 text-right">보증금</th>
-      <th class="py-1 px-2 border-r border-slate-700 text-right text-amber-300">월세</th>
-      <th class="py-1 px-2 border-r border-slate-700 text-right">관리비</th>
-      <th class="py-1 px-2 border-r border-slate-700 text-center">계약시작</th>
-      <th class="py-1 px-2 text-center">계약종료</th>
+    <tr class="bg-surface-850 border-b border-slate-700 text-[11px] sticky top-0 z-10">
+      <th class="py-1.5 px-2 border-r border-slate-700 text-slate-400 text-center w-8">No</th>
+      <th class="py-1.5 px-2 border-r border-slate-700 text-cyan-300 text-center w-14">호실</th>
+      <th class="py-1.5 px-2 border-r border-slate-700 text-slate-200">세입자</th>
+      <th class="py-1.5 px-2 border-r border-slate-700 text-slate-300 text-center">연락처</th>
+      <th class="py-1.5 px-1.5 border-r border-slate-700 text-slate-300 text-center">유형</th>
+      <th class="py-1.5 px-2 border-r border-slate-700 text-right">보증금</th>
+      <th class="py-1.5 px-2 border-r border-slate-700 text-right text-amber-300">월세</th>
+      <th class="py-1.5 px-2 border-r border-slate-700 text-right">관리비</th>
+      <th class="py-1.5 px-2 border-r border-slate-700 text-center">계약시작(전입일)</th>
+      <th class="py-1.5 px-2 text-center">계약종료</th>
     </tr>
   `;
 
   // 테이블 본문
-  tbody.innerHTML = previewRows.map(row => {
+  tbody.innerHTML = previewRows.map((row, idx) => {
     const rNum = cleanRoomNumber(row[activeColumnMapping.room_number]);
-    const name = row[activeColumnMapping.name] || '공실';
+    const name = (row[activeColumnMapping.name] !== undefined ? String(row[activeColumnMapping.name]).trim() : '') || '공실';
     const phone = row[activeColumnMapping.phone] || '-';
     const leaseType = row[activeColumnMapping.lease_type] || '월세';
     const deposit = cleanMoneyValue(row[activeColumnMapping.deposit], activeColumnMapping.deposit);
@@ -1702,16 +1704,17 @@ export function renderExcelPreviewTable() {
     const expiry = cleanDateValue(row[activeColumnMapping.expiry]);
 
     return `
-      <tr class="hover:bg-surface-800/60">
-        <td class="py-1 px-2 border-r border-slate-800 font-bold text-cyan-300 text-center font-mono">${rNum || '<span class="text-rose-400">누락</span>'}</td>
-        <td class="py-1 px-2 border-r border-slate-800 font-sans text-slate-200">${name}</td>
-        <td class="py-1 px-2 border-r border-slate-800 text-center text-slate-400 text-[11px]">${phone}</td>
-        <td class="py-1 px-1.5 border-r border-slate-800 text-center text-slate-400 text-[11px]">${leaseType}</td>
-        <td class="py-1 px-2 border-r border-slate-800 text-right font-mono text-slate-300">${deposit.toLocaleString()}</td>
-        <td class="py-1 px-2 border-r border-slate-800 text-right font-mono font-bold text-amber-300">${rent.toLocaleString()}</td>
-        <td class="py-1 px-2 border-r border-slate-800 text-right font-mono text-slate-300">${maint.toLocaleString()}</td>
-        <td class="py-1 px-2 border-r border-slate-800 text-center text-slate-400 text-[11px]">${moveIn || '-'}</td>
-        <td class="py-1 px-2 text-center text-slate-400 text-[11px]">${expiry || '-'}</td>
+      <tr class="hover:bg-surface-800/60 border-b border-slate-800/50">
+        <td class="py-1.5 px-2 border-r border-slate-800 text-center text-slate-500 text-[10px]">${idx + 1}</td>
+        <td class="py-1.5 px-2 border-r border-slate-800 font-bold text-cyan-300 text-center font-mono">${rNum ? `${rNum}호` : '<span class="text-rose-400 font-normal">누락</span>'}</td>
+        <td class="py-1.5 px-2 border-r border-slate-800 font-sans ${name === '공실' ? 'text-slate-500' : 'text-slate-100 font-medium'}">${name}</td>
+        <td class="py-1.5 px-2 border-r border-slate-800 text-center text-slate-400 text-[11px]">${phone}</td>
+        <td class="py-1.5 px-1.5 border-r border-slate-800 text-center text-slate-300 text-[11px]">${leaseType}</td>
+        <td class="py-1.5 px-2 border-r border-slate-800 text-right font-mono text-slate-300">${deposit.toLocaleString()}</td>
+        <td class="py-1.5 px-2 border-r border-slate-800 text-right font-mono font-bold text-amber-300">${rent.toLocaleString()}</td>
+        <td class="py-1.5 px-2 border-r border-slate-800 text-right font-mono text-slate-300">${maint.toLocaleString()}</td>
+        <td class="py-1.5 px-2 border-r border-slate-800 text-center text-slate-300 text-[11px]">${moveIn || '-'}</td>
+        <td class="py-1.5 px-2 text-center text-slate-400 text-[11px]">${expiry || '-'}</td>
       </tr>
     `;
   }).join('');
@@ -1820,7 +1823,7 @@ export async function executeBatchImport() {
       await apiBatchImportRooms(targetRooms, state.currentBranch);
     }
 
-    // 로컬 상태 동기화 업데이트
+    // 로컬 상태 동기화 업데이트 및 과거 납부 내역 자동 동기화
     targetRooms.forEach(tr => {
       const existing = state.rooms[tr.room_number] || { payments: {} };
       state.rooms[tr.room_number] = {
@@ -1829,7 +1832,17 @@ export async function executeBatchImport() {
         room_number: tr.room_number,
         branch_id: state.currentBranch
       };
+      // 새로 등록된 세입자명, 금액, 전입일로 과거 납부 내역 즉시 동기화
+      fillTenantPaymentsState(tr.room_number);
     });
+
+    if (state.isOnline) {
+      try {
+        await apiFillTenantPayments(null, state.currentBranch);
+      } catch (errFill) {
+        console.warn("서버 납부내역 일괄 동기화 실패:", errFill);
+      }
+    }
 
     saveLocalFallback();
     closeModal('excelImportModal');

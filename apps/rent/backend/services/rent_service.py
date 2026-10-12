@@ -448,6 +448,11 @@ class RentService:
                 p.maintenance_amount = room.maintenance
 
         db.commit()
+
+        # 엑셀 일괄 등록 후 전입일 기준 과거 납부 내역도 새 세입자명과 금액으로 일괄 동기화
+        self.fill_tenant_payments(db, branch_id=branch_id)
+        db.commit()
+
         updated_rooms = self.get_rooms(db, branch_id)
         return {
             "success": True,

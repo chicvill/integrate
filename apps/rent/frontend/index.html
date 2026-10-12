@@ -732,13 +732,13 @@
           <div class="flex items-center justify-between text-xs px-1">
             <span class="font-bold text-slate-200 flex items-center gap-1.5">
               <span>🔍</span>
-              <span>데이터 미리보기 (상위 5개 호실)</span>
+              <span>데이터 미리보기 (전체 매핑 상태 전수 확인)</span>
               <span id="excelParsedCountBadge" class="text-cyan-400 font-mono text-[11px] font-bold">0개실 감지</span>
             </span>
             <span class="text-[11px] text-slate-400">(단위: 원 자동 환산)</span>
           </div>
 
-          <div class="overflow-x-auto border border-slate-800 rounded-xl bg-surface-950 p-1 max-h-48">
+          <div class="overflow-x-auto overflow-y-auto border border-slate-800 rounded-xl bg-surface-950 p-1 max-h-80 sm:max-h-96">
             <table class="w-full text-xs text-left border-collapse font-mono" id="excelPreviewTable">
               <thead class="bg-surface-850 text-slate-300 text-[11px]" id="excelPreviewThead"></thead>
               <tbody class="divide-y divide-slate-800/80 text-slate-200 text-xs" id="excelPreviewTbody"></tbody>
