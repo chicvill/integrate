@@ -90,7 +90,8 @@ class RentService:
 
             # 1~12월 납부 기록
             for m in range(1, 13):
-                is_past_paid = (not is_vacant) and (m < cur_month)
+                # 전입일부터 현재(cur_month)까지 납부 내역 완납 처리
+                is_past_paid = (not is_vacant) and (m <= cur_month)
                 
                 # 세입자 배정
                 if has_prev_tenant and m <= 6:
@@ -311,8 +312,112 @@ class RentService:
                 if data.maintenance is not None:
                     p.maintenance_amount = data.maintenance
 
+        # 신규 세입자 전입 또는 전입일 수정 시, 전입일부터 현재월까지의 납부 내역 자동 동기화
+        if room.name and room.move_in:
+            self.fill_tenant_payments(db, branch_id=branch_id, room_number=room_number)
+
         db.commit()
         return self.get_room(db, room_number, branch_id)
+
+    def fill_tenant_payments(self, db: Session, branch_id: str = "main", room_number: Optional[int] = None) -> Dict[str, Any]:
+        """현재 세입자의 전입일부터 현재월까지의 과거 납부 내역을 현재 세입자 정보 및 완납으로 동기화 채우기"""
+        self.ensure_default_seed(db, branch_id)
+        now = datetime.now()
+        cur_year = now.year
+        cur_month = now.month
+
+        query = db.query(RentRoom).filter(RentRoom.branch_id == branch_id)
+        if room_number is not None:
+            query = query.filter(RentRoom.room_number == room_number)
+        rooms = query.all()
+
+        updated_rooms = []
+        for r in rooms:
+            if not r.name:
+                continue
+
+            # 전입일 파싱
+            move_in_month = 1
+            if r.move_in:
+                try:
+                    dt_in = datetime.strptime(str(r.move_in)[:10], "%Y-%m-%d")
+                    if dt_in.year == cur_year:
+                        move_in_month = dt_in.month
+                    elif dt_in.year < cur_year:
+                        move_in_month = 1
+                    else:
+                        move_in_month = 13
+                except Exception:
+                    move_in_month = 1
+
+            # 전출자 이력 조회 (전입월 이전 기록 배정용)
+            prev_hist = db.query(RentTenantHistory).filter(
+                RentTenantHistory.branch_id == branch_id,
+                RentTenantHistory.room_number == r.room_number
+            ).order_by(RentTenantHistory.id.desc()).first()
+
+            rent_amt = 0 if r.lease_type == "전세" else (r.rent or 0)
+            maint_amt = r.maintenance or 0
+
+            # 1~12월 결제 레코드 처리
+            for m in range(1, 13):
+                pay = db.query(RentPayment).filter(
+                    RentPayment.branch_id == branch_id,
+                    RentPayment.room_number == r.room_number,
+                    RentPayment.year == cur_year,
+                    RentPayment.month == m
+                ).first()
+
+                if not pay:
+                    pay = RentPayment(
+                        branch_id=branch_id,
+                        room_number=r.room_number,
+                        year=cur_year,
+                        month=m
+                    )
+                    db.add(pay)
+
+                if m < move_in_month:
+                    # 전입 이전 월: 전출자 이력이 있으면 전출자 1년 보존 기록 처리
+                    if prev_hist:
+                        pay.tenant_name = prev_hist.name
+                        pay.tenant_id_number = prev_hist.id_number or ""
+                        pay.is_previous_tenant = True
+                        pay.paid = True
+                        pay.paid_date = f"{cur_year}-{str(m).zfill(2)}-10"
+                        pay.rent_amount = 0 if prev_hist.lease_type == "전세" else prev_hist.rent
+                        pay.maintenance_amount = prev_hist.maintenance
+                        pay.note = "이전 세입자 정상 입금 (전출)"
+                elif move_in_month <= m <= cur_month:
+                    # 전입월부터 현재(cur_month)까지: 현재 세입자 정보로 완납 채우기
+                    pay.tenant_name = r.name
+                    pay.tenant_id_number = r.id_number or ""
+                    pay.is_previous_tenant = False
+                    pay.paid = True
+                    pay.paid_date = f"{cur_year}-{str(m).zfill(2)}-10"
+                    pay.rent_amount = rent_amt
+                    pay.maintenance_amount = maint_amt
+                    pay.note = "정상 입금"
+                else:
+                    # 미래 월 (cur_month + 1 ~ 12): 현재 세입자 미납 대기
+                    pay.tenant_name = r.name
+                    pay.tenant_id_number = r.id_number or ""
+                    pay.is_previous_tenant = False
+                    pay.paid = False
+                    pay.paid_date = ""
+                    pay.rent_amount = rent_amt
+                    pay.maintenance_amount = maint_amt
+                    pay.note = ""
+
+            updated_rooms.append(r.room_number)
+
+        db.commit()
+        return {
+            "success": True,
+            "updated_rooms": updated_rooms,
+            "count": len(updated_rooms),
+            "message": f"{len(updated_rooms)}개 호실의 전입일 기준 납부내역이 현재 세입자 정보로 채워졌습니다."
+        }
 
     def batch_import_rooms(self, db: Session, branch_id: str, rooms_data: List[Dict[str, Any]]) -> Dict[str, Any]:
         """엑셀 파일 등에서 추출한 호실 계약 정보를 일괄 등록/갱신"""

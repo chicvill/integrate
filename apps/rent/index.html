@@ -323,10 +323,15 @@
             <span class="text-[11px] text-slate-400">최근 1년간(12개월) 납부 기록</span>
           </div>
         </div>
-        <!-- 펼치기 / 접기 토글 버튼 -->
-        <button type="button" id="pastToggleBtn" class="px-3 py-1.5 text-xs font-semibold rounded-xl bg-surface-800 hover:bg-surface-700 text-cyan-300 border border-slate-700 transition flex items-center gap-1.5 shadow-sm cursor-pointer">
-          <span id="pastToggleBtnText">과거 내역 펼치기 (최근 1년) ▾</span>
-        </button>
+        <!-- 펼치기 / 접기 토글 및 빠른 채우기 버튼 그룹 -->
+        <div class="flex items-center gap-1.5" onclick="event.stopPropagation()">
+          <button type="button" onclick="handleFillTenantPayments()" title="현재 세입자의 전입일부터 현재까지 납부내역을 완납으로 자동 채웁니다" class="px-2.5 py-1 text-[11px] font-semibold rounded-xl bg-cyan-950/80 hover:bg-cyan-800 text-cyan-300 border border-cyan-700/60 transition flex items-center gap-1 shadow-sm cursor-pointer whitespace-nowrap">
+            <span>⚡ 전입일~현재 납부채우기</span>
+          </button>
+          <button type="button" id="pastToggleBtn" onclick="togglePastAccordion()" class="px-3 py-1.5 text-xs font-semibold rounded-xl bg-surface-800 hover:bg-surface-700 text-cyan-300 border border-slate-700 transition flex items-center gap-1.5 shadow-sm cursor-pointer whitespace-nowrap">
+            <span id="pastToggleBtnText">과거 내역 펼치기 (최근 1년) ▾</span>
+          </button>
+        </div>
       </div>
 
       <!-- Collapsible Table Body (기본 전체 접힘) -->

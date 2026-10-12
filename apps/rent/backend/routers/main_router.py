@@ -204,6 +204,22 @@ async def cancel_payment(
     return updated
 
 
+@router.post("/rooms/fill-payments")
+async def fill_tenant_payments(
+    payload: Dict[str, Any] = Body(default={}),
+    branch_id: str = Query("main"),
+    db: Session = Depends(get_db)
+):
+    """현재 세입자의 전입일부터 현재까지의 과거 납부 내역을 현재 세입자 정보로 일괄 채우기"""
+    room_number = payload.get("room_number")
+    if room_number is not None:
+        try:
+            room_number = int(room_number)
+        except Exception:
+            room_number = None
+    return service.fill_tenant_payments(db, branch_id=branch_id, room_number=room_number)
+
+
 # ── 전출자 1년 보존 이력 조회 라우트 ──
 @router.get("/tenant-histories", response_model=TenantHistoryListResponse)
 async def list_tenant_histories(

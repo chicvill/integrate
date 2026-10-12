@@ -15,6 +15,7 @@ import {
   closeRoomDrawer,
   toggleRoomDrawer,
   togglePastAccordion,
+  handleFillTenantPayments,
   renderAll
 } from './js/ui.js?v=2.0';
 import {
@@ -75,6 +76,7 @@ window.closeRoomDrawer = closeRoomDrawer;
 window.toggleRoomDrawer = toggleRoomDrawer;
 
 window.togglePastAccordion = togglePastAccordion;
+window.handleFillTenantPayments = handleFillTenantPayments;
 
 window.openVatModal = openVatModal;
 window.setVatPeriod = setVatPeriod;

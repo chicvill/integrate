@@ -3,8 +3,8 @@
  * 원룸 임차료 관리 시스템 모바일 최적화 DOM 렌더링 및 UI 슬라이드 드로어 제어.
  */
 
-import { state, FLOOR_STRUCTURE, currentMonth, currentYear, formattedToday, saveLocalFallback, loadInitialData } from './state.js?v=2.0';
-import { apiProcessPayment, apiCancelPayment } from './api.js?v=2.0';
+import { state, FLOOR_STRUCTURE, currentMonth, currentYear, formattedToday, saveLocalFallback, loadInitialData, fillTenantPaymentsState } from './state.js?v=2.0';
+import { apiProcessPayment, apiCancelPayment, apiFillTenantPayments, apiGetRooms } from './api.js?v=2.0';
 
 export function selectRoom(roomNum) {
   state.selectedRoom = parseInt(roomNum, 10);
@@ -541,5 +541,42 @@ export async function handleCancelPayment(roomNum, month) {
     renderAll();
   } catch (err) {
     alert("납부 취소 실패: " + err.message);
+  }
+}
+
+// ── 전입일부터 현재까지 납부내역 자동 채우기 핸들러 ──
+export async function handleFillTenantPayments(roomNum = null) {
+  const targetRoom = roomNum || state.selectedRoom;
+  const room = state.rooms[targetRoom];
+  if (!room || !room.name) {
+    alert(`${targetRoom}호는 공실이거나 세입자가 등록되어 있지 않습니다.`);
+    return;
+  }
+
+  try {
+    if (state.isOnline) {
+      const res = await apiFillTenantPayments(targetRoom, state.currentBranch);
+      if (res && res.success) {
+        const freshRooms = await apiGetRooms(state.currentBranch);
+        if (freshRooms) {
+          state.rooms = freshRooms;
+        } else {
+          fillTenantPaymentsState(targetRoom);
+        }
+      } else {
+        fillTenantPaymentsState(targetRoom);
+      }
+    } else {
+      fillTenantPaymentsState(targetRoom);
+    }
+    saveLocalFallback();
+    renderAll();
+    alert(`[${targetRoom}호 ${room.name}] 전입일(${room.move_in || '기준일'})부터 현재(${currentMonth}월)까지 납부내역이 완납으로 채워졌습니다!`);
+  } catch (err) {
+    console.warn("API 동기화 중 오류, 로컬 상태로 채우기 적용:", err);
+    fillTenantPaymentsState(targetRoom);
+    saveLocalFallback();
+    renderAll();
+    alert(`[${targetRoom}호 ${room.name}] 전입일 기준 납부내역이 로컬에 채워졌습니다!`);
   }
 }

@@ -95,6 +95,14 @@ export async function apiCancelPayment(roomNumber, month, branchId = 'main') {
   });
 }
 
+export async function apiFillTenantPayments(roomNumber = null, branchId = 'main') {
+  const base = getApiBase('rent');
+  return await fetchWithAuth(`${base}/rooms/fill-payments?branch_id=${encodeURIComponent(branchId)}`, {
+    method: 'POST',
+    body: JSON.stringify({ room_number: roomNumber })
+  });
+}
+
 export async function apiGetExpenses(branchId = 'main') {
   const base = getApiBase('rent');
   return await fetchWithAuth(`${base}/expenses?branch_id=${encodeURIComponent(branchId)}`);

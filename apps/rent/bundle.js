@@ -107,6 +107,14 @@ async function apiCancelPayment(roomNumber, month, branchId = 'main') {
   });
 }
 
+async function apiFillTenantPayments(roomNumber = null, branchId = 'main') {
+  const base = getApiBase('rent');
+  return await fetchWithAuth(`${base}/rooms/fill-payments?branch_id=${encodeURIComponent(branchId)}`, {
+    method: 'POST',
+    body: JSON.stringify({ room_number: roomNumber })
+  });
+}
+
 async function apiGetExpenses(branchId = 'main') {
   const base = getApiBase('rent');
   return await fetchWithAuth(`${base}/expenses?branch_id=${encodeURIComponent(branchId)}`);
@@ -416,20 +424,31 @@ function generateDefaultSeedRooms() {
     const hasPrevTenant = (rNum === 201);
 
     for (let m = 1; m <= 12; m++) {
-      const isPaid = (m < currentMonth);
+      let isPaid = false;
       let tName = DEFAULT_NAMES[idx % DEFAULT_NAMES.length];
       let isPrev = false;
 
       if (hasPrevTenant && m <= 6) {
         tName = "박지훈";
         isPrev = true;
+        isPaid = true;
+      } else if (hasPrevTenant) {
+        // 201호: 전입월(7월)부터 현재월(10월)까지 이서연 완납
+        isPaid = (m <= currentMonth);
+        tName = DEFAULT_NAMES[idx % DEFAULT_NAMES.length];
+        isPrev = false;
+      } else {
+        // 일반 세입자: 전입월부터 현재월(10월)까지 완납
+        isPaid = (m <= currentMonth);
+        tName = DEFAULT_NAMES[idx % DEFAULT_NAMES.length];
+        isPrev = false;
       }
 
       payments[m] = {
         month: m,
         year: currentYear,
         paid: isPaid,
-        paid_date: isPaid ? `2026-0${m}-10`.replace('-010', '-10') : "",
+        paid_date: isPaid ? `2026-${String(m).padStart(2, '0')}-10` : "",
         rent_amount: rentVal,
         maintenance_amount: maintVal,
         note: isPaid ? (isPrev ? "이전 세입자 정상 입금 (전출)" : "정상 입금") : "",
@@ -520,10 +539,78 @@ function loadLocalFallback() {
       ];
       saveLocalFallback();
     }
+
+    // 전입일부터 현재까지의 납부 내역 자동 보정 동기화 (구버전 캐시 자동 치유)
+    fillTenantPaymentsState();
   } catch (e) {
     console.error("Local load error:", e);
     state.rooms = generateDefaultSeedRooms();
   }
+}
+
+function fillTenantPaymentsState(roomNumber = null) {
+  if (!state.rooms) return;
+  const roomsToProcess = roomNumber ? [state.rooms[roomNumber]].filter(Boolean) : Object.values(state.rooms);
+  
+  roomsToProcess.forEach(room => {
+    if (!room || !room.name) return;
+    const isJeonse = (room.lease_type === '전세');
+    const rentVal = isJeonse ? 0 : (room.rent || 0);
+    const maintVal = room.maintenance || 0;
+
+    let moveInMonth = 1;
+    if (room.move_in) {
+      try {
+        const parts = room.move_in.split('-');
+        const yr = parseInt(parts[0], 10);
+        const mo = parseInt(parts[1], 10);
+        if (yr === currentYear) moveInMonth = mo;
+        else if (yr < currentYear) moveInMonth = 1;
+        else moveInMonth = 13;
+      } catch (e) {
+        moveInMonth = 1;
+      }
+    }
+
+    if (!room.payments) room.payments = {};
+
+    for (let m = 1; m <= 12; m++) {
+      const existing = room.payments[m] || {};
+      if (m < moveInMonth) {
+        // 전입 이전: 기존 전출자 정보 유지
+      } else if (m >= moveInMonth && m <= currentMonth) {
+        // 전입월부터 현재월(10월)까지 현재 세입자 정보로 완납 채우기
+        room.payments[m] = {
+          ...existing,
+          month: m,
+          year: currentYear,
+          paid: true,
+          paid_date: existing.paid_date || `2026-${String(m).padStart(2, '0')}-10`,
+          rent_amount: rentVal,
+          maintenance_amount: maintVal,
+          note: existing.note || "정상 입금",
+          tenant_name: room.name,
+          is_previous_tenant: false
+        };
+      } else {
+        // 미래 월 (11, 12월): 현재 세입자 미납 대기
+        room.payments[m] = {
+          ...existing,
+          month: m,
+          year: currentYear,
+          paid: false,
+          paid_date: "",
+          rent_amount: rentVal,
+          maintenance_amount: maintVal,
+          note: "",
+          tenant_name: room.name,
+          is_previous_tenant: false
+        };
+      }
+    }
+  });
+
+  saveState();
 }
 
 /**
@@ -1069,6 +1156,43 @@ async function handleCancelPayment(roomNum, month) {
     renderAll();
   } catch (err) {
     alert("납부 취소 실패: " + err.message);
+  }
+}
+
+// ── 전입일부터 현재까지 납부내역 자동 채우기 핸들러 ──
+async function handleFillTenantPayments(roomNum = null) {
+  const targetRoom = roomNum || state.selectedRoom;
+  const room = state.rooms[targetRoom];
+  if (!room || !room.name) {
+    alert(`${targetRoom}호는 공실이거나 세입자가 등록되어 있지 않습니다.`);
+    return;
+  }
+
+  try {
+    if (state.isOnline) {
+      const res = await apiFillTenantPayments(targetRoom, state.currentBranch);
+      if (res && res.success) {
+        const freshRooms = await apiGetRooms(state.currentBranch);
+        if (freshRooms) {
+          state.rooms = freshRooms;
+        } else {
+          fillTenantPaymentsState(targetRoom);
+        }
+      } else {
+        fillTenantPaymentsState(targetRoom);
+      }
+    } else {
+      fillTenantPaymentsState(targetRoom);
+    }
+    saveLocalFallback();
+    renderAll();
+    alert(`[${targetRoom}호 ${room.name}] 전입일(${room.move_in || '기준일'})부터 현재(${currentMonth}월)까지 납부내역이 완납으로 채워졌습니다!`);
+  } catch (err) {
+    console.warn("API 동기화 중 오류, 로컬 상태로 채우기 적용:", err);
+    fillTenantPaymentsState(targetRoom);
+    saveLocalFallback();
+    renderAll();
+    alert(`[${targetRoom}호 ${room.name}] 전입일 기준 납부내역이 로컬에 채워졌습니다!`);
   }
 }
 
@@ -3183,6 +3307,7 @@ window.closeRoomDrawer = closeRoomDrawer;
 window.toggleRoomDrawer = toggleRoomDrawer;
 
 window.togglePastAccordion = togglePastAccordion;
+window.handleFillTenantPayments = handleFillTenantPayments;
 
 window.openVatModal = openVatModal;
 window.setVatPeriod = setVatPeriod;
