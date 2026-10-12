@@ -365,57 +365,6 @@
 
     </section>
 
-    <!-- ── CARD 4: 건물 운영 지출 장부 (엑셀 규격: 일자 | 적요 | 금액 | 합계) ── -->
-    <section class="bg-surface-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
-      
-      <!-- Card Header -->
-      <div class="px-3.5 py-3 bg-surface-850/80 flex items-center justify-between gap-2 border-b border-slate-800">
-        <div class="flex items-center gap-2">
-          <span class="text-base">📒</span>
-          <div>
-            <h3 class="text-xs sm:text-sm font-bold text-white tracking-tight flex items-center gap-1.5">
-              <span>지출 장부 내역</span>
-              <span class="text-[11px] text-cyan-400 font-normal">(시크빌 운영 경비)</span>
-            </h3>
-            <span class="text-[11px] text-slate-400">엑셀 장부 규격 (일자 · 적요 · 금액 · 합계)</span>
-          </div>
-        </div>
-        <!-- Right Badges & Actions -->
-        <div class="flex items-center gap-2">
-          <button type="button" onclick="exportExpenseLedgerExcel()" class="px-2.5 py-1 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/40 border border-emerald-500/50 text-emerald-300 font-bold text-xs flex items-center gap-1 transition cursor-pointer active:scale-95" title="지출 장부 엑셀(CSV) 다운로드">
-            <span>📊</span>
-            <span>엑셀 내보내기</span>
-          </button>
-          <div class="flex items-center gap-1">
-            <span class="text-[11px] text-slate-400 sm:inline hidden">누적 합계:</span>
-            <span id="expenseLedgerTotalBadge" class="text-xs font-mono font-bold text-amber-400 bg-amber-950/60 border border-amber-800/60 px-2.5 py-1 rounded-xl">0원</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Excel-like Table Container -->
-      <div class="overflow-x-auto p-1 bg-surface-950/60 max-h-80 overflow-y-auto">
-        <table class="w-full text-left text-xs border-collapse">
-          <thead class="sticky top-0 z-10">
-            <tr class="bg-surface-850 text-slate-300 border-b border-slate-700 text-[11px] font-semibold whitespace-nowrap">
-              <th class="py-2.5 px-3 text-center border-r border-slate-700 w-28 whitespace-nowrap">일자</th>
-              <th class="py-2.5 px-3 text-left border-r border-slate-700 min-w-[140px] whitespace-nowrap">적요 (항목 / 비고)</th>
-              <th class="py-2.5 px-3 text-right border-r border-slate-700 w-28 whitespace-nowrap">금액</th>
-              <th class="py-2.5 px-3 text-center border-r border-slate-700 w-32 whitespace-nowrap">영수증</th>
-              <th class="py-2.5 px-3 text-right w-28 whitespace-nowrap">합계</th>
-            </tr>
-          </thead>
-          <tbody id="expenseLedgerTableBody" class="divide-y divide-slate-800/60 font-mono">
-            <!-- Dynamic rows rendered by JS -->
-          </tbody>
-          <tfoot id="expenseLedgerTableFoot" class="bg-surface-850/90 text-slate-200 border-t-2 border-slate-700 text-[11px] font-bold sticky bottom-0">
-            <!-- Summary total row rendered by JS -->
-          </tfoot>
-        </table>
-      </div>
-
-    </section>
-
   </main>
 
   <!-- ── MODALS ── -->
