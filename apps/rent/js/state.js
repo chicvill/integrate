@@ -40,7 +40,7 @@ export const state = {
   rooms: {},
   expenses: [],
   tenantHistories: [],
-  showAllPastMonths: false, // 기본 최근 6개월, 위로 스크롤/펼칠 시 1년 전까지
+  isPastOpen: false, // 기본 전체 접힘, 펼치기 시 최근 1년간 기록 표시
   isContractOpen: false,
   isOnline: false
 };

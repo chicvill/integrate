@@ -271,36 +271,39 @@
 
     </section>
 
-    <!-- ── CARD 3: 과거 납부 내역 (기본 6개월 + 위로 스크롤/펼칠 때 전출자 1년 보존 포함) ── -->
+    <!-- ── CARD 3: 과거 납부 내역 (기본 전체 접힘, 펼치기 시 최근 1년간 기록 표시) ── -->
     <section class="bg-surface-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
       
-      <div class="px-3.5 py-2.5 bg-surface-850/80 border-b border-slate-800 flex items-center justify-between gap-2">
-        <div class="flex items-center gap-1.5">
-          <span class="text-sm text-slate-400">📅</span>
-          <h3 class="text-xs sm:text-sm font-bold text-white">
-            과거 납부 내역
-          </h3>
+      <div class="px-3.5 py-3 bg-surface-850/80 flex items-center justify-between gap-2 cursor-pointer select-none" onclick="togglePastAccordion()">
+        <div class="flex items-center gap-2">
+          <span class="text-base text-slate-400">📅</span>
+          <div>
+            <h3 class="text-xs sm:text-sm font-bold text-white tracking-tight">
+              과거 납부 내역
+            </h3>
+            <span class="text-[11px] text-slate-400">최근 1년간(12개월) 납부 기록</span>
+          </div>
         </div>
-        <!-- 6개월 vs 1년 전출자 포함 토글 버튼 -->
-        <button type="button" id="pastScopeToggleBtn" onclick="togglePastMonthsScope()" class="px-2.5 py-1 text-xs rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 transition cursor-pointer">
-          <span class="text-cyan-300 font-bold">⬆ 이전 세입자 포함 1년전까지</span>
+        <!-- 펼치기 / 접기 토글 버튼 -->
+        <button type="button" id="pastToggleBtn" class="px-3 py-1.5 text-xs font-semibold rounded-xl bg-surface-800 hover:bg-surface-700 text-cyan-300 border border-slate-700 transition flex items-center gap-1.5 shadow-sm cursor-pointer">
+          <span id="pastToggleBtnText">과거 내역 펼치기 (최근 1년) ▾</span>
         </button>
       </div>
 
-      <!-- Compact Table -->
-      <div class="overflow-x-auto p-1">
+      <!-- Collapsible Table Body (기본 전체 접힘) -->
+      <div id="pastAccordionBody" class="hidden border-t border-slate-800 overflow-x-auto p-1 bg-surface-950/60">
         <table class="w-full text-left text-xs border-collapse">
           <thead>
-            <tr class="bg-surface-800/80 text-slate-400 border-b border-slate-700 text-[11px] font-semibold">
-              <th class="py-2 px-2 text-center border-r border-slate-700 w-12">회차</th>
-              <th class="py-2 px-2.5 border-r border-slate-700">세입자</th>
-              <th class="py-2 px-2 text-right border-r border-slate-700">금액</th>
-              <th class="py-2 px-1.5 text-center border-r border-slate-700 w-14">상태</th>
-              <th class="py-2 px-1.5 text-center w-12">조작</th>
+            <tr class="bg-surface-850 text-slate-400 border-b border-slate-700 text-[11px] font-semibold whitespace-nowrap">
+              <th class="py-2 px-2 text-center border-r border-slate-700 w-12 whitespace-nowrap">회차</th>
+              <th class="py-2 px-2.5 border-r border-slate-700 whitespace-nowrap">세입자</th>
+              <th class="py-2 px-2 text-right border-r border-slate-700 w-24 whitespace-nowrap">금액</th>
+              <th class="py-2 px-1.5 text-center border-r border-slate-700 w-14 whitespace-nowrap">상태</th>
+              <th class="py-2 px-2 text-center w-14 min-w-[56px] whitespace-nowrap">조작</th>
             </tr>
           </thead>
           <tbody id="pastPaymentTableBody" class="divide-y divide-slate-800">
-            <!-- Dynamic rows rendered by JS -->
+            <!-- Dynamic rows rendered by JS (최근 1년치 기록) -->
           </tbody>
         </table>
       </div>

@@ -103,8 +103,8 @@ export function toggleRoomDrawer() {
   }
 }
 
-export function togglePastMonthsScope() {
-  state.showAllPastMonths = !state.showAllPastMonths;
+export function togglePastAccordion() {
+  state.isPastOpen = !state.isPastOpen;
   const room = state.rooms[state.selectedRoom];
   if (room) renderPastHistorySection(room);
 }
@@ -277,27 +277,28 @@ export function renderCurrentMonthSection(room) {
 export function renderPastHistorySection(room) {
   const rNum = room.room_number;
   const tbody = document.getElementById('pastPaymentTableBody');
-  const pastScopeToggleBtn = document.getElementById('pastScopeToggleBtn');
+  const accordionBody = document.getElementById('pastAccordionBody');
+  const pastToggleBtnText = document.getElementById('pastToggleBtnText');
   if (!tbody) return;
-  tbody.innerHTML = '';
 
-  const isJeonse = (room.lease_type === '전세');
-
-  // 월 범위 결정: 기본 최근 6개월, 확장 시 1~12월 (1년 전까지)
-  const startM = state.showAllPastMonths ? 1 : Math.max(1, currentMonth - 5);
-  const endM = currentMonth;
-
-  if (pastScopeToggleBtn) {
-    if (state.showAllPastMonths) {
-      pastScopeToggleBtn.innerHTML = `<span>⬇ 최근 6개월만 축소 보기</span>`;
+  if (accordionBody && pastToggleBtnText) {
+    if (state.isPastOpen) {
+      accordionBody.classList.remove('hidden');
+      pastToggleBtnText.textContent = '과거 내역 접기 ▴';
     } else {
-      pastScopeToggleBtn.innerHTML = `<span class="text-cyan-300 font-bold">⬆ 이전 세입자 포함 1년전까지 펼쳐보기</span>`;
+      accordionBody.classList.add('hidden');
+      pastToggleBtnText.textContent = '과거 내역 펼치기 (최근 1년) ▾';
+      tbody.innerHTML = '';
+      return;
     }
   }
 
-  // 역순(최근월이 맨 위)으로 렌더링하여 위로 스크롤할 때 과거 내역 확인
+  tbody.innerHTML = '';
+  const isJeonse = (room.lease_type === '전세');
+
+  // 최근 1년간의 기록 (12개월 전체를 최근월부터 역순 렌더링)
   const monthsToRender = [];
-  for (let m = endM; m >= startM; m--) {
+  for (let m = 12; m >= 1; m--) {
     monthsToRender.push(m);
   }
 
@@ -319,48 +320,47 @@ export function renderPastHistorySection(room) {
     const tot = rAmt + mAmt;
 
     const tr = document.createElement('tr');
-    tr.className = `hover:bg-surface-850/60 transition ${p.is_previous_tenant ? 'bg-amber-950/20' : ''}`;
+    tr.className = `hover:bg-surface-850/60 transition ${p.is_previous_tenant ? 'bg-amber-950/25' : ''}`;
 
     // 세입자 표시 라벨 (전출자 1년 보존 표시)
     let tenantLabel = '';
     if (p.is_previous_tenant) {
       tenantLabel = `
-        <div class="font-bold text-amber-300 flex items-center gap-1">
+        <div class="font-bold text-amber-300 flex items-center gap-1 whitespace-nowrap">
           <span>${p.tenant_name || '전출 세입자'}</span>
-          <span class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1 py-0.2 rounded font-normal">전출자(1년보존)</span>
+          <span class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1 py-0.2 rounded font-normal whitespace-nowrap">전출(1년)</span>
         </div>
       `;
     } else {
       tenantLabel = `
-        <div class="font-medium text-slate-200">
+        <div class="font-medium text-slate-200 whitespace-nowrap">
           ${p.tenant_name || room.name || '공실'}
-          ${m === currentMonth ? '<span class="text-[9px] bg-cyan-500/20 text-cyan-300 px-1 py-0.2 rounded ml-0.5">당월</span>' : ''}
         </div>
       `;
     }
 
     tr.innerHTML = `
-      <td class="py-2 px-2 text-center border-r border-slate-800 font-bold text-slate-300 font-mono text-xs">
+      <td class="py-2 px-2 text-center border-r border-slate-800 font-bold text-slate-300 font-mono text-xs whitespace-nowrap">
         ${m}월
       </td>
-      <td class="py-2 px-2.5 border-r border-slate-800 text-xs">
+      <td class="py-2 px-2.5 border-r border-slate-800 text-xs whitespace-nowrap">
         ${tenantLabel}
       </td>
-      <td class="py-2 px-2 border-r border-slate-800 text-right font-bold text-slate-100 font-mono text-xs">
+      <td class="py-2 px-2 border-r border-slate-800 text-right font-bold text-slate-100 font-mono text-xs whitespace-nowrap">
         ${Number(tot).toLocaleString()}원
       </td>
-      <td class="py-2 px-1.5 border-r border-slate-800 text-center">
-        <span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold ${p.paid ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">
+      <td class="py-2 px-1.5 border-r border-slate-800 text-center whitespace-nowrap">
+        <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap ${p.paid ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">
           ${p.paid ? '완납' : '미납'}
         </span>
       </td>
-      <td class="py-2 px-1.5 text-center">
+      <td class="py-2 px-2 text-center whitespace-nowrap">
         ${p.paid ? `
-          <button type="button" class="btn-cancel-past px-2 py-0.5 rounded text-[11px] bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-rose-300 border border-slate-700 transition cursor-pointer" data-month="${m}">
+          <button type="button" class="btn-cancel-past inline-block px-1.5 py-0.5 rounded text-[10px] font-normal bg-slate-800/80 hover:bg-rose-950/50 text-slate-400 hover:text-rose-300 border border-slate-700/60 hover:border-rose-500/40 transition whitespace-nowrap cursor-pointer shadow-xs" data-month="${m}">
             취소
           </button>
         ` : `
-          <button type="button" class="btn-pay-past px-2 py-0.5 rounded text-[11px] bg-cyan-600 hover:bg-cyan-500 text-white font-semibold transition shadow-sm cursor-pointer" data-month="${m}">
+          <button type="button" class="btn-pay-past inline-block px-2 py-0.5 rounded text-[11px] bg-cyan-600 hover:bg-cyan-500 text-white font-bold transition shadow-xs whitespace-nowrap cursor-pointer" data-month="${m}">
             수납
           </button>
         `}
@@ -370,10 +370,16 @@ export function renderPastHistorySection(room) {
   });
 
   tbody.querySelectorAll('.btn-cancel-past').forEach(btn => {
-    btn.onclick = () => handleCancelPayment(rNum, parseInt(btn.dataset.month, 10));
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      handleCancelPayment(rNum, parseInt(btn.dataset.month, 10));
+    };
   });
   tbody.querySelectorAll('.btn-pay-past').forEach(btn => {
-    btn.onclick = () => handleProcessPayment(rNum, parseInt(btn.dataset.month, 10));
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      handleProcessPayment(rNum, parseInt(btn.dataset.month, 10));
+    };
   });
 }
 

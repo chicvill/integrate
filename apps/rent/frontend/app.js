@@ -14,7 +14,7 @@ import {
   openRoomDrawer,
   closeRoomDrawer,
   toggleRoomDrawer,
-  togglePastMonthsScope,
+  togglePastAccordion,
   renderAll
 } from './js/ui.js?v=2.0';
 import {
@@ -49,7 +49,7 @@ window.openRoomDrawer = openRoomDrawer;
 window.closeRoomDrawer = closeRoomDrawer;
 window.toggleRoomDrawer = toggleRoomDrawer;
 
-window.togglePastMonthsScope = togglePastMonthsScope;
+window.togglePastAccordion = togglePastAccordion;
 
 window.openVatModal = openVatModal;
 window.setVatPeriod = setVatPeriod;
