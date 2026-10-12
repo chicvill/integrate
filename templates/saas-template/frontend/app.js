@@ -199,6 +199,28 @@ function setupEventListeners() {
 }
 
 // App Initialization
+import { openLoginSecurityModal, closeLoginSecurityModal, fillQuickLogin, handleSecurityLoginSubmit, handleOneTouchLogout, updateAdminProfileUI } from './js/modals.js?v=2.0';
+import { touchAuthSession } from './js/state.js?v=2.0';
+
+window.openLoginSecurityModal = openLoginSecurityModal;
+window.closeLoginSecurityModal = closeLoginSecurityModal;
+window.fillQuickLogin = fillQuickLogin;
+window.handleSecurityLoginSubmit = handleSecurityLoginSubmit;
+window.handleOneTouchLogout = handleOneTouchLogout;
+
+// 화면 복귀 시 14일 세션 자동 연장
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && state.currentUser) {
+    const valid = touchAuthSession();
+    if (!valid) {
+      updateAdminProfileUI();
+      openLoginSecurityModal(false);
+    } else {
+      updateAdminProfileUI();
+    }
+  }
+});
+
 document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
 
@@ -227,6 +249,11 @@ document.addEventListener('DOMContentLoaded', () => {
   loadBranches().then(() => {
     loadData();
   });
+
+  updateAdminProfileUI();
+  if (!state.currentUser) {
+    openLoginSecurityModal(false);
+  }
 
   // Setup periodic refresh
   setInterval(checkSystemStatus, 30000);

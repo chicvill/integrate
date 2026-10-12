@@ -3,8 +3,8 @@ apps/rent/backend/routers/main_router.py
 원룸 임차료 관리 시스템 REST API 라우터 (prefix="").
 게이트웨이에서 app.include_router(main_router, prefix="/api/rent") 로 마운트됩니다.
 """
-from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from typing import Optional, List, Dict, Any
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, Body
 from sqlalchemy.orm import Session
 
 from ..db.database import get_db
@@ -136,6 +136,29 @@ async def update_room_contract(
     if not updated:
         raise HTTPException(status_code=404, detail=f"{room_number}호를 찾을 수 없습니다.")
     return updated
+
+
+@router.post("/rooms/batch-import")
+async def batch_import_rooms(
+    payload: List[Dict[str, Any]] = Body(...),
+    branch_id: str = Query("main", description="등록 대상 건물 ID"),
+    db: Session = Depends(get_db)
+):
+    """엑셀 파일 등에서 추출한 호실 계약 정보 일괄 등록/갱신"""
+    return service.batch_import_rooms(db, branch_id=branch_id, rooms_data=payload)
+
+
+@router.post("/rooms/ocr-import")
+async def ocr_import_rooms(
+    payload: Dict[str, Any] = Body(...),
+    branch_id: str = Query("main"),
+    db: Session = Depends(get_db)
+):
+    """엑셀 화면 캡처 이미지(OCR/Vision)로부터 표 데이터 추출"""
+    image_b64 = payload.get("image_base64", "")
+    if not image_b64:
+        raise HTTPException(status_code=400, detail="이미지 데이터가 전달되지 않았습니다.")
+    return service.ocr_import_image(image_b64)
 
 
 # ── 당월 / 과거 납부 처리 ──
@@ -276,6 +299,14 @@ async def admin_login(payload: AdminLoginRequest):
             "name": "1호관 원룸 관리실장",
             "redirect_url": "/rent/?branch=main",
             "branch_id": "main"
+        }
+    elif u == "admin02" and p == "1212":
+        return {
+            "success": True,
+            "role": "branch_admin",
+            "name": "2호관 원룸 관리실장",
+            "redirect_url": "/rent/?branch=branch-b",
+            "branch_id": "branch-b"
         }
     elif u in ("user", "student", "tenant") and p in ("1212", "password"):
         return {

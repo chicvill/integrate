@@ -77,3 +77,76 @@ class AppState {
 }
 
 export const state = new AppState();
+
+// ── 표준 SaaS 14일 슬라이딩 세션 자동 유지 모듈 ──
+export const AUTH_STORAGE_KEY = "MQNET_SAAS_ADMIN_AUTH_V1";
+export const SESSION_DURATION_DAYS = 14;
+export const SESSION_TTL_MS = SESSION_DURATION_DAYS * 24 * 60 * 60 * 1000;
+
+// 저장된 세션 복원 및 슬라이딩 자동 연장
+try {
+  const savedUser = localStorage.getItem(AUTH_STORAGE_KEY);
+  if (savedUser) {
+    const parsed = JSON.parse(savedUser);
+    const now = Date.now();
+    const baseTime = parsed.expiresAt ? new Date(parsed.expiresAt).getTime() : (parsed.loginAt ? new Date(parsed.loginAt).getTime() + SESSION_TTL_MS : now + SESSION_TTL_MS);
+    if (now > baseTime) {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      state.setCurrentUser(null);
+    } else {
+      parsed.lastActiveAt = new Date(now).toISOString();
+      parsed.expiresAt = new Date(now + SESSION_TTL_MS).toISOString();
+      state.setCurrentUser(parsed);
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(parsed));
+    }
+  }
+} catch (e) {
+  state.setCurrentUser(null);
+}
+
+export function touchAuthSession() {
+  if (!state.currentUser) return false;
+  const now = Date.now();
+  const expires = state.currentUser.expiresAt ? new Date(state.currentUser.expiresAt).getTime() : now;
+  if (now > expires) {
+    clearAuthUser();
+    return false;
+  }
+  state.currentUser.lastActiveAt = new Date(now).toISOString();
+  state.currentUser.expiresAt = new Date(now + SESSION_TTL_MS).toISOString();
+  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(state.currentUser));
+  return true;
+}
+
+export function getAuthSessionInfo() {
+  if (!state.currentUser || !state.currentUser.expiresAt) return null;
+  const diff = new Date(state.currentUser.expiresAt).getTime() - Date.now();
+  if (diff <= 0) return { expired: true, text: '세션 만료' };
+  const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+  const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+  return {
+    expired: false,
+    days: days,
+    hours: hours,
+    text: days > 0 ? `${days}일 남음 (접속시 자동연장)` : `${hours}시간 남음 (접속시 자동연장)`,
+    expiresDate: new Date(state.currentUser.expiresAt).toISOString().split('T')[0]
+  };
+}
+
+export function setAuthUser(user) {
+  if (user) {
+    const now = Date.now();
+    user.lastActiveAt = new Date(now).toISOString();
+    user.expiresAt = new Date(now + SESSION_TTL_MS).toISOString();
+    state.setCurrentUser(user);
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+  } else {
+    state.setCurrentUser(null);
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+  }
+}
+
+export function clearAuthUser() {
+  state.setCurrentUser(null);
+  localStorage.removeItem(AUTH_STORAGE_KEY);
+}

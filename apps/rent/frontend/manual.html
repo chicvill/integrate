@@ -284,12 +284,94 @@
       </ul>
     </section>
 
-    <!-- 5. 데이터 안전 및 백업 -->
+    <!-- 5. 엑셀 일괄 입력 & AI 스마트 컬럼 매핑 -->
     <section class="section-card">
-      <h2 class="section-title">💾 5. 데이터 보존 및 백업 수칙</h2>
+      <h2 class="section-title">📑 5. 엑셀 데이터 일괄 입력 & AI 스마트 컬럼 매핑</h2>
       <ul>
-        <li>백엔드 데이터베이스(<code>integrat.db</code>) 및 브라우저 로컬 저장소가 실시간 동기화되어 오프라인 환경에서도 빠른 속도로 동작합니다.</li>
-        <li>정기적으로 <code>CSV 내보내기</code> 기능을 사용하여 건물 전체 호실의 수납 및 지출 데이터를 PC에 저장해 두시기를 권장합니다.</li>
+        <li><strong>다양한 엑셀 서식 100% 수용:</strong> 부동산마다 '방번호', '호수', '입주자', '월차임', '보증금(만원)' 등 서로 다른 열 제목을 사용하더라도, <strong>AI 스마트 매퍼가 시스템 10대 핵심 항목으로 자동 인식 및 매칭</strong>합니다.</li>
+        <li><strong>🧬 데이터 패턴 기반 AI 휴리스틱 추론:</strong> 헤더 텍스트뿐만 아니라 실제 입력된 셀 데이터 패턴(예: 010 연락처 정규식, 101~703 호실 범위, 보증금/월세 금액대, 선후불 키워드, 날짜 포맷)을 복합 분석하여 <strong>AI 매핑 신뢰도(예: 99%)</strong>를 산출하고 최적의 컬럼을 자동 추천합니다.</li>
+        <li><strong>📸 엑셀 화면 캡처(이미지/Ctrl+V) 지원:</strong> 엑셀 원본 파일이 없더라도, 화면을 캡처(<code>Win + Shift + S</code>)하여 모달 창에서 <strong><code>[Ctrl + V]</code>로 붙여넣기만 하면 AI Vision이 표 구조와 글자를 자동 추출</strong>합니다.</li>
+        <li><strong>📋 업계 표준 템플릿 4종 프리셋 내장:</strong>
+          <div style="margin-top: 0.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.5rem;">
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 0.6rem; border-radius: 8px;">
+              <strong style="color: #38bdf8;">① 표준 임대차 계약 대장</strong><br>
+              <span style="font-size: 0.8rem; color: #94a3b8;">원룸/오피스텔 일반 표준 서식</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 0.6rem; border-radius: 8px;">
+              <strong style="color: #34d399;">② 부동산 중개망 거래 장부</strong><br>
+              <span style="font-size: 0.8rem; color: #94a3b8;">동호수, 차임(만원) 등 공인중개 ERP 서식</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 0.6rem; border-radius: 8px;">
+              <strong style="color: #fbbf24;">③ 상가·사무실 부가세 대장</strong><br>
+              <span style="font-size: 0.8rem; color: #94a3b8;">상호(대표자), 과세구분 등 세무신고 서식</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 0.6rem; border-radius: 8px;">
+              <strong style="color: #c084fc;">④ LH·청년전세 특약 서식</strong><br>
+              <span style="font-size: 0.8rem; color: #94a3b8;">보증보험, 전월세구분 등 정부지원 서식</span>
+            </div>
+          </div>
+          각 템플릿별 <code>[📥 서식 다운]</code> 및 <code>[✨ 예시 로드]</code> 버튼을 지원하여 실제 데이터 업로드 전 AI 매핑을 미리 시연해볼 수 있습니다.
+        </li>
+        <li><strong>스마트 단위 환산 & 데이터 자동 정제:</strong> 엑셀의 보증금/월세가 '만원' 단위로 작성되었거나 1,000 미만 숫자로 기재된 경우 자동으로 원 단위(5,000,000원, 480,000원)로 정규화하며, 호실 뒤의 '호' 제거, 전화번호 하이픈 정규화가 무손실로 실행됩니다.</li>
+      </ul>
+    </section>
+
+    <!-- 6. 보안 관리자 로그인 & 권한 매트릭스 -->
+    <section class="section-card">
+      <h2 class="section-title">🛡️ 6. 보안 관리자 로그인 & 권한 매트릭스</h2>
+      <p style="color: #cbd5e1; font-size: 0.92rem;">
+        본 시스템은 무단 접근 방지 및 지점별 데이터 격리를 위해 <strong>보안 인증 게이트</strong>를 기본 적용합니다. 미인증 상태에서는 메인 화면이 잠기며 아래 계정을 통해 접속할 수 있습니다.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>계정 구분</th>
+            <th>아이디 / 비밀번호</th>
+            <th>권한 역할</th>
+            <th>기능 범위</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>본사 총괄 최고관리자</strong></td>
+            <td><code>admin</code> / <code>1212</code></td>
+            <td><span style="color: #38bdf8; font-weight: bold;">superadmin</span></td>
+            <td>전 지점 관리, 통합 정산, 등업 승인, 지점 생성</td>
+          </tr>
+          <tr>
+            <td><strong>제1매장 원룸 관리실장</strong></td>
+            <td><code>admin01</code> / <code>1212</code></td>
+            <td><span style="color: #34d399; font-weight: bold;">branch_admin</span></td>
+            <td>1호관 29개실 실시간 수납, 계약 수정, 지출 장부</td>
+          </tr>
+          <tr>
+            <td><strong>제2매장 원룸 관리실장</strong></td>
+            <td><code>admin02</code> / <code>1212</code></td>
+            <td><span style="color: #34d399; font-weight: bold;">branch_admin</span></td>
+            <td>2호관 29개실 실시간 수납 및 운영 관제</td>
+          </tr>
+          <tr>
+            <td><strong>입주자 / 일반 세입자</strong></td>
+            <td><code>tenant</code> / <code>1212</code></td>
+            <td><span style="color: #94a3b8;">tenant</span></td>
+            <td>자신의 호실 계약 및 납부 영수증 조회 전용</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top: 1rem; background: rgba(16, 185, 129, 0.08); border-left: 4px solid #10b981; border-radius: 8px; padding: 0.85rem 1.1rem; font-size: 0.88rem; color: #6ee7b7;">
+        <strong>📱 모바일 편의성 & 보안 절충안 (14일 슬라이딩 세션)</strong><br>
+        • <strong>14일 자동 유지:</strong> 로그인 후 14일 이내에 단 한 번이라도 앱을 열면 활동 시각이 감지되어 <strong>14일이 자동 연장</strong>되므로, 매번 비밀번호를 입력하는 번거로움이 없습니다.<br>
+        • <strong>자동 만료 보호:</strong> 기기를 14일 이상 미사용 방치하거나 분실한 경우 자동으로 세션이 파기되어 세입자 개인정보 유출을 방지합니다.<br>
+        • <strong>원터치 즉시 로그아웃:</strong> 좌측 메뉴 하단의 <code>[🔒 원터치 로그아웃]</code> 버튼을 누르면 팝업 확인 없이 즉시 1초 만에 세션을 파기하고 보안 잠금 화면으로 전환됩니다.
+      </div>
+    </section>
+
+    <!-- 7. 데이터 안전 및 백업 -->
+    <section class="section-card">
+      <h2 class="section-title">💾 7. 데이터 보존 및 전체 계약대장 엑셀 백업</h2>
+      <ul>
+        <li><strong>전체 계약대장 엑셀 백업:</strong> 좌측 메뉴 슬라이드 바의 <code>[💾 전체 계약대장 엑셀 백업]</code> 버튼을 누르면 29개실의 전체 임대차 정보(호실, 세입자, 연락처, 보증금, 월세, 당월 완납여부 등)가 UTF-8 BOM 인코딩된 CSV로 PC에 즉시 다운로드됩니다.</li>
+        <li><strong>데이터베이스 동기화:</strong> 백엔드 데이터베이스(<code>integrat.db</code>) 및 브라우저 로컬 저장소가 실시간 동기화되어 오프라인 환경에서도 빠른 속도로 안정적으로 작동합니다.</li>
       </ul>
     </section>
   </div>

@@ -206,6 +206,46 @@
     </div>
   </div>
 
+  <!-- Modal: 보안 로그인 및 14일 슬라이딩 세션 게이트 -->
+  <div id="loginSecurityModal" class="modal-backdrop" style="display: none; z-index: 9999; backdrop-filter: blur(8px); background: rgba(11, 15, 25, 0.88);">
+    <div class="modal-card" style="max-width: 380px; width: 100%; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
+      <div class="modal-header" style="text-align: center; display: block; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 1rem;">
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🛡️</div>
+        <h3 class="modal-title" style="font-size: 1.15rem; margin-bottom: 0.25rem;">MQnet SaaS 관리자 보안 로그인</h3>
+        <p style="font-size: 0.75rem; color: #94a3b8; margin: 0;">시스템 데이터 보호를 위해 관리자 인증이 필요합니다.</p>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="handleSecurityLoginSubmit(event)" style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" style="font-size: 0.75rem;">관리자 아이디</label>
+            <input type="text" id="loginUsername" required class="form-input" placeholder="예: admin, admin01" style="font-size: 0.85rem; padding: 0.6rem;">
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" style="font-size: 0.75rem;">비밀번호</label>
+            <input type="password" id="loginPassword" required class="form-input" placeholder="비밀번호 입력 (예: 1212)" style="font-size: 0.85rem; padding: 0.6rem;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: #34d399; background: rgba(16, 185, 129, 0.1); padding: 0.45rem 0.6rem; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.25);">
+            <span>🛡️</span>
+            <span>이 기기에서 <strong>14일간 자동 로그인</strong> 유지</span>
+          </div>
+          <div id="loginErrMsg" style="display: none; color: #f87171; font-size: 0.75rem; text-align: center; background: rgba(248, 113, 113, 0.1); padding: 0.4rem; border-radius: 6px;"></div>
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+            <button type="button" id="securityModalCancelBtn" onclick="closeLoginSecurityModal()" class="btn btn-secondary" style="flex: 1; display: none;">닫기</button>
+            <button type="submit" id="loginSubmitBtn" class="btn btn-primary" style="flex: 2; font-weight: bold;">🔒 보안 로그인 (14일 유지)</button>
+          </div>
+        </form>
+        <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.08); text-align: center;">
+          <span style="font-size: 0.7rem; color: #64748b; display: block; margin-bottom: 0.4rem;">빠른 계정 선택:</span>
+          <div style="display: flex; justify-content: center; gap: 0.35rem; flex-wrap: wrap;">
+            <button type="button" onclick="fillQuickLogin('admin', '1212')" class="btn btn-secondary btn-xs" style="font-size: 0.7rem;">본사총괄 (admin)</button>
+            <button type="button" onclick="fillQuickLogin('admin01', '1212')" class="btn btn-secondary btn-xs" style="font-size: 0.7rem;">1호점실장 (admin01)</button>
+            <button type="button" onclick="fillQuickLogin('admin02', '1212')" class="btn btn-secondary btn-xs" style="font-size: 0.7rem;">2호점실장 (admin02)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div id="toastContainer" class="toast-container"></div>
 

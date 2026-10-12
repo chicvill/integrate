@@ -7,6 +7,7 @@
 import { apiGetRooms, apiGetExpenses, apiGetBranches, apiGetTenantHistories } from './api.js?v=2.0';
 
 export const STORAGE_KEY = "ONEROOM_DATA_STORE_29_V5";
+export const AUTH_STORAGE_KEY = "RENT_ADMIN_AUTH_V1";
 
 export const ROOM_NUMBERS = [
   101,
@@ -42,8 +43,91 @@ export const state = {
   tenantHistories: [],
   isPastOpen: false, // 기본 전체 접힘, 펼치기 시 최근 1년간 기록 표시
   isContractOpen: false,
-  isOnline: false
+  isOnline: false,
+  currentUser: null // { username, role, name, branch_id }
 };
+
+export const SESSION_DURATION_DAYS = 14;
+export const SESSION_TTL_MS = SESSION_DURATION_DAYS * 24 * 60 * 60 * 1000; // 14일 (밀리초)
+
+// 저장된 관리자 인증 정보 복원 및 14일 슬라이딩 세션 자동 연장
+try {
+  const savedUser = localStorage.getItem(AUTH_STORAGE_KEY);
+  if (savedUser) {
+    const parsed = JSON.parse(savedUser);
+    const now = Date.now();
+    // 기존 데이터 호환: expiresAt이 없으면 loginAt 기준으로 계산, 없으면 지금부터 14일
+    const baseTime = parsed.expiresAt ? new Date(parsed.expiresAt).getTime() : (parsed.loginAt ? new Date(parsed.loginAt).getTime() + SESSION_TTL_MS : now + SESSION_TTL_MS);
+    
+    if (now > baseTime) {
+      // 14일 경과로 만료됨
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      state.currentUser = null;
+    } else {
+      // 유효 세션: 최근 접속일 기준 14일로 자동 연장 (Sliding Session)
+      parsed.lastActiveAt = new Date(now).toISOString();
+      parsed.expiresAt = new Date(now + SESSION_TTL_MS).toISOString();
+      state.currentUser = parsed;
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(parsed));
+    }
+  }
+} catch (e) {
+  state.currentUser = null;
+}
+
+/**
+ * 사용자 활동 시 14일 자동 연장 (Sliding Refresh)
+ */
+export function touchAuthSession() {
+  if (!state.currentUser) return false;
+  const now = Date.now();
+  const expires = state.currentUser.expiresAt ? new Date(state.currentUser.expiresAt).getTime() : now;
+  if (now > expires) {
+    clearAuthUser();
+    return false;
+  }
+  // 14일 연장
+  state.currentUser.lastActiveAt = new Date(now).toISOString();
+  state.currentUser.expiresAt = new Date(now + SESSION_TTL_MS).toISOString();
+  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(state.currentUser));
+  return true;
+}
+
+/**
+ * 남은 세션 시간 문자열 반환 (UI 표시용)
+ */
+export function getAuthSessionInfo() {
+  if (!state.currentUser || !state.currentUser.expiresAt) return null;
+  const diff = new Date(state.currentUser.expiresAt).getTime() - Date.now();
+  if (diff <= 0) return { expired: true, text: '세션 만료' };
+  const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+  const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+  return {
+    expired: false,
+    days: days,
+    hours: hours,
+    text: days > 0 ? `${days}일 후 만료 (접속 시 자동 연장)` : `${hours}시간 후 만료 (접속 시 자동 연장)`,
+    expiresDate: new Date(state.currentUser.expiresAt).toISOString().split('T')[0]
+  };
+}
+
+export function setAuthUser(user) {
+  if (user) {
+    const now = Date.now();
+    user.lastActiveAt = new Date(now).toISOString();
+    user.expiresAt = new Date(now + SESSION_TTL_MS).toISOString();
+    state.currentUser = user;
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+  } else {
+    state.currentUser = null;
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+  }
+}
+
+export function clearAuthUser() {
+  state.currentUser = null;
+  localStorage.removeItem(AUTH_STORAGE_KEY);
+}
 
 // URL 쿼리 파라미터 또는 localStorage에서 branch 가져오기
 const urlParams = new URLSearchParams(window.location.search);

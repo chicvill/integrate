@@ -63,6 +63,22 @@ export async function apiUpdateContract(roomNumber, data, branchId = 'main') {
   });
 }
 
+export async function apiBatchImportRooms(roomsData, branchId = 'main') {
+  const base = getApiBase('rent');
+  return await fetchWithAuth(`${base}/rooms/batch-import?branch_id=${encodeURIComponent(branchId)}`, {
+    method: 'POST',
+    body: JSON.stringify(roomsData)
+  });
+}
+
+export async function apiOcrImportImage(imageBase64, branchId = 'main') {
+  const base = getApiBase('rent');
+  return await fetchWithAuth(`${base}/rooms/ocr-import?branch_id=${encodeURIComponent(branchId)}`, {
+    method: 'POST',
+    body: JSON.stringify({ image_base64: imageBase64 })
+  });
+}
+
 export async function apiProcessPayment(roomNumber, month, branchId = 'main', paidDate = null, note = '정상 입금', tenantName = null) {
   const base = getApiBase('rent');
   return await fetchWithAuth(`${base}/rooms/${roomNumber}/payment?branch_id=${encodeURIComponent(branchId)}`, {
