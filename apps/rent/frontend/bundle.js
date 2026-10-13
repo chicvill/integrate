@@ -225,10 +225,15 @@ const apiGetTenantHistories = historiesApi.list;
 const apiDeleteTenantHistory = historiesApi.delete;
 
 const apiGetBranches = branchesApi.list;
+const fetchBranches = branchesApi.list;
 const apiCreateBranch = branchesApi.create;
+const createBranch = branchesApi.create;
 const apiUpdateBranch = branchesApi.update;
+const updateBranch = branchesApi.update;
 const apiDeleteBranch = branchesApi.delete;
+const deleteBranch = branchesApi.delete;
 const apiUpdateBranchBilling = branchesApi.updateBilling;
+const updateBranchBilling = branchesApi.updateBilling;
 
 const apiAdminLogin = authApi.login;
 const apiRegisterUser = authApi.register;
@@ -3765,12 +3770,15 @@ async function handleNewBranchSubmit(e) {
   try {
     if (state.isOnline) {
       await apiCreateBranch(payload);
-    } else {
+    }
+    const exists = (state.branches || []).some(b => b.branch_id === bId);
+    if (!exists) {
       state.branches.push({
         branch_id: bId,
         name: bName,
         address: bAddr,
-        billing_status: 'PAID'
+        billing_status: 'PAID',
+        is_active: true
       });
     }
     saveLocalFallback();

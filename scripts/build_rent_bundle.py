@@ -56,7 +56,7 @@ def build_bundle():
     print(f"Generated {bundle_path} ({len(bundle_content)} bytes)")
 
     # Sync to apps/rent root
-    sync_files = ["bundle.js", "index.html", "app.js", "manual.html"]
+    sync_files = ["bundle.js", "index.html", "branches.html", "app.js", "manual.html"]
     for fname in sync_files:
         src = os.path.join(FRONTEND_DIR, fname)
         dst = os.path.join(RENT_DIR, fname)

@@ -1413,12 +1413,15 @@ export async function handleNewBranchSubmit(e) {
   try {
     if (state.isOnline) {
       await apiCreateBranch(payload);
-    } else {
+    }
+    const exists = (state.branches || []).some(b => b.branch_id === bId);
+    if (!exists) {
       state.branches.push({
         branch_id: bId,
         name: bName,
         address: bAddr,
-        billing_status: 'PAID'
+        billing_status: 'PAID',
+        is_active: true
       });
     }
     saveLocalFallback();

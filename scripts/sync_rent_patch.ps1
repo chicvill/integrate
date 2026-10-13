@@ -18,24 +18,28 @@ tar -czf $TarFile -C $ProjectRoot `
     apps/rent/frontend/app.js `
     apps/rent/frontend/bundle.js `
     apps/rent/frontend/index.html `
+    apps/rent/frontend/branches.html `
     apps/rent/frontend/manual.html `
     apps/rent/frontend/style.css `
     apps/rent/frontend/css/layout.css `
     apps/rent/frontend/css/components.css `
     apps/rent/frontend/css/variables.css `
     apps/rent/frontend/js/api.js `
+    apps/rent/frontend/js/branches.js `
     apps/rent/frontend/js/ui.js `
     apps/rent/frontend/js/modals.js `
     apps/rent/frontend/js/state.js `
     apps/rent/app.js `
     apps/rent/bundle.js `
     apps/rent/index.html `
+    apps/rent/branches.html `
     apps/rent/manual.html `
     apps/rent/style.css `
     apps/rent/css/layout.css `
     apps/rent/css/components.css `
     apps/rent/css/variables.css `
     apps/rent/js/api.js `
+    apps/rent/js/branches.js `
     apps/rent/js/ui.js `
     apps/rent/js/modals.js `
     apps/rent/js/state.js

@@ -213,10 +213,15 @@ export const apiGetTenantHistories = historiesApi.list;
 export const apiDeleteTenantHistory = historiesApi.delete;
 
 export const apiGetBranches = branchesApi.list;
+export const fetchBranches = branchesApi.list;
 export const apiCreateBranch = branchesApi.create;
+export const createBranch = branchesApi.create;
 export const apiUpdateBranch = branchesApi.update;
+export const updateBranch = branchesApi.update;
 export const apiDeleteBranch = branchesApi.delete;
+export const deleteBranch = branchesApi.delete;
 export const apiUpdateBranchBilling = branchesApi.updateBilling;
+export const updateBranchBilling = branchesApi.updateBilling;
 
 export const apiAdminLogin = authApi.login;
 export const apiRegisterUser = authApi.register;

@@ -5,7 +5,14 @@
 
 import { MQnetAuth } from '/shared/ui/auth.js?v=2.0';
 import { getApiBase, fetchWithAuth, fetchBranches, createBranch, updateBranch, updateBranchBilling, deleteBranch } from './api.js?v=2.0';
-import { showToast } from './ui.js?v=2.0';
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toastContainer') || document.body;
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 10px 25px rgba(0,0,0,0.3);color:#fff;' + (type === 'error' ? 'background:#ef4444;' : 'background:#10b981;');
+  t.textContent = msg;
+  container.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
 
 const API_BASE = getApiBase('rent');
 
