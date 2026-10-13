@@ -124,6 +124,7 @@ class RoomResponse(BaseModel):
     expiry: str
     move_out: str
     payments: Dict[Any, PaymentInfo] = {}
+    tenant_histories: List[Dict[str, Any]] = []
 
     class Config:
         from_attributes = True

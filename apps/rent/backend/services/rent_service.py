@@ -258,6 +258,25 @@ class RentService:
             pay_map[r_num][p_month] = pay_obj
             pay_map[r_num][f"{p_year}-{p_month}"] = pay_obj
 
+        histories_db = db.query(RentTenantHistory).filter(RentTenantHistory.branch_id == branch_id).order_by(RentTenantHistory.move_out.desc()).all()
+        hist_map: Dict[int, List[Dict[str, Any]]] = {}
+        for h in histories_db:
+            h_rnum = cast(int, h.room_number)
+            hist_map.setdefault(h_rnum, []).append({
+                "id": str(h.id),
+                "name": str(h.name),
+                "id_number": str(h.id_number or ""),
+                "phone": str(h.phone or ""),
+                "lease_type": str(h.lease_type or "월세"),
+                "pay_timing": str(h.pay_timing or "후불"),
+                "deposit": h.deposit,
+                "rent": h.rent,
+                "maintenance": h.maintenance,
+                "move_in": str(h.move_in or ""),
+                "move_out": str(h.move_out or ""),
+                "retention_until": str(h.retention_until or "")
+            })
+
         result: Dict[int, Any] = {}
         for r in rooms_db:
             r_num: int = cast(int, r.room_number)
@@ -276,7 +295,8 @@ class RentService:
                 "move_in": str(r.move_in or ""),
                 "expiry": str(r.expiry or ""),
                 "move_out": str(r.move_out or ""),
-                "payments": pay_map.get(r_num, {})
+                "payments": pay_map.get(r_num, {}),
+                "tenant_histories": hist_map.get(r_num, [])
             }
         return result
 

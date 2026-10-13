@@ -5,6 +5,7 @@ $ProjectRoot = Split-Path -Parent $PSScriptRoot
 
 $TarFile = "$ProjectRoot\rent_patch.tar.gz"
 tar -czf $TarFile -C $ProjectRoot `
+    apps/rent/backend/schemas.py `
     apps/rent/backend/services/payment_service.py `
     apps/rent/backend/services/rent_service.py `
     apps/rent/backend/services/vat_service.py `

@@ -366,79 +366,118 @@ export function renderPastHistorySection(room) {
     // 결제 데이터 조회 (연도-월 키 우선, 당해연도 월 키, 없으면 기본 객체)
     const existingP = (room.payments && (room.payments[pKey] || (y === currentYear ? room.payments[m] : null)));
 
+    // 1. 현재 세입자 전입일 기준 거주 기간 판별
     let inYear = currentYear;
     let inMonth = 1;
+    let hasMoveIn = false;
     if (room.name && room.move_in) {
       const dtComp = parseDateComponents(room.move_in);
       if (dtComp) {
         inYear = dtComp.year;
         inMonth = dtComp.month;
+        hasMoveIn = true;
       }
     }
 
-    const rule = evaluatePaymentRule({
-      year: y,
-      month: m,
-      inYear,
-      inMonth,
-      leaseType: room.lease_type || '월세',
-      payTiming: room.pay_timing || '후불',
-      curYear: currentYear,
-      curMonth: currentMonth,
-      hasPrevHist: Boolean(existingP?.is_previous_tenant)
-    });
+    const isCurrentTenant = Boolean(room.name) && hasMoveIn && (y > inYear || (y === inYear && m >= inMonth));
 
+    // 2. 전출자 이력 매칭
+    const histories = room.tenant_histories || [];
+    let matchedHist = null;
+    if (!isCurrentTenant) {
+      for (const h of histories) {
+        let outY = 0, outM = 0;
+        if (h.move_out) {
+          const outComp = parseDateComponents(h.move_out);
+          if (outComp) {
+            outY = outComp.year;
+            outM = outComp.month;
+          }
+        }
+        let hInY = 0, hInM = 0;
+        if (h.move_in) {
+          const inComp = parseDateComponents(h.move_in);
+          if (inComp) {
+            hInY = inComp.year;
+            hInM = inComp.month;
+          }
+        }
+        if (outY && outM) {
+          let inPeriod = (y < outY || (y === outY && m <= outM));
+          if (hInY && hInM) {
+            inPeriod = inPeriod && (y > hInY || (y === hInY && m >= hInM));
+          }
+          if (inPeriod) {
+            matchedHist = h;
+            break;
+          }
+        }
+      }
+      if (!matchedHist && existingP && existingP.is_previous_tenant && existingP.tenant_name) {
+        matchedHist = {
+          name: existingP.tenant_name,
+          rent: existingP.rent_amount,
+          maintenance: existingP.maintenance_amount,
+          lease_type: '월세'
+        };
+      }
+    }
+
+    // 3. 공실 여부 판정: 현재 세입자 계약도 아니고 전출자 거주 기간도 아님
+    const isVacancy = (!isCurrentTenant && !matchedHist);
+
+    // 납부 객체 p 준비
     let p = existingP ? { ...existingP } : {
       month: m,
       year: y,
-      paid: rule.paid,
-      paid_date: rule.paid ? `${y}-${String(m).padStart(2, '0')}-10` : '',
+      paid: false,
+      paid_date: '',
       rent_amount: isJeonse ? 0 : room.rent,
       maintenance_amount: room.maintenance,
-      note: rule.note,
-      tenant_name: room.name,
-      is_previous_tenant: false
+      note: isVacancy ? '공실' : '',
+      tenant_name: isCurrentTenant ? room.name : (matchedHist ? matchedHist.name : ''),
+      is_previous_tenant: Boolean(matchedHist)
     };
 
-    // 전입 이전 기간(이전 세입자 이력 없음) 또는 입주월 후불인데 구버전 캐시 등으로 완납되어 있던 경우 자동 보정
-    if (existingP && !existingP.is_previous_tenant) {
-      if (rule.isBeforeMoveIn) {
-        p.paid = false;
-        p.paid_date = '';
-        p.note = rule.note;
-      } else if (rule.isMoveInMonth && !rule.paid && (p.note === '정상 입금' || !p.note)) {
-        p.paid = false;
-        p.paid_date = '';
-        p.note = rule.note;
-      }
+    if (isVacancy) {
+      p.paid = false;
+      p.paid_date = '';
+      p.note = '공실';
     }
 
-    // 현 세입자가 과거(예: 2022년 전입)부터 계속 살고 있는 경우 세입자명 및 금액 스마트 보정
-    let displayName = p.tenant_name;
-    let isPrev = !!p.is_previous_tenant;
-    let rAmt = isJeonse ? 0 : (p.rent_amount !== undefined ? p.rent_amount : room.rent);
-    let mAmt = p.maintenance_amount !== undefined ? p.maintenance_amount : room.maintenance;
+    // 세입자 표시 정보 및 청구 금액 산정
+    let displayName = '';
+    let isPrev = false;
+    let rAmt = 0;
+    let mAmt = 0;
 
-    if (room.name && room.move_in) {
-      const dtComp = parseDateComponents(room.move_in);
-      if (dtComp) {
-        if (y > dtComp.year || (y === dtComp.year && m >= dtComp.month)) {
-          displayName = room.name;
-          isPrev = false;
-          rAmt = isJeonse ? 0 : room.rent;
-          mAmt = room.maintenance;
-        }
-      }
+    if (isVacancy) {
+      displayName = '공실';
+      rAmt = 0;
+      mAmt = 0;
+    } else if (isCurrentTenant) {
+      displayName = room.name;
+      isPrev = false;
+      rAmt = isJeonse ? 0 : (p.rent_amount !== undefined ? p.rent_amount : room.rent);
+      mAmt = p.maintenance_amount !== undefined ? p.maintenance_amount : room.maintenance;
+    } else if (matchedHist) {
+      displayName = matchedHist.name;
+      isPrev = true;
+      const histJeonse = (matchedHist.lease_type === '전세');
+      rAmt = histJeonse ? 0 : (p.rent_amount !== undefined ? p.rent_amount : (matchedHist.rent || 0));
+      mAmt = p.maintenance_amount !== undefined ? p.maintenance_amount : (matchedHist.maintenance || 0);
     }
 
     const tot = rAmt + mAmt;
 
     const tr = document.createElement('tr');
-    tr.className = `hover:bg-surface-850/60 transition ${isPrev ? 'bg-amber-950/25' : ''}`;
+    tr.className = `hover:bg-surface-850/60 transition ${isPrev ? 'bg-amber-950/25' : (isVacancy ? 'opacity-85' : '')}`;
 
-    // 세입자 표시 라벨 (전출자 1년 보존 표시)
+    // 세입자 라벨 생성
     let tenantLabel = '';
-    if (isPrev) {
+    if (isVacancy) {
+      tenantLabel = `<span class="text-slate-500 font-normal whitespace-nowrap">공실</span>`;
+    } else if (isPrev) {
       tenantLabel = `
         <div class="font-bold text-amber-300 flex items-center gap-1 whitespace-nowrap">
           <span>${displayName || '전출 세입자'}</span>
@@ -448,15 +487,31 @@ export function renderPastHistorySection(room) {
     } else {
       tenantLabel = `
         <div class="font-medium text-slate-200 whitespace-nowrap">
-          ${displayName || room.name || '공실'}
+          ${displayName || room.name}
         </div>
       `;
     }
 
-    // 납부일자 표시 (은행 거래내역 확인용: 완납 시 날짜 표시 및 클릭하여 실입금일 수정 지원)
+    // 금액란 생성 (공실은 빈칸 '-', 미납/완납은 해당 시점 계약 금액 표시 및 수정 지원)
+    let amountHtml = '';
+    if (isVacancy) {
+      amountHtml = `<span class="text-slate-600 font-mono text-[11px]">-</span>`;
+    } else {
+      const isPaid = Boolean(p.paid && p.paid_date);
+      const btnStyle = isPaid
+        ? 'hover:bg-emerald-950/80 text-emerald-400 hover:text-emerald-300 border-slate-700/80 hover:border-emerald-500/60'
+        : 'hover:bg-rose-950/50 text-rose-300 hover:text-rose-200 border-rose-900/60 hover:border-rose-500/50';
+      amountHtml = `
+        <button type="button" class="btn-change-payamount inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-900/90 ${btnStyle} border font-mono text-[11px] font-bold transition cursor-pointer shadow-xs whitespace-nowrap" title="클릭하여 납부/청구 금액 수정" data-year="${y}" data-month="${m}" data-rent="${rAmt}" data-maint="${mAmt}" data-tot="${tot}">
+          <span>✏️</span><span>${Number(tot).toLocaleString()}원</span>
+        </button>
+      `;
+    }
+
+    // 납부일자 생성
     let payDateHtml = '';
-    if (p.paid) {
-      const displayDate = p.paid_date || `${y}-${String(m).padStart(2, '0')}-10`;
+    if (!isVacancy && p.paid && p.paid_date) {
+      const displayDate = p.paid_date;
       payDateHtml = `
         <button type="button" class="btn-change-paydate inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-900/90 hover:bg-cyan-950/80 text-cyan-300 hover:text-cyan-200 border border-slate-700/80 hover:border-cyan-500/60 font-mono text-[11px] font-semibold transition cursor-pointer shadow-xs whitespace-nowrap" title="클릭하여 은행 실입금일자로 수정" data-year="${y}" data-month="${m}" data-date="${displayDate}">
           <span class="text-[10px] opacity-70">📅</span><span>${displayDate}</span>
@@ -464,6 +519,34 @@ export function renderPastHistorySection(room) {
       `;
     } else {
       payDateHtml = `<span class="text-slate-600 font-mono text-[11px]">-</span>`;
+    }
+
+    // 상태 배지 생성
+    let statusHtml = '';
+    if (isVacancy) {
+      statusHtml = `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap bg-slate-800 text-slate-400 border border-slate-700">공실</span>`;
+    } else if (p.paid) {
+      statusHtml = `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">완납</span>`;
+    } else {
+      statusHtml = `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap bg-rose-500/20 text-rose-300 border border-rose-500/30">미납</span>`;
+    }
+
+    // 조작 버튼 생성 (공실은 버튼 없음, 미납은 수납 버튼, 완납은 취소 버튼)
+    let actionHtml = '';
+    if (isVacancy) {
+      actionHtml = `<span class="text-slate-600 font-mono text-[11px]">-</span>`;
+    } else if (p.paid) {
+      actionHtml = `
+        <button type="button" class="btn-cancel-past inline-block px-1.5 py-0.5 rounded text-[10px] font-normal bg-slate-800/80 hover:bg-rose-950/50 text-slate-400 hover:text-rose-300 border border-slate-700/60 hover:border-rose-500/40 transition whitespace-nowrap cursor-pointer shadow-xs" data-year="${y}" data-month="${m}">
+          취소
+        </button>
+      `;
+    } else {
+      actionHtml = `
+        <button type="button" class="btn-pay-past inline-block px-2 py-0.5 rounded text-[11px] bg-cyan-600 hover:bg-cyan-500 text-white font-bold transition shadow-xs whitespace-nowrap cursor-pointer" data-year="${y}" data-month="${m}">
+          수납
+        </button>
+      `;
     }
 
     tr.innerHTML = `
@@ -474,28 +557,16 @@ export function renderPastHistorySection(room) {
         ${tenantLabel}
       </td>
       <td class="py-2 px-2 border-r border-slate-800 text-right font-mono text-xs whitespace-nowrap">
-        <button type="button" class="btn-change-payamount inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-900/90 hover:bg-emerald-950/80 text-emerald-400 hover:text-emerald-300 border border-slate-700/80 hover:border-emerald-500/60 font-mono text-[11px] font-bold transition cursor-pointer shadow-xs whitespace-nowrap" title="클릭하여 납부/청구 금액 수정" data-year="${y}" data-month="${m}" data-rent="${rAmt}" data-maint="${mAmt}" data-tot="${tot}">
-          <span>✏️</span><span>${Number(tot).toLocaleString()}원</span>
-        </button>
+        ${amountHtml}
       </td>
       <td class="py-2 px-2 border-r border-slate-800 text-center whitespace-nowrap">
         ${payDateHtml}
       </td>
       <td class="py-2 px-1.5 border-r border-slate-800 text-center whitespace-nowrap">
-        <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap ${p.paid ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">
-          ${p.paid ? '완납' : '미납'}
-        </span>
+        ${statusHtml}
       </td>
       <td class="py-2 px-2 text-center whitespace-nowrap">
-        ${p.paid ? `
-          <button type="button" class="btn-cancel-past inline-block px-1.5 py-0.5 rounded text-[10px] font-normal bg-slate-800/80 hover:bg-rose-950/50 text-slate-400 hover:text-rose-300 border border-slate-700/60 hover:border-rose-500/40 transition whitespace-nowrap cursor-pointer shadow-xs" data-year="${y}" data-month="${m}">
-            취소
-          </button>
-        ` : `
-          <button type="button" class="btn-pay-past inline-block px-2 py-0.5 rounded text-[11px] bg-cyan-600 hover:bg-cyan-500 text-white font-bold transition shadow-xs whitespace-nowrap cursor-pointer" data-year="${y}" data-month="${m}">
-            수납
-          </button>
-        `}
+        ${actionHtml}
       </td>
     `;
     tbody.appendChild(tr);
@@ -844,6 +915,33 @@ export async function handleChangePaymentAmount(roomNum, month, year, newTotal, 
     const tenantName = (room && room.name) ? room.name : "공실";
     const pKey = `${year}-${month}`;
 
+    if (newTotal === 0) {
+      // 0원으로 수정 시 납부 취소 (미납 환원)
+      if (state.isOnline) {
+        const res = await apiCancelPayment(roomNum, month, state.currentBranch, year);
+        if (res) state.rooms[roomNum] = res;
+      }
+      if (room && room.payments) {
+        const existing = room.payments[pKey] || (year === currentYear ? room.payments[month] : {}) || {};
+        const payObj = {
+          ...existing,
+          month,
+          year,
+          paid: false,
+          paid_date: '',
+          rent_amount: 0,
+          maintenance_amount: 0,
+          note: '미납 (0원 처리)',
+          tenant_name: existing.tenant_name || tenantName
+        };
+        room.payments[pKey] = payObj;
+        if (year === currentYear) room.payments[month] = payObj;
+      }
+      saveLocalFallback();
+      renderAll();
+      return;
+    }
+
     const isJeonse = (room && room.lease_type === "전세");
     let newRent = 0;
     let newMaint = newTotal;
@@ -884,7 +982,7 @@ export async function handleChangePaymentAmount(roomNum, month, year, newTotal, 
         ...existing,
         month,
         year,
-        paid: existing.paid !== undefined ? existing.paid : true,
+        paid: true,
         paid_date: paidDate,
         rent_amount: newRent,
         maintenance_amount: newMaint,

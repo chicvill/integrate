@@ -112,15 +112,78 @@ class VatService:
             room_period_total = 0
             tenant_names_seen = set()
 
+            # 전입일 파싱
+            move_in_str = r.get("move_in") or ""
+            in_y, in_m = None, None
+            if move_in_str and len(move_in_str) >= 7:
+                try:
+                    in_y = int(move_in_str[:4])
+                    in_m = int(move_in_str[5:7])
+                except (ValueError, TypeError):
+                    pass
+
+            room_hists = hist_map.get(rNum, [])
+
             for m in months:
                 p = r.get("payments", {}).get(m, {})
-                if p.get("paid"):
-                    amt = (p.get("rent_amount") or 0) + (p.get("maintenance_amount") or 0)
-                    t_name = p.get("tenant_name")
-                    if t_name:
-                        tenant_names_seen.add(t_name)
-                else:
+                is_curr = False
+                if r.get("name") and in_y is not None and in_m is not None:
+                    if (year > in_y) or (year == in_y and m >= in_m):
+                        is_curr = True
+
+                matched_hist: Optional[RentTenantHistory] = None
+                if not is_curr:
+                    for h in room_hists:
+                        h_out_y, h_out_m = None, None
+                        if h.move_out and len(h.move_out) >= 7:
+                            try:
+                                h_out_y = int(h.move_out[:4])
+                                h_out_m = int(h.move_out[5:7])
+                            except (ValueError, TypeError):
+                                pass
+                        h_in_y, h_in_m = 0, 0
+                        if h.move_in and len(h.move_in) >= 7:
+                            try:
+                                h_in_y = int(h.move_in[:4])
+                                h_in_m = int(h.move_in[5:7])
+                            except (ValueError, TypeError):
+                                pass
+
+                        if h_out_y and h_out_m:
+                            in_period = (year < h_out_y or (year == h_out_y and m <= h_out_m))
+                            if h_in_y and h_in_m:
+                                in_period = in_period and (year > h_in_y or (year == h_in_y and m >= h_in_m))
+                            if in_period:
+                                matched_hist = h
+                                break
+
+                # 공실 여부 판정: 현 세입자 계약도 아니고 전출자 거주 기간도 아님
+                is_vacant = (not is_curr and not matched_hist)
+
+                if is_vacant:
+                    # 공실은 부가세 공급가액(수입)에서 완전 제외 (0원)
                     amt = 0
+                else:
+                    # 계약 기간: 미납이어도 수입으로 처리, 완납이면 납부금액
+                    if p.get("paid"):
+                        amt = (p.get("rent_amount") or 0) + (p.get("maintenance_amount") or 0)
+                    else:
+                        if is_curr:
+                            base_rent = 0 if r.get("lease_type") == "전세" else (r.get("rent") or 0)
+                            amt = base_rent + (r.get("maintenance") or 0)
+                        elif matched_hist:
+                            base_rent = 0 if matched_hist.lease_type == "전세" else (matched_hist.rent or 0)
+                            amt = base_rent + (matched_hist.maintenance or 0)
+                        else:
+                            amt = 0
+
+                    if is_curr and r.get("name"):
+                        tenant_names_seen.add(r.get("name"))
+                    elif matched_hist and matched_hist.name:
+                        tenant_names_seen.add(matched_hist.name)
+                    elif p.get("tenant_name"):
+                        tenant_names_seen.add(p.get("tenant_name"))
+
                 monthly_amounts[m] = amt
                 room_period_total += amt
 
