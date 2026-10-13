@@ -2807,24 +2807,15 @@ function exportVatCSV() {
   }
 
   const d = currentVatData;
-  const filteredRows = d.rows.filter(r => selectedVatRooms.has(Number(r.room_number)));
+  let filteredRows = d.rows.filter(r => selectedVatRooms.has(Number(r.room_number)));
   if (filteredRows.length === 0) {
-    alert("선택된 호실이 없습니다. 내보낼 호실을 최소 1개 이상 체크해주세요.");
-    return;
+    // 선택된 호실이 없으면 전체 행 대상으로 자동 전환
+    filteredRows = d.rows;
   }
 
   let csv = "\uFEFF"; // UTF-8 BOM (Excel 한글 깨짐 방지)
 
-  // 상단 헤더 정보
-  csv += `부동산 임차관리 - 부가가치세 및 호실별 수납현황\n`;
-  csv += `조회기간,${d.year}년 ${d.start_month}월 ~ ${d.end_month}월 (${filteredRows.length}개실 선택)\n`;
-  csv += `총 수납액,${d.total_collected}\n`;
-  csv += `공급가액,${d.total_supply}\n`;
-  csv += `부가가치세(10%),${d.total_vat}\n`;
-  csv += `금액단위,원 (호·원 생략)\n`;
-  csv += `출력일시,${formattedToday}\n\n`;
-
-  // 컬럼 헤더
+  // 컬럼 헤더 (15개 열 완벽 통일)
   let headerRow = ["호실", "임차인", "주민(사업자)번호", "임대유형", "보증금"];
   d.months.forEach(m => {
     headerRow.push(`${m}월 수납액`);
@@ -2835,16 +2826,26 @@ function exportVatCSV() {
   // 데이터 행
   const monthSums = {};
   d.months.forEach(m => { monthSums[m] = 0; });
-  let totalDeposit = 0;
+  let totalDeposit = 0, totalPeriod = 0, totalSupply = 0, totalVat = 0;
 
   filteredRows.forEach(r => {
-    totalDeposit += Number(r.deposit || 0);
+    const dep = Number(r.deposit || 0);
+    const pTot = Number(r.period_total || 0);
+    const sVal = Number(r.supply_value || 0);
+    const vVal = Number(r.vat_value || 0);
+
+    totalDeposit += dep;
+    totalPeriod += pTot;
+    totalSupply += sVal;
+    totalVat += vVal;
+
+    const idNum = r.id_number || (state.rooms[r.room_number] ? state.rooms[r.room_number].id_number : '') || '-';
     const row = [
-      `"${r.room_number}"`,
-      `"${r.tenant_name}"`,
-      `"${r.id_number || (state.rooms[r.room_number] ? state.rooms[r.room_number].id_number : '') || '-'}"`,
-      `"${r.lease_type}"`,
-      r.deposit || 0
+      `"${r.room_number}호"`,
+      `"${(r.tenant_name || '공실').replace(/"/g, '""')}"`,
+      `"\t${idNum}"`, // 탭 접두사로 엑셀 지수 표기 및 하이픈 계산식 오인 방지
+      `"${r.lease_type || '월세'}"`,
+      dep
     ];
 
     d.months.forEach(m => {
@@ -2853,27 +2854,167 @@ function exportVatCSV() {
       row.push(amt);
     });
 
-    row.push(r.period_total, r.supply_value, r.vat_value, `"${r.status}"`);
+    row.push(pTot, sVal, vVal, `"${r.status || '완납'}"`);
     csv += row.join(",") + "\n";
   });
 
-  // 합계 행
-  const summaryRow = ["합계", `"${filteredRows.length}개실"`, '""', totalDeposit];
+  // 합계 행 (정확히 15개 열 일치)
+  const summaryRow = [
+    '"합계"',
+    `"총 ${filteredRows.length}개실"`,
+    '""',
+    '""',
+    totalDeposit
+  ];
   d.months.forEach(m => {
     summaryRow.push(monthSums[m]);
   });
-  summaryRow.push(d.total_collected, d.total_supply, d.total_vat, '""');
-  csv += summaryRow.join(",") + "\n";
+  summaryRow.push(totalPeriod, totalSupply, totalVat, '""');
+  csv += summaryRow.join(",") + "\n\n";
 
-  // CSV 파일 다운로드 생성
+  // 하단 참고 요약 (보고서 메타정보)
+  csv += `[보고서 안내],조회기간: ${d.year}년 ${d.start_month}월 ~ ${d.end_month}월 (선택 ${filteredRows.length}개실),,,,,,,,,,\n`;
+  csv += `[과세표준],공급대가: ${totalPeriod}원 (공급가액: ${totalSupply}원 | 부가세: ${totalVat}원),,,,,,,,,,\n`;
+  csv += `[산출기준],순수 임차료(월세) 기준 산출 (실비 정산 관리비 및 전세 제외),,,,,,,,,,\n`;
+  csv += `[출력일시],${formattedToday},,,,,,,,,,\n`;
+
+  // CSV 파일 다운로드 생성 (특수문자 ~ 제거하여 윈도우 엑셀 호환성 확보)
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
+  const safeToday = (formattedToday || '').replace(/-/g, '');
   link.setAttribute("href", url);
-  link.setAttribute("download", `부동산_부가가치세_수납현황_${d.year}년_${d.start_month}월~${d.end_month}월_${formattedToday}.csv`);
+  link.setAttribute("download", `부동산_부가세_수납현황_${d.year}년_${d.start_month}월_${d.end_month}월_${safeToday}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+// ── 6-2. 부가가치세 Excel (.xls) 내보내기 ──
+function exportVatExcel() {
+  if (!currentVatData || !currentVatData.rows || currentVatData.rows.length === 0) {
+    alert("내보낼 수납 집계 데이터가 없습니다.");
+    return;
+  }
+
+  const d = currentVatData;
+  let filteredRows = d.rows.filter(r => selectedVatRooms.has(Number(r.room_number)));
+  if (filteredRows.length === 0) {
+    filteredRows = d.rows;
+  }
+
+  const monthThs = d.months.map(m => `<th style="background:#1e293b;color:#f8fafc;border:1px solid #475569;padding:6px;font-size:11px;">${m}월</th>`).join('');
+  const colSpanAll = 5 + d.months.length + 4;
+
+  let trs = '';
+  const monthSums = {};
+  d.months.forEach(m => { monthSums[m] = 0; });
+  let totalDeposit = 0, totalPeriod = 0, totalSupply = 0, totalVat = 0;
+
+  filteredRows.forEach(r => {
+    const dep = Number(r.deposit || 0);
+    const pTot = Number(r.period_total || 0);
+    const sVal = Number(r.supply_value || 0);
+    const vVal = Number(r.vat_value || 0);
+
+    totalDeposit += dep;
+    totalPeriod += pTot;
+    totalSupply += sVal;
+    totalVat += vVal;
+
+    const monthTds = d.months.map(m => {
+      const amt = (r.monthly_amounts && r.monthly_amounts[m]) || 0;
+      monthSums[m] += amt;
+      return `<td style="border:1px solid #cbd5e1;padding:5px;text-align:right;mso-number-format:'\\#\\,\\#\\#0';">${amt > 0 ? amt.toLocaleString() : '-'}</td>`;
+    }).join('');
+
+    const idNum = r.id_number || (state.rooms[r.room_number] ? state.rooms[r.room_number].id_number : '') || '-';
+
+    trs += `<tr>
+      <td style="border:1px solid #cbd5e1;padding:5px;text-align:center;mso-number-format:'\\@';font-weight:bold;">${r.room_number}호</td>
+      <td style="border:1px solid #cbd5e1;padding:5px;text-align:left;">${r.tenant_name || '공실'}</td>
+      <td style="border:1px solid #cbd5e1;padding:5px;text-align:center;mso-number-format:'\\@';">${idNum}</td>
+      <td style="border:1px solid #cbd5e1;padding:5px;text-align:center;">${r.lease_type || '월세'}</td>
+      <td style="border:1px solid #cbd5e1;padding:5px;text-align:right;mso-number-format:'\\#\\,\\#\\#0';">${dep.toLocaleString()}</td>
+      ${monthTds}
+      <td style="border:1px solid #cbd5e1;padding:5px;text-align:right;font-weight:bold;color:#0f766e;mso-number-format:'\\#\\,\\#\\#0';">${pTot.toLocaleString()}</td>
+      <td style="border:1px solid #cbd5e1;padding:5px;text-align:right;font-weight:bold;color:#1e40af;mso-number-format:'\\#\\,\\#\\#0';">${sVal.toLocaleString()}</td>
+      <td style="border:1px solid #cbd5e1;padding:5px;text-align:right;font-weight:bold;color:#b45309;mso-number-format:'\\#\\,\\#\\#0';">${vVal.toLocaleString()}</td>
+      <td style="border:1px solid #cbd5e1;padding:5px;text-align:center;">${r.status || '완납'}</td>
+    </tr>`;
+  });
+
+  const sumMonthTds = d.months.map(m => {
+    return `<td style="border:1px solid #475569;padding:6px;text-align:right;font-weight:bold;background:#e2e8f0;mso-number-format:'\\#\\,\\#\\#0';">${monthSums[m].toLocaleString()}</td>`;
+  }).join('');
+
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <meta charset="utf-8">
+  <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>부가가치세_수납현황</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+  <style>
+    body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; font-size: 11px; }
+    table { border-collapse: collapse; width: 100%; }
+  </style>
+</head>
+<body>
+  <table>
+    <tr>
+      <td colspan="${colSpanAll}" style="font-size:16px;font-weight:bold;padding:12px;background:#0f172a;color:#ffffff;text-align:center;">
+        부동산 임차관리 - 부가가치세 및 기간별 수납현황 (${d.year}년 ${d.start_month}월 ~ ${d.end_month}월)
+      </td>
+    </tr>
+    <tr>
+      <td colspan="${colSpanAll}" style="font-size:11px;color:#475569;padding:6px;text-align:right;background:#f8fafc;">
+        출력일시: ${formattedToday} | 선택호실: ${filteredRows.length}개실 | 기준: 순수 임차료(월세) 과세표준
+      </td>
+    </tr>
+    <thead>
+      <tr style="background:#1e293b;color:#ffffff;">
+        <th style="border:1px solid #475569;padding:6px;text-align:center;">호실</th>
+        <th style="border:1px solid #475569;padding:6px;text-align:center;">임차인</th>
+        <th style="border:1px solid #475569;padding:6px;text-align:center;">주민(사업자)번호</th>
+        <th style="border:1px solid #475569;padding:6px;text-align:center;">임대유형</th>
+        <th style="border:1px solid #475569;padding:6px;text-align:center;">보증금</th>
+        ${monthThs}
+        <th style="border:1px solid #475569;padding:6px;text-align:center;background:#0f766e;">기간총합계(VAT포함)</th>
+        <th style="border:1px solid #475569;padding:6px;text-align:center;background:#1e40af;">공급가액</th>
+        <th style="border:1px solid #475569;padding:6px;text-align:center;background:#b45309;">부가가치세(10%)</th>
+        <th style="border:1px solid #475569;padding:6px;text-align:center;">수납상태</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${trs}
+    </tbody>
+    <tfoot>
+      <tr style="background:#e2e8f0;font-weight:bold;">
+        <td style="border:1px solid #475569;padding:6px;text-align:center;">합계</td>
+        <td style="border:1px solid #475569;padding:6px;text-align:left;">총 ${filteredRows.length}개실</td>
+        <td style="border:1px solid #475569;padding:6px;text-align:center;">-</td>
+        <td style="border:1px solid #475569;padding:6px;text-align:center;">-</td>
+        <td style="border:1px solid #475569;padding:6px;text-align:right;mso-number-format:'\\#\\,\\#\\#0';">${totalDeposit.toLocaleString()}</td>
+        ${sumMonthTds}
+        <td style="border:1px solid #475569;padding:6px;text-align:right;color:#0f766e;mso-number-format:'\\#\\,\\#\\#0';">${totalPeriod.toLocaleString()}</td>
+        <td style="border:1px solid #475569;padding:6px;text-align:right;color:#1e40af;mso-number-format:'\\#\\,\\#\\#0';">${totalSupply.toLocaleString()}</td>
+        <td style="border:1px solid #475569;padding:6px;text-align:right;color:#b45309;mso-number-format:'\\#\\,\\#\\#0';">${totalVat.toLocaleString()}</td>
+        <td style="border:1px solid #475569;padding:6px;text-align:center;">-</td>
+      </tr>
+    </tfoot>
+  </table>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const safeToday = (formattedToday || '').replace(/-/g, '');
+  link.setAttribute("href", url);
+  link.setAttribute("download", `부동산_부가세_수납현황_${d.year}년_${d.start_month}월_${d.end_month}월_${safeToday}.xls`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 // ── 전출자 1년 보존 이력 조회 모달 ──
@@ -5369,6 +5510,7 @@ window.openVatModal = openVatModal;
 window.setVatPeriod = setVatPeriod;
 window.handleVatCustomQuery = handleVatCustomQuery;
 window.exportVatCSV = exportVatCSV;
+window.exportVatExcel = exportVatExcel;
 window.onToggleVatRoomRow = onToggleVatRoomRow;
 window.toggleAllVatRooms = toggleAllVatRooms;
 window.saveVatTargetRoomsSetting = saveVatTargetRoomsSetting;

@@ -42,6 +42,7 @@ import {
   setVatPeriod,
   handleVatCustomQuery,
   exportVatCSV,
+  exportVatExcel,
   onToggleVatRoomRow,
   toggleAllVatRooms,
   saveVatTargetRoomsSetting,
@@ -116,6 +117,7 @@ window.openVatModal = openVatModal;
 window.setVatPeriod = setVatPeriod;
 window.handleVatCustomQuery = handleVatCustomQuery;
 window.exportVatCSV = exportVatCSV;
+window.exportVatExcel = exportVatExcel;
 window.onToggleVatRoomRow = onToggleVatRoomRow;
 window.toggleAllVatRooms = toggleAllVatRooms;
 window.saveVatTargetRoomsSetting = saveVatTargetRoomsSetting;
