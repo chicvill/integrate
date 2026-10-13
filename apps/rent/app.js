@@ -24,7 +24,12 @@ import {
 import {
   openModal,
   closeModal,
+  openMoveInOutQuick,
   openContractEditModal,
+  switchModalRoom,
+  handleQuickMoveOut,
+  handleQuickMoveIn,
+  handleExtendContractOneYear,
   handleContractFormSubmit,
   handleLeaseTypeChangeInForm,
   openExpenseModal,
@@ -141,7 +146,12 @@ window.downloadTemplatePreset = downloadTemplatePreset;
 window.loadTemplatePresetDemo = loadTemplatePresetDemo;
 window.exportAllRoomsCSV = exportAllRoomsCSV;
 
+window.openMoveInOutQuick = openMoveInOutQuick;
 window.openContractEditModal = openContractEditModal;
+window.switchModalRoom = switchModalRoom;
+window.handleQuickMoveOut = handleQuickMoveOut;
+window.handleQuickMoveIn = handleQuickMoveIn;
+window.handleExtendContractOneYear = handleExtendContractOneYear;
 window.handleContractFormSubmit = handleContractFormSubmit;
 window.handleLeaseTypeChangeInForm = handleLeaseTypeChangeInForm;
 

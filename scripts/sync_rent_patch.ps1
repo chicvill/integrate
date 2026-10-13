@@ -10,6 +10,7 @@ tar -czf $TarFile -C $ProjectRoot `
     apps/rent/backend/services/rent_service.py `
     apps/rent/backend/services/vat_service.py `
     apps/rent/backend/routers/main_router.py `
+    apps/rent/frontend/app.js `
     apps/rent/frontend/bundle.js `
     apps/rent/frontend/index.html `
     apps/rent/frontend/manual.html `
@@ -21,6 +22,7 @@ tar -czf $TarFile -C $ProjectRoot `
     apps/rent/frontend/js/ui.js `
     apps/rent/frontend/js/modals.js `
     apps/rent/frontend/js/state.js `
+    apps/rent/app.js `
     apps/rent/bundle.js `
     apps/rent/index.html `
     apps/rent/manual.html `

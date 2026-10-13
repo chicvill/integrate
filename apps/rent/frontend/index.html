@@ -146,6 +146,17 @@
       <div>
         <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 block px-1">업무 바로가기</span>
         <div class="space-y-1">
+          <button type="button" onclick="openMoveInOutQuick(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-teal-950/70 to-cyan-950/70 hover:from-teal-900/80 hover:to-cyan-900/80 text-teal-300 border border-teal-500/50 font-semibold flex items-center gap-2.5 cursor-pointer transition shadow-sm">
+            <span class="text-xl">🚪</span>
+            <div>
+              <div class="text-xs font-bold text-white flex items-center gap-1.5">
+                <span>전입 / 전출 원터치 처리</span>
+                <span class="text-[9px] bg-teal-500/30 text-teal-200 border border-teal-500/50 px-1 py-0.2 rounded font-normal">퇴실보존·신규전입</span>
+              </div>
+              <div class="text-[10px] text-teal-300/80">퇴실자 1년 보존 아카이빙 & 신규 입주 등록</div>
+            </div>
+          </button>
+
           <button type="button" onclick="openVatModal(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-slate-200 border border-slate-700/60 font-semibold flex items-center gap-2.5 cursor-pointer transition">
             <span class="text-base text-cyan-400">📊</span>
             <div>
@@ -458,11 +469,48 @@
   <!-- 1. Contract Edit Modal -->
   <div id="contractModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-50 hidden items-center justify-center p-3">
     <div class="bg-surface-900 border border-slate-800 rounded-2xl max-w-md w-full p-4 sm:p-5 shadow-2xl overflow-y-auto max-h-[92vh]">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-        <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-1.5">
-          📝 <span id="modalRoomTitle">101호</span> 계약 정보 수정
-        </h3>
+      <div class="flex items-center justify-between pb-2.5 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <span class="text-base">🚪</span>
+          <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-1.5">
+            <span>전입·전출 / 계약 수정</span>
+          </h3>
+          <select id="modalRoomSelector" onchange="switchModalRoom(Number(this.value))" class="bg-surface-800 border border-slate-700 text-cyan-300 font-bold rounded-lg px-2 py-0.5 text-xs focus:ring-1 focus:ring-cyan-500">
+            <!-- JS로 101호~408호 (세입자명/공실) 자동 렌더링 -->
+          </select>
+        </div>
         <button type="button" onclick="closeModal('contractModal')" class="text-slate-400 hover:text-white text-base font-bold">✕</button>
+      </div>
+
+      <!-- 🚪 전입 / 전출 원터치 퀵 액션 카드 -->
+      <div class="mt-2.5 p-2.5 bg-surface-950/80 rounded-xl border border-slate-800/80 space-y-2">
+        <div class="flex items-center justify-between">
+          <div class="text-[11px] flex items-center gap-1.5 font-medium">
+            <span class="text-slate-400">현재 상태:</span>
+            <span id="modalRoomStatusBadge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-800/80">🟢 거주 중</span>
+          </div>
+          <div id="modalRoomPeriodInfo" class="text-[10px] text-slate-400 font-mono">계약 기간 로딩...</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800/60">
+          <button type="button" id="btnQuickMoveOut" onclick="handleQuickMoveOut()" class="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg bg-rose-950/50 hover:bg-rose-900/70 text-rose-300 border border-rose-800/70 text-xs font-bold transition shadow-xs cursor-pointer">
+            <span>📦</span>
+            <span>전출(퇴실) 원터치</span>
+          </button>
+          <button type="button" id="btnQuickMoveIn" onclick="handleQuickMoveIn()" class="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg bg-teal-950/50 hover:bg-teal-900/70 text-teal-300 border border-teal-800/70 text-xs font-bold transition shadow-xs cursor-pointer">
+            <span>🚪</span>
+            <span>신규 전입(입주)</span>
+          </button>
+        </div>
+        <div class="flex items-center justify-between text-[10px] text-slate-400 px-0.5">
+          <span class="flex items-center gap-1">
+            <span class="text-amber-400">💡</span>
+            <span>퇴실 시 1년 법정 보존 이력 자동 아카이빙</span>
+          </span>
+          <button type="button" onclick="handleExtendContractOneYear()" class="text-cyan-400 hover:text-cyan-300 underline underline-offset-2 flex items-center gap-0.5 font-semibold cursor-pointer">
+            <span>+1년 연장</span>
+          </button>
+        </div>
       </div>
 
       <form onsubmit="handleContractFormSubmit(event)" class="space-y-3 mt-3 text-xs">

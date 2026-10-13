@@ -23,13 +23,52 @@ export function closeModal(id) {
   }
 }
 
-// ── 계약 수정 모달 ──
-export function openContractEditModal() {
-  const rNum = state.selectedRoom;
+// ── 계약 수정 및 전입/전출 통합 모달 ──
+export function openMoveInOutQuick(targetRoomNum) {
+  openContractEditModal(targetRoomNum);
+}
+
+export function openContractEditModal(targetRoomNum) {
+  const rNum = targetRoomNum || state.selectedRoom || 101;
+  state.selectedRoom = rNum;
+
+  populateModalRoomSelector(rNum);
+  loadRoomIntoContractModal(rNum);
+  openModal('contractModal');
+}
+
+export function switchModalRoom(newRoomNum) {
+  newRoomNum = Number(newRoomNum);
+  if (!newRoomNum || !state.rooms[newRoomNum]) return;
+  state.selectedRoom = newRoomNum;
+  loadRoomIntoContractModal(newRoomNum);
+}
+
+function populateModalRoomSelector(currentRNum) {
+  const selector = document.getElementById('modalRoomSelector');
+  if (!selector) return;
+  selector.innerHTML = '';
+  ROOM_NUMBERS.forEach(rn => {
+    const rm = state.rooms[rn];
+    const opt = document.createElement('option');
+    opt.value = rn;
+    const isOccupied = !!(rm && rm.name && rm.name.trim());
+    opt.textContent = isOccupied ? `${rn}호 (${rm.name})` : `${rn}호 (공실)`;
+    if (rn === currentRNum) opt.selected = true;
+    selector.appendChild(opt);
+  });
+}
+
+function loadRoomIntoContractModal(rNum) {
   const room = state.rooms[rNum];
   if (!room) return;
 
-  document.getElementById('modalRoomTitle').textContent = `${rNum}호`;
+  const selector = document.getElementById('modalRoomSelector');
+  if (selector && Number(selector.value) !== rNum) selector.value = rNum;
+
+  const titleEl = document.getElementById('modalRoomTitle');
+  if (titleEl) titleEl.textContent = `${rNum}호`;
+
   document.getElementById('formLeaseType').value = room.lease_type || '월세';
   document.getElementById('formPayTiming').value = room.pay_timing || '후불';
   document.getElementById('formName').value = room.name || '';
@@ -43,8 +82,41 @@ export function openContractEditModal() {
   document.getElementById('formExpiry').value = room.expiry || '';
   document.getElementById('formMoveOut').value = room.move_out || '';
 
+  // 상태 배지 및 정보 갱신
+  const statusBadge = document.getElementById('modalRoomStatusBadge');
+  const periodInfo = document.getElementById('modalRoomPeriodInfo');
+  const btnMoveOut = document.getElementById('btnQuickMoveOut');
+  const btnMoveIn = document.getElementById('btnQuickMoveIn');
+
+  const isOccupied = !!(room.name && room.name.trim());
+  if (statusBadge) {
+    if (isOccupied) {
+      statusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-800/80';
+      statusBadge.innerHTML = `🟢 입주 중 (${room.name})`;
+    } else {
+      statusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800/80 text-slate-400 border border-slate-700/80';
+      statusBadge.innerHTML = `⚪ 현재 공실`;
+    }
+  }
+
+  if (periodInfo) {
+    if (isOccupied && (room.move_in || room.expiry)) {
+      periodInfo.textContent = `${room.move_in || '미정'} ~ ${room.expiry || '미정'}`;
+    } else {
+      periodInfo.textContent = '계약 기간 없음';
+    }
+  }
+
+  if (btnMoveOut) {
+    btnMoveOut.disabled = !isOccupied;
+    if (!isOccupied) {
+      btnMoveOut.classList.add('opacity-40', 'cursor-not-allowed');
+    } else {
+      btnMoveOut.classList.remove('opacity-40', 'cursor-not-allowed');
+    }
+  }
+
   handleLeaseTypeChangeInForm();
-  openModal('contractModal');
 }
 
 export function handleLeaseTypeChangeInForm() {
@@ -58,6 +130,131 @@ export function handleLeaseTypeChangeInForm() {
     rentInput.disabled = false;
     rentInput.classList.remove('opacity-50');
   }
+}
+
+// 📦 원터치 전출(퇴실) 처리
+export async function handleQuickMoveOut() {
+  const rNum = state.selectedRoom;
+  const room = state.rooms[rNum];
+  if (!room || !room.name || !room.name.trim()) {
+    alert("현재 호실은 이미 공실 상태입니다.");
+    return;
+  }
+
+  const currentTenantName = room.name;
+  const outDatePrompt = prompt(
+    `[${rNum}호] ${currentTenantName} 임차인을 퇴실(전출) 처리하시겠습니까?\n\n퇴실일자를 확인하세요 (YYYY-MM-DD):`,
+    formattedToday
+  );
+  if (outDatePrompt === null) return; // 취소
+  const outDate = outDatePrompt.trim() || formattedToday;
+
+  const payload = {
+    lease_type: room.lease_type || '월세',
+    pay_timing: room.pay_timing || '후불',
+    name: '', // 공실화
+    id_number: '',
+    phone: '',
+    deposit: 0,
+    rent: room.rent || 0,
+    maintenance: room.maintenance || 0,
+    clean_fee: room.clean_fee || 0,
+    move_in: '',
+    expiry: '',
+    move_out: outDate
+  };
+
+  try {
+    if (state.isOnline) {
+      const res = await apiUpdateContract(rNum, payload, state.currentBranch);
+      state.rooms[rNum] = res;
+      // 전출자 이력 갱신
+      try {
+        const histRes = await apiGetTenantHistories(state.currentBranch);
+        if (histRes && histRes.histories) {
+          state.tenantHistories = histRes.histories;
+        }
+      } catch (eH) {
+        console.warn("전출자 이력 갱신 오류:", eH);
+      }
+    } else {
+      Object.assign(room, payload);
+    }
+
+    saveLocalFallback();
+    populateModalRoomSelector(rNum);
+    loadRoomIntoContractModal(rNum);
+    renderAll();
+
+    alert(`✅ [${rNum}호] ${currentTenantName}님의 전출(퇴실) 처리가 완료되었습니다.\n\n📦 1년 법정 보존 이력에 안전하게 아카이빙되었으며, 해당 호실은 공실로 전환되었습니다.`);
+  } catch (err) {
+    alert("전출 처리 실패: " + err.message);
+  }
+}
+
+// 🚪 신규 전입(입주) 세팅
+export function handleQuickMoveIn() {
+  const rNum = state.selectedRoom;
+  const room = state.rooms[rNum];
+
+  // 기존 세입자가 이미 있는 경우 확인
+  if (room && room.name && room.name.trim()) {
+    const ok = confirm(`현재 [${rNum}호]에 기존 입주자(${room.name})가 등록되어 있습니다.\n신규 전입 세입자 정보로 덮어쓰시겠습니까?\n\n(기존 입주자의 퇴실 이력을 보존하려면 먼저 [전출(퇴실) 원터치]를 진행하세요)`);
+    if (!ok) return;
+  }
+
+  // 폼 초기화 및 오늘 날짜 기준 1년 계약 자동 계산
+  document.getElementById('formName').value = '';
+  document.getElementById('formIdNumber').value = '';
+  document.getElementById('formPhone').value = '';
+  document.getElementById('formMoveOut').value = '';
+
+  const todayStr = formattedToday;
+  const [ty, tm, td] = todayStr.split('-').map(Number);
+  const nextYear = ty + 1;
+  const nextMonthStr = String(tm).padStart(2, '0');
+  const nextDayStr = String(td).padStart(2, '0');
+  const defaultExpiryStr = `${nextYear}-${nextMonthStr}-${nextDayStr}`;
+
+  document.getElementById('formMoveIn').value = todayStr;
+  document.getElementById('formExpiry').value = defaultExpiryStr;
+
+  // 기본 보증금/월세가 0이면 표준값 세팅
+  if (!Number(document.getElementById('formDeposit').value)) {
+    document.getElementById('formDeposit').value = 5000000;
+  }
+  if (!Number(document.getElementById('formRent').value)) {
+    document.getElementById('formRent').value = 450000;
+  }
+  if (!Number(document.getElementById('formMaintenance').value)) {
+    document.getElementById('formMaintenance').value = 50000;
+  }
+
+  // 성명 입력칸에 포커스
+  const nameInput = document.getElementById('formName');
+  if (nameInput) {
+    nameInput.focus();
+    nameInput.placeholder = '신규 입주자 성명 입력';
+  }
+
+  alert(`🚪 [${rNum}호] 신규 전입 모드로 세팅되었습니다.\n\n• 전입일: ${todayStr} (오늘)\n• 만기일: ${defaultExpiryStr} (1년 자동 계산)\n\n입주자 성명, 연락처, 보증금/월세를 확인하신 후 하단의 [저장 완료]를 눌러주세요.`);
+}
+
+// 🔄 만기일 1년 연장
+export function handleExtendContractOneYear() {
+  const expiryInput = document.getElementById('formExpiry');
+  const curExpiry = expiryInput ? expiryInput.value : '';
+  let baseDate = curExpiry ? new Date(curExpiry) : new Date();
+  if (isNaN(baseDate.getTime())) baseDate = new Date();
+
+  baseDate.setFullYear(baseDate.getFullYear() + 1);
+  const ey = baseDate.getFullYear();
+  const em = String(baseDate.getMonth() + 1).padStart(2, '0');
+  const ed = String(baseDate.getDate()).padStart(2, '0');
+  const newExpiry = `${ey}-${em}-${ed}`;
+
+  if (expiryInput) expiryInput.value = newExpiry;
+  alert(`만기일이 1년 연장되었습니다 (${newExpiry}).\n하단의 [저장 완료]를 누르면 저장됩니다.`);
 }
 
 export async function handleContractFormSubmit(e) {
@@ -99,6 +296,8 @@ export async function handleContractFormSubmit(e) {
     // 계약 정보 변경 시 과거 납부 내역 전체를 새 계약 정보 및 새 세입자명으로 즉시 동기화
     fillTenantPaymentsState(rNum);
     saveLocalFallback();
+    populateModalRoomSelector(rNum);
+    loadRoomIntoContractModal(rNum);
     closeModal('contractModal');
     renderAll();
   } catch (err) {
