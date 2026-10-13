@@ -127,7 +127,9 @@ export const historiesApi = {
     const params = { branch_id: branchId };
     if (roomNumber) params.room_number = roomNumber;
     return http.get('/tenant-histories', params);
-  }
+  },
+  delete: (historyId, branchId = 'main') =>
+    http.delete(`/tenant-histories/${historyId}`, { branch_id: branchId })
 };
 
 export const branchesApi = {
@@ -194,6 +196,7 @@ export const apiCreateExpense = expensesApi.create;
 export const apiDeleteExpense = expensesApi.delete;
 
 export const apiGetTenantHistories = historiesApi.list;
+export const apiDeleteTenantHistory = historiesApi.delete;
 
 export const apiGetBranches = branchesApi.list;
 export const apiCreateBranch = branchesApi.create;

@@ -68,6 +68,7 @@ import {
   saveVatTargetRoomsSetting,
   openTenantHistoryModal,
   restoreTenantFromHistory,
+  deleteTenantHistory,
   saveTestSnapshot,
   restoreTestSnapshot,
   openNewBranchModal,
@@ -192,6 +193,7 @@ window.exportCurrentRoomCSV = exportCurrentRoomCSV;
 
 window.openTenantHistoryModal = openTenantHistoryModal;
 window.restoreTenantFromHistory = restoreTenantFromHistory;
+window.deleteTenantHistory = deleteTenantHistory;
 window.saveTestSnapshot = saveTestSnapshot;
 window.restoreTestSnapshot = restoreTestSnapshot;
 window.openNewBranchModal = openNewBranchModal;

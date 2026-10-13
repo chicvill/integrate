@@ -269,6 +269,19 @@ async def purge_expired_tenant_histories(
     return service.purge_expired_tenant_histories(db, branch_id=branch_id)
 
 
+@router.delete("/tenant-histories/{history_id}")
+async def delete_tenant_history(
+    history_id: str,
+    branch_id: str = Query("main", description="건물 ID"),
+    db: Session = Depends(get_db)
+):
+    """특정 전출자 이력 수동 삭제 (테스트 데이터 정리 및 퇴실 취소 호실 복원 시 정리)"""
+    res = service.delete_tenant_history(db, history_id=history_id, branch_id=branch_id)
+    if not res.get("success"):
+        raise HTTPException(status_code=404, detail=res.get("message"))
+    return res
+
+
 # ── 만기 1·2개월 전 도래 호실 목록 조회 라우트 ──
 @router.get("/expiring-rooms")
 async def get_expiring_rooms(

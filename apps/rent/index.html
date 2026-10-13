@@ -266,21 +266,16 @@
           </div>
         </button>
 
-        <div class="grid grid-cols-2 gap-1.5">
-          <button type="button" onclick="openExpenseModal(); closeMenuDrawer();" class="p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-amber-300 border border-amber-500/30 font-semibold text-left transition cursor-pointer">
-            <div class="flex items-center gap-1.5 text-xs font-bold text-amber-200">
-              <span>💰</span><span>오늘 지출 등록</span>
+        <button type="button" onclick="openExpenseModal(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-amber-300 border border-amber-500/30 font-semibold flex items-center gap-2.5 transition cursor-pointer">
+          <span class="text-xl">💰</span>
+          <div>
+            <div class="text-xs font-bold text-amber-200 flex items-center gap-1.5">
+              <span>오늘 지출 등록</span>
+              <span class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1 py-0.2 rounded font-normal">영수증 보관</span>
             </div>
-            <div class="text-[10px] text-slate-400 mt-1">수리비, 청소비 영수증 기록</div>
-          </button>
-
-          <button type="button" onclick="openLedgerModal(); closeMenuDrawer();" class="p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-slate-200 border border-slate-700/60 font-semibold text-left transition cursor-pointer">
-            <div class="flex items-center gap-1.5 text-xs font-bold text-indigo-300">
-              <span>📒</span><span>지출 장부 내역</span>
-            </div>
-            <div class="text-[10px] text-slate-400 mt-1">운영비 지출 총액 합계</div>
-          </button>
-        </div>
+            <div class="text-[10px] text-slate-400">수리비, 청소비, 비품비 등 간편 기록</div>
+          </div>
+        </button>
 
         <button type="button" onclick="openVatModal(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-slate-200 border border-slate-700/60 font-semibold flex items-center gap-2.5 cursor-pointer transition">
           <span class="text-base text-cyan-400">📊</span>

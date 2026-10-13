@@ -4,7 +4,7 @@
  */
 
 import { state, formattedToday, saveLocalFallback, setAuthUser, clearAuthUser, getAuthSessionInfo, touchAuthSession, fillTenantPaymentsState, parseDateComponents, ROOM_NUMBERS, currentYear, currentMonth, getExpiringRoomsList } from './state.js?v=2.0';
-import { apiUpdateContract, apiCreateExpense, apiDeleteExpense, apiRequestUpgrade, apiGetVatReport, apiGetVatSettings, apiSaveVatSettings, apiCreateBranch, apiGetTenantHistories, apiBatchImportRooms, apiBatchImportPaymentMatrix, apiOcrImportImage, apiAdminLogin, apiFillTenantPayments, apiProcessPayment, apiGetExpiringRooms } from './api.js?v=2.0';
+import { apiUpdateContract, apiCreateExpense, apiDeleteExpense, apiRequestUpgrade, apiGetVatReport, apiGetVatSettings, apiSaveVatSettings, apiCreateBranch, apiGetTenantHistories, apiDeleteTenantHistory, apiBatchImportRooms, apiBatchImportPaymentMatrix, apiOcrImportImage, apiAdminLogin, apiFillTenantPayments, apiProcessPayment, apiGetExpiringRooms } from './api.js?v=2.0';
 import { renderAll, switchBranch } from './ui.js?v=2.0';
 
 export function openModal(id) {
@@ -1215,11 +1215,15 @@ export async function openTenantHistoryModal() {
             <span class="font-bold text-slate-100 text-sm">${h.name}</span>
             <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">전출 세입자</span>
           </div>
-          <div class="flex items-center gap-2">
-            <span class="text-[11px] text-slate-400 font-mono">1년 보존기한: <strong class="text-emerald-400 font-bold">${h.retention_until || '-'}</strong></span>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="text-[11px] text-slate-400 font-mono">1년 보존: <strong class="text-emerald-400 font-bold">${h.retention_until || '-'}</strong></span>
             <button type="button" onclick="restoreTenantFromHistory('${h.id}')" class="px-2.5 py-1 rounded-lg bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/80 text-[11px] font-bold flex items-center gap-1 transition cursor-pointer shadow-xs">
               <span>↩️</span>
               <span>호실로 복원 (퇴실 취소)</span>
+            </button>
+            <button type="button" onclick="deleteTenantHistory('${h.id}', '${h.room_number}', '${h.name}')" class="px-2 py-1 rounded-lg bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-700/60 text-[11px] font-bold flex items-center gap-1 transition cursor-pointer shadow-xs" title="테스트 이력 또는 불필요 이력 영구 삭제">
+              <span>🗑️</span>
+              <span>삭제</span>
             </button>
           </div>
         </div>
@@ -1273,9 +1277,17 @@ export async function restoreTenantFromHistory(histId) {
     if (state.isOnline) {
       const res = await apiUpdateContract(rNum, payload, state.currentBranch);
       state.rooms[rNum] = res;
+      // 퇴실 취소되어 복원되었으므로 전출자 이력 목록에서도 자동 제거
+      try {
+        await apiDeleteTenantHistory(histId, state.currentBranch);
+      } catch (eDel) {
+        console.warn("전출 이력 서버 삭제 경고:", eDel);
+      }
     } else {
       Object.assign(state.rooms[rNum], payload);
     }
+
+    state.tenantHistories = (state.tenantHistories || []).filter(item => String(item.id) !== String(histId));
 
     saveLocalFallback();
     populateModalRoomSelector(rNum);
@@ -1283,9 +1295,27 @@ export async function restoreTenantFromHistory(histId) {
     renderAll();
     closeModal('tenantHistoryModal');
 
-    alert(`🎉 [${rNum}호] ${h.name}님의 계약 정보가 원래 상태로 완벽히 복원되었습니다!\n(호실 상태: 거주 중으로 복귀)`);
+    alert(`🎉 [${rNum}호] ${h.name}님의 계약 정보가 원래 상태로 완벽히 복원되었습니다!\n(전출 보존 이력에서도 정상 정리되었습니다)`);
   } catch (err) {
     alert("호실 복원 실패: " + err.message);
+  }
+}
+
+// ── 전출 보존 이력 수동 영구 삭제 (테스트 데이터 정리용) ──
+export async function deleteTenantHistory(histId, roomNumber, name) {
+  const ok = confirm(`[${roomNumber}호] ${name}님의 전출 보존 이력을 완전히 삭제하시겠습니까?\n\n(테스트용으로 생성되었거나 불필요한 이력인 경우 확인을 누르세요)`);
+  if (!ok) return;
+
+  try {
+    if (state.isOnline) {
+      await apiDeleteTenantHistory(histId, state.currentBranch);
+    }
+    state.tenantHistories = (state.tenantHistories || []).filter(item => String(item.id) !== String(histId));
+    saveLocalFallback();
+    openTenantHistoryModal();
+    alert(`✅ [${roomNumber}호] ${name}님의 전출 이력이 성공적으로 삭제되었습니다.`);
+  } catch (err) {
+    alert("전출 이력 삭제 실패: " + err.message);
   }
 }
 

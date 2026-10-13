@@ -745,6 +745,30 @@ class RentService:
             "message": f"전출 후 1년이 경과한 세입자 이력 {count}건이 영구 정리되었습니다."
         }
 
+    def delete_tenant_history(self, db: Session, history_id: str, branch_id: str = "main") -> Dict[str, Any]:
+        """특정 전출자 이력 수동 삭제 (테스트 이력 정리 및 퇴실 취소 복원 시 정리용)"""
+        hist = db.query(RentTenantHistory).filter(
+            RentTenantHistory.id == history_id,
+            RentTenantHistory.branch_id == branch_id
+        ).first()
+        if not hist and history_id.isdigit():
+            hist = db.query(RentTenantHistory).filter(
+                RentTenantHistory.room_number == int(history_id),
+                RentTenantHistory.branch_id == branch_id
+            ).order_by(RentTenantHistory.id.desc()).first()
+
+        if not hist:
+            return {"success": False, "message": "삭제할 전출 이력을 찾을 수 없습니다."}
+
+        name = hist.name
+        room_num = hist.room_number
+        db.delete(hist)
+        db.commit()
+        return {
+            "success": True,
+            "message": f"[{room_num}호] {name}님의 전출 이력이 성공적으로 삭제되었습니다."
+        }
+
     def list_tenant_histories(self, db: Session, branch_id: str = "main", room_number: Optional[int] = None) -> List[RentTenantHistory]:
         """전출 후 1년간 필수 보관되는 전출자 이력 조회 (1년 경과 데이터 자동 파기 후 유효 데이터만 반환)"""
         self.ensure_default_seed(db, branch_id)
