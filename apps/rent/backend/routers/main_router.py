@@ -269,6 +269,23 @@ async def purge_expired_tenant_histories(
     return service.purge_expired_tenant_histories(db, branch_id=branch_id)
 
 
+# ── 만기 1·2개월 전 도래 호실 목록 조회 라우트 ──
+@router.get("/expiring-rooms")
+async def get_expiring_rooms(
+    branch_id: str = Query("main", description="건물 ID"),
+    days_window: int = Query(65, description="조회 기간 일수 (기본 65일, 약 2개월)"),
+    db: Session = Depends(get_db)
+):
+    """만기 1, 2개월 전 도래 호실 리스트 조회 (사전 전출 의사 확인용)"""
+    expiring = service.get_expiring_rooms(db, branch_id=branch_id, days_window=days_window)
+    return {
+        "success": True,
+        "branch_id": branch_id,
+        "total": len(expiring),
+        "rooms": expiring
+    }
+
+
 
 # ── 지출 장부 라우트 ──
 @router.get("/expenses", response_model=ExpenseListResponse)

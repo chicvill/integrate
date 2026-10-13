@@ -95,7 +95,8 @@ export const roomsApi = {
   updateContract: (roomNumber, data, branchId = 'main') => http.put(`/rooms/${roomNumber}`, data, { branch_id: branchId }),
   batchImport: (roomsData, branchId = 'main') => http.post('/rooms/batch-import', roomsData, { branch_id: branchId }),
   ocrImport: (imageBase64, branchId = 'main') => http.post('/rooms/ocr-import', { image_base64: imageBase64 }, { branch_id: branchId }),
-  fillPayments: (roomNumber = null, branchId = 'main') => http.post('/rooms/fill-payments', { room_number: roomNumber }, { branch_id: branchId })
+  fillPayments: (roomNumber = null, branchId = 'main') => http.post('/rooms/fill-payments', { room_number: roomNumber }, { branch_id: branchId }),
+  getExpiring: (branchId = 'main', daysWindow = 65) => http.get('/expiring-rooms', { branch_id: branchId, days_window: daysWindow })
 };
 
 export const paymentsApi = {
@@ -182,6 +183,7 @@ export const apiUpdateContract = roomsApi.updateContract;
 export const apiBatchImportRooms = roomsApi.batchImport;
 export const apiOcrImportImage = roomsApi.ocrImport;
 export const apiFillTenantPayments = roomsApi.fillPayments;
+export const apiGetExpiringRooms = roomsApi.getExpiring;
 
 export const apiProcessPayment = paymentsApi.process;
 export const apiCancelPayment = paymentsApi.cancel;

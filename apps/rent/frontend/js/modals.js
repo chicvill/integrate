@@ -3,8 +3,8 @@
  * 원룸 임차료 관리 시스템 모달 팝업 및 계약/지출 폼 제어 모듈.
  */
 
-import { state, formattedToday, saveLocalFallback, setAuthUser, clearAuthUser, getAuthSessionInfo, touchAuthSession, fillTenantPaymentsState, parseDateComponents, ROOM_NUMBERS, currentYear, currentMonth } from './state.js?v=2.0';
-import { apiUpdateContract, apiCreateExpense, apiDeleteExpense, apiRequestUpgrade, apiGetVatReport, apiGetVatSettings, apiSaveVatSettings, apiCreateBranch, apiGetTenantHistories, apiBatchImportRooms, apiBatchImportPaymentMatrix, apiOcrImportImage, apiAdminLogin, apiFillTenantPayments, apiProcessPayment } from './api.js?v=2.0';
+import { state, formattedToday, saveLocalFallback, setAuthUser, clearAuthUser, getAuthSessionInfo, touchAuthSession, fillTenantPaymentsState, parseDateComponents, ROOM_NUMBERS, currentYear, currentMonth, getExpiringRoomsList } from './state.js?v=2.0';
+import { apiUpdateContract, apiCreateExpense, apiDeleteExpense, apiRequestUpgrade, apiGetVatReport, apiGetVatSettings, apiSaveVatSettings, apiCreateBranch, apiGetTenantHistories, apiBatchImportRooms, apiBatchImportPaymentMatrix, apiOcrImportImage, apiAdminLogin, apiFillTenantPayments, apiProcessPayment, apiGetExpiringRooms } from './api.js?v=2.0';
 import { renderAll, switchBranch } from './ui.js?v=2.0';
 
 export function openModal(id) {
@@ -91,8 +91,13 @@ function loadRoomIntoContractModal(rNum) {
   const isOccupied = !!(room.name && room.name.trim());
   if (statusBadge) {
     if (isOccupied) {
-      statusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-800/80';
-      statusBadge.innerHTML = `🟢 입주 중 (${room.name})`;
+      if (room.auto_renewed) {
+        statusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950/80 text-amber-300 border border-amber-800/80';
+        statusBadge.innerHTML = `🟢 입주 중 (${room.name}) <span class="text-[9px] bg-amber-500/30 text-amber-200 px-1 py-0.2 rounded font-normal ml-1">1년 묵시적 자동연장됨</span>`;
+      } else {
+        statusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-800/80';
+        statusBadge.innerHTML = `🟢 입주 중 (${room.name})`;
+      }
     } else {
       statusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800/80 text-slate-400 border border-slate-700/80';
       statusBadge.innerHTML = `⚪ 현재 공실`;
@@ -238,23 +243,6 @@ export function handleQuickMoveIn() {
   }
 
   alert(`🚪 [${rNum}호] 신규 전입 모드로 세팅되었습니다.\n\n• 전입일: ${todayStr} (오늘)\n• 만기일: ${defaultExpiryStr} (1년 자동 계산)\n\n입주자 성명, 연락처, 보증금/월세를 확인하신 후 하단의 [저장 완료]를 눌러주세요.`);
-}
-
-// 🔄 만기일 1년 연장
-export function handleExtendContractOneYear() {
-  const expiryInput = document.getElementById('formExpiry');
-  const curExpiry = expiryInput ? expiryInput.value : '';
-  let baseDate = curExpiry ? new Date(curExpiry) : new Date();
-  if (isNaN(baseDate.getTime())) baseDate = new Date();
-
-  baseDate.setFullYear(baseDate.getFullYear() + 1);
-  const ey = baseDate.getFullYear();
-  const em = String(baseDate.getMonth() + 1).padStart(2, '0');
-  const ed = String(baseDate.getDate()).padStart(2, '0');
-  const newExpiry = `${ey}-${em}-${ed}`;
-
-  if (expiryInput) expiryInput.value = newExpiry;
-  alert(`만기일이 1년 연장되었습니다 (${newExpiry}).\n하단의 [저장 완료]를 누르면 저장됩니다.`);
 }
 
 export async function handleContractFormSubmit(e) {
@@ -3643,5 +3631,353 @@ export function handlePhoneMessageClick(phone, name, roomNumber) {
   // 모바일 SMS 창 호출
   window.location.href = smsUrl;
 }
+
+// ══════════════════════════════════════════════════════════════════════
+// 10. 만기 1·2개월 전 전출 의사 확인 및 차례차례 문자 발송 툴 모듈
+// ══════════════════════════════════════════════════════════════════════
+
+let currentExpiryFilter = 'ALL'; // 'ALL', '1MONTH', '2MONTH'
+let sequentialQueue = []; // [{ room_number, name, phone, expiry, diff_days, period_category, sent: false }]
+let sequentialIndex = 0;
+let defaultExpiryMessageTemplate = "만기일이 {만기일}입니다. 전출 계획이 있다면 미리 연락바랍니다. {건물명} 관리실";
+
+export function openExpiryNoticeModal() {
+  renderExpiryNoticeList(currentExpiryFilter);
+  openModal('expiryNoticeModal');
+}
+
+export function closeExpiryNoticeModal() {
+  closeModal('expiryNoticeModal');
+}
+
+export function setExpiryNoticeFilter(filter) {
+  currentExpiryFilter = filter;
+  renderExpiryNoticeList(filter);
+}
+
+export function updateExpiryNoticeBadge() {
+  const list = getExpiringRoomsList(65);
+  const badgeEl = document.getElementById('headerExpiryNoticeBadge');
+  const btnEl = document.getElementById('btnHeaderExpiryNotice');
+  if (btnEl) {
+    if (list.length > 0) {
+      btnEl.classList.remove('hidden');
+      if (badgeEl) badgeEl.textContent = `${list.length}건`;
+    } else {
+      btnEl.classList.add('hidden');
+    }
+  }
+
+  // 좌측 드로어 배지도 업데이트
+  const drawerBadge = document.getElementById('drawerExpiryNoticeCount');
+  if (drawerBadge) {
+    drawerBadge.textContent = `${list.length}실`;
+  }
+}
+
+export function checkDaily0700ExpiryNotice() {
+  updateExpiryNoticeBadge();
+  const list = getExpiringRoomsList(65);
+  if (list.length === 0) return;
+
+  const now = new Date();
+  const todayStr = formattedToday;
+  const currentHour = now.getHours();
+
+  // 07:00 이후이고 오늘 아직 팝업하지 않았으면 자동 팝업
+  const lastCheckKey = 'RENT_LAST_0700_EXPIRY_CHECK_DATE';
+  const lastCheckedDate = localStorage.getItem(lastCheckKey);
+
+  if (currentHour >= 7 && lastCheckedDate !== todayStr) {
+    localStorage.setItem(lastCheckKey, todayStr);
+    // 사용자 경험을 위해 데이터 로드 완료 직후(0.8초 후) 자연스럽게 오픈
+    setTimeout(() => {
+      openExpiryNoticeModal();
+    }, 800);
+  }
+}
+
+export function renderExpiryNoticeList(filter = 'ALL') {
+  const container = document.getElementById('expiryNoticeListContainer');
+  const summaryEl = document.getElementById('expiryNoticeSummaryText');
+  if (!container) return;
+
+  let allList = getExpiringRoomsList(65);
+  const totalCount = allList.length;
+  const count1M = allList.filter(x => x.period_category === '1개월 전').length;
+  const count2M = allList.filter(x => x.period_category === '2개월 전').length;
+
+  if (summaryEl) {
+    summaryEl.innerHTML = `총 <strong class="text-white">${totalCount}개실</strong> 도래 (1개월 전: <span class="text-rose-400 font-bold">${count1M}</span>실, 2개월 전: <span class="text-amber-400 font-bold">${count2M}</span>실)`;
+  }
+
+  // 필터 버튼 스타일 갱신
+  ['ALL', '1MONTH', '2MONTH'].forEach(f => {
+    const btn = document.getElementById(`filterBtnExpiry_${f}`);
+    if (btn) {
+      if (f === filter) {
+        btn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold bg-cyan-600 text-white shadow-xs';
+      } else {
+        btn.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-surface-800 text-slate-400 hover:text-white border border-slate-700/60';
+      }
+    }
+  });
+
+  let displayList = allList;
+  if (filter === '1MONTH') {
+    displayList = allList.filter(x => x.period_category === '1개월 전');
+  } else if (filter === '2MONTH') {
+    displayList = allList.filter(x => x.period_category === '2개월 전');
+  }
+
+  if (displayList.length === 0) {
+    container.innerHTML = `
+      <tr>
+        <td colspan="7" class="py-10 text-center text-slate-400 text-xs">
+          <div class="text-2xl mb-1.5">🎉</div>
+          <div>해당 조건에 해당하는 만기 도래 호실이 없습니다.</div>
+        </td>
+      </tr>
+    `;
+    const selCountEl = document.getElementById('expirySelectedCountBadge');
+    if (selCountEl) selCountEl.textContent = '0실 선택';
+    return;
+  }
+
+  let html = '';
+  displayList.forEach(item => {
+    const is1M = item.period_category === '1개월 전';
+    const tagClass = is1M
+      ? 'bg-rose-950/70 text-rose-300 border-rose-800/80'
+      : 'bg-amber-950/70 text-amber-300 border-amber-800/80';
+
+    html += `
+      <tr class="hover:bg-surface-800/50 transition border-b border-slate-800/60">
+        <td class="p-2 text-center">
+          <input type="checkbox" class="expiry-room-check cursor-pointer accent-cyan-500 rounded" value="${item.room_number}" checked onchange="updateExpirySelectedCount()">
+        </td>
+        <td class="p-2 text-center font-bold text-white whitespace-nowrap">
+          ${item.room_number}호
+        </td>
+        <td class="p-2 font-medium text-slate-200 whitespace-nowrap">
+          ${item.name}
+        </td>
+        <td class="p-2 font-mono text-[11px] text-slate-400 whitespace-nowrap">
+          ${item.phone || '<span class="text-slate-600">연락처없음</span>'}
+        </td>
+        <td class="p-2 font-mono text-center text-[11px] text-slate-300 whitespace-nowrap">
+          ${item.expiry}
+        </td>
+        <td class="p-2 text-center whitespace-nowrap">
+          <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold border ${tagClass}">
+            ${item.period_category} (D-${item.diff_days})
+          </span>
+        </td>
+        <td class="p-2 text-center whitespace-nowrap">
+          <button type="button" onclick="startSingleSmsSend(${item.room_number})" class="px-2 py-1 rounded bg-surface-800 hover:bg-surface-700 text-cyan-300 border border-slate-700 text-[10px] font-semibold cursor-pointer">
+            단독 발송
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+
+  container.innerHTML = html;
+  updateExpirySelectedCount();
+}
+
+export function toggleAllExpiryCheckboxes(checked) {
+  const checkboxes = document.querySelectorAll('.expiry-room-check');
+  checkboxes.forEach(cb => { cb.checked = checked; });
+  updateExpirySelectedCount();
+}
+
+export function updateExpirySelectedCount() {
+  const checkboxes = document.querySelectorAll('.expiry-room-check:checked');
+  const countEl = document.getElementById('expirySelectedCountBadge');
+  if (countEl) {
+    countEl.textContent = `${checkboxes.length}실 선택`;
+  }
+}
+
+export function startSequentialSmsSend() {
+  const checkedBoxes = document.querySelectorAll('.expiry-room-check:checked');
+  if (checkedBoxes.length === 0) {
+    alert("메시지를 전송할 호실을 1개 이상 체크해주세요.");
+    return;
+  }
+
+  const selectedRoomNums = Array.from(checkedBoxes).map(cb => Number(cb.value));
+  const allList = getExpiringRoomsList(65);
+  sequentialQueue = allList
+    .filter(x => selectedRoomNums.includes(x.room_number))
+    .map(x => ({ ...x, sent: false }));
+
+  if (sequentialQueue.length === 0) {
+    alert("전송 대상 호실 정보를 찾을 수 없습니다.");
+    return;
+  }
+
+  sequentialIndex = 0;
+  closeModal('expiryNoticeModal');
+  renderCurrentSequentialSmsStep();
+  openModal('sequentialSmsModal');
+}
+
+export function startSingleSmsSend(roomNum) {
+  const allList = getExpiringRoomsList(65);
+  const target = allList.find(x => x.room_number === roomNum);
+  if (!target) return;
+
+  sequentialQueue = [{ ...target, sent: false }];
+  sequentialIndex = 0;
+  closeModal('expiryNoticeModal');
+  renderCurrentSequentialSmsStep();
+  openModal('sequentialSmsModal');
+}
+
+export function renderCurrentSequentialSmsStep() {
+  if (sequentialIndex < 0) sequentialIndex = 0;
+  if (sequentialIndex >= sequentialQueue.length) {
+    finishSequentialSmsSend();
+    return;
+  }
+
+  const item = sequentialQueue[sequentialIndex];
+  const branchObj = state.branches.find(b => b.branch_id === state.currentBranch);
+  const branchName = branchObj ? branchObj.name.split(' ')[0] : '시크빌';
+
+  // 상단 진행도
+  const progressText = document.getElementById('seqSmsProgressText');
+  const progressBar = document.getElementById('seqSmsProgressBar');
+  const total = sequentialQueue.length;
+  const currentNum = sequentialIndex + 1;
+  const pct = Math.round((currentNum / total) * 100);
+
+  if (progressText) progressText.textContent = `${currentNum} / ${total} 호실 (${pct}%)`;
+  if (progressBar) progressBar.style.width = `${pct}%`;
+
+  // 호실 및 세입자 정보
+  const targetInfo = document.getElementById('seqSmsTargetInfo');
+  if (targetInfo) {
+    targetInfo.innerHTML = `
+      <div class="flex items-center gap-2">
+        <span class="text-base font-extrabold text-cyan-300 font-mono">${item.room_number}호</span>
+        <span class="text-sm font-bold text-white">${item.name}</span>
+        <span class="text-[10px] px-1.5 py-0.5 rounded bg-surface-800 text-slate-300 border border-slate-700">${item.period_category} (D-${item.diff_days})</span>
+      </div>
+      <div class="text-xs text-slate-400 font-mono mt-0.5">
+        📞 ${item.phone || '연락처 미등록'} • 만기일: <strong class="text-slate-200">${item.expiry}</strong>
+      </div>
+    `;
+  }
+
+  // 메시지 템플릿 생성: '만기일이 xxxx.xx.xx입니다. 전출 계획이 있다면 미리 연락바랍니다. 시크빌 관리실'
+  const formattedExpiry = item.expiry.replace(/-/g, '.');
+  const customTemplate = document.getElementById('expiryNoticeTemplateInput');
+  let template = (customTemplate && customTemplate.value.trim()) || defaultExpiryMessageTemplate;
+
+  const finalMsg = template
+    .replace('{만기일}', formattedExpiry)
+    .replace('{호실}', `${item.room_number}호`)
+    .replace('{임차인}', item.name)
+    .replace('{건물명}', branchName);
+
+  const previewEl = document.getElementById('seqSmsMessagePreview');
+  if (previewEl) {
+    previewEl.value = finalMsg;
+  }
+
+  // 상태 배지
+  const sentBadge = document.getElementById('seqSmsStatusBadge');
+  if (sentBadge) {
+    if (item.sent) {
+      sentBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-800/80';
+      sentBadge.textContent = '✅ 발송 완료됨';
+    } else {
+      sentBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950/80 text-amber-300 border border-amber-800/80';
+      sentBadge.textContent = '⏳ 발송 대기';
+    }
+  }
+
+  // 이전 버튼 활성화/비활성화
+  const btnPrev = document.getElementById('btnSeqPrev');
+  if (btnPrev) {
+    btnPrev.disabled = sequentialIndex === 0;
+    if (sequentialIndex === 0) btnPrev.classList.add('opacity-40');
+    else btnPrev.classList.remove('opacity-40');
+  }
+}
+
+export function handleSequentialSmsSendAction() {
+  const item = sequentialQueue[sequentialIndex];
+  if (!item) return;
+
+  const previewEl = document.getElementById('seqSmsMessagePreview');
+  const msg = (previewEl && previewEl.value) || '';
+  const phone = item.phone || '';
+  const cleanPhone = phone.replace(/[^\d+]/g, '');
+
+  if (!cleanPhone) {
+    alert("세입자의 전화번호가 등록되어 있지 않습니다. 호실 정보에서 연락처를 확인하세요.");
+    return;
+  }
+
+  // 클립보드 복사
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(msg).catch(() => {});
+  }
+
+  // 모바일 문자 앱 호출
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const smsUrl = `sms:${cleanPhone}${isIOS ? '&' : '?'}body=${encodeURIComponent(msg)}`;
+
+  item.sent = true;
+  renderCurrentSequentialSmsStep();
+
+  // 모바일 SMS 창 호출
+  window.location.href = smsUrl;
+}
+
+export function handleSequentialSmsCopy() {
+  const previewEl = document.getElementById('seqSmsMessagePreview');
+  const msg = (previewEl && previewEl.value) || '';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(msg)
+      .then(() => alert("메시지 내용이 클립보드에 복사되었습니다."))
+      .catch(() => alert("복사 실패"));
+  }
+}
+
+export function handleSequentialNext() {
+  if (sequentialIndex < sequentialQueue.length - 1) {
+    sequentialIndex += 1;
+    renderCurrentSequentialSmsStep();
+  } else {
+    finishSequentialSmsSend();
+  }
+}
+
+export function handleSequentialSkip() {
+  handleSequentialNext();
+}
+
+export function handleSequentialPrev() {
+  if (sequentialIndex > 0) {
+    sequentialIndex -= 1;
+    renderCurrentSequentialSmsStep();
+  }
+}
+
+export function finishSequentialSmsSend() {
+  closeModal('sequentialSmsModal');
+  const sentCount = sequentialQueue.filter(x => x.sent).length;
+  alert(`🎉 만기 전출 확인 메시지 발송 과정이 완료되었습니다!\n(총 ${sequentialQueue.length}건 중 ${sentCount}건 전송 완료)`);
+}
+
+export function closeSequentialSmsModal() {
+  closeModal('sequentialSmsModal');
+}
+
 
 

@@ -277,9 +277,32 @@ class RentService:
                 "retention_until": str(h.retention_until or "")
             })
 
+        today_dt = datetime.now()
+        has_auto_renewal = False
+
         result: Dict[int, Any] = {}
         for r in rooms_db:
             r_num: int = cast(int, r.room_number)
+            expiry_val = str(r.expiry or "")
+            auto_renewed = False
+
+            # 만기일이 지났으나 전출(퇴실)하지 않은 경우 자동으로 1년 연장 (주택임대차 묵시적 갱신 원칙)
+            if r.name and not r.move_out and expiry_val:
+                try:
+                    exp_dt = datetime.strptime(expiry_val, "%Y-%m-%d")
+                    if exp_dt < today_dt:
+                        while exp_dt < today_dt:
+                            try:
+                                exp_dt = exp_dt.replace(year=exp_dt.year + 1)
+                            except ValueError:
+                                exp_dt = exp_dt + timedelta(days=365)
+                        expiry_val = exp_dt.strftime("%Y-%m-%d")
+                        r.expiry = expiry_val
+                        auto_renewed = True
+                        has_auto_renewal = True
+                except Exception:
+                    pass
+
             result[r_num] = {
                 "room_number": r_num,
                 "branch_id": str(r.branch_id),
@@ -293,12 +316,52 @@ class RentService:
                 "maintenance": r.maintenance,
                 "clean_fee": r.clean_fee,
                 "move_in": str(r.move_in or ""),
-                "expiry": str(r.expiry or ""),
+                "expiry": expiry_val,
+                "auto_renewed": auto_renewed,
                 "move_out": str(r.move_out or ""),
                 "payments": pay_map.get(r_num, {}),
                 "tenant_histories": hist_map.get(r_num, [])
             }
+
+        if has_auto_renewal:
+            try:
+                db.commit()
+            except Exception:
+                db.rollback()
+
         return result
+
+    def get_expiring_rooms(self, db: Session, branch_id: str = "main", days_window: int = 65) -> List[Dict[str, Any]]:
+        """만기 1, 2개월 전 (약 65일 이내) 도래 호실 목록 조회"""
+        rooms = self.get_rooms(db, branch_id)
+        today_dt = datetime.now()
+        expiring = []
+
+        for r_num, r in rooms.items():
+            if not r.get("name") or not r.get("expiry") or r.get("move_out"):
+                continue
+            try:
+                exp_dt = datetime.strptime(r["expiry"], "%Y-%m-%d")
+                diff_days = (exp_dt - today_dt).days + 1
+                if 0 <= diff_days <= days_window:
+                    period_category = "1개월 전" if diff_days <= 35 else "2개월 전"
+                    expiring.append({
+                        "room_number": r_num,
+                        "branch_id": branch_id,
+                        "name": r.get("name"),
+                        "phone": r.get("phone"),
+                        "expiry": r.get("expiry"),
+                        "diff_days": diff_days,
+                        "period_category": period_category,
+                        "deposit": r.get("deposit"),
+                        "rent": r.get("rent"),
+                        "maintenance": r.get("maintenance")
+                    })
+            except Exception:
+                continue
+
+        expiring.sort(key=lambda x: x["diff_days"])
+        return expiring
 
     def get_room(self, db: Session, room_number: int, branch_id: str = "main") -> Optional[Dict[str, Any]]:
         rooms = self.get_rooms(db, branch_id)

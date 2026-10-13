@@ -155,6 +155,7 @@ export async function loadInitialData() {
     ]);
 
     state.rooms = roomsRes.rooms || {};
+    applyAutoLeaseRenewal(state.rooms);
     state.expenses = expRes.expenses || [];
     state.branches = branchRes.branches || [];
     state.tenantHistories = histRes.histories || [];
@@ -174,7 +175,87 @@ export async function loadInitialData() {
     console.warn("⚠️ 백엔드 연결 불가, 로컬 캐시(localStorage)로 폴백합니다:", err);
     state.isOnline = false;
     loadLocalFallback();
+    applyAutoLeaseRenewal(state.rooms);
   }
+}
+
+/**
+ * 묵시적 갱신: 만기일이 지났으나 전출(퇴실)하지 않은 호실 자동 1년 연장
+ */
+export function applyAutoLeaseRenewal(rooms) {
+  if (!rooms) return false;
+  const todayStr = formattedToday;
+  const [ty, tm, td] = todayStr.split('-').map(Number);
+  const todayTime = new Date(ty, tm - 1, td).getTime();
+
+  let modified = false;
+  Object.values(rooms).forEach(r => {
+    if (r && r.name && !r.move_out && r.expiry) {
+      const parts = r.expiry.split('-').map(Number);
+      if (parts.length === 3) {
+        let [ey, em, ed] = parts;
+        let expTime = new Date(ey, em - 1, ed).getTime();
+        if (expTime < todayTime) {
+          while (expTime < todayTime) {
+            ey += 1;
+            expTime = new Date(ey, em - 1, ed).getTime();
+          }
+          const newExpStr = `${ey}-${String(em).padStart(2, '0')}-${String(ed).padStart(2, '0')}`;
+          r.expiry = newExpStr;
+          r.auto_renewed = true;
+          modified = true;
+        }
+      }
+    }
+  });
+  return modified;
+}
+
+/**
+ * 만기 1·2개월 전 (0~65일 이내) 도래 호실 목록 계산
+ * ★ 1년 자동 연장은 오늘부터 만기일까지의 날짜 계산을 위한 필수 전처리 과정!
+ *   만기일이 지난 호실은 자동으로 1년 연장 후 새 만기일을 기준으로 잔여 일수를 파악합니다.
+ */
+export function getExpiringRoomsList(daysWindow = 65) {
+  // 1. 필수 전처리: 만기일 경과 호실 자동 1년 연장
+  const renewed = applyAutoLeaseRenewal(state.rooms);
+  if (renewed) {
+    saveLocalFallback();
+  }
+
+  const list = [];
+  const todayStr = formattedToday;
+  const [ty, tm, td] = todayStr.split('-').map(Number);
+  const todayTime = new Date(ty, tm - 1, td).getTime();
+
+  ROOM_NUMBERS.forEach(rNum => {
+    const r = state.rooms[rNum];
+    if (r && r.name && !r.move_out && r.expiry) {
+      const parts = r.expiry.split('-').map(Number);
+      if (parts.length === 3) {
+        const [ey, em, ed] = parts;
+        const expTime = new Date(ey, em - 1, ed).getTime();
+        const diffDays = Math.ceil((expTime - todayTime) / (1000 * 60 * 60 * 24));
+        if (diffDays >= 0 && diffDays <= daysWindow) {
+          const category = diffDays <= 35 ? '1개월 전' : '2개월 전';
+          list.push({
+            room_number: rNum,
+            name: r.name,
+            phone: r.phone || '',
+            expiry: r.expiry,
+            diff_days: diffDays,
+            period_category: category,
+            deposit: r.deposit || 0,
+            rent: r.rent || 0,
+            maintenance: r.maintenance || 0
+          });
+        }
+      }
+    }
+  });
+
+  list.sort((a, b) => a.diff_days - b.diff_days);
+  return list;
 }
 
 export function saveLocalFallback() {

@@ -305,7 +305,13 @@ export function renderMainRoomCard(room) {
 
   // 전입일 / 만기일 요약
   const cPeriod = document.getElementById('cPeriod');
-  if (cPeriod) cPeriod.textContent = (room.move_in && room.expiry) ? `${room.move_in} ~ ${room.expiry}` : '-';
+  if (cPeriod) {
+    let pText = (room.move_in && room.expiry) ? `${room.move_in} ~ ${room.expiry}` : '-';
+    if (room.auto_renewed) {
+      pText += ' (자동1년연장)';
+    }
+    cPeriod.textContent = pText;
+  }
 
   const periodTypeTag = document.getElementById('cardPeriodTypeTag');
   if (periodTypeTag) {

@@ -29,9 +29,23 @@ import {
   switchModalRoom,
   handleQuickMoveOut,
   handleQuickMoveIn,
-  handleExtendContractOneYear,
   handleContractFormSubmit,
   handleLeaseTypeChangeInForm,
+  openExpiryNoticeModal,
+  closeExpiryNoticeModal,
+  setExpiryNoticeFilter,
+  toggleAllExpiryCheckboxes,
+  updateExpirySelectedCount,
+  startSequentialSmsSend,
+  startSingleSmsSend,
+  handleSequentialSmsSendAction,
+  handleSequentialSmsCopy,
+  handleSequentialNext,
+  handleSequentialSkip,
+  handleSequentialPrev,
+  closeSequentialSmsModal,
+  checkDaily0700ExpiryNotice,
+  updateExpiryNoticeBadge,
   openExpenseModal,
   renderModalExpenseTable,
   handleModalAmountInput,
@@ -151,7 +165,6 @@ window.openContractEditModal = openContractEditModal;
 window.switchModalRoom = switchModalRoom;
 window.handleQuickMoveOut = handleQuickMoveOut;
 window.handleQuickMoveIn = handleQuickMoveIn;
-window.handleExtendContractOneYear = handleExtendContractOneYear;
 window.handleContractFormSubmit = handleContractFormSubmit;
 window.handleLeaseTypeChangeInForm = handleLeaseTypeChangeInForm;
 
@@ -171,6 +184,23 @@ window.exportCurrentRoomCSV = exportCurrentRoomCSV;
 window.openTenantHistoryModal = openTenantHistoryModal;
 window.openNewBranchModal = openNewBranchModal;
 window.handleNewBranchSubmit = handleNewBranchSubmit;
+
+// 만기 1·2개월 전 전출 확인 및 문자 순차 발송 관련
+window.openExpiryNoticeModal = openExpiryNoticeModal;
+window.closeExpiryNoticeModal = closeExpiryNoticeModal;
+window.setExpiryNoticeFilter = setExpiryNoticeFilter;
+window.toggleAllExpiryCheckboxes = toggleAllExpiryCheckboxes;
+window.updateExpirySelectedCount = updateExpirySelectedCount;
+window.startSequentialSmsSend = startSequentialSmsSend;
+window.startSingleSmsSend = startSingleSmsSend;
+window.handleSequentialSmsSendAction = handleSequentialSmsSendAction;
+window.handleSequentialSmsCopy = handleSequentialSmsCopy;
+window.handleSequentialNext = handleSequentialNext;
+window.handleSequentialSkip = handleSequentialSkip;
+window.handleSequentialPrev = handleSequentialPrev;
+window.closeSequentialSmsModal = closeSequentialSmsModal;
+window.checkDaily0700ExpiryNotice = checkDaily0700ExpiryNotice;
+window.updateExpiryNoticeBadge = updateExpiryNoticeBadge;
 
 // 보안 로그인 및 14일 슬라이딩 세션 관련
 window.openLoginSecurityModal = openLoginSecurityModal;
@@ -204,6 +234,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   await loadInitialData();
   renderAll();
   updateAdminProfileUI();
+
+  // 만기 1·2개월 전 도래 호실 확인 및 배지 갱신 (매일 07:00 자동 감지)
+  checkDaily0700ExpiryNotice();
 
   // 보안 인증 체크: 로그인 상태가 아니면 모달 강제 팝업
   if (!state.currentUser) {
