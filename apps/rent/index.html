@@ -62,11 +62,14 @@
   <header class="border-b border-slate-800/90 bg-surface-900/95 backdrop-blur sticky top-0 z-30 px-2 py-2 sm:px-3 sm:py-2.5">
     <div class="w-full max-w-xl mx-auto flex items-center justify-between gap-1.5 sm:gap-2">
       
-      <!-- Left: Menu Drawer Toggle Button -->
-      <button type="button" onclick="openMenuDrawer()" class="p-1.5 sm:p-2 rounded-xl bg-surface-800/80 hover:bg-surface-700 text-slate-200 border border-slate-700/80 transition flex items-center gap-1 cursor-pointer shadow-sm active:scale-95 shrink-0" title="메뉴 열기">
-        <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
-        <span class="text-xs font-bold hidden sm:inline">메뉴</span>
-      </button>
+      <!-- Left: Menu Drawer Toggle Button & Role Indicator Badge -->
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button type="button" onclick="openMenuDrawer()" class="p-1.5 sm:p-2 rounded-xl bg-surface-800/80 hover:bg-surface-700 text-slate-200 border border-slate-700/80 transition flex items-center gap-1 cursor-pointer shadow-sm active:scale-95 shrink-0" title="메뉴 열기">
+          <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
+          <span class="text-xs font-bold hidden sm:inline">메뉴</span>
+        </button>
+        <div id="headerRoleBadge" onclick="openAdminModal()" class="cursor-pointer" title="관리자 계정 및 권한"></div>
+      </div>
 
       <!-- Center: Active Property / Building Switcher + 지출 등록 버튼 -->
       <div class="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1 justify-center">
@@ -137,15 +140,15 @@
         <div class="flex items-center justify-between mb-1.5 px-1">
           <span class="text-[11px] font-bold text-cyan-400 uppercase tracking-wider">🏢 등록된 부동산 목록</span>
           <div class="flex items-center gap-1.5 flex-wrap justify-end">
-            <button type="button" onclick="openNewBranchModal(); closeMenuDrawer();" class="text-[11px] text-cyan-300 hover:text-cyan-200 font-bold flex items-center gap-0.5 cursor-pointer">
+            <button type="button" id="drawerBtnNewBranch" onclick="handleNewBranchClick()" class="text-[11px] text-cyan-300 hover:text-cyan-200 font-bold flex items-center gap-0.5 cursor-pointer">
               + 신규 추가
             </button>
-            <span class="text-slate-600 text-[10px]">|</span>
-            <button type="button" onclick="openEditSelectedBranchModal(); closeMenuDrawer();" class="text-[11px] text-amber-300 hover:text-amber-200 font-semibold flex items-center gap-0.5 cursor-pointer" title="선택된 건물 정보 수정">
+            <span class="text-slate-600 text-[10px]" id="drawerDividerEdit">|</span>
+            <button type="button" id="drawerBtnEditBranch" onclick="openEditSelectedBranchModal(); closeMenuDrawer();" class="text-[11px] text-amber-300 hover:text-amber-200 font-semibold flex items-center gap-0.5 cursor-pointer" title="선택된 건물 정보 수정">
               ✏️ 수정
             </button>
-            <span class="text-slate-600 text-[10px]">|</span>
-            <button type="button" onclick="window.handleDeleteSelectedBranch()" class="text-[11px] text-rose-400 hover:text-rose-300 font-semibold flex items-center gap-0.5 cursor-pointer" title="현재 선택된 건물 삭제">
+            <span class="text-slate-600 text-[10px]" id="drawerDividerDelete">|</span>
+            <button type="button" id="drawerBtnDeleteBranch" onclick="handleDeleteSelectedBranchClick()" class="text-[11px] text-rose-400 hover:text-rose-300 font-semibold flex items-center gap-0.5 cursor-pointer" title="현재 선택된 건물 삭제">
               🗑️ 삭제
             </button>
           </div>
@@ -158,20 +161,8 @@
       <hr class="border-slate-800/80">
 
       <!-- 🏛️ 본사 전용 관리 센터 (지점 및 점주 가입 승인) -->
-      <div class="space-y-1.5">
-        <a href="./branches.html" class="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-purple-950/80 to-indigo-950/80 hover:from-purple-900/90 hover:to-indigo-900/90 text-purple-200 border border-purple-500/60 font-semibold flex items-center justify-between cursor-pointer transition shadow-md no-underline block">
-          <div class="flex items-center gap-2.5">
-            <span class="text-xl">🏛️</span>
-            <div>
-              <div class="text-xs font-bold text-white flex items-center gap-1.5">
-                <span>본사 관리 센터 (가입 승인 & 지점)</span>
-                <span class="text-[9px] bg-purple-500/40 text-purple-200 border border-purple-400/60 px-1.5 py-0.2 rounded font-bold">HQ 전용</span>
-              </div>
-              <div class="text-[10px] text-purple-300/90">점주 가입 승인 / 반려 · 신규 건물 등록 · SaaS 수납</div>
-            </div>
-          </div>
-          <span class="text-purple-400 text-xs font-bold">↗</span>
-        </a>
+      <div class="space-y-1.5" id="drawerHqCenterContainer">
+        <!-- Dynamically rendered based on superadmin / branch_admin -->
       </div>
 
       <hr class="border-slate-800/80">

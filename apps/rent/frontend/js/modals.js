@@ -2991,14 +2991,16 @@ export function updateAdminProfileUI() {
   const roleEl = document.getElementById('drawerAdminRole');
   const sessionEl = document.getElementById('drawerAdminSessionText');
   const cancelBtn = document.getElementById('securityModalCancelBtn');
+  const headerRoleBadge = document.getElementById('headerRoleBadge');
 
   if (state.currentUser) {
     touchAuthSession(); // UI 갱신 시 활동 감지 및 14일 슬라이딩 연장
+    const isSuper = (state.currentUser.role === 'superadmin');
     if (nameEl) nameEl.textContent = state.currentUser.name || state.currentUser.username || '관리자';
     if (roleEl) {
       const roleMap = {
-        'superadmin': '본사 총괄 최고관리자',
-        'branch_admin': '지점/원룸 관리실장',
+        'superadmin': '👑 본사 총괄 최고관리자 (전권)',
+        'branch_admin': '🏢 지점/원룸 점주실장',
         'tenant': '입주자'
       };
       roleEl.textContent = roleMap[state.currentUser.role] || state.currentUser.role || '인증 완료';
@@ -3008,11 +3010,39 @@ export function updateAdminProfileUI() {
       sessionEl.innerHTML = info ? `🟢 <strong class="text-emerald-300">14일 자동유지</strong> (${info.days}일 남음 · 접속시 자동연장)` : '🟢 14일간 로그인 유지 중';
     }
     if (cancelBtn) cancelBtn.style.display = 'inline-block';
+
+    if (headerRoleBadge) {
+      if (isSuper) {
+        headerRoleBadge.innerHTML = `
+          <span class="px-2 py-1 rounded-xl bg-purple-950/90 border border-purple-500/80 text-purple-200 text-[10px] sm:text-xs font-black flex items-center gap-1 shadow-sm hover:border-purple-400 transition">
+            <span>🏛️</span>
+            <span>HQ admin</span>
+            <span class="text-[9px] bg-purple-500/40 text-purple-200 px-1 rounded font-normal">전권</span>
+          </span>
+        `;
+      } else {
+        headerRoleBadge.innerHTML = `
+          <span class="px-2 py-1 rounded-xl bg-cyan-950/90 border border-cyan-500/70 text-cyan-200 text-[10px] sm:text-xs font-bold flex items-center gap-1 shadow-sm hover:border-cyan-400 transition">
+            <span>🏢</span>
+            <span>${state.currentUser.username || '점주'}</span>
+          </span>
+        `;
+      }
+    }
   } else {
     if (nameEl) nameEl.textContent = '로그인이 필요합니다';
     if (roleEl) roleEl.textContent = '미인증 상태 (보안 잠금)';
     if (sessionEl) sessionEl.textContent = '🔒 미접속 상태';
     if (cancelBtn) cancelBtn.style.display = 'none';
+
+    if (headerRoleBadge) {
+      headerRoleBadge.innerHTML = `
+        <span class="px-2 py-1 rounded-xl bg-surface-800/80 hover:bg-surface-700/80 border border-slate-700 text-slate-300 text-[10px] sm:text-xs font-semibold flex items-center gap-1 transition">
+          <span>🔒</span>
+          <span>로그인</span>
+        </span>
+      `;
+    }
   }
 }
 
@@ -3191,6 +3221,17 @@ export async function handleSecurityLoginSubmit(e) {
       setAuthUser(user);
       updateAdminProfileUI();
       closeLoginSecurityModal();
+
+      if (user.role === 'superadmin' && authResult.redirect_url && !window.location.pathname.includes('branches.html')) {
+        const banner = document.createElement('div');
+        banner.className = 'fixed top-5 right-5 z-[9999] bg-purple-600 text-white px-4 py-3 rounded-xl shadow-xl font-medium text-xs sm:text-sm flex items-center gap-2';
+        banner.innerHTML = `<span>🏛️ <strong>본사 관리 센터(/branches.html)</strong>로 자동 이동합니다...</span>`;
+        document.body.appendChild(banner);
+        setTimeout(() => {
+          window.location.href = authResult.redirect_url;
+        }, 500);
+        return;
+      }
 
       if (targetBranchId && targetBranchId !== state.currentBranchId) {
         await switchBranch(targetBranchId);

@@ -65,7 +65,13 @@ async function fetchWithAuth(url, options = {}) {
     let errMsg = `HTTP Error ${res.status}`;
     try {
       const errData = await res.json();
-      errMsg = errData.detail || errData.message || errMsg;
+      if (typeof errData.detail === 'string') {
+        errMsg = errData.detail;
+      } else if (Array.isArray(errData.detail)) {
+        errMsg = errData.detail.map(d => (d.msg || JSON.stringify(d))).join(', ');
+      } else if (errData.message) {
+        errMsg = errData.message;
+      }
     } catch (_) {}
     throw new Error(errMsg);
   }
@@ -151,12 +157,32 @@ const historiesApi = {
 };
 
 const branchesApi = {
-  list: (activeOnly = false) => http.get('/branches', { active_only: activeOnly }),
-  create: (data) => http.post('/branches', data),
-  update: (branchId, data) => http.patch(`/branches/${branchId}`, data),
-  delete: (branchId) => http.delete(`/branches/${branchId}`),
-  updateBilling: (branchId, billingStatus, lastPaidAt = null) =>
-    http.patch(`/branches/${branchId}/billing`, { billing_status: billingStatus, last_paid_at: lastPaidAt })
+  list: (activeOnly = false) => {
+    const params = {};
+    if (typeof activeOnly === 'boolean') {
+      params.active_only = activeOnly;
+    }
+    return http.get('/branches', params);
+  },
+  create: (arg1, arg2) => {
+    const data = arg2 !== undefined ? arg2 : arg1;
+    return http.post('/branches', data);
+  },
+  update: (arg1, arg2, arg3) => {
+    const branchId = arg3 !== undefined ? arg2 : arg1;
+    const data = arg3 !== undefined ? arg3 : arg2;
+    return http.patch(`/branches/${branchId}`, data);
+  },
+  delete: (arg1, arg2) => {
+    const branchId = arg2 !== undefined ? arg2 : arg1;
+    return http.delete(`/branches/${branchId}`);
+  },
+  updateBilling: (arg1, arg2, arg3, arg4) => {
+    const branchId = arg3 !== undefined ? arg2 : arg1;
+    const billingStatus = arg3 !== undefined ? arg3 : arg2;
+    const lastPaidAt = arg4 || null;
+    return http.patch(`/branches/${branchId}/billing`, { billing_status: billingStatus, last_paid_at: lastPaidAt });
+  }
 };
 
 const authApi = {
@@ -1757,13 +1783,90 @@ function renderRightRoomDrawer() {
   });
 }
 
-// ── 좌측 슬라이드 바: 부동산 선택 및 메뉴 ──
+function isSameBranchId(id1, id2) {
+  if (!id1 || !id2) return false;
+  const a = String(id1).trim().toLowerCase();
+  const b = String(id2).trim().toLowerCase();
+  if (a === b) return true;
+  if ((a === 'main' || a === 'chicvill' || a === 'chicvill1' || a === 'chicvill01') &&
+      (b === 'main' || b === 'chicvill' || b === 'chicvill1' || b === 'chicvill01')) {
+    return true;
+  }
+  if ((a === 'branch_9027' || a === 'chicvill2' || a === 'chicvill02') &&
+      (b === 'branch_9027' || b === 'chicvill2' || b === 'chicvill02')) {
+    return true;
+  }
+  return false;
+}
+
+// ── 좌측 슬라이드 바: 부동산 선택 및 메뉴 (RBAC 권한 분리) ──
 function renderLeftMenuDrawer() {
   const branchListContainer = document.getElementById('drawerBranchList');
   if (!branchListContainer) return;
   branchListContainer.innerHTML = '';
 
-  // 1. 등록된 부동산 목록 렌더링
+  const user = state.currentUser;
+  const isSuperadmin = (user && user.role === 'superadmin');
+  const isBranchAdmin = (user && user.role === 'branch_admin');
+  const myBranch = user ? (user.branch_id || 'main') : null;
+
+  // 1. 상단 액션 버튼 제어 (신규 추가, 삭제는 본사 최고관리자 admin 전용)
+  const btnNew = document.getElementById('drawerBtnNewBranch');
+  const btnDel = document.getElementById('drawerBtnDeleteBranch');
+  const divDel = document.getElementById('drawerDividerDelete');
+  const hqContainer = document.getElementById('drawerHqCenterContainer');
+
+  if (btnNew) {
+    btnNew.style.display = isSuperadmin ? 'inline-block' : 'none';
+  }
+  if (btnDel) {
+    btnDel.style.display = isSuperadmin ? 'inline-block' : 'none';
+  }
+  if (divDel) {
+    divDel.style.display = isSuperadmin ? 'inline-block' : 'none';
+  }
+
+  // 2. HQ 본사 관리 센터 배너 권한 분기
+  if (hqContainer) {
+    if (isSuperadmin) {
+      hqContainer.innerHTML = `
+        <a href="./branches.html" class="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-purple-950/80 to-indigo-950/80 hover:from-purple-900/90 hover:to-indigo-900/90 text-purple-200 border border-purple-500/60 font-semibold flex items-center justify-between cursor-pointer transition shadow-md no-underline block">
+          <div class="flex items-center gap-2.5">
+            <span class="text-xl">🏛️</span>
+            <div>
+              <div class="text-xs font-bold text-white flex items-center gap-1.5">
+                <span>본사 관리 센터 (가입 승인 & 지점)</span>
+                <span class="text-[9px] bg-purple-500/40 text-purple-200 border border-purple-400/60 px-1.5 py-0.2 rounded font-bold">HQ 전용</span>
+              </div>
+              <div class="text-[10px] text-purple-300/90">점주 가입 승인 / 반려 · 신규 건물 등록 · SaaS 수납</div>
+            </div>
+          </div>
+          <span class="text-purple-400 text-xs font-bold">↗</span>
+        </a>
+      `;
+    } else {
+      hqContainer.innerHTML = `
+        <div id="btnHqRestricted" class="w-full text-left p-2.5 rounded-xl bg-surface-850/60 border border-slate-700/60 text-slate-400 font-semibold flex items-center justify-between cursor-pointer opacity-75 hover:opacity-100 transition shadow-xs">
+          <div class="flex items-center gap-2.5">
+            <span class="text-xl">🔒</span>
+            <div>
+              <div class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                <span>본사 관리 센터</span>
+                <span class="text-[9px] bg-slate-700 text-slate-300 px-1.5 py-0.2 rounded font-mono">admin 전용</span>
+              </div>
+              <div class="text-[10px] text-slate-500">지점 점주는 담당 매장만 관제 가능합니다</div>
+            </div>
+          </div>
+          <span class="text-slate-500 text-xs font-bold">🔒</span>
+        </div>
+      `;
+      document.getElementById('btnHqRestricted')?.addEventListener('click', () => {
+        alert('본사 지점 & 수납 관리 센터는 본사 총괄 최고관리자(admin) 전용 보안 메뉴입니다.');
+      });
+    }
+  }
+
+  // 3. 등록된 부동산 목록 렌더링
   if (!state.branches || state.branches.length === 0) {
     branchListContainer.innerHTML = `
       <div class="w-full text-left p-2.5 rounded-xl bg-cyan-950/60 border border-cyan-500/60 text-cyan-300 font-bold text-xs flex items-center justify-between">
@@ -1775,8 +1878,11 @@ function renderLeftMenuDrawer() {
   }
 
   state.branches.forEach(b => {
-    const isSelected = (b.branch_id === state.currentBranch);
+    const isSelected = isSameBranchId(b.branch_id, state.currentBranch);
     const isMain = (b.branch_id === 'main');
+    const isMyBranch = isSameBranchId(b.branch_id, myBranch);
+    const canAccessThisBranch = isSuperadmin || isMyBranch || !user;
+
     const itemEl = document.createElement('div');
 
     if (isSelected) {
@@ -1788,6 +1894,7 @@ function renderLeftMenuDrawer() {
         <div class="flex items-center gap-1.5 truncate">
           <span>🏢</span>
           <span class="truncate">${b.name}</span>
+          ${isSuperadmin ? '<span class="text-[9px] px-1 bg-purple-500/30 text-purple-300 rounded border border-purple-500/40">전권</span>' : (isMyBranch ? '<span class="text-[9px] px-1 bg-cyan-500/30 text-cyan-200 rounded">내 매장</span>' : '')}
         </div>
         <div class="text-[10px] text-cyan-400/80 mt-0.5 truncate">${b.address || '주소 등록됨'}</div>
       `;
@@ -1795,20 +1902,23 @@ function renderLeftMenuDrawer() {
       const rightCol = document.createElement('div');
       rightCol.className = 'flex items-center gap-1.5 shrink-0';
 
-      // ✏️ 건물 정보 수정 버튼
-      const editBtn = document.createElement('button');
-      editBtn.type = 'button';
-      editBtn.className = 'px-1.5 py-0.5 rounded text-[11px] text-amber-300 hover:text-amber-100 hover:bg-amber-900/60 border border-amber-500/40 transition cursor-pointer';
-      editBtn.title = '건물 정보 수정';
-      editBtn.textContent = '✏️ 수정';
-      editBtn.onclick = (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        openEditBranchModal(b.branch_id);
-      };
-      rightCol.appendChild(editBtn);
+      // ✏️ 건물 정보 수정 버튼 (본사 최고관리자 또는 해당 지점 점주만)
+      if (isSuperadmin || isMyBranch) {
+        const editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'px-1.5 py-0.5 rounded text-[11px] text-amber-300 hover:text-amber-100 hover:bg-amber-900/60 border border-amber-500/40 transition cursor-pointer';
+        editBtn.title = '건물 정보 수정';
+        editBtn.textContent = '✏️ 수정';
+        editBtn.onclick = (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          openEditBranchModal(b.branch_id);
+        };
+        rightCol.appendChild(editBtn);
+      }
 
-      if (!isMain) {
+      // 🗑️ 건물 삭제 버튼 (오직 본사 최고관리자 admin만!)
+      if (isSuperadmin && !isMain) {
         const delBtn = document.createElement('button');
         delBtn.type = 'button';
         delBtn.className = 'px-1.5 py-0.5 rounded text-[11px] text-rose-300 hover:text-rose-100 hover:bg-rose-900/60 border border-rose-500/40 transition cursor-pointer';
@@ -1833,55 +1943,72 @@ function renderLeftMenuDrawer() {
       itemEl.className = 'w-full text-left p-2.5 rounded-xl bg-surface-800/80 hover:bg-surface-700/80 text-slate-300 border border-slate-700/60 text-xs flex items-center justify-between transition';
       
       const leftCol = document.createElement('div');
-      leftCol.className = 'flex-1 min-w-0 pr-2 cursor-pointer';
+      leftCol.className = 'flex-1 min-w-0 pr-2 ' + (canAccessThisBranch ? 'cursor-pointer' : 'cursor-not-allowed opacity-60');
       leftCol.innerHTML = `
         <div class="flex items-center gap-1.5 truncate">
-          <span class="text-slate-400">🏢</span>
+          <span class="text-slate-400">${canAccessThisBranch ? '🏢' : '🔒'}</span>
           <span class="font-semibold text-slate-200 truncate">${b.name}</span>
+          ${!canAccessThisBranch ? '<span class="text-[9px] px-1 bg-slate-800 text-slate-400 rounded">타 매장</span>' : ''}
         </div>
         <div class="text-[10px] text-slate-400 mt-0.5 truncate">${b.address || '주소 등록됨'}</div>
       `;
-      leftCol.onclick = () => switchBranch(b.branch_id);
+      leftCol.onclick = () => {
+        if (!canAccessThisBranch) {
+          alert(`'${b.name}'은 타 매장입니다. 점주는 배정된 담당 매장만 관제할 수 있습니다.\n전체 매장 관제 권한은 본사 admin 계정이 필요합니다.`);
+          return;
+        }
+        switchBranch(b.branch_id);
+      };
 
       const rightCol = document.createElement('div');
       rightCol.className = 'flex items-center gap-1.5 shrink-0';
 
-      // ✏️ 건물 정보 수정 버튼
-      const editBtn = document.createElement('button');
-      editBtn.type = 'button';
-      editBtn.className = 'p-1 rounded text-slate-400 hover:text-amber-300 hover:bg-amber-950/50 transition cursor-pointer';
-      editBtn.title = '건물 정보 수정';
-      editBtn.textContent = '✏️';
-      editBtn.onclick = (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        openEditBranchModal(b.branch_id);
-      };
-      rightCol.appendChild(editBtn);
-
-      if (!isMain) {
-        const delBtn = document.createElement('button');
-        delBtn.type = 'button';
-        delBtn.className = 'p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-rose-950/50 transition cursor-pointer';
-        delBtn.title = '이 건물 삭제';
-        delBtn.textContent = '🗑️';
-        delBtn.onclick = (e) => {
+      if (isSuperadmin) {
+        // ✏️ 건물 정보 수정 버튼
+        const editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'p-1 rounded text-slate-400 hover:text-amber-300 hover:bg-amber-950/50 transition cursor-pointer';
+        editBtn.title = '건물 정보 수정';
+        editBtn.textContent = '✏️';
+        editBtn.onclick = (e) => {
           e.stopPropagation();
           e.preventDefault();
-          handleDeleteBranch(b.branch_id, b.name);
+          openEditBranchModal(b.branch_id);
         };
-        rightCol.appendChild(delBtn);
+        rightCol.appendChild(editBtn);
+
+        if (!isMain) {
+          const delBtn = document.createElement('button');
+          delBtn.type = 'button';
+          delBtn.className = 'p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-rose-950/50 transition cursor-pointer';
+          delBtn.title = '이 건물 삭제';
+          delBtn.textContent = '🗑️';
+          delBtn.onclick = (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            handleDeleteBranch(b.branch_id, b.name);
+          };
+          rightCol.appendChild(delBtn);
+        }
       }
 
-      const selectBtn = document.createElement('button');
-      selectBtn.type = 'button';
-      selectBtn.className = 'text-[11px] text-cyan-400 hover:text-cyan-300 font-semibold cursor-pointer';
-      selectBtn.textContent = '선택 ↗';
-      selectBtn.onclick = (e) => {
-        e.stopPropagation();
-        switchBranch(b.branch_id);
-      };
-      rightCol.appendChild(selectBtn);
+      if (canAccessThisBranch) {
+        const selectBtn = document.createElement('button');
+        selectBtn.type = 'button';
+        selectBtn.className = 'text-[11px] text-cyan-400 hover:text-cyan-300 font-semibold cursor-pointer';
+        selectBtn.textContent = '선택 ↗';
+        selectBtn.onclick = (e) => {
+          e.stopPropagation();
+          switchBranch(b.branch_id);
+        };
+        rightCol.appendChild(selectBtn);
+      } else {
+        const lockBadge = document.createElement('span');
+        lockBadge.className = 'text-[10px] text-slate-500 font-mono px-1.5 py-0.5 rounded bg-slate-800/80 cursor-not-allowed';
+        lockBadge.title = '점주 권한 제한 (타 매장)';
+        lockBadge.textContent = '🔒 잠김';
+        rightCol.appendChild(lockBadge);
+      }
 
       itemEl.appendChild(leftCol);
       itemEl.appendChild(rightCol);
@@ -1891,8 +2018,33 @@ function renderLeftMenuDrawer() {
   });
 }
 
+// ── RBAC 바인딩 핸들러 ──
+window.handleNewBranchClick = () => {
+  const user = state.currentUser;
+  if (!user || user.role !== 'superadmin') {
+    alert('신규 매장(가맹점) 등록은 본사 총괄 최고관리자(admin) 전용 권한입니다.');
+    return;
+  }
+  openNewBranchModal();
+  closeMenuDrawer();
+};
+
+window.handleDeleteSelectedBranchClick = () => {
+  const user = state.currentUser;
+  if (!user || user.role !== 'superadmin') {
+    alert('매장 영구 삭제는 본사 총괄 최고관리자(admin) 전용 권한입니다.');
+    return;
+  }
+  handleDeleteSelectedBranch();
+};
+
 // ── 현재 선택된 부동산 삭제 (신규 추가 옆 '삭제' 링크) ──
 async function handleDeleteSelectedBranch() {
+  const user = state.currentUser;
+  if (!user || user.role !== 'superadmin') {
+    alert('매장 영구 삭제는 본사 총괄 최고관리자(admin) 전용 권한입니다.');
+    return;
+  }
   const currentBranchId = state.currentBranch;
   if (!currentBranchId || currentBranchId === 'main') {
     alert("기본 본사 부동산('시크빌')은 삭제할 수 없습니다.\n별관 등 삭제하려는 건물을 먼저 목록에서 선택해주세요.");
@@ -1908,6 +2060,11 @@ let pendingDeleteBranchId = null;
 let pendingDeleteBranchName = null;
 
 function handleDeleteBranch(branchId, branchName = '') {
+  const user = state.currentUser;
+  if (!user || user.role !== 'superadmin') {
+    alert('매장 영구 삭제는 본사 총괄 최고관리자(admin) 전용 권한입니다.');
+    return;
+  }
   if (!branchId || branchId === 'main') {
     alert("기본 본사 부동산('시크빌')은 시스템 필수 데이터이므로 삭제할 수 없습니다.");
     return;
@@ -5348,14 +5505,16 @@ function updateAdminProfileUI() {
   const roleEl = document.getElementById('drawerAdminRole');
   const sessionEl = document.getElementById('drawerAdminSessionText');
   const cancelBtn = document.getElementById('securityModalCancelBtn');
+  const headerRoleBadge = document.getElementById('headerRoleBadge');
 
   if (state.currentUser) {
     touchAuthSession(); // UI 갱신 시 활동 감지 및 14일 슬라이딩 연장
+    const isSuper = (state.currentUser.role === 'superadmin');
     if (nameEl) nameEl.textContent = state.currentUser.name || state.currentUser.username || '관리자';
     if (roleEl) {
       const roleMap = {
-        'superadmin': '본사 총괄 최고관리자',
-        'branch_admin': '지점/원룸 관리실장',
+        'superadmin': '👑 본사 총괄 최고관리자 (전권)',
+        'branch_admin': '🏢 지점/원룸 점주실장',
         'tenant': '입주자'
       };
       roleEl.textContent = roleMap[state.currentUser.role] || state.currentUser.role || '인증 완료';
@@ -5365,11 +5524,39 @@ function updateAdminProfileUI() {
       sessionEl.innerHTML = info ? `🟢 <strong class="text-emerald-300">14일 자동유지</strong> (${info.days}일 남음 · 접속시 자동연장)` : '🟢 14일간 로그인 유지 중';
     }
     if (cancelBtn) cancelBtn.style.display = 'inline-block';
+
+    if (headerRoleBadge) {
+      if (isSuper) {
+        headerRoleBadge.innerHTML = `
+          <span class="px-2 py-1 rounded-xl bg-purple-950/90 border border-purple-500/80 text-purple-200 text-[10px] sm:text-xs font-black flex items-center gap-1 shadow-sm hover:border-purple-400 transition">
+            <span>🏛️</span>
+            <span>HQ admin</span>
+            <span class="text-[9px] bg-purple-500/40 text-purple-200 px-1 rounded font-normal">전권</span>
+          </span>
+        `;
+      } else {
+        headerRoleBadge.innerHTML = `
+          <span class="px-2 py-1 rounded-xl bg-cyan-950/90 border border-cyan-500/70 text-cyan-200 text-[10px] sm:text-xs font-bold flex items-center gap-1 shadow-sm hover:border-cyan-400 transition">
+            <span>🏢</span>
+            <span>${state.currentUser.username || '점주'}</span>
+          </span>
+        `;
+      }
+    }
   } else {
     if (nameEl) nameEl.textContent = '로그인이 필요합니다';
     if (roleEl) roleEl.textContent = '미인증 상태 (보안 잠금)';
     if (sessionEl) sessionEl.textContent = '🔒 미접속 상태';
     if (cancelBtn) cancelBtn.style.display = 'none';
+
+    if (headerRoleBadge) {
+      headerRoleBadge.innerHTML = `
+        <span class="px-2 py-1 rounded-xl bg-surface-800/80 hover:bg-surface-700/80 border border-slate-700 text-slate-300 text-[10px] sm:text-xs font-semibold flex items-center gap-1 transition">
+          <span>🔒</span>
+          <span>로그인</span>
+        </span>
+      `;
+    }
   }
 }
 
@@ -5548,6 +5735,17 @@ async function handleSecurityLoginSubmit(e) {
       setAuthUser(user);
       updateAdminProfileUI();
       closeLoginSecurityModal();
+
+      if (user.role === 'superadmin' && authResult.redirect_url && !window.location.pathname.includes('branches.html')) {
+        const banner = document.createElement('div');
+        banner.className = 'fixed top-5 right-5 z-[9999] bg-purple-600 text-white px-4 py-3 rounded-xl shadow-xl font-medium text-xs sm:text-sm flex items-center gap-2';
+        banner.innerHTML = `<span>🏛️ <strong>본사 관리 센터(/branches.html)</strong>로 자동 이동합니다...</span>`;
+        document.body.appendChild(banner);
+        setTimeout(() => {
+          window.location.href = authResult.redirect_url;
+        }, 500);
+        return;
+      }
 
       if (targetBranchId && targetBranchId !== state.currentBranchId) {
         await switchBranch(targetBranchId);

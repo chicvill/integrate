@@ -252,7 +252,8 @@
           <span class="text-[11px] font-mono" id="systemStatusText">정상 가동</span>
         </div>
 
-        <div id="userAuthBadge"></div>
+        <!-- HQ Admin Badge / Logout -->
+        <div id="hqAdminBadgeContainer"></div>
       </div>
 
     </div>
@@ -519,6 +520,65 @@
           <button type="submit" class="px-4 py-1.5 rounded-xl bg-cyan-600 text-white text-xs font-bold hover:bg-cyan-500 shadow-md">저장하기</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ── 🔒 Security Guard Gate for branches.html (HQ Superadmin Only) ── -->
+  <div id="hqSecurityGate" class="fixed inset-0 z-[1000] bg-slate-950/92 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-surface-900 border border-purple-500/60 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl text-center space-y-4">
+      <div class="w-16 h-16 rounded-2xl bg-purple-950/80 border border-purple-500/50 text-purple-300 text-3xl flex items-center justify-center mx-auto shadow-inner">
+        🏛️
+      </div>
+      <div>
+        <h2 class="text-base sm:text-lg font-extrabold text-white tracking-tight">본사 최고관리자(admin) 전용 보안 센터</h2>
+        <p class="text-xs text-slate-400 mt-1.5 leading-relaxed" id="hqSecurityGateDesc">
+          가맹점 등록/삭제, SaaS 수납 상태 및 점주 가입 승인 업무는 <strong class="text-purple-300">본사 총괄 최고관리자(admin)</strong> 권한이 필수입니다.
+        </p>
+      </div>
+
+      <!-- Login Form when not authenticated -->
+      <form id="hqLoginForm" class="space-y-3.5 text-left pt-1">
+        <div class="text-[11px] text-purple-300/90 bg-purple-950/40 p-2.5 rounded-xl border border-purple-500/30">
+          🔑 최고관리자 계정: <strong>admin</strong> / 비밀번호: <strong>1212</strong>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-300 mb-1">최고관리자 아이디</label>
+          <input type="text" id="hqUsername" class="form-input w-full" value="admin" required placeholder="admin">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-300 mb-1">비밀번호</label>
+          <input type="password" id="hqPassword" class="form-input w-full" value="1212" required placeholder="비밀번호 입력">
+        </div>
+        <div id="hqLoginError" class="hidden text-xs text-rose-400 bg-rose-950/50 p-2.5 rounded-xl border border-rose-800/50 font-semibold"></div>
+        <div class="flex items-center gap-2 pt-2">
+          <a href="./index.html" class="flex-1 py-2.5 text-center rounded-xl bg-surface-800 hover:bg-surface-750 text-slate-300 text-xs font-semibold no-underline transition">
+            ← 메인 대시보드
+          </a>
+          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md shadow-purple-950/50 cursor-pointer transition active:scale-95">
+            🔑 최고관리자 인증
+          </button>
+        </div>
+      </form>
+
+      <!-- Warning card when logged in as non-superadmin (branch_admin) -->
+      <div id="hqBranchAdminCard" class="hidden space-y-3.5 text-left pt-1">
+        <div class="p-3.5 rounded-xl bg-amber-950/40 border border-amber-500/50 text-amber-200 text-xs space-y-1.5">
+          <div class="font-bold text-amber-300 flex items-center gap-1.5">
+            <span>⚠️</span><span>지점 점주(실장) 접근 제한</span>
+          </div>
+          <div id="hqBranchAdminMsg" class="text-[11px] text-amber-200/90 leading-relaxed">
+            귀하는 지점 관리자 계정으로 접속 중입니다. 본사 관리 센터는 본사 총괄 최고관리자(admin)만 접근할 수 있습니다.
+          </div>
+        </div>
+        <div class="flex items-center gap-2 pt-2">
+          <button type="button" id="btnGoToMyBranch" class="flex-1 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md cursor-pointer transition active:scale-95">
+            🏢 담당 매장 관제로 이동
+          </button>
+          <button type="button" id="btnReloginAsAdmin" class="flex-1 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md cursor-pointer transition active:scale-95">
+            🔑 admin으로 재로그인
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

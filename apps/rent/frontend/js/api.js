@@ -53,7 +53,13 @@ export async function fetchWithAuth(url, options = {}) {
     let errMsg = `HTTP Error ${res.status}`;
     try {
       const errData = await res.json();
-      errMsg = errData.detail || errData.message || errMsg;
+      if (typeof errData.detail === 'string') {
+        errMsg = errData.detail;
+      } else if (Array.isArray(errData.detail)) {
+        errMsg = errData.detail.map(d => (d.msg || JSON.stringify(d))).join(', ');
+      } else if (errData.message) {
+        errMsg = errData.message;
+      }
     } catch (_) {}
     throw new Error(errMsg);
   }
@@ -139,12 +145,32 @@ export const historiesApi = {
 };
 
 export const branchesApi = {
-  list: (activeOnly = false) => http.get('/branches', { active_only: activeOnly }),
-  create: (data) => http.post('/branches', data),
-  update: (branchId, data) => http.patch(`/branches/${branchId}`, data),
-  delete: (branchId) => http.delete(`/branches/${branchId}`),
-  updateBilling: (branchId, billingStatus, lastPaidAt = null) =>
-    http.patch(`/branches/${branchId}/billing`, { billing_status: billingStatus, last_paid_at: lastPaidAt })
+  list: (activeOnly = false) => {
+    const params = {};
+    if (typeof activeOnly === 'boolean') {
+      params.active_only = activeOnly;
+    }
+    return http.get('/branches', params);
+  },
+  create: (arg1, arg2) => {
+    const data = arg2 !== undefined ? arg2 : arg1;
+    return http.post('/branches', data);
+  },
+  update: (arg1, arg2, arg3) => {
+    const branchId = arg3 !== undefined ? arg2 : arg1;
+    const data = arg3 !== undefined ? arg3 : arg2;
+    return http.patch(`/branches/${branchId}`, data);
+  },
+  delete: (arg1, arg2) => {
+    const branchId = arg2 !== undefined ? arg2 : arg1;
+    return http.delete(`/branches/${branchId}`);
+  },
+  updateBilling: (arg1, arg2, arg3, arg4) => {
+    const branchId = arg3 !== undefined ? arg2 : arg1;
+    const billingStatus = arg3 !== undefined ? arg3 : arg2;
+    const lastPaidAt = arg4 || null;
+    return http.patch(`/branches/${branchId}/billing`, { billing_status: billingStatus, last_paid_at: lastPaidAt });
+  }
 };
 
 export const authApi = {

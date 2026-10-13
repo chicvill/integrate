@@ -9,8 +9,23 @@ from ..db.models import RentBranch, RentPayment, RentRoom, RentExpense, RentTena
 from ..schemas import BranchCreate, BranchUpdate, BranchBillingUpdate
 
 
+def normalize_branch_id(branch_id: Optional[str]) -> str:
+    """지점 코드 에일리어스 정규화 (chicvill01 -> main, chicvill02 -> branch_9027)"""
+    if not branch_id:
+        return "main"
+    bid = branch_id.strip().lower()
+    if bid in ("chicvill01", "chicvill1", "chicvill", "main"):
+        return "main"
+    if bid in ("chicvill02", "chicvill2", "branch_9027"):
+        return "branch_9027"
+    return branch_id
+
+
 class BranchService:
     """부동산 지점(건물) 관리 전담 클래스"""
+
+    def normalize_branch_id(self, branch_id: Optional[str]) -> str:
+        return normalize_branch_id(branch_id)
 
     def list_branches(self, db: Session, active_only: bool = False) -> List[RentBranch]:
         """등록된 모든 부동산 지점 조회 (호실/수납 데이터가 존재하는 지점 자동 감지 동기화)"""
@@ -48,8 +63,13 @@ class BranchService:
         return q.order_by(RentBranch.created_at.asc()).all()
 
     def get_branch(self, db: Session, branch_id: str) -> Optional[RentBranch]:
-        """특정 부동산 지점 조회"""
-        return db.query(RentBranch).filter(RentBranch.branch_id == branch_id).first()
+        """특정 부동산 지점 조회 (에일리어스 지원)"""
+        b = db.query(RentBranch).filter(RentBranch.branch_id == branch_id).first()
+        if not b:
+            norm_id = normalize_branch_id(branch_id)
+            if norm_id != branch_id:
+                b = db.query(RentBranch).filter(RentBranch.branch_id == norm_id).first()
+        return b
 
     def create_branch(self, db: Session, data: BranchCreate) -> RentBranch:
         """신규 부동산 지점 등록"""

@@ -31,6 +31,11 @@ ROOM_NUMBERS = [
 
 class RentService:
     _seeded: bool = False
+    branch_service = branch_service
+
+    def normalize_branch_id(self, branch_id: Optional[str]) -> str:
+        """지점 코드 정규화 (chicvill01 -> main, chicvill02 -> branch_9027)"""
+        return branch_service.normalize_branch_id(branch_id)
 
     def _seed_branch_rooms(self, db: Session, branch_id: str, is_main: bool = True) -> None:
         """지점별 29개실 및 12개월 납부 장부 / 전출자 1년 보존 이력 생성"""
@@ -222,9 +227,10 @@ class RentService:
 
     def get_rooms(self, db: Session, branch_id: str = "main") -> Dict[int, Any]:
         """지점 내 29개실 전체 정보 및 12개월 납부 장부 집계 (이전 세입자 정보 포함)"""
-        self.ensure_default_seed(db, branch_id)
-        rooms_db = db.query(RentRoom).filter(RentRoom.branch_id == branch_id).order_by(RentRoom.room_number).all()
-        payments_db = db.query(RentPayment).filter(RentPayment.branch_id == branch_id).all()
+        norm_bid = self.branch_service.normalize_branch_id(branch_id)
+        self.ensure_default_seed(db, norm_bid)
+        rooms_db = db.query(RentRoom).filter(RentRoom.branch_id == norm_bid).order_by(RentRoom.room_number).all()
+        payments_db = db.query(RentPayment).filter(RentPayment.branch_id == norm_bid).all()
 
         pay_map: Dict[int, Dict[Any, Any]] = {}
         for p in payments_db:

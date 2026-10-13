@@ -68,6 +68,26 @@ class AuthService:
                 "reason": "시크빌 2호점 전용 점주 계정"
             },
             {
+                "username": "chicvill01",
+                "password": "1212",
+                "name": "시크빌 1호점 점주실장",
+                "phone": "010-1234-5678",
+                "role": "branch_admin",
+                "assigned_branch_id": "chicvill01",
+                "status": "APPROVED",
+                "reason": "시크빌 1호점 직관적 계정"
+            },
+            {
+                "username": "chicvill02",
+                "password": "1212",
+                "name": "시크빌 2호점 점주실장",
+                "phone": "010-9876-5432",
+                "role": "branch_admin",
+                "assigned_branch_id": "chicvill02",
+                "status": "APPROVED",
+                "reason": "시크빌 2호점 직관적 계정"
+            },
+            {
                 "username": "admin01",
                 "password": "1212",
                 "name": "시크빌 1호점 실장",

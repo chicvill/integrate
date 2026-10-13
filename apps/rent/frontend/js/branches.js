@@ -24,7 +24,7 @@ let activeFilter = '';
 
 async function loadBranches() {
   try {
-    const data = await fetchBranches(API_BASE);
+    const data = await fetchBranches();
     branchesList = data.branches || [];
     render();
   } catch (err) {
@@ -348,7 +348,135 @@ async function handleRejectUpgrade(req) {
   }
 }
 
-// ── 🔑 관리자 로그인 & 지점 자동 분기 테스트 ──
+// ── 🛡️ 본사 최고관리자(superadmin) 보안 게이트웨이 & 세션 검증 ──
+function getStoredUser() {
+  try {
+    const u = JSON.parse(localStorage.getItem('RENT_ADMIN_AUTH_V1') || 'null');
+    if (u && u.username) return u;
+  } catch (_) {}
+  try {
+    const s = JSON.parse(localStorage.getItem('saas_user') || 'null');
+    if (s && s.username) return s;
+  } catch (_) {}
+  return null;
+}
+
+function verifySuperadminGate() {
+  const gate = document.getElementById('hqSecurityGate');
+  const loginForm = document.getElementById('hqLoginForm');
+  const branchAdminCard = document.getElementById('hqBranchAdminCard');
+  const branchAdminMsg = document.getElementById('hqBranchAdminMsg');
+  const badgeContainer = document.getElementById('hqAdminBadgeContainer');
+
+  const user = getStoredUser();
+
+  if (user && user.role === 'superadmin') {
+    // 👑 본사 최고관리자(admin): 게이트 통과 & 전권 활성화
+    if (gate) gate.style.display = 'none';
+    if (badgeContainer) {
+      badgeContainer.innerHTML = `
+        <div class="flex items-center gap-2 bg-gradient-to-r from-purple-950/80 to-indigo-950/80 border border-purple-500/60 px-3 py-1.5 rounded-xl text-xs shadow-sm">
+          <span class="text-sm">👑</span>
+          <span class="font-bold text-purple-200">본사 총괄: <strong>${user.name || user.username}</strong> <span class="text-[10px] text-purple-400 font-mono">(전권 관제)</span></span>
+          <button type="button" id="btnHqLogout" class="ml-1 text-[11px] text-rose-300 hover:text-rose-100 bg-rose-950/50 hover:bg-rose-900/60 border border-rose-800/50 px-2 py-0.5 rounded-lg transition cursor-pointer">
+            로그아웃
+          </button>
+        </div>
+      `;
+      document.getElementById('btnHqLogout')?.addEventListener('click', () => {
+        localStorage.removeItem('RENT_ADMIN_AUTH_V1');
+        localStorage.removeItem('saas_user');
+        localStorage.removeItem('mqnet_auth_token');
+        showToast('로그아웃되었습니다.', 'info');
+        setTimeout(() => window.location.reload(), 400);
+      });
+    }
+    loadBranches();
+    loadUpgradeRequests();
+    return true;
+  }
+
+  // Not superadmin: 본사 센터 잠금 및 접근 차단
+  if (gate) gate.style.display = 'flex';
+  if (badgeContainer) badgeContainer.innerHTML = '';
+
+  if (user && user.role === 'branch_admin') {
+    // 지점 점주 계정으로 접근 시: 권한 부족 알림
+    if (loginForm) loginForm.style.display = 'none';
+    if (branchAdminCard) {
+      branchAdminCard.classList.remove('hidden');
+      branchAdminCard.style.display = 'block';
+    }
+    if (branchAdminMsg) {
+      branchAdminMsg.innerHTML = `
+        현재 <strong>${user.name}</strong> (${user.username}) 님은 <strong>지점 점주(실장)</strong> 계정입니다.<br>
+        가맹점 등록/삭제, SaaS 월이용료 수납 및 점주 가입 승인은 <strong>본사 총괄 최고관리자(admin)</strong>만 권한을 가집니다.
+      `;
+    }
+    const targetBranch = user.branch_id || 'main';
+    document.getElementById('btnGoToMyBranch')?.addEventListener('click', () => {
+      window.location.href = `./index.html?branch=${encodeURIComponent(targetBranch)}`;
+    });
+    document.getElementById('btnReloginAsAdmin')?.addEventListener('click', () => {
+      localStorage.removeItem('RENT_ADMIN_AUTH_V1');
+      localStorage.removeItem('saas_user');
+      if (branchAdminCard) branchAdminCard.style.display = 'none';
+      if (loginForm) loginForm.style.display = 'block';
+    });
+  } else {
+    // 미인증: 최고관리자 로그인 폼 활성화
+    if (branchAdminCard) branchAdminCard.style.display = 'none';
+    if (loginForm) loginForm.style.display = 'block';
+  }
+
+  return false;
+}
+
+// ── 🔑 최고관리자 전용 로그인 처리 ──
+async function handleHqLogin(e) {
+  e.preventDefault();
+  const username = document.getElementById('hqUsername').value.trim();
+  const password = document.getElementById('hqPassword').value.trim();
+  const errEl = document.getElementById('hqLoginError');
+
+  if (!username || !password) return;
+
+  try {
+    const res = await fetchWithAuth(`${API_BASE}/auth/admin-login`, {
+      method: 'POST',
+      body: JSON.stringify({ username, password })
+    });
+
+    if (res.role !== 'superadmin') {
+      throw new Error(`'${res.name}'님은 최고관리자(admin)가 아닌 지점 관리자 계정입니다.\n본사 센터는 admin 계정으로만 접근하실 수 있습니다.`);
+    }
+
+    const authUser = {
+      id: res.user_id,
+      username: res.username,
+      name: res.name,
+      role: res.role,
+      branch_id: res.assigned_branch_id,
+      loginAt: new Date().toISOString()
+    };
+
+    localStorage.setItem('RENT_ADMIN_AUTH_V1', JSON.stringify(authUser));
+    localStorage.setItem('saas_user', JSON.stringify(authUser));
+    if (res.access_token) {
+      localStorage.setItem('mqnet_auth_token', res.access_token);
+    }
+
+    showToast(`👑 ${res.name}님 최고관리자 인증 완료!`, 'success');
+    verifySuperadminGate();
+  } catch (err) {
+    if (errEl) {
+      errEl.textContent = err.message || '인증에 실패했습니다.';
+      errEl.classList.remove('hidden');
+    }
+  }
+}
+
+// ── 🔑 관리자 계정 로그인 테스트 모달 (자동 분기) ──
 async function handleAdminLogin(e) {
   e.preventDefault();
   const username = document.getElementById('loginUsername').value.trim();
@@ -360,13 +488,25 @@ async function handleAdminLogin(e) {
   }
 
   try {
-    const res = await fetchWithAuth(`${API_BASE}/auth/login`, {
+    const res = await fetchWithAuth(`${API_BASE}/auth/admin-login`, {
       method: 'POST',
       body: JSON.stringify({ username, password })
     });
 
-    showToast(`${res.user.name}님 로그인 성공! 전용 페이지로 이동합니다.`, 'success');
-    localStorage.setItem('saas_user', JSON.stringify(res.user));
+    showToast(`${res.name}님 로그인 성공! 전용 화면으로 이동합니다.`, 'success');
+    const authUser = {
+      id: res.user_id,
+      username: res.username,
+      name: res.name,
+      role: res.role,
+      branch_id: res.assigned_branch_id,
+      loginAt: new Date().toISOString()
+    };
+    localStorage.setItem('RENT_ADMIN_AUTH_V1', JSON.stringify(authUser));
+    localStorage.setItem('saas_user', JSON.stringify(authUser));
+    if (res.access_token) {
+      localStorage.setItem('mqnet_auth_token', res.access_token);
+    }
 
     setTimeout(() => {
       window.location.href = res.redirect_url;
@@ -394,7 +534,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('cancelBranchModalBtn')?.addEventListener('click', closeBranchModal);
   document.getElementById('branchForm')?.addEventListener('submit', handleSaveBranch);
 
-  // 로그인 모달
+  // HQ 전용 보안 게이트 폼
+  document.getElementById('hqLoginForm')?.addEventListener('submit', handleHqLogin);
+
+  // 로그인 모달 (상단 테스트용)
   const loginModal = document.getElementById('loginModal');
   document.getElementById('btnOpenLoginModal')?.addEventListener('click', () => {
     if (loginModal) loginModal.style.display = 'flex';
@@ -414,15 +557,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const sectionUpgrades = document.getElementById('sectionUpgrades');
 
   tabBranchesBtn?.addEventListener('click', () => {
-    tabBranchesBtn.className = 'btn btn-primary btn-sm';
-    tabUpgradesBtn.className = 'btn btn-secondary btn-sm';
+    tabBranchesBtn.className = 'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-cyan-600 text-white shadow-md shadow-cyan-950/50 transition cursor-pointer';
+    tabUpgradesBtn.className = 'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-surface-800 hover:bg-surface-750 text-slate-300 border border-slate-700/80 transition cursor-pointer';
     sectionBranches.style.display = 'block';
     sectionUpgrades.style.display = 'none';
   });
 
   tabUpgradesBtn?.addEventListener('click', () => {
-    tabUpgradesBtn.className = 'btn btn-primary btn-sm';
-    tabBranchesBtn.className = 'btn btn-secondary btn-sm';
+    tabUpgradesBtn.className = 'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-purple-600 text-white shadow-md shadow-purple-950/50 transition cursor-pointer';
+    tabBranchesBtn.className = 'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-surface-800 hover:bg-surface-750 text-slate-300 border border-slate-700/80 transition cursor-pointer';
     sectionBranches.style.display = 'none';
     sectionUpgrades.style.display = 'block';
     loadUpgradeRequests();
@@ -442,13 +585,6 @@ document.addEventListener('DOMContentLoaded', () => {
     render();
   });
 
-  // 통합 인증 배지
-  MQnetAuth.init({
-    appId: 'rent',
-    onAuthChange: () => MQnetAuth.renderBadge('userAuthBadge')
-  });
-  MQnetAuth.renderBadge('userAuthBadge');
-
-  loadBranches();
-  loadUpgradeRequests();
+  // 본사 최고관리자 게이트 검증 및 데이터 로드
+  verifySuperadminGate();
 });
