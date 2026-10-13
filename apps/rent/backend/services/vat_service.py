@@ -75,11 +75,10 @@ class VatService:
     @staticmethod
     def _parse_year_month(date_str: Optional[str]) -> Tuple[Optional[int], Optional[int]]:
         """YYYY-MM-DD 또는 YYYY-MM 문자열에서 (년, 월) 튜플 안전 추출"""
-        if not date_str or len(str(date_str)) < 7:
+        if not date_str or len(date_str) < 7:
             return None, None
         try:
-            s = str(date_str)
-            return int(s[:4]), int(s[5:7])
+            return int(date_str[:4]), int(date_str[5:7])
         except (ValueError, TypeError):
             return None, None
 
