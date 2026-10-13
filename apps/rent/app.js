@@ -92,6 +92,9 @@ import {
   handleGlobalPasteForOcr,
   openLoginSecurityModal,
   closeLoginSecurityModal,
+  openAdminModal,
+  openRegisterModal,
+  handleRegisterSubmit,
   fillQuickLogin,
   handleSecurityLoginSubmit,
   handleLogout,
@@ -231,6 +234,9 @@ window.updateExpiryNoticeBadge = updateExpiryNoticeBadge;
 // 보안 로그인 및 14일 슬라이딩 세션 관련
 window.openLoginSecurityModal = openLoginSecurityModal;
 window.closeLoginSecurityModal = closeLoginSecurityModal;
+window.openAdminModal = openAdminModal;
+window.openRegisterModal = openRegisterModal;
+window.handleRegisterSubmit = handleRegisterSubmit;
 window.fillQuickLogin = fillQuickLogin;
 window.handleSecurityLoginSubmit = handleSecurityLoginSubmit;
 window.handleLogout = handleLogout;

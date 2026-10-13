@@ -1384,39 +1384,92 @@
       <form id="securityLoginForm" onsubmit="handleSecurityLoginSubmit(event)" class="space-y-3">
         <div>
           <label class="block text-slate-300 font-bold mb-1 text-[11px]">관리자 아이디</label>
-          <input type="text" id="secUsername" required placeholder="예: admin, admin01" class="w-full bg-surface-950 border border-slate-700 focus:border-cyan-500 text-slate-100 rounded-xl px-3 py-2 text-xs outline-none transition font-medium">
+          <input type="text" id="secUsername" required placeholder="관리자 아이디 입력" class="w-full bg-surface-950 border border-slate-700 focus:border-cyan-500 text-slate-100 rounded-xl px-3 py-2 text-xs outline-none transition font-medium">
         </div>
         <div>
           <label class="block text-slate-300 font-bold mb-1 text-[11px]">비밀번호</label>
-          <input type="password" id="secPassword" required placeholder="기본 비밀번호: 1212" class="w-full bg-surface-950 border border-slate-700 focus:border-cyan-500 text-slate-100 rounded-xl px-3 py-2 text-xs outline-none transition font-medium">
+          <input type="password" id="secPassword" required placeholder="비밀번호 입력" class="w-full bg-surface-950 border border-slate-700 focus:border-cyan-500 text-slate-100 rounded-xl px-3 py-2 text-xs outline-none transition font-medium">
         </div>
 
         <div class="flex items-center gap-1.5 py-0.5 text-[11px] text-emerald-400 font-medium bg-emerald-950/30 px-2.5 py-1.5 rounded-lg border border-emerald-800/40">
           <span>🛡️</span>
-          <span>이 휴대폰에서 <strong>14일간 로그인 자동 유지</strong> (접속 시 자동 연장)</span>
+          <span>이 기기에서 <strong>14일간 로그인 자동 유지</strong> (접속 시 자동 연장)</span>
         </div>
 
-        <div id="secLoginError" class="hidden text-rose-400 text-[11px] font-semibold text-center bg-rose-950/30 border border-rose-800/40 py-1.5 px-2 rounded-lg"></div>
+        <div id="secLoginError" class="hidden text-rose-400 text-[11px] font-semibold text-center bg-rose-950/30 border border-rose-800/40 py-1.5 px-2 rounded-lg whitespace-pre-line"></div>
 
         <button type="submit" id="btnSecLoginSubmit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs shadow-md shadow-cyan-950/50 transition cursor-pointer active:scale-98">
           🔒 보안 로그인 (14일 세션 시작)
         </button>
       </form>
 
-      <!-- 간편 로그인 테스트 칩 (AGENTS.md 표준) -->
-      <div class="pt-2 border-t border-slate-800 space-y-1.5 text-center">
-        <span class="text-[10px] text-slate-400 block">빠른 계정 선택:</span>
-        <div class="flex items-center justify-center gap-1.5 flex-wrap">
-          <button type="button" onclick="fillQuickLogin('admin', '1212')" class="px-2 py-0.5 rounded-md bg-surface-850 hover:bg-surface-800 text-cyan-300 border border-slate-700 text-[10px] cursor-pointer">
-            최고관리자 (admin)
+      <!-- 관리자 회원가입 신청 링크 -->
+      <div class="pt-2 border-t border-slate-800 text-center">
+        <button type="button" onclick="openRegisterModal()" class="text-[11px] text-cyan-400 hover:text-cyan-300 font-semibold hover:underline cursor-pointer transition">
+          📝 아직 계정이 없으신가요? 관리자 회원가입 신청
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 📝 신규 관리자 회원가입 신청 모달 -->
+  <div id="registerModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-3 animate-in fade-in duration-200">
+    <div class="bg-surface-900 border border-slate-800 rounded-2xl w-full max-w-sm p-4.5 space-y-4 shadow-2xl relative text-slate-200">
+      <button type="button" onclick="closeModal('registerModal')" class="absolute top-3.5 right-3.5 text-slate-400 hover:text-white text-base cursor-pointer">✕</button>
+
+      <div class="text-center space-y-1">
+        <div class="w-11 h-11 mx-auto rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-600/20 border border-indigo-500/30 flex items-center justify-center text-xl shadow-inner">
+          📝
+        </div>
+        <h3 class="text-base font-bold text-white tracking-tight mt-1.5">지점 관리자 가입 신청</h3>
+        <p class="text-[11px] text-slate-400 leading-tight">신청 접수 후 본사 관리자(admin) 승인 시 로그인이 활성화됩니다.</p>
+      </div>
+
+      <form id="registerForm" onsubmit="handleRegisterSubmit(event)" class="space-y-2.5">
+        <div>
+          <label class="block text-slate-300 font-bold mb-1 text-[11px]">희망 아이디 <span class="text-rose-400">*</span></label>
+          <input type="text" id="regUsername" required placeholder="영문/숫자 아이디 입력" class="w-full bg-surface-950 border border-slate-700 focus:border-cyan-500 text-slate-100 rounded-xl px-3 py-2 text-xs outline-none transition font-medium">
+        </div>
+        <div>
+          <label class="block text-slate-300 font-bold mb-1 text-[11px]">비밀번호 <span class="text-rose-400">*</span></label>
+          <input type="password" id="regPassword" required placeholder="비밀번호 설정" class="w-full bg-surface-950 border border-slate-700 focus:border-cyan-500 text-slate-100 rounded-xl px-3 py-2 text-xs outline-none transition font-medium">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-slate-300 font-bold mb-1 text-[11px]">담당자 성명 <span class="text-rose-400">*</span></label>
+            <input type="text" id="regName" required placeholder="홍길동" class="w-full bg-surface-950 border border-slate-700 focus:border-cyan-500 text-slate-100 rounded-xl px-3 py-2 text-xs outline-none transition font-medium">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1 text-[11px]">연락처 <span class="text-rose-400">*</span></label>
+            <input type="text" id="regPhone" required placeholder="010-0000-0000" class="w-full bg-surface-950 border border-slate-700 focus:border-cyan-500 text-slate-100 rounded-xl px-3 py-2 text-xs outline-none transition font-medium">
+          </div>
+        </div>
+        <div>
+          <label class="block text-slate-300 font-bold mb-1 text-[11px]">담당 희망 건물</label>
+          <select id="regTargetBranch" class="w-full bg-surface-950 border border-slate-700 focus:border-cyan-500 text-slate-100 rounded-xl px-2.5 py-2 text-xs outline-none transition font-medium">
+            <!-- 동적으로 지점 목록 바인딩 -->
+          </select>
+        </div>
+        <div>
+          <label class="block text-slate-300 font-bold mb-1 text-[11px]">신청 사유 / 메모</label>
+          <input type="text" id="regReason" placeholder="예: 시크빌 2호점 신규 점주 실장" class="w-full bg-surface-950 border border-slate-700 focus:border-cyan-500 text-slate-100 rounded-xl px-3 py-2 text-xs outline-none transition font-medium">
+        </div>
+
+        <div id="regError" class="hidden text-rose-400 text-[11px] font-semibold text-center bg-rose-950/30 border border-rose-800/40 py-1.5 px-2 rounded-lg"></div>
+
+        <div class="flex items-center gap-2 pt-1">
+          <button type="button" onclick="closeModal('registerModal')" class="flex-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition cursor-pointer">
+            취소
           </button>
-          <button type="button" onclick="fillQuickLogin('admin01', '1212')" class="px-2 py-0.5 rounded-md bg-surface-850 hover:bg-surface-800 text-slate-300 border border-slate-700 text-[10px] cursor-pointer">
-            1호점 실장 (admin01)
-          </button>
-          <button type="button" onclick="fillQuickLogin('admin02', '1212')" class="px-2 py-0.5 rounded-md bg-surface-850 hover:bg-surface-800 text-slate-300 border border-slate-700 text-[10px] cursor-pointer">
-            2호점 실장 (admin02)
+          <button type="submit" id="btnRegSubmit" class="flex-1 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs shadow-md shadow-indigo-950/50 transition cursor-pointer active:scale-98">
+            가입 신청 제출
           </button>
         </div>
+      </form>
+
+      <div class="text-[10px] text-slate-500 text-center">
+        이미 승인된 계정이 있으신가요? <button type="button" onclick="closeModal('registerModal'); openAdminModal();" class="text-cyan-400 underline font-semibold cursor-pointer">로그인 창으로</button>
       </div>
 
     </div>

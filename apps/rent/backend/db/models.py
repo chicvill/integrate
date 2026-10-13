@@ -130,3 +130,18 @@ class RentUpgradeRequest(Base, TimestampMixin):
     assigned_branch_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(30), default="PENDING", index=True)  # PENDING, APPROVED, REJECTED
+
+
+class RentUser(Base, TimestampMixin):
+    """지점 관리자 및 회원 통합 계정 모델"""
+    __tablename__ = "rent_users"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    password: Mapped[str] = mapped_column(String(100), nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    phone: Mapped[str] = mapped_column(String(50), default="", index=True)
+    role: Mapped[str] = mapped_column(String(30), default="branch_admin", index=True)  # superadmin, branch_admin, user
+    assigned_branch_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
+    status: Mapped[str] = mapped_column(String(30), default="PENDING", index=True)  # PENDING, APPROVED, REJECTED
+    reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

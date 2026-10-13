@@ -161,6 +161,12 @@ const branchesApi = {
 
 const authApi = {
   login: (username, password) => http.post('/auth/admin-login', { username, password }),
+  register: (data) => http.post('/auth/register', data),
+  getUsers: () => http.get('/auth/users'),
+  approveUser: (userId, action, assignedBranchId = null) =>
+    http.patch(`/auth/users/${userId}/status`, { action, assigned_branch_id: assignedBranchId }),
+  updateUser: (userId, data) => http.patch(`/auth/users/${userId}`, data),
+  deleteUser: (userId) => http.delete(`/auth/users/${userId}`),
   requestUpgrade: (data) => http.post('/upgrade-request', data)
 };
 
@@ -225,6 +231,11 @@ const apiDeleteBranch = branchesApi.delete;
 const apiUpdateBranchBilling = branchesApi.updateBilling;
 
 const apiAdminLogin = authApi.login;
+const apiRegisterUser = authApi.register;
+const apiGetUsers = authApi.getUsers;
+const apiApproveUser = authApi.approveUser;
+const apiUpdateUser = authApi.updateUser;
+const apiDeleteUser = authApi.deleteUser;
 const apiRequestUpgrade = authApi.requestUpgrade;
 
 const apiGetVatReport = vatApi.getReport;
@@ -5357,7 +5368,7 @@ function updateAdminProfileUI() {
 function openLoginSecurityModal(canClose = false) {
   const modal = document.getElementById('loginSecurityModal');
   if (!modal) return;
-  const errMsg = document.getElementById('loginErrMsg');
+  const errMsg = document.getElementById('loginErrMsg') || document.getElementById('secLoginError');
   if (errMsg) {
     errMsg.classList.add('hidden');
     errMsg.textContent = '';
@@ -5372,15 +5383,89 @@ function openLoginSecurityModal(canClose = false) {
   modal.classList.add('flex');
 
   // 자동 포커스
-  const userInput = document.getElementById('loginUsername');
+  const userInput = document.getElementById('secUsername') || document.getElementById('loginUsername');
   if (userInput) userInput.focus();
 }
+
+const openAdminModal = openLoginSecurityModal;
 
 function closeLoginSecurityModal() {
   const modal = document.getElementById('loginSecurityModal');
   if (modal) {
     modal.classList.remove('flex');
     modal.classList.add('hidden');
+  }
+}
+
+function openRegisterModal() {
+  const sel = document.getElementById('regTargetBranch');
+  if (sel) {
+    sel.innerHTML = '<option value="">(신규 건물 또는 미정 - 본사 지정)</option>';
+    (state.branches || []).forEach(b => {
+      sel.innerHTML += `<option value="${b.branch_id}">${b.name}</option>`;
+    });
+  }
+  document.getElementById('registerForm')?.reset();
+  const errMsg = document.getElementById('regError');
+  if (errMsg) {
+    errMsg.classList.add('hidden');
+    errMsg.textContent = '';
+  }
+  closeLoginSecurityModal();
+  openModal('registerModal');
+}
+
+async function handleRegisterSubmit(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  const username = document.getElementById('regUsername')?.value.trim();
+  const password = document.getElementById('regPassword')?.value.trim();
+  const name = document.getElementById('regName')?.value.trim();
+  const phone = document.getElementById('regPhone')?.value.trim();
+  const branchId = document.getElementById('regTargetBranch')?.value.trim() || null;
+  const reason = document.getElementById('regReason')?.value.trim() || null;
+  const errEl = document.getElementById('regError');
+  const submitBtn = document.getElementById('btnRegSubmit');
+
+  if (!username || !password || !name) {
+    if (errEl) {
+      errEl.textContent = '아이디, 비밀번호, 성명은 필수 입력 항목입니다.';
+      errEl.classList.remove('hidden');
+    }
+    return;
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = '가입 신청 전송 중...';
+  }
+  if (errEl) errEl.classList.add('hidden');
+
+  try {
+    const res = await apiRegisterUser({
+      username,
+      password,
+      name,
+      phone,
+      assigned_branch_id: branchId,
+      reason
+    });
+
+    closeModal('registerModal');
+    alert(res.message || '가입 신청이 정상 접수되었습니다. 본사 관리자(admin) 승인 후 로그인하실 수 있습니다.');
+    openLoginSecurityModal(false);
+  } catch (err) {
+    if (errEl) {
+      errEl.textContent = err.message || '가입 신청 중 오류가 발생했습니다.';
+      errEl.classList.remove('hidden');
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '📝 관리자 가입 신청 제출';
+    }
   }
 }
 
@@ -5428,27 +5513,27 @@ async function handleSecurityLoginSubmit(e) {
     try {
       authResult = await apiAdminLogin(username, password);
     } catch (apiErr) {
-      console.warn('API 로그인 호출 실패, 로컬 오프라인 규칙 검증 수행:', apiErr);
-      // 오프라인 비상 인증 (인터넷/서버 미연결 대비)
+      const errMsgStr = apiErr.message || '';
+      // 서버에서 전달된 승인/상태 에러는 바로 그대로 상위로 throw
+      if (errMsgStr.includes('승인 대기') || errMsgStr.includes('거절') || errMsgStr.includes('비활성화') || errMsgStr.includes('비밀번호')) {
+        throw apiErr;
+      }
+      console.warn('API 로그인 호출 실패, 로컬 비상 인증 규칙 점검:', apiErr);
+      // 서버 오프라인 비상 접속: admin / 1212 만 허용
       if (username === 'admin' && password === '1212') {
         authResult = { success: true, role: 'superadmin', name: '본사 총괄 최고관리자', branch_id: null };
-      } else if (username === 'admin01' && password === '1212') {
-        authResult = { success: true, role: 'branch_admin', name: '1호관 원룸 관리실장', branch_id: 'main' };
-      } else if (username === 'admin02' && password === '1212') {
-        authResult = { success: true, role: 'branch_admin', name: '2호관 원룸 관리실장', branch_id: 'branch-b' };
-      } else if ((username === 'user' || username === 'student' || username === 'tenant') && (password === '1212' || password === 'password')) {
-        authResult = { success: true, role: 'tenant', name: '입주자', branch_id: 'main' };
       } else {
-        throw new Error('아이디 또는 비밀번호가 올바르지 않습니다.');
+        throw apiErr;
       }
     }
 
     if (authResult && authResult.success) {
+      const targetBranchId = authResult.assigned_branch_id || authResult.branch_id || null;
       const user = {
         username: username,
         name: authResult.name || username,
         role: authResult.role || 'branch_admin',
-        branch_id: authResult.branch_id || null,
+        branch_id: targetBranchId,
         loginAt: new Date().toISOString()
       };
 
@@ -5456,8 +5541,8 @@ async function handleSecurityLoginSubmit(e) {
       updateAdminProfileUI();
       closeLoginSecurityModal();
 
-      if (authResult.branch_id && authResult.branch_id !== state.currentBranchId) {
-        await switchBranch(authResult.branch_id);
+      if (targetBranchId && targetBranchId !== state.currentBranchId) {
+        await switchBranch(targetBranchId);
       } else {
         renderAll();
       }
@@ -6750,6 +6835,9 @@ window.updateExpiryNoticeBadge = updateExpiryNoticeBadge;
 // 보안 로그인 및 14일 슬라이딩 세션 관련
 window.openLoginSecurityModal = openLoginSecurityModal;
 window.closeLoginSecurityModal = closeLoginSecurityModal;
+window.openAdminModal = openAdminModal;
+window.openRegisterModal = openRegisterModal;
+window.handleRegisterSubmit = handleRegisterSubmit;
 window.fillQuickLogin = fillQuickLogin;
 window.handleSecurityLoginSubmit = handleSecurityLoginSubmit;
 window.handleLogout = handleLogout;

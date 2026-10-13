@@ -222,3 +222,45 @@ class VatSettingsResponse(BaseModel):
     vat_target_rooms: Optional[List[int]] = None
     message: Optional[str] = None
 
+
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+    name: str
+    phone: Optional[str] = None
+    assigned_branch_id: Optional[str] = None
+    target_branch_id: Optional[str] = None
+    reason: Optional[str] = None
+
+
+class UserApprovePayload(BaseModel):
+    action: str  # APPROVE, REJECT
+    assigned_branch_id: Optional[str] = None
+    role: Optional[str] = None
+    reason: Optional[str] = None
+
+
+class UserUpdatePayload(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    password: Optional[str] = None
+    assigned_branch_id: Optional[str] = None
+    role: Optional[str] = None
+    status: Optional[str] = None
+
+
+class UserResponse(BaseModel):
+    id: str
+    username: str
+    name: str
+    phone: str
+    role: str
+    assigned_branch_id: Optional[str] = None
+    assigned_branch_name: Optional[str] = None
+    status: str
+    reason: Optional[str] = None
+    created_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+

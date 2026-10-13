@@ -10,10 +10,13 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional, cast
 from sqlalchemy.orm import Session
 
-from ..db.models import RentBranch, RentRoom, RentPayment, RentExpense, RentUpgradeRequest, RentTenantHistory
-from ..schemas import RoomUpdate, ExpenseCreate, BranchCreate, BranchUpdate, BranchBillingUpdate
+from ..db.database import init_db
+from ..db.models import RentBranch, RentRoom, RentPayment, RentExpense, RentUpgradeRequest, RentTenantHistory, RentUser
+from ..schemas import RoomUpdate, ExpenseCreate, BranchCreate, BranchUpdate, BranchBillingUpdate, RegisterRequest, UserApprovePayload, UserUpdatePayload
 from .payment_service import PaymentService
 from .vat_service import VatService
+from .auth_service import auth_service
+from .branch_service import branch_service
 
 ROOM_NUMBERS = [
     101,
@@ -665,78 +668,26 @@ class RentService:
 
     def list_branches(self, db: Session, active_only: bool = False) -> List[RentBranch]:
         self.ensure_default_seed(db)
-        q = db.query(RentBranch)
-        if active_only:
-            q = q.filter(RentBranch.is_active == True)
-        return q.order_by(RentBranch.branch_id).all()
+        return branch_service.list_branches(db, active_only=active_only)
 
     def get_branch(self, db: Session, branch_id: str) -> Optional[RentBranch]:
         self.ensure_default_seed(db)
-        return db.query(RentBranch).filter(RentBranch.branch_id == branch_id).first()
+        return branch_service.get_branch(db, branch_id)
 
     def create_branch(self, db: Session, data: BranchCreate) -> RentBranch:
         self.ensure_default_seed(db)
-        b = RentBranch(
-            branch_id=data.branch_id,
-            name=data.name,
-            contact_phone=data.contact_phone,
-            address=data.address,
-            fee_plan=data.fee_plan or "원룸 프리미엄 29실형",
-            monthly_fee=data.monthly_fee or 150000,
-            billing_due_day=data.billing_due_day or 25,
-            billing_status="PAID",
-            is_active=True
-        )
-        db.add(b)
-        db.commit()
-        db.refresh(b)
-        # 신규 등록된 지점에도 29개실 자동 시드
+        b = branch_service.create_branch(db, data)
         self._seed_branch_rooms(db, data.branch_id, is_main=False)
         return b
 
     def update_branch(self, db: Session, branch_id: str, data: BranchUpdate) -> Optional[RentBranch]:
-        b = self.get_branch(db, branch_id)
-        if not b:
-            return None
-        for f, v in data.model_dump(exclude_unset=True).items():
-            setattr(b, f, v)
-        db.commit()
-        db.refresh(b)
-        return b
+        return branch_service.update_branch(db, branch_id, data)
 
     def update_branch_billing(self, db: Session, branch_id: str, data: BranchBillingUpdate) -> Optional[RentBranch]:
-        b = self.get_branch(db, branch_id)
-        if not b:
-            return None
-        b.billing_status = data.billing_status
-        if data.last_paid_at:
-            b.last_paid_at = data.last_paid_at
-        db.commit()
-        db.refresh(b)
-        return b
+        return branch_service.update_branch_billing(db, branch_id, data)
 
     def delete_branch(self, db: Session, branch_id: str) -> Dict[str, Any]:
-        """부동산(지점) 삭제 및 관련 호실/수납/지출/전출이력 데이터 일괄 정리"""
-        if branch_id == "main":
-            return {"success": False, "message": "기본 본사 부동산(시크빌)은 삭제할 수 없습니다."}
-
-        b = self.get_branch(db, branch_id)
-        if not b:
-            return {"success": False, "message": "삭제할 부동산 정보를 찾을 수 없습니다."}
-
-        branch_name = b.name
-        # 연관 데이터 삭제
-        db.query(RentPayment).filter(RentPayment.branch_id == branch_id).delete(synchronize_session=False)
-        db.query(RentRoom).filter(RentRoom.branch_id == branch_id).delete(synchronize_session=False)
-        db.query(RentExpense).filter(RentExpense.branch_id == branch_id).delete(synchronize_session=False)
-        db.query(RentTenantHistory).filter(RentTenantHistory.branch_id == branch_id).delete(synchronize_session=False)
-        db.delete(b)
-        db.commit()
-        return {
-            "success": True,
-            "branch_id": branch_id,
-            "message": f"'{branch_name}' 부동산과 관련 데이터가 성공적으로 삭제되었습니다."
-        }
+        return branch_service.delete_branch(db, branch_id)
 
     def purge_expired_tenant_histories(self, db: Session, branch_id: str = "main") -> Dict[str, Any]:
         """전출 후 1년(법적 보존기한)이 경과한 만료 세입자 이력 및 관련 데이터 자동 영구 삭제"""
@@ -808,6 +759,16 @@ class RentService:
         """지점별 부가세 대상 호실 목록 DB 조회 (VatService 위임)"""
         self.ensure_default_seed(db, branch_id)
         return VatService.get_vat_settings(db, branch_id=branch_id)
+
+    def save_vat_settings(
+        self,
+        db: Session,
+        branch_id: str = "main",
+        target_rooms: Optional[List[int]] = None
+    ) -> Dict[str, Any]:
+        """지점별 부가세 대상 호실 목록 DB 저장 (VatService 위임)"""
+        self.ensure_default_seed(db, branch_id)
+        return VatService.save_vat_settings(db, branch_id=branch_id, target_rooms=target_rooms)
 
     def generate_vat_download(
         self,
@@ -1074,6 +1035,28 @@ class RentService:
                 for h in self.list_tenant_histories(db, target_branch_id)
             ]
         }
+
+    # ── 사용자/관리자 인증 및 승인 관리 (AuthService 위임) ──
+    def ensure_default_admins(self, db: Session) -> None:
+        auth_service.ensure_default_admins(db)
+
+    def register_user(self, db: Session, payload: RegisterRequest) -> Dict[str, Any]:
+        return auth_service.register_user(db, payload)
+
+    def authenticate_user(self, db: Session, username: str, password: str) -> Dict[str, Any]:
+        return auth_service.authenticate_user(db, username, password)
+
+    def list_users(self, db: Session, status: Optional[str] = None) -> List[Dict[str, Any]]:
+        return auth_service.list_users(db, status=status)
+
+    def approve_user(self, db: Session, user_id: str, payload: UserApprovePayload) -> Dict[str, Any]:
+        return auth_service.approve_user(db, user_id, payload)
+
+    def update_user(self, db: Session, user_id: str, payload: UserUpdatePayload) -> Dict[str, Any]:
+        return auth_service.update_user(db, user_id, payload)
+
+    def delete_user(self, db: Session, user_id: str) -> Dict[str, Any]:
+        return auth_service.delete_user(db, user_id)
 
 
 service = RentService()

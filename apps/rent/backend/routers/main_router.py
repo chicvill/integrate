@@ -18,7 +18,8 @@ from ..schemas import (
     TenantHistoryResponse, TenantHistoryListResponse,
     SystemStatusResponse,
     AdminLoginRequest, UpgradeRequestPayload, UpgradeApprovePayload,
-    VatSettingsUpdate, VatSettingsResponse
+    VatSettingsUpdate, VatSettingsResponse,
+    RegisterRequest, UserApprovePayload, UserUpdatePayload
 )
 from ..services.rent_service import service
 from ..config import settings
@@ -482,46 +483,67 @@ async def save_vat_settings(
 
 
 # ── 계정 권한별 동적 로그인 & 등업 신청 ──
+@router.post("/auth/register")
+async def register_account(payload: RegisterRequest, db: Session = Depends(get_db)):
+    """지점 관리자 및 회원 신규 가입 신청"""
+    try:
+        return service.register_user(db, payload)
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+
+
+@router.post("/auth/login")
 @router.post("/auth/admin-login")
-async def admin_login(payload: AdminLoginRequest):
-    """관리자 로그인 및 동적 라우팅 판정"""
-    u = payload.username.strip()
-    p = payload.password.strip()
+async def admin_login(payload: AdminLoginRequest, db: Session = Depends(get_db)):
+    """관리자 로그인 및 동적 라우팅 판정 (DB 기반 검증 및 승인 여부 판정)"""
+    try:
+        return service.authenticate_user(db, username=payload.username, password=payload.password)
+    except PermissionError as pe:
+        raise HTTPException(status_code=403, detail=str(pe))
+    except ValueError as ve:
+        raise HTTPException(status_code=401, detail=str(ve))
 
-    if u == "admin" and p == "1212":
-        return {
-            "success": True,
-            "role": "superadmin",
-            "name": "본사 총괄 최고관리자",
-            "redirect_url": "/rent/branches.html",
-            "branch_id": None
-        }
-    elif u == "admin01" and p == "1212":
-        return {
-            "success": True,
-            "role": "branch_admin",
-            "name": "1호관 원룸 관리실장",
-            "redirect_url": "/rent/?branch=main",
-            "branch_id": "main"
-        }
-    elif u == "admin02" and p == "1212":
-        return {
-            "success": True,
-            "role": "branch_admin",
-            "name": "2호관 원룸 관리실장",
-            "redirect_url": "/rent/?branch=branch-b",
-            "branch_id": "branch-b"
-        }
-    elif u in ("user", "student", "tenant") and p in ("1212", "password"):
-        return {
-            "success": True,
-            "role": "tenant",
-            "name": "입주자",
-            "redirect_url": "/rent/",
-            "branch_id": "main"
-        }
 
-    raise HTTPException(status_code=401, detail="아이디 또는 비밀번호가 올바르지 않습니다.")
+@router.get("/auth/users")
+async def get_all_users(db: Session = Depends(get_db)):
+    """등록된 관리자/회원 목록 조회 (본사 관리자 전용)"""
+    users = service.list_users(db)
+    return {"success": True, "total": len(users), "users": users}
+
+
+@router.patch("/auth/users/{user_id}/status")
+async def approve_or_reject_user(
+    user_id: str,
+    payload: UserApprovePayload,
+    db: Session = Depends(get_db)
+):
+    """신규 관리자 승인/반려 및 담당 건물 지정"""
+    try:
+        return service.approve_user(db, user_id=user_id, payload=payload)
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+
+
+@router.patch("/auth/users/{user_id}")
+async def update_user_info(
+    user_id: str,
+    payload: UserUpdatePayload,
+    db: Session = Depends(get_db)
+):
+    """관리자 정보/비밀번호/배정건물 수정"""
+    try:
+        return service.update_user(db, user_id=user_id, payload=payload)
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+
+
+@router.delete("/auth/users/{user_id}")
+async def delete_user_account(user_id: str, db: Session = Depends(get_db)):
+    """관리자 계정 영구 삭제 (최고관리자 admin 제외)"""
+    try:
+        return service.delete_user(db, user_id=user_id)
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
 
 
 @router.post("/upgrade-request")
@@ -561,3 +583,38 @@ async def approve_upgrade_request(payload: UpgradeApprovePayload, db: Session = 
         req.status = "REJECTED"
     db.commit()
     return {"success": True, "status": req.status}
+
+
+@router.get("/auth/upgrade/requests")
+async def get_upgrade_requests(db: Session = Depends(get_db)):
+    """점주/실장 가입 및 등업 신청 목록 (RentUser 기반 통합)"""
+    users = service.list_users(db)
+    requests = []
+    for u in users:
+        # admin을 제외한 점주/실장 가입 신청자 노출
+        if u["username"] == "admin":
+            continue
+        requests.append({
+            "id": u["id"],
+            "username": u["username"],
+            "name": u["name"],
+            "user_name": f"{u['name']} ({u['username']})",
+            "contact": u["phone"],
+            "target_branch_id": u["assigned_branch_id"] or "미지정",
+            "reason": u["reason"] or "",
+            "created_at": u["created_at"],
+            "status": u["status"],
+            "assigned_branch_id": u["assigned_branch_name"]
+        })
+    return {"success": True, "requests": requests}
+
+
+@router.post("/auth/upgrade/requests/{req_id}/approve")
+async def approve_upgrade_req(req_id: str, payload: Dict[str, Any] = Body(default={}), db: Session = Depends(get_db)):
+    assigned_b = payload.get("assigned_branch_id")
+    return service.approve_user(db, user_id=req_id, payload=UserApprovePayload(action="APPROVE", assigned_branch_id=assigned_b))
+
+
+@router.post("/auth/upgrade/requests/{req_id}/reject")
+async def reject_upgrade_req(req_id: str, db: Session = Depends(get_db)):
+    return service.approve_user(db, user_id=req_id, payload=UserApprovePayload(action="REJECT"))

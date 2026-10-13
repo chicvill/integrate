@@ -149,6 +149,12 @@ export const branchesApi = {
 
 export const authApi = {
   login: (username, password) => http.post('/auth/admin-login', { username, password }),
+  register: (data) => http.post('/auth/register', data),
+  getUsers: () => http.get('/auth/users'),
+  approveUser: (userId, action, assignedBranchId = null) =>
+    http.patch(`/auth/users/${userId}/status`, { action, assigned_branch_id: assignedBranchId }),
+  updateUser: (userId, data) => http.patch(`/auth/users/${userId}`, data),
+  deleteUser: (userId) => http.delete(`/auth/users/${userId}`),
   requestUpgrade: (data) => http.post('/upgrade-request', data)
 };
 
@@ -213,6 +219,11 @@ export const apiDeleteBranch = branchesApi.delete;
 export const apiUpdateBranchBilling = branchesApi.updateBilling;
 
 export const apiAdminLogin = authApi.login;
+export const apiRegisterUser = authApi.register;
+export const apiGetUsers = authApi.getUsers;
+export const apiApproveUser = authApi.approveUser;
+export const apiUpdateUser = authApi.updateUser;
+export const apiDeleteUser = authApi.deleteUser;
 export const apiRequestUpgrade = authApi.requestUpgrade;
 
 export const apiGetVatReport = vatApi.getReport;
