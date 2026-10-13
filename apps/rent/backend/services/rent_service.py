@@ -215,8 +215,8 @@ class RentService:
                 is_active=True
             )
             db.add(b1)
-        elif b1.name == "시크빌 (29개실)":
-            b1.name = "시크빌 1호점 (본점, 29개실)"
+        elif getattr(b1, "name", "") == "시크빌 (29개실)":
+            setattr(b1, "name", "시크빌 1호점 (본점, 29개실)")
 
         db.commit()
 
