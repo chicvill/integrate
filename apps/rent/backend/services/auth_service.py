@@ -38,6 +38,36 @@ class AuthService:
                 "reason": "시스템 기본 최고관리자"
             },
             {
+                "username": "chicvill",
+                "password": "1212",
+                "name": "시크빌 1호점 점주실장",
+                "phone": "010-1234-5678",
+                "role": "branch_admin",
+                "assigned_branch_id": "main",
+                "status": "APPROVED",
+                "reason": "시크빌 전용 점주 계정"
+            },
+            {
+                "username": "chickvill",
+                "password": "1212",
+                "name": "시크빌 1호점 점주실장",
+                "phone": "010-1234-5678",
+                "role": "branch_admin",
+                "assigned_branch_id": "main",
+                "status": "APPROVED",
+                "reason": "시크빌 점주 계정 (오타 호환)"
+            },
+            {
+                "username": "chicvill2",
+                "password": "1212",
+                "name": "시크빌 2호점 점주실장",
+                "phone": "010-9876-5432",
+                "role": "branch_admin",
+                "assigned_branch_id": "branch_9027",
+                "status": "APPROVED",
+                "reason": "시크빌 2호점 전용 점주 계정"
+            },
+            {
                 "username": "admin01",
                 "password": "1212",
                 "name": "시크빌 1호점 실장",
@@ -53,7 +83,7 @@ class AuthService:
                 "name": "시크빌 2호점 실장",
                 "phone": "010-2222-2222",
                 "role": "branch_admin",
-                "assigned_branch_id": "branch_3765",
+                "assigned_branch_id": "branch_9027",
                 "status": "APPROVED",
                 "reason": "2호점 기본 관리자"
             }
