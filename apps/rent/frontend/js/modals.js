@@ -2754,7 +2754,7 @@ export function closeSmsDepositModal() {
 }
 
 export function fillSampleSmsText() {
-  const sample = `알림\n\n농협\n입금440,000원\n10/06 19:40\n351-****-9152\n-93 이종진404호\n잔액4,788,692원`;
+  const sample = `알림\n\n농협\n입금440,000원\n10/06 19:40\n351-****-9152\n-93 이종진404호`;
   const rawInput = document.getElementById('smsRawInput');
   if (rawInput) {
     rawInput.value = sample;
@@ -2904,35 +2904,61 @@ export function parseBankSmsText(rawText) {
 
 /**
  * 송금자 영수증 메시지 생성:
- * 은행에서 온 메시지 내용을 그대로 유지하고,
- * 잔액 라인을 '입금 확인했습니다.\n감사합니다.'로 대체하여 해당 내용만 생성
+ * 은행, 일시, 계좌정보, 송금자, 호실(없으면 세입자명 검색하여) 모두를 담아 영수증 생성
  */
-export function generateReceiptMessage(rawText) {
+export function generateReceiptMessage(rawText, targetRoomNum = null) {
   if (!rawText) return "";
+  const parsed = parseBankSmsText(rawText);
+  const detectedRoom = targetRoomNum || (parsed ? parsed.roomNumber : (state.selectedRoom || 404));
+  const room = (state.rooms && state.rooms[detectedRoom]) ? state.rooms[detectedRoom] : null;
+  const tenantName = (room && room.name) ? room.name : ((parsed && parsed.tenantName) ? parsed.tenantName : "");
+
   const lines = rawText.split(/\r?\n/).map(l => l.trim());
-  const result = [];
-  let replacedBalance = false;
+  const cleanedLines = [];
+  let hasRoomInText = false;
 
   for (const line of lines) {
     if (!line) continue;
     // 최상단 단독 '알림' 헤더 제외
     if (line === '알림') continue;
 
-    if (line.includes('잔액')) {
-      result.push('입금 확인했습니다.');
-      result.push('감사합니다.');
-      replacedBalance = true;
+    // 잔액 라인 무조건 제외
+    if (line.includes('잔액')) continue;
+
+    // 기존 감사 문구는 마지막에 일괄 정돈하므로 제외
+    if (line.includes('입금 확인했습니다') || line.includes('입금확인했습니다') || line.includes('감사합니다')) continue;
+
+    // 호실이 이미 해당 라인에 명시되어 있는지 확인 (예: 404호)
+    if (new RegExp(`${detectedRoom}\\s*호`).test(line) || /(\d{3})\s*호/.test(line)) {
+      hasRoomInText = true;
+      cleanedLines.push(line);
+      continue;
+    }
+
+    // 세입자명이 들어있는 송금자 라인인데 호실이 빠져있는 경우 -> 호실(세입자명 검색 결과) 자동 부착
+    if (tenantName && line.includes(tenantName) && !hasRoomInText) {
+      cleanedLines.push(`${line} ${detectedRoom}호`);
+      hasRoomInText = true;
+      continue;
+    }
+
+    cleanedLines.push(line);
+  }
+
+  // 만약 텍스트 전체에서 호실 번호가 어디에도 명시되지 않았던 경우:
+  if (!hasRoomInText && detectedRoom) {
+    if (tenantName) {
+      cleanedLines.push(`${tenantName} ${detectedRoom}호`);
     } else {
-      result.push(line);
+      cleanedLines.push(`${detectedRoom}호`);
     }
   }
 
-  if (!replacedBalance) {
-    result.push('입금 확인했습니다.');
-    result.push('감사합니다.');
-  }
+  // 입금 확인 및 감사 문구 추가
+  cleanedLines.push('입금 확인했습니다.');
+  cleanedLines.push('감사합니다.');
 
-  return result.join('\n');
+  return cleanedLines.join('\n');
 }
 
 /**
@@ -2979,8 +3005,8 @@ export function handleLiveSmsParse() {
     execBtnText.textContent = `${parsed.roomNumber}호 ${parsed.month}월분 ${Number(parsed.amount).toLocaleString()}원 입금 처리 완료`;
   }
 
-  // 영수증 문자 자동 변환 생성 (은행 원문에서 잔액만 삭제하고 입금확인/감사 대체)
-  const receipt = generateReceiptMessage(rawText);
+  // 영수증 문자 자동 변환 생성 (은행, 일시, 계좌, 송금자, 호실 보충 포함)
+  const receipt = generateReceiptMessage(rawText, parsed.roomNumber);
   const receiptEl = document.getElementById('smsReceiptText');
   if (receiptEl) receiptEl.value = receipt;
 
@@ -3011,7 +3037,7 @@ export function onSmsDetectedRoomChange() {
 
   const rawInput = document.getElementById('smsRawInput');
   if (rawInput && rawInput.value.trim()) {
-    const receipt = generateReceiptMessage(rawInput.value);
+    const receipt = generateReceiptMessage(rawInput.value, rNum);
     const receiptEl = document.getElementById('smsReceiptText');
     if (receiptEl) receiptEl.value = receipt;
     state.pendingReceiptText = receipt;
