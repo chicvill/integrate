@@ -2,11 +2,12 @@
 apps/rent/backend/services/vat_service.py
 원룸 부가가치세(VAT) 세무 신고 및 과세 대상 호실 관리 전담 도메인 서비스 (Clean Architecture).
 - 기간별(상반기/하반기/전체) 수납 집계 보고서
-- 공급가액(1/1.1) 및 부가세(10%) 산출
+- 순수 임차료(월세) 기준 과세표준 및 공급가액(1/1.1), 부가세(10%) 산출 (관리비/전세 제외)
 - 전출자 납부 이력 결합 및 표시명 정밀 생성
+- Excel(.xls) 및 CSV 표준 바이너리 생성
 - 지점/호실별 부가세 과세 대상 영구 저장 및 동기화
 """
-from typing import List, Dict, Any, Optional, cast
+from typing import List, Dict, Any, Optional, Tuple, cast
 from sqlalchemy.orm import Session
 
 from ..db.models import RentBranch, RentRoom, RentTenantHistory
@@ -21,7 +22,6 @@ class VatService:
         if branch and branch.metadata_json and isinstance(branch.metadata_json, dict):
             saved_rooms = branch.metadata_json.get("vat_target_rooms")
 
-        # 만약 branch metadata에 없으면 room 개별 metadata에서 탐색
         if saved_rooms is None:
             rooms = db.query(RentRoom).filter(RentRoom.branch_id == branch_id).all()
             target_list: List[int] = []
@@ -72,6 +72,102 @@ class VatService:
             "message": f"부가세 대상 호실 {len(target_list)}개실 설정이 DB에 영구 저장되었습니다."
         }
 
+    @staticmethod
+    def _parse_year_month(date_str: Optional[str]) -> Tuple[Optional[int], Optional[int]]:
+        """YYYY-MM-DD 또는 YYYY-MM 문자열에서 (년, 월) 튜플 안전 추출"""
+        if not date_str or len(str(date_str)) < 7:
+            return None, None
+        try:
+            s = str(date_str)
+            return int(s[:4]), int(s[5:7])
+        except (ValueError, TypeError):
+            return None, None
+
+    @classmethod
+    def _resolve_monthly_amount(
+        cls,
+        r: Dict[str, Any],
+        room_hists: List[RentTenantHistory],
+        year: int,
+        month: int,
+        in_y: Optional[int],
+        in_m: Optional[int]
+    ) -> Tuple[int, Optional[str]]:
+        """
+        특정 호실의 해당 월(month) 순수 월세액 및 유효 세입자명 판정.
+        - 현 세입자 계약 기간이면 현 세입자 월세
+        - 전입 전 공백이거나 비거주월이면 전출자 이력 매칭
+        - 매칭되는 거주자가 없으면 0원 (공실)
+        - 실비 정산 관리비 및 전세는 0원 처리 (세법 원칙)
+        """
+        is_curr = False
+        if r.get("name") and in_y is not None and in_m is not None:
+            if (year > in_y) or (year == in_y and month >= in_m):
+                is_curr = True
+
+        matched_hist: Optional[RentTenantHistory] = None
+        if not is_curr:
+            for h in room_hists:
+                h_out_y, h_out_m = cls._parse_year_month(cast(Optional[str], h.move_out))
+                h_in_y, h_in_m = cls._parse_year_month(cast(Optional[str], h.move_in))
+
+                if h_out_y and h_out_m:
+                    in_period = (year < h_out_y or (year == h_out_y and month <= h_out_m))
+                    if h_in_y and h_in_m:
+                        in_period = in_period and (year > h_in_y or (year == h_in_y and month >= h_in_m))
+                    if in_period:
+                        matched_hist = h
+                        break
+
+        # 공실인 경우 (현 세입자도 아니고 이전 세입자 거주월도 아님)
+        if not is_curr and not matched_hist:
+            return 0, None
+
+        # 전세 여부 확인
+        matched_lease_type = str(matched_hist.lease_type or "") if matched_hist else ""
+        is_jeonse = (str(r.get("lease_type") or "") == "전세") if is_curr else (matched_lease_type == "전세")
+        if is_jeonse:
+            tenant_name = str(r.get("name")) if is_curr else (str(matched_hist.name) if matched_hist else None)
+            return 0, tenant_name
+
+        # 순수 월세액 산출
+        p = r.get("payments", {}).get(month, {})
+        matched_rent = cast(int, matched_hist.rent) if (matched_hist and matched_hist.rent) else 0
+
+        amt = 0
+        if p.get("paid"):
+            p_rent = p.get("rent_amount")
+            if p_rent is not None:
+                amt = int(p_rent)
+            else:
+                amt = int(r.get("rent") or 0) if is_curr else matched_rent
+        else:
+            amt = int(r.get("rent") or 0) if is_curr else matched_rent
+
+        tenant_name = None
+        if is_curr and r.get("name"):
+            tenant_name = str(r.get("name"))
+        elif matched_hist and matched_hist.name:
+            tenant_name = str(matched_hist.name)
+        elif p.get("tenant_name"):
+            tenant_name = str(p.get("tenant_name"))
+
+        return amt, tenant_name
+
+    @staticmethod
+    def _build_display_name(curr_name: str, names_seen: set) -> str:
+        """세입자 표시명 생성 (과거 전출자 납부 이력이 있을 경우 결합 표기)"""
+        if len(names_seen) > 1:
+            others = [n for n in names_seen if n != curr_name]
+            return f"{curr_name} (전: {', '.join(others)})"
+        elif len(names_seen) == 1:
+            only = next(iter(names_seen))
+            if only != curr_name and curr_name != "공실":
+                return f"{curr_name} (전: {only})"
+            elif only != curr_name and curr_name == "공실":
+                return f"{only} (전출)"
+        return curr_name
+
     @classmethod
     def get_vat_report(
         cls,
@@ -84,7 +180,7 @@ class VatService:
         rooms_data: Optional[Dict[int, Dict[str, Any]]] = None,
         histories: Optional[List[RentTenantHistory]] = None
     ) -> Dict[str, Any]:
-        """부가가치세 신고용 기간별(1~6월, 7~12월 등) 호실별 수납 집계 보고서"""
+        """부가가치세 신고용 기간별 호실별 수납 집계 보고서"""
         if rooms_data is None:
             rooms_data = {}
         if histories is None:
@@ -94,16 +190,15 @@ class VatService:
         total_collected = 0
         total_supply = 0
         total_vat = 0
-
         months = list(range(start_month, end_month + 1))
 
-        # 전출자 이력 맵 (호실별)
+        # 호실별 전출자 이력 맵 구축
         hist_map: Dict[int, List[RentTenantHistory]] = {}
         for h in histories:
             hist_map.setdefault(cast(int, h.room_number), []).append(h)
 
         target_rooms = sorted(rooms_data.keys())
-        if room_numbers is not None and len(room_numbers) > 0:
+        if room_numbers:
             target_rooms = [r for r in target_rooms if r in room_numbers]
 
         for rNum in target_rooms:
@@ -112,109 +207,20 @@ class VatService:
             room_period_total = 0
             tenant_names_seen = set()
 
-            # 전입일 파싱
-            move_in_str = r.get("move_in") or ""
-            in_y, in_m = None, None
-            if move_in_str and len(move_in_str) >= 7:
-                try:
-                    in_y = int(move_in_str[:4])
-                    in_m = int(move_in_str[5:7])
-                except (ValueError, TypeError):
-                    pass
-
+            in_y, in_m = cls._parse_year_month(r.get("move_in"))
             room_hists = hist_map.get(rNum, [])
 
             for m in months:
-                p = r.get("payments", {}).get(m, {})
-                is_curr = False
-                if r.get("name") and in_y is not None and in_m is not None:
-                    if (year > in_y) or (year == in_y and m >= in_m):
-                        is_curr = True
-
-                matched_hist: Optional[RentTenantHistory] = None
-                if not is_curr:
-                    for h in room_hists:
-                        h_out_y, h_out_m = None, None
-                        h_move_out_str = str(h.move_out or "")
-                        if len(h_move_out_str) >= 7:
-                            try:
-                                h_out_y = int(h_move_out_str[:4])
-                                h_out_m = int(h_move_out_str[5:7])
-                            except (ValueError, TypeError):
-                                pass
-                        h_in_y, h_in_m = 0, 0
-                        h_move_in_str = str(h.move_in or "")
-                        if len(h_move_in_str) >= 7:
-                            try:
-                                h_in_y = int(h_move_in_str[:4])
-                                h_in_m = int(h_move_in_str[5:7])
-                            except (ValueError, TypeError):
-                                pass
-
-                        if h_out_y and h_out_m:
-                            in_period = (year < h_out_y or (year == h_out_y and m <= h_out_m))
-                            if h_in_y and h_in_m:
-                                in_period = in_period and (year > h_in_y or (year == h_in_y and m >= h_in_m))
-                            if in_period:
-                                matched_hist = h
-                                break
-
-                # 공실 여부 판정: 현 세입자 계약도 아니고 전출자 거주 기간도 아님
-                is_vacant = (not is_curr and not matched_hist)
-
-                amt: int = 0
-                if is_vacant:
-                    # 공실은 부가세 공급가액(수입)에서 완전 제외 (0원)
-                    amt = 0
-                else:
-                    # 계약 기간: 순수 임차료(월세)만으로 부가세 공급대가 산출 (공공요금 실비 관리비 제외)
-                    matched_lease_type = str(matched_hist.lease_type or "") if matched_hist else ""
-                    matched_rent: int = cast(int, matched_hist.rent) if (matched_hist and matched_hist.rent) else 0
-                    is_jeonse = (str(r.get("lease_type") or "") == "전세") if is_curr else (matched_lease_type == "전세")
-
-                    if is_jeonse:
-                        amt = 0
-                    elif p.get("paid"):
-                        p_rent = p.get("rent_amount")
-                        if p_rent is not None:
-                            amt = int(p_rent)
-                        else:
-                            amt = int(r.get("rent") or 0) if is_curr else matched_rent
-                    else:
-                        if is_curr:
-                            amt = int(r.get("rent") or 0)
-                        elif matched_hist:
-                            amt = matched_rent
-                        else:
-                            amt = 0
-
-                    if is_curr and r.get("name"):
-                        tenant_names_seen.add(str(r.get("name")))
-                    elif matched_hist and matched_hist.name:
-                        tenant_names_seen.add(str(matched_hist.name))
-                    elif p.get("tenant_name"):
-                        tenant_names_seen.add(str(p.get("tenant_name")))
-
+                amt, t_name = cls._resolve_monthly_amount(r, room_hists, year, m, in_y, in_m)
+                if t_name:
+                    tenant_names_seen.add(t_name)
                 monthly_amounts[m] = amt
                 room_period_total += amt
 
-            # 세입자 표시명 산출: 과거 세입자가 납부한 경우 전출자 표기 결합
-            curr_name = r.get("name") or "공실"
-            if len(tenant_names_seen) > 1:
-                other_names = [n for n in tenant_names_seen if n != curr_name]
-                display_name = f"{curr_name} (전: {', '.join(other_names)})"
-            elif len(tenant_names_seen) == 1:
-                only_name = next(iter(tenant_names_seen))
-                if only_name != curr_name and curr_name != "공실":
-                    display_name = f"{curr_name} (전: {only_name})"
-                elif only_name != curr_name and curr_name == "공실":
-                    display_name = f"{only_name} (전출)"
-                else:
-                    display_name = curr_name
-            else:
-                display_name = curr_name
+            curr_name = str(r.get("name") or "공실")
+            display_name = cls._build_display_name(curr_name, tenant_names_seen)
 
-            # 공급가액 및 부가세(10%) 계산
+            # 공급가액 (1/1.1) 및 부가세 (차액) 계산
             supply_val = round(room_period_total / 1.1)
             vat_val = room_period_total - supply_val
 
@@ -238,7 +244,6 @@ class VatService:
                 "status": status_text
             })
 
-        # DB에 저장된 부가세 대상 호실 목록
         saved_settings = cls.get_vat_settings(db, branch_id)
         saved_target_rooms = saved_settings.get("vat_target_rooms")
 
@@ -258,6 +263,7 @@ class VatService:
 
     @classmethod
     def generate_excel_bytes(cls, report_data: Dict[str, Any]) -> bytes:
+        """엑셀에서 즉시 열리는 HTML Table 기반 스프레드시트 바이트 생성"""
         d = report_data
         months = d.get("months", [])
         rows = d.get("rows", [])
@@ -369,6 +375,7 @@ class VatService:
 
     @classmethod
     def generate_csv_bytes(cls, report_data: Dict[str, Any]) -> bytes:
+        """국세청 및 세무 신고용 표준 15개 열 CSV 바이트 생성 (UTF-8 BOM)"""
         d = report_data
         months = d.get("months", [])
         rows = d.get("rows", [])
