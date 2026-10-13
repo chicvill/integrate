@@ -2878,17 +2878,38 @@ function exportVatCSV() {
   csv += `[산출기준],순수 임차료(월세) 기준 산출 (실비 정산 관리비 및 전세 제외),,,,,,,,,,\n`;
   csv += `[출력일시],${formattedToday},,,,,,,,,,\n`;
 
-  // CSV 파일 다운로드 생성 (특수문자 ~ 제거하여 윈도우 엑셀 호환성 확보)
+  // 1. 온라인 상태일 때는 백엔드 직접 다운로드 우선 사용 (크롬 UUID 파일명 버그 100% 방지)
+  try {
+    const branch = state.currentBranch || 'main';
+    const roomParam = filteredRows.map(r => r.room_number).join(',');
+    const downloadUrl = `/api/rent/vat-report/download?format_type=csv&branch_id=${encodeURIComponent(branch)}&year=${d.year}&start_month=${d.start_month}&end_month=${d.end_month}&room_numbers=${encodeURIComponent(roomParam)}`;
+
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = `부동산_부가세_수납현황_${d.year}년_${d.start_month}월_${d.end_month}월.csv`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      if (a.parentNode) document.body.removeChild(a);
+    }, 1000);
+    return;
+  } catch (err) {
+    console.warn("서버 다운로드 실패, 로컬 Blob 다운로드로 전환:", err);
+  }
+
+  // 2. 오프라인 폴백: Blob 다운로드 (revokeObjectURL 지연으로 Chrome 버그 차단)
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   const safeToday = (formattedToday || '').replace(/-/g, '');
-  link.setAttribute("href", url);
-  link.setAttribute("download", `부동산_부가세_수납현황_${d.year}년_${d.start_month}월_${d.end_month}월_${safeToday}.csv`);
+  link.href = url;
+  link.download = `부동산_부가세_수납현황_${d.year}년_${d.start_month}월_${d.end_month}월_${safeToday}.csv`;
   document.body.appendChild(link);
   link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  setTimeout(() => {
+    if (link.parentNode) document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, 30000); // 30초 후 안전하게 해제
 }
 
 // ── 6-2. 부가가치세 Excel (.xls) 내보내기 ──
@@ -2904,6 +2925,26 @@ function exportVatExcel() {
     filteredRows = d.rows;
   }
 
+  // 1. 온라인 상태일 때는 백엔드 직접 다운로드 우선 사용 (크롬 UUID 파일명 버그 100% 방지)
+  try {
+    const branch = state.currentBranch || 'main';
+    const roomParam = filteredRows.map(r => r.room_number).join(',');
+    const downloadUrl = `/api/rent/vat-report/download?format_type=excel&branch_id=${encodeURIComponent(branch)}&year=${d.year}&start_month=${d.start_month}&end_month=${d.end_month}&room_numbers=${encodeURIComponent(roomParam)}`;
+
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = `부동산_부가세_수납현황_${d.year}년_${d.start_month}월_${d.end_month}월.xls`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      if (a.parentNode) document.body.removeChild(a);
+    }, 1000);
+    return;
+  } catch (err) {
+    console.warn("서버 다운로드 실패, 로컬 Blob 다운로드로 전환:", err);
+  }
+
+  // 2. 오프라인 폴백: Blob 다운로드
   const monthThs = d.months.map(m => `<th style="background:#1e293b;color:#f8fafc;border:1px solid #475569;padding:6px;font-size:11px;">${m}월</th>`).join('');
   const colSpanAll = 5 + d.months.length + 4;
 
@@ -2954,8 +2995,8 @@ function exportVatExcel() {
   <meta charset="utf-8">
   <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>부가가치세_수납현황</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
   <style>
-    body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; font-size: 11px; }
-    table { border-collapse: collapse; width: 100%; }
+    body {{ font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; font-size: 11px; }}
+    table {{ border-collapse: collapse; width: 100%; }}
   </style>
 </head>
 <body>
@@ -3009,12 +3050,14 @@ function exportVatExcel() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   const safeToday = (formattedToday || '').replace(/-/g, '');
-  link.setAttribute("href", url);
-  link.setAttribute("download", `부동산_부가세_수납현황_${d.year}년_${d.start_month}월_${d.end_month}월_${safeToday}.xls`);
+  link.href = url;
+  link.download = `부동산_부가세_수납현황_${d.year}년_${d.start_month}월_${d.end_month}월_${safeToday}.xls`;
   document.body.appendChild(link);
   link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  setTimeout(() => {
+    if (link.parentNode) document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, 30000);
 }
 
 // ── 전출자 1년 보존 이력 조회 모달 ──

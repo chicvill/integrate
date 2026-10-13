@@ -255,3 +255,174 @@ class VatService:
             "saved_vat_target_rooms": saved_target_rooms,
             "rows": report_rows
         }
+
+    @classmethod
+    def generate_excel_bytes(cls, report_data: Dict[str, Any]) -> bytes:
+        d = report_data
+        months = d.get("months", [])
+        rows = d.get("rows", [])
+
+        month_ths = "".join(f'<th style="background:#1e293b;color:#f8fafc;border:1px solid #475569;padding:6px;font-size:11px;">{m}월</th>' for m in months)
+        col_span_all = 5 + len(months) + 4
+
+        trs = []
+        month_sums = {m: 0 for m in months}
+        tot_dep = 0
+        tot_period = 0
+        tot_supply = 0
+        tot_vat = 0
+
+        for r in rows:
+            dep = int(r.get("deposit") or 0)
+            p_tot = int(r.get("period_total") or 0)
+            s_val = int(r.get("supply_value") or 0)
+            v_val = int(r.get("vat_value") or 0)
+            tot_dep += dep
+            tot_period += p_tot
+            tot_supply += s_val
+            tot_vat += v_val
+
+            month_tds = []
+            for m in months:
+                amt = int(r.get("monthly_amounts", {}).get(m, 0))
+                month_sums[m] += amt
+                amt_str = f"{amt:,}" if amt > 0 else "-"
+                month_tds.append(f"<td style=\"border:1px solid #cbd5e1;padding:5px;text-align:right;mso-number-format:'\\#\\,\\#\\#0';\">{amt_str}</td>")
+
+            id_num = r.get("id_number") or "-"
+            t_name = str(r.get("tenant_name") or "공실").replace('"', '&quot;')
+            l_type = r.get("lease_type") or "월세"
+            stat = r.get("status") or "완납"
+            r_num = r.get("room_number")
+
+            trs.append(f"""<tr>
+  <td style="border:1px solid #cbd5e1;padding:5px;text-align:center;mso-number-format:'\\@';font-weight:bold;">{r_num}호</td>
+  <td style="border:1px solid #cbd5e1;padding:5px;text-align:left;">{t_name}</td>
+  <td style="border:1px solid #cbd5e1;padding:5px;text-align:center;mso-number-format:'\\@';">{id_num}</td>
+  <td style="border:1px solid #cbd5e1;padding:5px;text-align:center;">{l_type}</td>
+  <td style="border:1px solid #cbd5e1;padding:5px;text-align:right;mso-number-format:'\\#\\,\\#\\#0';">{dep:,}</td>
+  {''.join(month_tds)}
+  <td style="border:1px solid #cbd5e1;padding:5px;text-align:right;font-weight:bold;color:#0f766e;mso-number-format:'\\#\\,\\#\\#0';">{p_tot:,}</td>
+  <td style="border:1px solid #cbd5e1;padding:5px;text-align:right;font-weight:bold;color:#1e40af;mso-number-format:'\\#\\,\\#\\#0';">{s_val:,}</td>
+  <td style="border:1px solid #cbd5e1;padding:5px;text-align:right;font-weight:bold;color:#b45309;mso-number-format:'\\#\\,\\#\\#0';">{v_val:,}</td>
+  <td style="border:1px solid #cbd5e1;padding:5px;text-align:center;">{stat}</td>
+</tr>""")
+
+        sum_month_tds = "".join(f"<td style=\"border:1px solid #475569;padding:6px;text-align:right;font-weight:bold;background:#e2e8f0;mso-number-format:'\\#\\,\\#\\#0';\">{month_sums[m]:,}</td>" for m in months)
+
+        html = f"""<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <meta charset="utf-8">
+  <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>부가가치세_수납현황</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+  <style>
+    body {{ font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; font-size: 11px; }}
+    table {{ border-collapse: collapse; width: 100%; }}
+  </style>
+</head>
+<body>
+  <table>
+    <tr>
+      <td colspan="{col_span_all}" style="font-size:16px;font-weight:bold;padding:12px;background:#0f172a;color:#ffffff;text-align:center;">
+        부동산 임차관리 - 부가가치세 및 기간별 수납현황 ({d.get('year')}년 {d.get('start_month')}월 ~ {d.get('end_month')}월)
+      </td>
+    </tr>
+    <tr>
+      <td colspan="{col_span_all}" style="font-size:11px;color:#475569;padding:6px;text-align:right;background:#f8fafc;">
+        조회기간: {d.get('year')}년 {d.get('start_month')}월 ~ {d.get('end_month')}월 | 대상: {len(rows)}개실 | 기준: 순수 임차료(월세) 과세표준
+      </td>
+    </tr>
+    <thead>
+      <tr style="background:#1e293b;color:#ffffff;">
+        <th style="border:1px solid #475569;padding:6px;text-align:center;">호실</th>
+        <th style="border:1px solid #475569;padding:6px;text-align:center;">임차인</th>
+        <th style="border:1px solid #475569;padding:6px;text-align:center;">주민(사업자)번호</th>
+        <th style="border:1px solid #475569;padding:6px;text-align:center;">임대유형</th>
+        <th style="border:1px solid #475569;padding:6px;text-align:center;">보증금</th>
+        {month_ths}
+        <th style="border:1px solid #475569;padding:6px;text-align:center;background:#0f766e;">기간총합계(VAT포함)</th>
+        <th style="border:1px solid #475569;padding:6px;text-align:center;background:#1e40af;">공급가액</th>
+        <th style="border:1px solid #475569;padding:6px;text-align:center;background:#b45309;">부가가치세(10%)</th>
+        <th style="border:1px solid #475569;padding:6px;text-align:center;">수납상태</th>
+      </tr>
+    </thead>
+    <tbody>
+      {''.join(trs)}
+    </tbody>
+    <tfoot>
+      <tr style="background:#e2e8f0;font-weight:bold;">
+        <td style="border:1px solid #475569;padding:6px;text-align:center;">합계</td>
+        <td style="border:1px solid #475569;padding:6px;text-align:left;">총 {len(rows)}개실</td>
+        <td style="border:1px solid #475569;padding:6px;text-align:center;">-</td>
+        <td style="border:1px solid #475569;padding:6px;text-align:center;">-</td>
+        <td style="border:1px solid #475569;padding:6px;text-align:right;mso-number-format:'\\#\\,\\#\\#0';">{tot_dep:,}</td>
+        {sum_month_tds}
+        <td style="border:1px solid #475569;padding:6px;text-align:right;color:#0f766e;mso-number-format:'\\#\\,\\#\\#0';">{tot_period:,}</td>
+        <td style="border:1px solid #475569;padding:6px;text-align:right;color:#1e40af;mso-number-format:'\\#\\,\\#\\#0';">{tot_supply:,}</td>
+        <td style="border:1px solid #475569;padding:6px;text-align:right;color:#b45309;mso-number-format:'\\#\\,\\#\\#0';">{tot_vat:,}</td>
+        <td style="border:1px solid #475569;padding:6px;text-align:center;">-</td>
+      </tr>
+    </tfoot>
+  </table>
+</body>
+</html>"""
+        return html.encode("utf-8")
+
+    @classmethod
+    def generate_csv_bytes(cls, report_data: Dict[str, Any]) -> bytes:
+        d = report_data
+        months = d.get("months", [])
+        rows = d.get("rows", [])
+
+        lines = ["\ufeff"]
+        header = ["호실", "임차인", "주민(사업자)번호", "임대유형", "보증금"]
+        for m in months:
+            header.append(f"{m}월 수납액")
+        header.extend(["기간총합계(VAT포함)", "공급가액", "부가가치세", "수납상태"])
+        lines.append(",".join(header) + "\n")
+
+        month_sums = {m: 0 for m in months}
+        tot_dep = 0
+        tot_period = 0
+        tot_supply = 0
+        tot_vat = 0
+
+        for r in rows:
+            dep = int(r.get("deposit") or 0)
+            p_tot = int(r.get("period_total") or 0)
+            s_val = int(r.get("supply_value") or 0)
+            v_val = int(r.get("vat_value") or 0)
+            tot_dep += dep
+            tot_period += p_tot
+            tot_supply += s_val
+            tot_vat += v_val
+
+            t_name = str(r.get("tenant_name") or "공실").replace('"', '""')
+            id_num = str(r.get("id_number") or "-")
+            l_type = str(r.get("lease_type") or "월세")
+            stat = str(r.get("status") or "완납")
+
+            row = [
+                f'"{r.get("room_number")}호"',
+                f'"{t_name}"',
+                f'"\t{id_num}"',
+                f'"{l_type}"',
+                str(dep)
+            ]
+            for m in months:
+                amt = int(r.get("monthly_amounts", {}).get(m, 0))
+                month_sums[m] += amt
+                row.append(str(amt))
+            row.extend([str(p_tot), str(s_val), str(v_val), f'"{stat}"'])
+            lines.append(",".join(row) + "\n")
+
+        sum_row = ['"합계"', f'"총 {len(rows)}개실"', '""', '""', str(tot_dep)]
+        for m in months:
+            sum_row.append(str(month_sums[m]))
+        sum_row.extend([str(tot_period), str(tot_supply), str(tot_vat), '""'])
+        lines.append(",".join(sum_row) + "\n\n")
+
+        lines.append(f"[보고서 안내],조회기간: {d.get('year')}년 {d.get('start_month')}월 ~ {d.get('end_month')}월 (선택 {len(rows)}개실),,,,,,,,,,\n")
+        lines.append(f"[과세표준],공급대가: {tot_period}원 (공급가액: {tot_supply}원 | 부가세: {tot_vat}원),,,,,,,,,,\n")
+        lines.append("[산출기준],순수 임차료(월세) 기준 산출 (실비 정산 관리비 및 전세 제외),,,,,,,,,,\n")
+
+        return "".join(lines).encode("utf-8-sig")

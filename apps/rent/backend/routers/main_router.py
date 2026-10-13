@@ -3,8 +3,9 @@ apps/rent/backend/routers/main_router.py
 원룸 임차료 관리 시스템 REST API 라우터 (prefix="").
 게이트웨이에서 app.include_router(main_router, prefix="/api/rent") 로 마운트됩니다.
 """
+import urllib.parse
 from typing import Optional, List, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, Body
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, Body, Response
 from sqlalchemy.orm import Session
 
 from ..db.database import get_db
@@ -343,6 +344,46 @@ async def get_vat_report(
         year=year,
         room_numbers=parsed_room_numbers
     )
+
+
+@router.get("/vat-report/download")
+async def download_vat_report(
+    branch_id: str = Query("main", description="건물 식별 ID"),
+    start_month: int = Query(1, ge=1, le=12, description="시작월"),
+    end_month: int = Query(6, ge=1, le=12, description="종료월"),
+    year: int = Query(2026, description="정산 연도"),
+    format_type: str = Query("excel", regex="^(excel|csv)$", description="다운로드 포맷: excel 또는 csv"),
+    room_numbers: Optional[str] = Query(None, description="쉼표 구분 대상 호실 목록"),
+    db: Session = Depends(get_db)
+):
+    """부가가치세 신고용 파일 브라우저 직접 다운로드 (RFC 5987 표준 헤더로 Chrome UUID 버그 완벽 방지)"""
+    if start_month > end_month:
+        raise HTTPException(status_code=400, detail="시작월은 종료월보다 클 수 없습니다.")
+
+    parsed_room_numbers = None
+    if room_numbers:
+        try:
+            parsed_room_numbers = [int(r.strip()) for r in room_numbers.split(",") if r.strip().isdigit()]
+        except Exception:
+            parsed_room_numbers = None
+
+    content, media_type, filename = service.generate_vat_download(
+        db=db,
+        branch_id=branch_id,
+        start_month=start_month,
+        end_month=end_month,
+        year=year,
+        format_type=format_type,
+        room_numbers=parsed_room_numbers
+    )
+
+    encoded_filename = urllib.parse.quote(filename)
+    headers = {
+        "Content-Disposition": f"attachment; filename=\"{encoded_filename}\"; filename*=UTF-8''{encoded_filename}",
+        "Access-Control-Expose-Headers": "Content-Disposition"
+    }
+
+    return Response(content=content, media_type=media_type, headers=headers)
 
 
 @router.get("/vat-settings", response_model=VatSettingsResponse)

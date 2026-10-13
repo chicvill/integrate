@@ -712,10 +712,34 @@ class RentService:
         self.ensure_default_seed(db, branch_id)
         return VatService.get_vat_settings(db, branch_id=branch_id)
 
-    def save_vat_settings(self, db: Session, branch_id: str = "main", target_rooms: Optional[List[int]] = None) -> Dict[str, Any]:
-        """지점별 부가세 대상 호실 목록 DB 저장 및 영구 유지 (VatService 위임)"""
-        self.ensure_default_seed(db, branch_id)
-        return VatService.save_vat_settings(db, branch_id=branch_id, target_rooms=target_rooms)
+    def generate_vat_download(
+        self,
+        db: Session,
+        branch_id: str = "main",
+        start_month: int = 1,
+        end_month: int = 6,
+        year: int = 2026,
+        format_type: str = "excel",
+        room_numbers: Optional[List[int]] = None
+    ) -> tuple[bytes, str, str]:
+        """부가가치세 보고서 파일 바이트(엑셀 또는 CSV) 및 파일명/MIME 타입 반환"""
+        report_data = self.get_vat_report(
+            db=db,
+            branch_id=branch_id,
+            start_month=start_month,
+            end_month=end_month,
+            year=year,
+            room_numbers=room_numbers
+        )
+        if format_type == "csv":
+            content = VatService.generate_csv_bytes(report_data)
+            media_type = "text/csv; charset=utf-8"
+            filename = f"부동산_부가세_수납현황_{year}년_{start_month}월_{end_month}월.csv"
+        else:
+            content = VatService.generate_excel_bytes(report_data)
+            media_type = "application/vnd.ms-excel; charset=utf-8"
+            filename = f"부동산_부가세_수납현황_{year}년_{start_month}월_{end_month}월.xls"
+        return content, media_type, filename
 
 
 service = RentService()
