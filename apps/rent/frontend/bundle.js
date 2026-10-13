@@ -1993,9 +1993,10 @@ function openEditSelectedBranchModal() {
 }
 
 function openEditBranchModal(branchId) {
-  const b = (state.branches || []).find(item => item.branch_id === branchId) || {
-    branch_id: branchId,
-    name: branchId === 'main' ? '시크빌 (29개실)' : branchId,
+  const targetId = branchId || state.currentBranch || 'main';
+  const b = (state.branches || []).find(item => item.branch_id === targetId) || {
+    branch_id: targetId,
+    name: targetId === 'main' ? '시크빌 (29개실)' : targetId,
     address: '',
     contact_phone: ''
   };
@@ -2005,10 +2006,14 @@ function openEditBranchModal(branchId) {
   const addrInput = document.getElementById('editBranchAddressInput');
   const phoneInput = document.getElementById('editBranchPhoneInput');
 
-  if (idInput) idInput.value = b.branch_id || '';
+  if (idInput) idInput.value = b.branch_id || targetId;
   if (nameInput) nameInput.value = b.name || '';
   if (addrInput) addrInput.value = b.address || '';
   if (phoneInput) phoneInput.value = b.contact_phone || '';
+
+  try {
+    closeMenuDrawer();
+  } catch (_) {}
 
   const modal = document.getElementById('editBranchModal');
   if (modal) {
