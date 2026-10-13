@@ -205,27 +205,12 @@ class RentService:
             )
             db.add(b1)
 
-        # 2. 제2부동산: 원룸 별관 (다중 부동산 선택 지원)
-        b2 = db.query(RentBranch).filter(RentBranch.branch_id == "branch_02").first()
-        if not b2:
-            b2 = RentBranch(
-                branch_id="branch_02",
-                name="원룸 별관 (29개실)",
-                contact_phone="010-9876-5432",
-                address="서울특별시 서초구 반포대로 45",
-                fee_plan="원룸 스탠다드 29실형",
-                monthly_fee=150000,
-                billing_status="PAID",
-                is_active=True
-            )
-            db.add(b2)
         db.commit()
 
-        # 호실 시드
+        # 호실 시드 (기본 본사 시크빌)
         self._seed_branch_rooms(db, "main", is_main=True)
-        self._seed_branch_rooms(db, "branch_02", is_main=False)
 
-        if branch_id not in ("main", "branch_02"):
+        if branch_id != "main":
             self._seed_branch_rooms(db, branch_id, is_main=False)
 
         self._seeded = True
@@ -727,6 +712,29 @@ class RentService:
         db.commit()
         db.refresh(b)
         return b
+
+    def delete_branch(self, db: Session, branch_id: str) -> Dict[str, Any]:
+        """부동산(지점) 삭제 및 관련 호실/수납/지출/전출이력 데이터 일괄 정리"""
+        if branch_id == "main":
+            return {"success": False, "message": "기본 본사 부동산(시크빌)은 삭제할 수 없습니다."}
+
+        b = self.get_branch(db, branch_id)
+        if not b:
+            return {"success": False, "message": "삭제할 부동산 정보를 찾을 수 없습니다."}
+
+        branch_name = b.name
+        # 연관 데이터 삭제
+        db.query(RentPayment).filter(RentPayment.branch_id == branch_id).delete(synchronize_session=False)
+        db.query(RentRoom).filter(RentRoom.branch_id == branch_id).delete(synchronize_session=False)
+        db.query(RentExpense).filter(RentExpense.branch_id == branch_id).delete(synchronize_session=False)
+        db.query(RentTenantHistory).filter(RentTenantHistory.branch_id == branch_id).delete(synchronize_session=False)
+        db.delete(b)
+        db.commit()
+        return {
+            "success": True,
+            "branch_id": branch_id,
+            "message": f"'{branch_name}' 부동산과 관련 데이터가 성공적으로 삭제되었습니다."
+        }
 
     def purge_expired_tenant_histories(self, db: Session, branch_id: str = "main") -> Dict[str, Any]:
         """전출 후 1년(법적 보존기한)이 경과한 만료 세입자 이력 및 관련 데이터 자동 영구 삭제"""

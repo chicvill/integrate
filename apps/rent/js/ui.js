@@ -4,7 +4,7 @@
  */
 
 import { state, FLOOR_STRUCTURE, currentMonth, currentYear, formattedToday, saveLocalFallback, loadInitialData, fillTenantPaymentsState, evaluatePaymentRule, parseDateComponents } from './state.js?v=2.0';
-import { apiProcessPayment, apiCancelPayment, apiFillTenantPayments, apiGetRooms } from './api.js?v=2.0';
+import { apiProcessPayment, apiCancelPayment, apiFillTenantPayments, apiGetRooms, apiDeleteBranch } from './api.js?v=2.0';
 
 export function selectRoom(roomNum) {
   state.selectedRoom = parseInt(roomNum, 10);
@@ -847,47 +847,123 @@ export function renderLeftMenuDrawer() {
   branchListContainer.innerHTML = '';
 
   // 1. 등록된 부동산 목록 렌더링
-  if (state.branches.length === 0) {
+  if (!state.branches || state.branches.length === 0) {
     branchListContainer.innerHTML = `
-      <button type="button" class="w-full text-left p-2.5 rounded-xl bg-cyan-950/60 border border-cyan-500/60 text-cyan-300 font-bold text-xs flex items-center justify-between">
+      <div class="w-full text-left p-2.5 rounded-xl bg-cyan-950/60 border border-cyan-500/60 text-cyan-300 font-bold text-xs flex items-center justify-between">
         <span>🏢 시크빌 (29개실)</span>
         <span class="text-xs">✓ 선택됨</span>
-      </button>
+      </div>
     `;
   } else {
     state.branches.forEach(b => {
       const isSelected = (b.branch_id === state.currentBranch);
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.onclick = () => switchBranch(b.branch_id);
+      const isMain = (b.branch_id === 'main');
+      const itemEl = document.createElement('div');
 
       if (isSelected) {
-        btn.className = 'w-full text-left p-2.5 rounded-xl bg-cyan-950/70 border border-cyan-500/80 text-cyan-300 font-bold text-xs flex items-center justify-between shadow-sm cursor-pointer';
-        btn.innerHTML = `
-          <div>
-            <div class="flex items-center gap-1.5">
+        itemEl.className = 'w-full text-left p-2.5 rounded-xl bg-cyan-950/70 border border-cyan-500/80 text-cyan-300 font-bold text-xs flex items-center justify-between shadow-sm';
+        itemEl.innerHTML = `
+          <div class="flex-1 min-w-0 pr-2">
+            <div class="flex items-center gap-1.5 truncate">
               <span>🏢</span>
-              <span>${b.name}</span>
+              <span class="truncate">${b.name}</span>
             </div>
-            <div class="text-[10px] text-cyan-400/80 mt-0.5">${b.address || '주소 등록됨'}</div>
+            <div class="text-[10px] text-cyan-400/80 mt-0.5 truncate">${b.address || '주소 등록됨'}</div>
           </div>
-          <span class="text-xs font-black text-cyan-300">✓ 선택중</span>
+          <div class="flex items-center gap-1.5 shrink-0">
+            ${!isMain ? `
+              <button type="button" onclick="event.stopPropagation(); handleDeleteBranch('${b.branch_id}', '${b.name.replace(/'/g, "\\'")}')" class="px-1.5 py-0.5 rounded text-[11px] text-rose-300 hover:text-rose-100 hover:bg-rose-900/60 border border-rose-500/40 transition cursor-pointer" title="현재 건물 삭제">
+                🗑️ 삭제
+              </button>
+            ` : ''}
+            <span class="text-xs font-black text-cyan-300">✓ 선택중</span>
+          </div>
         `;
       } else {
-        btn.className = 'w-full text-left p-2.5 rounded-xl bg-surface-800/80 hover:bg-surface-700/80 text-slate-300 border border-slate-700/60 text-xs flex items-center justify-between cursor-pointer transition';
-        btn.innerHTML = `
-          <div>
-            <div class="flex items-center gap-1.5">
+        itemEl.className = 'w-full text-left p-2.5 rounded-xl bg-surface-800/80 hover:bg-surface-700/80 text-slate-300 border border-slate-700/60 text-xs flex items-center justify-between transition';
+        itemEl.innerHTML = `
+          <div class="flex-1 min-w-0 pr-2 cursor-pointer" onclick="switchBranch('${b.branch_id}')">
+            <div class="flex items-center gap-1.5 truncate">
               <span class="text-slate-400">🏢</span>
-              <span class="font-semibold text-slate-200">${b.name}</span>
+              <span class="font-semibold text-slate-200 truncate">${b.name}</span>
             </div>
-            <div class="text-[10px] text-slate-400 mt-0.5">${b.address || '주소 등록됨'}</div>
+            <div class="text-[10px] text-slate-400 mt-0.5 truncate">${b.address || '주소 등록됨'}</div>
           </div>
-          <span class="text-[11px] text-slate-500">선택 ↗</span>
+          <div class="flex items-center gap-1.5 shrink-0">
+            ${!isMain ? `
+              <button type="button" onclick="event.stopPropagation(); handleDeleteBranch('${b.branch_id}', '${b.name.replace(/'/g, "\\'")}')" class="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-rose-950/50 transition cursor-pointer" title="이 건물 삭제">
+                🗑️
+              </button>
+            ` : ''}
+            <button type="button" onclick="switchBranch('${b.branch_id}')" class="text-[11px] text-cyan-400 hover:text-cyan-300 font-semibold cursor-pointer">
+              선택 ↗
+            </button>
+          </div>
         `;
       }
-      branchListContainer.appendChild(btn);
+      branchListContainer.appendChild(itemEl);
     });
+  }
+}
+
+// ── 현재 선택된 부동산 삭제 (신규 추가 옆 '삭제' 링크) ──
+export async function handleDeleteSelectedBranch() {
+  const currentBranchId = state.currentBranch;
+  if (!currentBranchId || currentBranchId === 'main') {
+    alert("기본 본사 부동산('시크빌')은 삭제할 수 없습니다.\\n별관 등 삭제하려는 건물을 먼저 목록에서 선택해주세요.");
+    return;
+  }
+  const curBranchObj = state.branches.find(b => b.branch_id === currentBranchId);
+  const branchName = curBranchObj ? curBranchObj.name : currentBranchId;
+  await handleDeleteBranch(currentBranchId, branchName);
+}
+
+// ── 특정 부동산 삭제 처리 ──
+export async function handleDeleteBranch(branchId, branchName = '') {
+  if (!branchId || branchId === 'main') {
+    alert("기본 본사 부동산('시크빌')은 시스템 필수 데이터이므로 삭제할 수 없습니다.");
+    return;
+  }
+
+  const displayName = branchName || branchId;
+  const isConfirmed = confirm(
+    `[경고] '${displayName}' 건물을 정말로 영구 삭제하시겠습니까?\\n\\n` +
+    `• 해당 건물에 등록된 29개 호실 및 수납/지출 장부 전체 데이터가 삭제됩니다.\\n` +
+    `• 이 작업은 되돌릴 수 없습니다.\\n\\n` +
+    `계속 진행하시겠습니까?`
+  );
+  if (!isConfirmed) return;
+
+  try {
+    if (state.isOnline) {
+      await apiDeleteBranch(branchId);
+    }
+
+    // 로컬 스토리지 캐시 정리
+    try {
+      localStorage.removeItem(`rent_state_v2_${branchId}`);
+      localStorage.removeItem(`rent_backup_snapshot_${branchId}`);
+    } catch (_) {}
+
+    // state.branches에서 제거
+    state.branches = state.branches.filter(b => b.branch_id !== branchId);
+
+    // 만약 현재 보고 있던 건물이 삭제된 건물이면 기본 'main' (시크빌)로 자동 전환
+    if (state.currentBranch === branchId) {
+      state.currentBranch = 'main';
+      saveLocalFallback();
+      const url = new URL(window.location.href);
+      url.searchParams.set('branch', 'main');
+      window.history.pushState({}, '', url.toString());
+      await loadInitialData();
+    } else {
+      saveLocalFallback();
+      renderLeftMenuDrawer();
+    }
+
+    alert(`✅ '${displayName}' 건물이 성공적으로 삭제되었습니다.`);
+  } catch (err) {
+    alert(`건물 삭제 실패: ${err.message || '서버 응답 오류'}`);
   }
 }
 

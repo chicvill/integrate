@@ -478,8 +478,7 @@ export function loadLocalFallback() {
       state.rooms = parsed.rooms && Object.keys(parsed.rooms).length > 0 ? parsed.rooms : generateDefaultSeedRooms();
       state.expenses = parsed.expenses || [];
       state.branches = (parsed.branches && parsed.branches.length > 0 ? parsed.branches : [
-        { branch_id: 'main', name: '시크빌 (29개실)', billing_status: 'PAID' },
-        { branch_id: 'branch_02', name: '원룸 별관 (29개실)', billing_status: 'PAID' }
+        { branch_id: 'main', name: '시크빌 (29개실)', billing_status: 'PAID' }
       ]).map(b => b.branch_id === 'main' ? { ...b, name: '시크빌 (29개실)' } : b);
       state.tenantHistories = parsed.tenantHistories || [
         {
@@ -506,8 +505,7 @@ export function loadLocalFallback() {
       state.rooms = generateDefaultSeedRooms();
       state.expenses = [];
       state.branches = [
-        { branch_id: 'main', name: '시크빌 (29개실)', billing_status: 'PAID' },
-        { branch_id: 'branch_02', name: '원룸 별관 (29개실)', billing_status: 'PAID' }
+        { branch_id: 'main', name: '시크빌 (29개실)', billing_status: 'PAID' }
       ];
       state.tenantHistories = [
         {

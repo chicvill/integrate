@@ -99,6 +99,15 @@ async def update_branch_billing(branch_id: str, payload: BranchBillingUpdate, db
     return updated
 
 
+@router.delete("/branches/{branch_id}")
+async def delete_branch(branch_id: str, db: Session = Depends(get_db)):
+    """등록된 부동산(지점) 및 관련 데이터 영구 삭제 (메인 부동산은 삭제 불가)"""
+    res = service.delete_branch(db, branch_id=branch_id)
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res.get("message"))
+    return res
+
+
 # ── 호실 및 임대차 계약 라우트 ──
 @router.get("/rooms", response_model=RoomListResponse)
 async def get_all_rooms(

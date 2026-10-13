@@ -19,7 +19,9 @@ import {
   handleChangePaymentDate,
   handleChangePaymentAmount,
   renderBuildingSummary,
-  renderAll
+  renderAll,
+  handleDeleteSelectedBranch,
+  handleDeleteBranch
 } from './js/ui.js?v=2.0';
 import {
   openModal,
@@ -130,6 +132,8 @@ window.switchBranch = switchBranch;
 window.openMenuDrawer = openMenuDrawer;
 window.closeMenuDrawer = closeMenuDrawer;
 window.toggleMenuDrawer = toggleMenuDrawer;
+window.handleDeleteSelectedBranch = handleDeleteSelectedBranch;
+window.handleDeleteBranch = handleDeleteBranch;
 
 window.openRoomDrawer = openRoomDrawer;
 window.closeRoomDrawer = closeRoomDrawer;
