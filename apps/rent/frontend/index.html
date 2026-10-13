@@ -147,157 +147,162 @@
 
       <hr class="border-slate-800/80">
 
-      <!-- ⚙️ 주요 관리 업무 메뉴 -->
-      <div>
-        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 block px-1">업무 바로가기</span>
-        <div class="space-y-1">
-          <button type="button" onclick="openMoveInOutQuick(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-teal-950/70 to-cyan-950/70 hover:from-teal-900/80 hover:to-cyan-900/80 text-teal-300 border border-teal-500/50 font-semibold flex items-center gap-2.5 cursor-pointer transition shadow-sm">
-            <span class="text-xl">🚪</span>
-            <div>
-              <div class="text-xs font-bold text-white flex items-center gap-1.5">
-                <span>전입 / 전출 원터치 처리</span>
-                <span class="text-[9px] bg-teal-500/30 text-teal-200 border border-teal-500/50 px-1 py-0.2 rounded font-normal">퇴실보존·신규전입</span>
-              </div>
-              <div class="text-[10px] text-teal-300/80">퇴실자 1년 보존 아카이빙 & 신규 입주 등록</div>
-            </div>
-          </button>
-
-          <button type="button" onclick="openExpiryNoticeModal(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-rose-950/60 to-amber-950/60 hover:from-rose-900/70 hover:to-amber-900/70 text-rose-300 border border-rose-500/40 font-semibold flex items-center gap-2.5 cursor-pointer transition shadow-sm">
-            <span class="text-xl">🔔</span>
-            <div>
-              <div class="text-xs font-bold text-white flex items-center gap-1.5">
-                <span>만기 1·2개월 전 전출 확인 & 문자</span>
-                <span id="drawerExpiryNoticeCount" class="text-[9px] bg-rose-500/30 text-rose-200 border border-rose-500/50 px-1 py-0.2 rounded font-normal">확인</span>
-              </div>
-              <div class="text-[10px] text-rose-300/80">만기 도래 리스트 확인 및 사전 안내문자 순차 발송</div>
-            </div>
-          </button>
-
-          <button type="button" onclick="openVatModal(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-slate-200 border border-slate-700/60 font-semibold flex items-center gap-2.5 cursor-pointer transition">
-            <span class="text-base text-cyan-400">📊</span>
-            <div>
-              <div class="text-xs font-bold text-white">부가가치세 신고 집계</div>
-              <div class="text-[10px] text-slate-400">기간별 수납액, 공급가액, VAT 엑셀</div>
-            </div>
-          </button>
-
-          <button type="button" onclick="openExpenseModal(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-amber-300 border border-amber-500/30 font-semibold flex items-center gap-2.5 cursor-pointer transition">
-            <span class="text-base">💰</span>
-            <div>
-              <div class="text-xs font-bold text-amber-200">오늘 지출 등록</div>
-              <div class="text-[10px] text-slate-400">수리비, 청소비, 비품비 등 간편 기록</div>
-            </div>
-          </button>
-
-          <button type="button" onclick="openLedgerModal(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-slate-200 border border-slate-700/60 font-semibold flex items-center gap-2.5 cursor-pointer transition">
-            <span class="text-base text-indigo-400">📒</span>
-            <div>
-              <div class="text-xs font-bold text-white">지출 장부 내역</div>
-              <div class="text-[10px] text-slate-400">건물 운영 지출 내역 및 총액 합계</div>
-            </div>
-          </button>
-
-          <button type="button" onclick="openTenantHistoryModal(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-slate-200 border border-slate-700/60 font-semibold flex items-center gap-2.5 cursor-pointer transition">
-            <span class="text-base text-emerald-400">🗂️</span>
-            <div>
-              <div class="text-xs font-bold text-white">전출자 1년 보존 이력 & 호실 복원</div>
-              <div class="text-[10px] text-slate-400">퇴실자 명단 확인 및 퇴실 취소(호실 복원)</div>
-            </div>
-          </button>
-
-          <!-- 🛡️ 안심 테스트 스냅샷 카드 -->
-          <div class="p-2.5 rounded-xl bg-surface-950/70 border border-blue-900/40 space-y-1.5">
-            <div class="flex items-center justify-between text-xs">
-              <span class="font-bold text-blue-300 flex items-center gap-1.5">
-                <span>🛡️</span><span>안심 테스트 안전장치</span>
-              </span>
-              <span class="text-[10px] text-slate-400">1초 백업/롤백</span>
-            </div>
-            <div class="grid grid-cols-2 gap-1.5">
-              <button type="button" onclick="saveTestSnapshot(); closeMenuDrawer();" class="py-1.5 px-2 rounded-lg bg-blue-950/80 hover:bg-blue-900 text-blue-200 border border-blue-700/60 text-[11px] font-bold text-center cursor-pointer transition">
-                📸 스냅샷 백업
-              </button>
-              <button type="button" onclick="restoreTestSnapshot(); closeMenuDrawer();" class="py-1.5 px-2 rounded-lg bg-amber-950/80 hover:bg-amber-900 text-amber-200 border border-amber-700/60 text-[11px] font-bold text-center cursor-pointer transition">
-                ↩️ 1초 롤백
-              </button>
-            </div>
-            <div class="text-[10px] text-slate-400 leading-tight">
-              전출·전입 테스트 전 스냅샷을 찍어두면 언제든 1초 만에 원래 상태로 되돌릴 수 있습니다.
-            </div>
-          </div>
-
-          <button type="button" onclick="openExcelImportModal(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-slate-200 border border-emerald-500/40 font-semibold flex items-center gap-2.5 cursor-pointer transition">
-            <span class="text-base text-emerald-400">📑</span>
-            <div>
-              <div class="text-xs font-bold text-white flex items-center gap-1.5">
-                <span>엑셀 일괄 입력</span>
-                <span class="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1 py-0.2 rounded font-normal">AI 자동 매핑</span>
-              </div>
-              <div class="text-[10px] text-slate-400">임대차 계약 명단 엑셀/CSV 일괄 업로드</div>
-            </div>
-          </button>
-
-          <button type="button" onclick="exportCurrentRoomCSV(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-slate-200 border border-slate-700/60 font-semibold flex items-center gap-2.5 cursor-pointer transition">
-            <span class="text-base text-emerald-300">📥</span>
-            <div>
-              <div class="text-xs font-bold text-white">호실 장부 CSV 다운로드</div>
-              <div class="text-[10px] text-slate-400">현재 호실 12개월 납부 엑셀 파일</div>
-            </div>
-          </button>
-
-          <button type="button" onclick="openContractEditModal(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-slate-200 border border-slate-700/60 font-semibold flex items-center gap-2.5 cursor-pointer transition">
-            <span class="text-base text-blue-400">📝</span>
-            <div>
-              <div class="text-xs font-bold text-white">계약 상세 정보 수정</div>
-              <div class="text-[10px] text-slate-400">보증금, 월세, 전입일/만기일 변경</div>
-            </div>
-          </button>
-
-          <!-- 💾 내 폰/PC 전체 데이터 파일 백업 & 복원 -->
-          <div class="p-2.5 rounded-xl bg-surface-950/80 border border-emerald-500/40 space-y-2">
-            <div class="flex items-center justify-between text-xs">
-              <span class="font-bold text-emerald-300 flex items-center gap-1.5">
-                <span>💾</span><span>전체 데이터 영구 백업 & 복원</span>
-              </span>
-              <span class="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1 py-0.2 rounded font-mono">내 폰/PC 저장</span>
-            </div>
-            <div class="grid grid-cols-2 gap-1.5">
-              <button type="button" onclick="exportFullSystemBackupJSON(); closeMenuDrawer();" class="py-2 px-2 rounded-lg bg-emerald-950 hover:bg-emerald-900 text-emerald-200 border border-emerald-700/70 text-[11px] font-bold text-center cursor-pointer transition flex items-center justify-center gap-1 shadow-xs">
-                <span>📥</span><span>전체 백업 다운로드</span>
-              </button>
-              <button type="button" onclick="triggerFullSystemRestoreFile(); closeMenuDrawer();" class="py-2 px-2 rounded-lg bg-indigo-950 hover:bg-indigo-900 text-indigo-200 border border-indigo-700/70 text-[11px] font-bold text-center cursor-pointer transition flex items-center justify-center gap-1 shadow-xs">
-                <span>📂</span><span>백업 파일로 복원</span>
-              </button>
-            </div>
-            <div class="text-[10px] text-slate-400 leading-tight">
-              29개실 계약대장 + 12개월 전체 수납장부 + 지출 + 전출자 이력 전체를 <strong>사용자 핸드폰/PC에 실제 파일(.json)로 저장</strong>합니다.
-            </div>
-          </div>
-          <input type="file" id="fullBackupRestoreInput" accept=".json" class="hidden" onchange="handleFullSystemRestoreFile(event)">
-
-          <button type="button" onclick="exportAllRoomsCSV(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-emerald-300 border border-emerald-800/50 font-semibold flex items-center gap-2.5 cursor-pointer transition">
-            <span class="text-base">📊</span>
-            <div>
-              <div class="text-xs font-bold text-emerald-200">계약대장 엑셀 다운로드 (CSV)</div>
-              <div class="text-[10px] text-slate-400">29개실 호실별 세입자 명단 및 당월 현황</div>
-            </div>
-          </button>
-          <button type="button" onclick="closeMenuDrawer(); openSmsDepositModal();" class="w-full text-left p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-cyan-300 border border-cyan-800/50 font-semibold flex items-center gap-2.5 transition">
-            <span class="text-base">📲</span>
-            <div>
-              <div class="text-xs font-bold text-cyan-200">입금 문자 자동 인식 & 영수증</div>
-              <div class="text-[10px] text-slate-400">문자 분석, 자동 완납 및 영수증 전송</div>
-            </div>
-          </button>
-
-          <a href="./manual.html" target="_blank" class="w-full text-left p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-cyan-300 border border-cyan-800/50 font-semibold flex items-center gap-2.5 transition no-underline">
-            <span class="text-base">📖</span>
-            <div>
-              <div class="text-xs font-bold text-cyan-200">운영 매뉴얼 (A4 인쇄)</div>
-              <div class="text-[10px] text-slate-400">사용 설명서 및 PDF 저장 기능</div>
-            </div>
-          </a>
+      <!-- 1. 💾 데이터 백업 & 안전 복원 섹션 (최우선 배치) -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between px-1">
+          <span class="text-[11px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+            <span>💾</span><span>데이터 백업 & 안전 복원</span>
+          </span>
+          <span class="text-[10px] text-slate-400">내 폰/PC 안전 보존</span>
         </div>
+
+        <!-- 💾 내 폰/PC 전체 데이터 파일 백업 & 복원 카드 -->
+        <div class="p-3 rounded-xl bg-surface-950/90 border border-emerald-500/50 space-y-2 shadow-sm">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-white flex items-center gap-1.5">
+              <span class="text-emerald-400 text-sm">📁</span><span>전체 데이터 영구 백업 & 복원</span>
+            </span>
+            <span class="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.5 rounded font-bold">내 폰/PC 파일</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="exportFullSystemBackupJSON(); closeMenuDrawer();" class="py-2 px-2 rounded-lg bg-emerald-950 hover:bg-emerald-900 text-emerald-200 border border-emerald-700/80 text-[11px] font-bold text-center cursor-pointer transition flex items-center justify-center gap-1 shadow-xs active:scale-98">
+              <span>📥</span><span>전체 백업 다운로드</span>
+            </button>
+            <button type="button" onclick="triggerFullSystemRestoreFile(); closeMenuDrawer();" class="py-2 px-2 rounded-lg bg-indigo-950 hover:bg-indigo-900 text-indigo-200 border border-indigo-700/80 text-[11px] font-bold text-center cursor-pointer transition flex items-center justify-center gap-1 shadow-xs active:scale-98">
+              <span>📂</span><span>백업 파일로 복원</span>
+            </button>
+          </div>
+          <div class="text-[10px] text-slate-400 leading-tight">
+            29개실 계약대장 + 12개월 전체 수납장부 + 지출 장부 + 전출자 이력 전체를 <strong>내 스마트폰/PC에 실제 파일(.json)로 안전하게 보관</strong>합니다.
+          </div>
+        </div>
+        <input type="file" id="fullBackupRestoreInput" accept=".json" class="hidden" onchange="handleFullSystemRestoreFile(event)">
+
+        <!-- 🛡️ 원터치 안심 테스트 스냅샷 카드 -->
+        <div class="p-2.5 rounded-xl bg-surface-950/70 border border-blue-900/50 space-y-1.5">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-blue-300 flex items-center gap-1.5">
+              <span>🛡️</span><span>안심 테스트 안전장치</span>
+            </span>
+            <span class="text-[10px] text-slate-400 font-mono">1초 백업/롤백</span>
+          </div>
+          <div class="grid grid-cols-2 gap-1.5">
+            <button type="button" onclick="saveTestSnapshot(); closeMenuDrawer();" class="py-1.5 px-2 rounded-lg bg-blue-950/80 hover:bg-blue-900 text-blue-200 border border-blue-700/60 text-[11px] font-bold text-center cursor-pointer transition flex items-center justify-center gap-1">
+              <span>📸</span><span>스냅샷 백업</span>
+            </button>
+            <button type="button" onclick="restoreTestSnapshot(); closeMenuDrawer();" class="py-1.5 px-2 rounded-lg bg-amber-950/80 hover:bg-amber-900 text-amber-200 border border-amber-700/60 text-[11px] font-bold text-center cursor-pointer transition flex items-center justify-center gap-1">
+              <span>↩️</span><span>1초 롤백</span>
+            </button>
+          </div>
+          <div class="text-[10px] text-slate-400 leading-tight">
+            전출·전입 테스트 전 스냅샷을 찍어두면 언제든 1초 만에 테스트 전 상태로 즉시 되돌릴 수 있습니다.
+          </div>
+        </div>
+
+        <!-- 📊 엑셀/CSV 다운로드 & 일괄 입력 -->
+        <div class="grid grid-cols-2 gap-1.5 pt-0.5">
+          <button type="button" onclick="exportAllRoomsCSV(); closeMenuDrawer();" class="p-2 rounded-xl bg-surface-850 hover:bg-surface-800 text-slate-200 border border-slate-700/60 text-left transition cursor-pointer flex flex-col justify-between">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-emerald-300">
+              <span>📊</span><span>계약대장 엑셀</span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-1">29개실 전체 CSV</div>
+          </button>
+          <button type="button" onclick="openExcelImportModal(); closeMenuDrawer();" class="p-2 rounded-xl bg-surface-850 hover:bg-surface-800 text-slate-200 border border-slate-700/60 text-left transition cursor-pointer flex flex-col justify-between">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-cyan-300">
+              <span>📑</span><span>엑셀 일괄 등록</span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-1">AI 자동 매핑 가져오기</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. 🚪 계약 & 입퇴실 관리 섹션 -->
+      <div class="space-y-1.5 pt-2 border-t border-slate-800/80">
+        <span class="text-[11px] font-bold text-cyan-400 uppercase tracking-wider block px-1">계약 & 입퇴실 관리</span>
+        
+        <button type="button" onclick="openMoveInOutQuick(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-teal-950/70 to-cyan-950/70 hover:from-teal-900/80 hover:to-cyan-900/80 text-teal-300 border border-teal-500/50 font-semibold flex items-center gap-2.5 cursor-pointer transition shadow-sm">
+          <span class="text-xl">🚪</span>
+          <div>
+            <div class="text-xs font-bold text-white flex items-center gap-1.5">
+              <span>전입 / 전출 / 계약 관리</span>
+              <span class="text-[9px] bg-teal-500/30 text-teal-200 border border-teal-500/50 px-1 py-0.2 rounded font-normal">퇴실보존·신규전입</span>
+            </div>
+            <div class="text-[10px] text-teal-300/80">원터치 퇴실 처리 & 신규 입주 계약 등록</div>
+          </div>
+        </button>
+
+        <button type="button" onclick="openExpiryNoticeModal(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-rose-950/60 to-amber-950/60 hover:from-rose-900/70 hover:to-amber-900/70 text-rose-300 border border-rose-500/40 font-semibold flex items-center gap-2.5 cursor-pointer transition shadow-sm">
+          <span class="text-xl">🔔</span>
+          <div>
+            <div class="text-xs font-bold text-white flex items-center gap-1.5">
+              <span>만기 1·2개월 전 전출 확인 & 문자</span>
+              <span id="drawerExpiryNoticeCount" class="text-[9px] bg-rose-500/30 text-rose-200 border border-rose-500/50 px-1 py-0.2 rounded font-normal">확인</span>
+            </div>
+            <div class="text-[10px] text-rose-300/80">만기 도래 리스트 확인 및 사전 안내문자 순차 발송</div>
+          </div>
+        </button>
+
+        <button type="button" onclick="openTenantHistoryModal(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-slate-200 border border-slate-700/60 font-semibold flex items-center gap-2.5 cursor-pointer transition">
+          <span class="text-base text-emerald-400">🗂️</span>
+          <div>
+            <div class="text-xs font-bold text-white">전출자 1년 보존 이력 & 호실 복원</div>
+            <div class="text-[10px] text-slate-400">퇴실자 명단 확인 및 원터치 퇴실 취소(호실 복원)</div>
+          </div>
+        </button>
+      </div>
+
+      <!-- 3. 💵 수납 & 지출 & 세무 회계 섹션 -->
+      <div class="space-y-1.5 pt-2 border-t border-slate-800/80">
+        <span class="text-[11px] font-bold text-amber-400 uppercase tracking-wider block px-1">수납 & 지출 & 세무 회계</span>
+
+        <button type="button" onclick="closeMenuDrawer(); openSmsDepositModal();" class="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-cyan-950/60 to-blue-950/60 hover:from-cyan-900/70 hover:to-blue-900/70 text-cyan-300 border border-cyan-500/40 font-semibold flex items-center gap-2.5 transition">
+          <span class="text-xl">📲</span>
+          <div>
+            <div class="text-xs font-bold text-cyan-200 flex items-center gap-1.5">
+              <span>입금 문자 자동 인식 & 영수증</span>
+              <span class="text-[9px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-1 py-0.2 rounded font-normal">간편 완납</span>
+            </div>
+            <div class="text-[10px] text-slate-400">은행 입금문자 붙여넣기, 자동 완납 및 영수증 전송</div>
+          </div>
+        </button>
+
+        <div class="grid grid-cols-2 gap-1.5">
+          <button type="button" onclick="openExpenseModal(); closeMenuDrawer();" class="p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-amber-300 border border-amber-500/30 font-semibold text-left transition cursor-pointer">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-amber-200">
+              <span>💰</span><span>오늘 지출 등록</span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-1">수리비, 청소비 영수증 기록</div>
+          </button>
+
+          <button type="button" onclick="openLedgerModal(); closeMenuDrawer();" class="p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-slate-200 border border-slate-700/60 font-semibold text-left transition cursor-pointer">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-indigo-300">
+              <span>📒</span><span>지출 장부 내역</span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-1">운영비 지출 총액 합계</div>
+          </button>
+        </div>
+
+        <button type="button" onclick="openVatModal(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-slate-200 border border-slate-700/60 font-semibold flex items-center gap-2.5 cursor-pointer transition">
+          <span class="text-base text-cyan-400">📊</span>
+          <div>
+            <div class="text-xs font-bold text-white">부가가치세 신고 집계 (홈택스 연동)</div>
+            <div class="text-[10px] text-slate-400">기간별 수납액, 공급가액, VAT 엑셀 다운로드</div>
+          </div>
+        </button>
+      </div>
+
+      <!-- 4. 📖 매뉴얼 & 안내 섹션 -->
+      <div class="pt-2 border-t border-slate-800/80">
+        <a href="./manual.html" target="_blank" class="w-full text-left p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-cyan-300 border border-cyan-800/50 font-semibold flex items-center justify-between transition no-underline">
+          <div class="flex items-center gap-2.5">
+            <span class="text-lg">📖</span>
+            <div>
+              <div class="text-xs font-bold text-cyan-200">운영 매뉴얼 (A4 인쇄 / PDF 저장)</div>
+              <div class="text-[10px] text-slate-400">시스템 전체 사용 설명서 및 공식 지침</div>
+            </div>
+          </div>
+          <span class="text-slate-500 text-xs">↗</span>
+        </a>
       </div>
     </div>
 
