@@ -21,7 +21,8 @@ import {
   renderBuildingSummary,
   renderAll,
   handleDeleteSelectedBranch,
-  handleDeleteBranch
+  handleDeleteBranch,
+  executeBranchDeleteConfirmed
 } from './js/ui.js?v=2.0';
 import {
   openModal,
@@ -134,6 +135,7 @@ window.closeMenuDrawer = closeMenuDrawer;
 window.toggleMenuDrawer = toggleMenuDrawer;
 window.handleDeleteSelectedBranch = handleDeleteSelectedBranch;
 window.handleDeleteBranch = handleDeleteBranch;
+window.executeBranchDeleteConfirmed = executeBranchDeleteConfirmed;
 
 window.openRoomDrawer = openRoomDrawer;
 window.closeRoomDrawer = closeRoomDrawer;

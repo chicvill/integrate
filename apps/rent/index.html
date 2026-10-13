@@ -141,7 +141,7 @@
               + 신규 추가
             </button>
             <span class="text-slate-600 text-[10px]">|</span>
-            <button type="button" onclick="handleDeleteSelectedBranch()" class="text-[11px] text-rose-400 hover:text-rose-300 font-semibold flex items-center gap-0.5 cursor-pointer" title="현재 선택된 건물 삭제">
+            <button type="button" onclick="window.handleDeleteSelectedBranch()" class="text-[11px] text-rose-400 hover:text-rose-300 font-semibold flex items-center gap-0.5 cursor-pointer" title="현재 선택된 건물 삭제">
               🗑️ 삭제
             </button>
           </div>
@@ -513,6 +513,32 @@
   </main>
 
   <!-- ── MODALS ── -->
+
+  <!-- 0. Branch Delete Confirmation Modal -->
+  <div id="branchDeleteModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-50 hidden items-center justify-center p-3">
+    <div class="bg-surface-900 border border-rose-500/50 rounded-2xl p-4 sm:p-5 max-w-sm w-full space-y-4 shadow-2xl animate-fade-in">
+      <div class="flex items-center gap-2.5 text-rose-400">
+        <span class="text-2xl">⚠️</span>
+        <h3 class="text-sm font-bold text-white">부동산(별관) 삭제 확인</h3>
+      </div>
+      <div class="space-y-2 text-xs text-slate-300">
+        <p>선택하신 <strong id="deleteBranchTargetName" class="text-rose-400 font-bold">건물</strong>을(를) 정말로 영구 삭제하시겠습니까?</p>
+        <div class="p-2.5 rounded-lg bg-rose-950/40 border border-rose-500/30 text-[11px] text-rose-200/90 space-y-1">
+          <div>• 등록된 29개 호실 계약 정보 전체 영구 삭제</div>
+          <div>• 해당 건물의 과거 수납 장부 및 지출 내역 영구 삭제</div>
+          <div>• 삭제 후에는 복구할 수 없습니다.</div>
+        </div>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button type="button" onclick="closeModal('branchDeleteModal')" class="flex-1 py-2 rounded-xl bg-surface-800 hover:bg-surface-750 text-slate-300 font-semibold text-xs border border-slate-700 cursor-pointer">
+          취소
+        </button>
+        <button type="button" id="btnConfirmDeleteBranch" onclick="executeBranchDeleteConfirmed()" class="flex-1 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md shadow-rose-950/50 transition cursor-pointer">
+          🗑️ 네, 삭제합니다
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- 1. Contract Edit Modal -->
   <div id="contractModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-50 hidden items-center justify-center p-3">
@@ -1355,6 +1381,6 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- Universal Bundle Script -->
-  <script src="./bundle.js?v=3.0"></script>
+  <script src="./bundle.js?v=4.0"></script>
 </body>
 </html>

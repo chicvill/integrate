@@ -85,6 +85,12 @@ export const http = {
       method: 'PATCH',
       body: JSON.stringify(data)
     });
+  },
+  delete(endpoint, params = {}) {
+    const base = getApiBase('rent');
+    return fetchWithAuth(`${base}${endpoint}${buildQueryString(params)}`, {
+      method: 'DELETE'
+    });
   }
 };
 
