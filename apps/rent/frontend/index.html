@@ -270,119 +270,161 @@
   </aside>
 
   <!-- ── 4. Main Mobile View (Zero Waste Margins, Maximum Font Size) ── -->
-  <main class="w-full max-w-xl mx-auto px-2 sm:px-3 mt-2 sm:mt-2.5 space-y-2.5 box-border">
+  <main class="w-full max-w-xl mx-auto px-2 sm:px-3 mt-1.5 space-y-1.5 sm:space-y-2 box-border">
 
-    <!-- ── CARD 1: 호실 & 계약 요약 (글자 대형화) ── -->
-    <section class="bg-surface-900 border border-slate-800 rounded-2xl p-3 sm:p-3.5 shadow-xl w-full box-border">
+    <!-- ── CARD 0: 전체 건물 종합 현황 요약 (한눈에 보는 전체상황) ── -->
+    <section id="buildingSummaryCard" class="bg-surface-900/95 border border-slate-800 rounded-xl p-2 sm:p-2.5 shadow-md w-full box-border">
+      <!-- 1행: 건물명, 총실수, 공실수, 보증금 합계 -->
+      <div class="flex items-center justify-between gap-1 pb-1 border-b border-slate-800/80 text-xs">
+        <div class="flex items-center gap-1.5 min-w-0">
+          <span class="text-sm">🏢</span>
+          <span id="sumBuildingName" class="font-bold text-white text-xs sm:text-sm tracking-tight truncate">시크빌</span>
+          <span class="text-[10px] px-1.5 py-0.2 rounded bg-surface-800 text-slate-300 font-mono border border-slate-700/60">
+            실수 <strong id="sumTotalRooms" class="text-cyan-300">29실</strong>
+          </span>
+          <span class="text-[10px] px-1.5 py-0.2 rounded bg-emerald-950/40 text-emerald-300 font-mono border border-emerald-800/50">
+            공실 <strong id="sumVacantRooms">0실</strong>
+          </span>
+        </div>
+        <div class="text-right shrink-0">
+          <span class="text-[10px] text-slate-400">보증금 </span>
+          <span id="sumTotalDeposit" class="text-xs sm:text-sm font-bold text-amber-400 font-mono">172,000,000원</span>
+        </div>
+      </div>
+
+      <!-- 2행: 당월 목표액, 월수납액, 비율(%) -->
+      <div class="flex items-center justify-between gap-1 pt-1 text-xs">
+        <div class="flex items-center gap-1 text-[10px] sm:text-[11px] truncate">
+          <span class="text-slate-400">월목표</span>
+          <span id="sumMonthlyGoal" class="font-bold text-slate-200 font-mono">11,800,000원</span>
+          <span class="text-slate-500 mx-0.5">|</span>
+          <span class="text-slate-400">수납</span>
+          <span id="sumMonthlyPaid" class="font-bold text-cyan-400 font-mono">3,820,000원</span>
+        </div>
+        <div class="flex items-center gap-1 shrink-0">
+          <span class="text-[10px] text-slate-400">비율</span>
+          <span id="sumPaymentRateBadge" class="text-[11px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-mono">
+            32.4%
+          </span>
+        </div>
+      </div>
+
+      <!-- 미니 프로그레스 바 -->
+      <div class="w-full bg-slate-800 rounded-full h-1 mt-1 overflow-hidden">
+        <div id="sumProgressBar" class="bg-gradient-to-r from-cyan-500 to-emerald-400 h-1 rounded-full transition-all duration-300" style="width: 32.4%"></div>
+      </div>
+    </section>
+
+    <!-- ── CARD 1: 호실 & 계약 요약 (콤팩트 최적화) ── -->
+    <section class="bg-surface-900 border border-slate-800 rounded-xl p-2 sm:p-2.5 shadow-lg w-full box-border">
       
-      <!-- Top Row: Large Room Number, Tenant Name, Badges -->
-      <div class="flex items-start justify-between gap-1.5 pb-2.5 border-b border-slate-800">
+      <!-- Top Row: Room Number, Tenant Name, Badges, Edit Button -->
+      <div class="flex items-center justify-between gap-1 pb-1.5 border-b border-slate-800">
         <div class="min-w-0 flex-1">
-          <div class="flex items-center flex-wrap gap-1.5 sm:gap-2">
-            <span id="cardRoomNumber" class="text-2xl sm:text-3xl font-black text-cyan-400 font-mono tracking-tight">101호</span>
-            <span id="cardStatusBadge" class="text-xs px-2 sm:px-2.5 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">입주중</span>
-            <span id="cardLeaseTypeBadge" class="text-xs px-1.5 py-0.5 rounded-md font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30">월세</span>
-            <span id="cardPayTimingBadge" class="text-xs px-1.5 py-0.5 rounded-md font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30">후불</span>
+          <div class="flex items-center flex-wrap gap-1 sm:gap-1.5">
+            <span id="cardRoomNumber" class="text-xl sm:text-2xl font-black text-cyan-400 font-mono tracking-tight">101호</span>
+            <span id="cardStatusBadge" class="text-[10px] sm:text-xs px-2 py-0.2 rounded-full font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">입주중</span>
+            <span id="cardLeaseTypeBadge" class="text-[10px] sm:text-xs px-1.5 py-0.2 rounded font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30">월세</span>
+            <span id="cardPayTimingBadge" class="text-[10px] sm:text-xs px-1.5 py-0.2 rounded font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30">후불</span>
           </div>
-          <div class="flex items-center flex-wrap gap-1.5 sm:gap-2 mt-1">
-            <h2 id="cardTenantName" class="text-base sm:text-lg font-bold text-white tracking-tight">홍길동 님</h2>
-            <span id="cardIdNumber" class="text-[11px] px-1.5 py-0.5 rounded bg-surface-850 text-slate-300 font-mono border border-slate-700/80">주민: -</span>
-            <span id="cardPhone" class="text-xs text-slate-400 font-mono">010-0000-0000</span>
+          <div class="flex items-center flex-wrap gap-1 sm:gap-1.5 mt-0.5">
+            <h2 id="cardTenantName" class="text-sm sm:text-base font-bold text-white tracking-tight">홍길동 님</h2>
+            <span id="cardIdNumber" class="text-[10px] px-1 py-0.2 rounded bg-surface-850 text-slate-300 font-mono border border-slate-700/80">주민: -</span>
+            <span id="cardPhone" class="text-[11px] text-slate-400 font-mono">010-0000-0000</span>
           </div>
         </div>
 
         <!-- 수정 버튼 -->
-        <button type="button" onclick="openContractEditModal()" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 transition flex items-center gap-1 cursor-pointer shrink-0">
-          <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+        <button type="button" onclick="openContractEditModal()" class="px-2 py-0.8 text-xs font-semibold rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 transition flex items-center gap-1 cursor-pointer shrink-0">
+          <svg class="w-3 h-3 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
           수정
         </button>
       </div>
 
-      <!-- Snug Key Contract Numbers Grid (3열 축소 및 min-w-0 적용) -->
-      <div class="grid grid-cols-3 gap-1.5 sm:gap-2 pt-2 text-center w-full">
-        <div class="bg-surface-850/80 rounded-xl p-1.5 sm:p-2 border border-slate-800 min-w-0">
-          <span class="text-[10px] sm:text-[11px] text-slate-400 block mb-0.5">보증금</span>
-          <span id="cDeposit" class="text-[11px] xs:text-xs sm:text-sm font-bold text-amber-400 font-mono block truncate">5,000,000원</span>
+      <!-- Snug Key Contract Numbers Grid (3열 콤팩트) -->
+      <div class="grid grid-cols-3 gap-1 sm:gap-1.5 pt-1.5 text-center w-full">
+        <div class="bg-surface-850/80 rounded-lg py-1 px-1 sm:px-1.5 border border-slate-800 min-w-0">
+          <span class="text-[9px] sm:text-[10px] text-slate-400 block mb-0.2">보증금</span>
+          <span id="cDeposit" class="text-xs sm:text-sm font-bold text-amber-400 font-mono block truncate">5,000,000원</span>
         </div>
-        <div class="bg-surface-850/80 rounded-xl p-1.5 sm:p-2 border border-slate-800 min-w-0">
-          <span class="text-[10px] sm:text-[11px] text-slate-400 block mb-0.5">월 임차료</span>
-          <span id="cRent" class="text-[11px] xs:text-xs sm:text-sm font-bold text-cyan-400 font-mono block truncate">400,000원</span>
+        <div class="bg-surface-850/80 rounded-lg py-1 px-1 sm:px-1.5 border border-slate-800 min-w-0">
+          <span class="text-[9px] sm:text-[10px] text-slate-400 block mb-0.2">월 임차료</span>
+          <span id="cRent" class="text-xs sm:text-sm font-bold text-cyan-400 font-mono block truncate">400,000원</span>
         </div>
-        <div class="bg-surface-850/80 rounded-xl p-1.5 sm:p-2 border border-slate-800 min-w-0">
-          <span class="text-[10px] sm:text-[11px] text-slate-400 block mb-0.5">월 관리비</span>
-          <span id="cMaintenance" class="text-[11px] xs:text-xs sm:text-sm font-bold text-indigo-400 font-mono block truncate">50,000원</span>
+        <div class="bg-surface-850/80 rounded-lg py-1 px-1 sm:px-1.5 border border-slate-800 min-w-0">
+          <span class="text-[9px] sm:text-[10px] text-slate-400 block mb-0.2">월 관리비</span>
+          <span id="cMaintenance" class="text-xs sm:text-sm font-bold text-indigo-400 font-mono block truncate">50,000원</span>
         </div>
       </div>
 
       <!-- Period Footer -->
-      <div class="mt-2 pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-1 text-[11px] text-slate-400">
-        <span class="flex items-center gap-1.5 shrink-0">
+      <div class="mt-1 pt-1 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-1 text-[10px] sm:text-[11px] text-slate-400">
+        <span class="flex items-center gap-1 shrink-0">
           <span>계약 기간</span>
-          <span id="cardPeriodTypeTag" class="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">월세 · 후불</span>
+          <span id="cardPeriodTypeTag" class="text-[9px] px-1 py-0.2 rounded font-semibold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">월세 · 후불</span>
         </span>
-        <span id="cPeriod" class="text-slate-200 font-mono text-[10px] sm:text-xs truncate">2024-03-01 ~ 2026-12-31</span>
+        <span id="cPeriod" class="text-slate-200 font-mono text-[10px] sm:text-[11px] truncate">2024-03-01 ~ 2026-12-31</span>
       </div>
 
     </section>
 
-    <!-- ── CARD 2: 당월 납부 현황 (스크롤 없이 시원한 초대형 폰트 & 원터치 완납) ── -->
-    <section class="bg-gradient-to-b from-surface-900 to-surface-850 border-2 border-cyan-500/60 rounded-2xl p-3 sm:p-4 shadow-2xl relative overflow-hidden w-full box-border">
+    <!-- ── CARD 2: 당월 납부 현황 (콤팩트 최적화) ── -->
+    <section class="bg-gradient-to-b from-surface-900 to-surface-850 border-2 border-cyan-500/60 rounded-xl p-2 sm:p-2.5 shadow-xl relative overflow-hidden w-full box-border">
       
-      <div class="flex items-center justify-between gap-1 pb-2 border-b border-slate-800">
-        <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
-          <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shrink-0"></span>
+      <div class="flex items-center justify-between gap-1 pb-1 border-b border-slate-800">
+        <div class="flex items-center gap-1.5 min-w-0">
+          <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shrink-0"></span>
           <span id="curMonthTitle" class="text-xs sm:text-sm font-bold text-cyan-300 truncate">10월분</span>
-          <span class="text-[11px] sm:text-xs text-slate-400 truncate">임차료 수납</span>
+          <span class="text-[10px] sm:text-xs text-slate-400 truncate">임차료 수납</span>
         </div>
-        <div id="curMonthStatusBadge" class="px-2 py-0.5 sm:px-3 sm:py-1 rounded-full font-bold text-[11px] sm:text-xs bg-rose-500/25 text-rose-300 border border-rose-500/50 shrink-0">
+        <div id="curMonthStatusBadge" class="px-2 py-0.5 rounded-full font-bold text-[10px] sm:text-xs bg-rose-500/25 text-rose-300 border border-rose-500/50 shrink-0">
           ● 미납 (입금대기)
         </div>
       </div>
 
-      <!-- 청구 금액 대형 디스플레이 -->
-      <div class="my-2.5 sm:my-3 text-center">
-        <span class="text-[11px] sm:text-xs text-slate-400 block mb-0.5">당월 청구 총액</span>
-        <div id="curTotalAmount" class="text-2xl sm:text-4xl font-black text-white font-mono tracking-tight drop-shadow-md">
+      <!-- 청구 금액 디스플레이 (높이 축소) -->
+      <div class="my-1 sm:my-1.5 text-center">
+        <span class="text-[10px] text-slate-400 block">당월 청구 총액</span>
+        <div id="curTotalAmount" class="text-xl sm:text-2xl font-black text-white font-mono tracking-tight drop-shadow-md">
           450,000원
         </div>
-        <span id="curRentDetail" class="text-[11px] sm:text-xs text-cyan-400/90 font-mono mt-0.5 block truncate">
+        <span id="curRentDetail" class="text-[10px] sm:text-[11px] text-cyan-400/90 font-mono block truncate">
           월세 400,000원 + 관리비 50,000원
         </span>
       </div>
 
       <!-- 원터치 완납 / 납부취소 액션 영역 -->
-      <div id="curMonthActionArea" class="pt-1 w-full">
+      <div id="curMonthActionArea" class="pt-0.5 w-full">
         <!-- Rendered by JS -->
       </div>
 
       <!-- 입금 알림문자 간편 연동 버튼 -->
-      <div class="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
-        <span class="text-slate-400 text-[10px] sm:text-xs">은행 알림으로 자동 수납:</span>
-        <button type="button" onclick="openSmsDepositModal()" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-surface-800 hover:bg-surface-700 text-cyan-300 border border-slate-700 transition flex items-center gap-1 shadow-sm cursor-pointer shrink-0">
+      <div class="mt-1 pt-1 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
+        <span class="text-slate-400 text-[10px]">은행 알림 자동 수납:</span>
+        <button type="button" onclick="openSmsDepositModal()" class="px-2 py-0.5 text-[10px] font-semibold rounded-lg bg-surface-800 hover:bg-surface-700 text-cyan-300 border border-slate-700 transition flex items-center gap-1 shadow-sm cursor-pointer shrink-0">
           <span>📲 입금문자 간편인식</span>
         </button>
       </div>
 
     </section>
 
-    <!-- ── CARD 3: 과거 납부 내역 (기본 전체 접힘, 펼치기 시 최근 1년간 기록 표시) ── -->
-    <section class="bg-surface-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden w-full box-border">
+    <!-- ── CARD 3: 과거 납부 내역 (기본 전체 접힘) ── -->
+    <section class="bg-surface-900 border border-slate-800 rounded-xl shadow-md overflow-hidden w-full box-border">
       
-      <div class="p-3 sm:px-3.5 sm:py-3 bg-surface-850/80 cursor-pointer select-none" onclick="togglePastAccordion(event)">
+      <div class="p-2 sm:px-2.5 sm:py-2 bg-surface-850/80 cursor-pointer select-none" onclick="togglePastAccordion(event)">
         <!-- Top Row: Icon, Title & Toggle Button -->
-        <div class="flex items-center justify-between gap-2">
-          <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
-            <span class="text-base text-slate-400 shrink-0">📅</span>
+        <div class="flex items-center justify-between gap-1.5">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span class="text-sm text-slate-400 shrink-0">📅</span>
             <div class="min-w-0">
-              <h3 class="text-xs sm:text-sm font-bold text-white tracking-tight flex items-center gap-1.5">
+              <h3 class="text-xs sm:text-sm font-bold text-white tracking-tight flex items-center gap-1">
                 <span>과거 납부 내역</span>
                 <span class="text-[10px] text-slate-400 font-normal hidden sm:inline">(최근 1년)</span>
               </h3>
-              <span class="text-[10px] text-slate-400 truncate block sm:hidden">최근 1년 (12개월)</span>
             </div>
           </div>
           
-          <button type="button" id="pastToggleBtn" onclick="togglePastAccordion(event)" class="px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs font-semibold rounded-xl bg-surface-800 hover:bg-surface-700 text-cyan-300 border border-slate-700 transition flex items-center gap-1 shadow-sm cursor-pointer shrink-0">
+          <button type="button" id="pastToggleBtn" onclick="togglePastAccordion(event)" class="px-2 py-0.8 text-[11px] font-semibold rounded-lg bg-surface-800 hover:bg-surface-700 text-cyan-300 border border-slate-700 transition flex items-center gap-1 shadow-sm cursor-pointer shrink-0">
             <span id="pastToggleBtnText">내역 펼치기 ▾</span>
           </button>
         </div>

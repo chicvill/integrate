@@ -920,12 +920,88 @@ function renderAll() {
   if (!room) return;
 
   renderHeaderSummary(room);
+  renderBuildingSummary();
   renderMainRoomCard(room);
   renderCurrentMonthSection(room);
   renderPastHistorySection(room);
   renderExpenseLedgerSection();
   renderRightRoomDrawer();
   renderLeftMenuDrawer();
+}
+
+function renderBuildingSummary() {
+  const rooms = state.rooms || {};
+  const roomKeys = Object.keys(rooms);
+  const totalRooms = roomKeys.length || 29;
+
+  let totalDeposit = 0;
+  let vacantCount = 0;
+  let monthlyGoal = 0;
+  let monthlyPaid = 0;
+
+  roomKeys.forEach(rNum => {
+    const r = rooms[rNum];
+    if (!r) return;
+
+    totalDeposit += Number(r.deposit || 0);
+
+    const isVacant = !r.name || !!r.move_out;
+    if (isVacant) {
+      vacantCount++;
+    }
+
+    const leaseType = r.lease_type || '월세';
+    const p = (r.payments && r.payments[currentMonth]) || {};
+    const rent = p.rent_amount !== undefined ? p.rent_amount : (leaseType === '전세' ? 0 : Number(r.rent || 0));
+    const maint = p.maintenance_amount !== undefined ? p.maintenance_amount : Number(r.maintenance || 0);
+    const charge = (leaseType === '전세' ? 0 : rent) + maint;
+
+    monthlyGoal += charge;
+    if (p.paid) {
+      monthlyPaid += charge;
+    }
+  });
+
+  const payRate = monthlyGoal > 0 ? (monthlyPaid / monthlyGoal * 100) : 0;
+  const payRateFormatted = payRate.toFixed(1);
+
+  const curBranchObj = state.branches.find(b => b.branch_id === state.currentBranch);
+  const branchName = (state.currentBranch === 'main') ? '시크빌' : (curBranchObj ? curBranchObj.name : '시크빌');
+
+  const bNameEl = document.getElementById('sumBuildingName');
+  if (bNameEl) bNameEl.textContent = branchName;
+
+  const totRoomsEl = document.getElementById('sumTotalRooms');
+  if (totRoomsEl) totRoomsEl.textContent = `${totalRooms}실`;
+
+  const vacRoomsEl = document.getElementById('sumVacantRooms');
+  if (vacRoomsEl) vacRoomsEl.textContent = `${vacantCount}실`;
+
+  const totDepEl = document.getElementById('sumTotalDeposit');
+  if (totDepEl) totDepEl.textContent = `${totalDeposit.toLocaleString()}원`;
+
+  const mGoalEl = document.getElementById('sumMonthlyGoal');
+  if (mGoalEl) mGoalEl.textContent = `${monthlyGoal.toLocaleString()}원`;
+
+  const mPaidEl = document.getElementById('sumMonthlyPaid');
+  if (mPaidEl) mPaidEl.textContent = `${monthlyPaid.toLocaleString()}원`;
+
+  const rateBadgeEl = document.getElementById('sumPaymentRateBadge');
+  if (rateBadgeEl) {
+    rateBadgeEl.textContent = `${payRateFormatted}%`;
+    if (payRate >= 100) {
+      rateBadgeEl.className = 'text-[11px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/25 text-emerald-300 border border-emerald-500/50 font-mono';
+    } else if (payRate >= 50) {
+      rateBadgeEl.className = 'text-[11px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-mono';
+    } else {
+      rateBadgeEl.className = 'text-[11px] font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono';
+    }
+  }
+
+  const pBarEl = document.getElementById('sumProgressBar');
+  if (pBarEl) {
+    pBarEl.style.width = `${Math.min(100, Math.max(0, payRate))}%`;
+  }
 }
 
 function renderHeaderSummary(room) {
@@ -5320,6 +5396,8 @@ window.openRoomDrawer = openRoomDrawer;
 window.closeRoomDrawer = closeRoomDrawer;
 window.toggleRoomDrawer = toggleRoomDrawer;
 
+window.renderAll = renderAll;
+window.renderBuildingSummary = renderBuildingSummary;
 window.togglePastAccordion = togglePastAccordion;
 window.handleFillTenantPayments = handleFillTenantPayments;
 window.handleChangePaymentDate = handleChangePaymentDate;

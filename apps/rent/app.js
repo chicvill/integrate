@@ -18,6 +18,7 @@ import {
   handleFillTenantPayments,
   handleChangePaymentDate,
   handleChangePaymentAmount,
+  renderBuildingSummary,
   renderAll
 } from './js/ui.js?v=2.0';
 import {
@@ -108,6 +109,8 @@ window.openRoomDrawer = openRoomDrawer;
 window.closeRoomDrawer = closeRoomDrawer;
 window.toggleRoomDrawer = toggleRoomDrawer;
 
+window.renderAll = renderAll;
+window.renderBuildingSummary = renderBuildingSummary;
 window.togglePastAccordion = togglePastAccordion;
 window.handleFillTenantPayments = handleFillTenantPayments;
 window.handleChangePaymentDate = handleChangePaymentDate;
