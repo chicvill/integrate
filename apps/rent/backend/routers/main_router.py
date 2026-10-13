@@ -425,6 +425,26 @@ async def download_vat_report(
     return Response(content=content, media_type=media_type, headers=headers)
 
 
+@router.get("/backup/download")
+async def download_backup(
+    branch_id: str = Query("main", description="건물 식별 ID"),
+    db: Session = Depends(get_db)
+):
+    """전체 시스템 백업 파일 브라우저 직접 다운로드 (RFC 5987 표준 헤더로 Chrome UUID 버그 완벽 방지)"""
+    content, media_type, filename = service.generate_backup_download(
+        db=db,
+        branch_id=branch_id
+    )
+
+    encoded_filename = urllib.parse.quote(filename)
+    headers = {
+        "Content-Disposition": f"attachment; filename=\"{encoded_filename}\"; filename*=UTF-8''{encoded_filename}",
+        "Access-Control-Expose-Headers": "Content-Disposition"
+    }
+
+    return Response(content=content, media_type=media_type, headers=headers)
+
+
 @router.get("/vat-settings", response_model=VatSettingsResponse)
 async def get_vat_settings(
     branch_id: str = Query("main", description="건물 식별 ID"),

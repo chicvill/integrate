@@ -2842,21 +2842,28 @@ export async function exportFullSystemBackupJSON(e) {
   const branchName = ((state.branches || []).find(b => b.branch_id === state.currentBranch)?.name) || '시크빌';
   const now = new Date();
   const timeTag = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+  const cleanBranch = (branchName || '시크빌').replace(/[^\w가-힣0-9_-]/g, '_');
+  const filename = `${cleanBranch}_전체백업_${timeTag}.json`;
+  const deviceName = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? '스마트폰 [다운로드] 폴더' : 'PC [다운로드] 폴더';
 
-  // 온라인인 경우 최신 DB 상태 확보
+  // 온라인 환경: Chrome/Edge 브라우저 난수 UUID 버그를 원천 차단하는 서버 직접 스트리밍 다운로드
   if (state.isOnline) {
-    try {
-      const rRes = await apiGetRooms(state.currentBranch);
-      if (rRes && rRes.rooms) state.rooms = rRes.rooms;
-      const eRes = await apiGetExpenses(state.currentBranch);
-      if (eRes && eRes.expenses) state.expenses = eRes.expenses;
-      const hRes = await apiGetTenantHistories(state.currentBranch);
-      if (hRes && hRes.histories) state.tenantHistories = hRes.histories;
-    } catch(err) {
-      console.warn("전체 백업 전 최신 동기화 경고:", err);
-    }
+    const downloadUrl = `/api/rent/backup/download?branch_id=${encodeURIComponent(state.currentBranch || 'main')}&_t=${Date.now()}`;
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = downloadUrl;
+    document.body.appendChild(iframe);
+    setTimeout(() => {
+      try {
+        if (iframe.parentNode) document.body.removeChild(iframe);
+      } catch (_) {}
+    }, 15000);
+
+    alert(`💾 전체 데이터 통합 백업 다운로드가 시작되었습니다!\n\n📁 파일명: ${filename}\n📌 저장 위치: 지금 사용 중이신 ${deviceName}\n\n📦 백업된 전체 데이터 내역:\n- 29개실 전체 계약대장\n- 1월~12월 수납 내역 (전체 장부)\n- 지출 관리 장부 내역\n- 전출자 1년 보존 이력`);
+    return;
   }
 
+  // 오프라인 로컬 저장소 폴백
   const backupPayload = {
     version: "3.0",
     system: "MQnet Rent SaaS Edition",
@@ -2876,9 +2883,6 @@ export async function exportFullSystemBackupJSON(e) {
   };
 
   const jsonStr = JSON.stringify(backupPayload, null, 2);
-  const cleanBranch = (branchName || '시크빌').replace(/[^\w가-힣0-9_-]/g, '_');
-  const filename = `${cleanBranch}_전체백업_${timeTag}.json`;
-
   const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
 
   if (window.navigator && window.navigator.msSaveOrOpenBlob) {
@@ -2900,7 +2904,6 @@ export async function exportFullSystemBackupJSON(e) {
     }, 10000);
   }
 
-  const deviceName = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? '스마트폰 [다운로드] 폴더' : 'PC [다운로드] 폴더';
   alert(`💾 전체 데이터 통합 백업 파일이 저장되었습니다!\n\n📁 파일명: ${filename}\n📌 저장 위치: 지금 사용 중이신 ${deviceName}\n\n📦 백업된 전체 데이터 내역:\n- 29개실 전체 계약대장\n- 1월~12월 수납 내역 (전체 장부)\n- 지출 관리 장부 내역\n- 전출자 1년 보존 이력`);
 }
 

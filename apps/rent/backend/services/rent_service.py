@@ -3,6 +3,8 @@ apps/rent/backend/services/rent_service.py
 원룸 임차료 관리 시스템 비즈니스 로직 서비스.
 Clean Architecture 규격에 맞춰 DB 조작 및 29개실 시드 캐싱을 전담합니다.
 """
+import json
+import re
 import uuid
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional, cast
@@ -834,6 +836,83 @@ class RentService:
             content = VatService.generate_excel_bytes(report_data)
             media_type = "application/vnd.ms-excel; charset=utf-8"
             filename = f"부동산_부가세_수납현황_{year}년_{start_month}월_{end_month}월.xls"
+        return content, media_type, filename
+
+    def generate_backup_download(
+        self,
+        db: Session,
+        branch_id: str = "main"
+    ) -> tuple[bytes, str, str]:
+        """전체 시스템 데이터(29개실, 12개월 장부, 지출, 전출이력) JSON 다운로드 생성"""
+        self.ensure_default_seed(db, branch_id)
+        branch = db.query(RentBranch).filter(RentBranch.branch_id == branch_id).first()
+        branch_name = branch.name if branch else "시크빌"
+
+        now = datetime.now()
+        time_tag = now.strftime("%Y%m%d_%H%M%S")
+
+        rooms_data = self.get_rooms(db, branch_id)
+        expenses_objs = self.list_expenses(db, branch_id)
+        expenses_data = [
+            {
+                "id": e.id,
+                "branch_id": e.branch_id,
+                "date": e.date,
+                "item": e.item,
+                "amount": e.amount,
+                "note": e.note,
+                "receipt_type": e.receipt_type,
+                "receipt_info": e.receipt_info
+            }
+            for e in expenses_objs
+        ]
+        histories_objs = self.list_tenant_histories(db, branch_id)
+        histories_data = [
+            {
+                "id": h.id,
+                "branch_id": h.branch_id,
+                "room_number": h.room_number,
+                "name": h.name,
+                "id_number": h.id_number,
+                "phone": h.phone,
+                "lease_type": h.lease_type,
+                "pay_timing": h.pay_timing,
+                "deposit": h.deposit,
+                "rent": h.rent,
+                "maintenance": h.maintenance,
+                "clean_fee": h.clean_fee,
+                "move_in": h.move_in,
+                "expiry": h.expiry,
+                "move_out": h.move_out,
+                "retention_until": h.retention_until,
+                "metadata_json": h.metadata_json or {}
+            }
+            for h in histories_objs
+        ]
+
+        backup_payload = {
+            "version": "3.0",
+            "system": "MQnet Rent SaaS Edition",
+            "backup_type": "FULL_SYSTEM_BACKUP",
+            "exported_at": now.isoformat(),
+            "exported_at_formatted": now.strftime("%Y-%m-%d %H:%M:%S"),
+            "branch_id": branch_id,
+            "branch_name": branch_name,
+            "rooms_count": len(rooms_data),
+            "expenses_count": len(expenses_data),
+            "tenant_histories_count": len(histories_data),
+            "data": {
+                "rooms": rooms_data,
+                "expenses": expenses_data,
+                "tenantHistories": histories_data
+            }
+        }
+
+        json_str = json.dumps(backup_payload, ensure_ascii=False, indent=2)
+        content = json_str.encode("utf-8")
+        clean_branch = re.sub(r'[^\w가-힣0-9_-]', '_', branch_name)
+        filename = f"{clean_branch}_전체백업_{time_tag}.json"
+        media_type = "application/json; charset=utf-8"
         return content, media_type, filename
 
 
