@@ -164,16 +164,17 @@ class VatService:
                     # 공실은 부가세 공급가액(수입)에서 완전 제외 (0원)
                     amt = 0
                 else:
-                    # 계약 기간: 미납이어도 수입으로 처리, 완납이면 납부금액
-                    if p.get("paid"):
-                        amt = (p.get("rent_amount") or 0) + (p.get("maintenance_amount") or 0)
+                    # 계약 기간: 순수 임차료(월세)만으로 부가세 공급대가 산출 (공공요금 실비 관리비 제외)
+                    is_jeonse = (r.get("lease_type") == "전세") if is_curr else (matched_hist.lease_type == "전세" if matched_hist else False)
+                    if is_jeonse:
+                        amt = 0
+                    elif p.get("paid"):
+                        amt = p.get("rent_amount") if p.get("rent_amount") is not None else ((r.get("rent") or 0) if is_curr else ((matched_hist.rent or 0) if matched_hist else 0))
                     else:
                         if is_curr:
-                            base_rent = 0 if r.get("lease_type") == "전세" else (r.get("rent") or 0)
-                            amt = base_rent + (r.get("maintenance") or 0)
+                            amt = (r.get("rent") or 0)
                         elif matched_hist:
-                            base_rent = 0 if matched_hist.lease_type == "전세" else (matched_hist.rent or 0)
-                            amt = base_rent + (matched_hist.maintenance or 0)
+                            amt = (matched_hist.rent or 0)
                         else:
                             amt = 0
 

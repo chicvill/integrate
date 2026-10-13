@@ -2600,12 +2600,15 @@ function calculateLocalVatReport(startMonth, endMonth, year) {
     const tenant_names_seen = new Set();
 
     for (const m of months) {
-      const p = (r.payments && r.payments[m]) || {};
+      const isJeonse = (r.lease_type === '전세');
       let amt = 0;
-      if (p.paid) {
-        amt = (p.rent_amount !== undefined ? p.rent_amount : (r.rent || 0)) + 
-              (p.maintenance_amount !== undefined ? p.maintenance_amount : (r.maintenance || 0));
+      if (isJeonse) {
+        amt = 0;
+      } else if (p.paid) {
+        amt = (p.rent_amount !== undefined ? p.rent_amount : (r.rent || 0));
         if (p.tenant_name) tenant_names_seen.add(p.tenant_name);
+      } else {
+        amt = (r.rent || 0);
       }
       monthly_amounts[m] = amt;
       room_period_total += amt;
