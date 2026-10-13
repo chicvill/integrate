@@ -253,12 +253,35 @@
             </div>
           </button>
 
-          <button type="button" onclick="exportAllRoomsCSV(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-emerald-300 border border-emerald-800/50 font-semibold flex items-center gap-2.5 cursor-pointer transition">
-            <span class="text-base">💾</span>
-            <div>
-              <div class="text-xs font-bold text-emerald-200">전체 계약대장 엑셀 백업</div>
-              <div class="text-[10px] text-slate-400">29개실 전체 계약·수납 현황 CSV 저장</div>
+          <!-- 💾 내 폰/PC 전체 데이터 파일 백업 & 복원 -->
+          <div class="p-2.5 rounded-xl bg-surface-950/80 border border-emerald-500/40 space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-bold text-emerald-300 flex items-center gap-1.5">
+                <span>💾</span><span>전체 데이터 영구 백업 & 복원</span>
+              </span>
+              <span class="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1 py-0.2 rounded font-mono">내 폰/PC 저장</span>
             </div>
+            <div class="grid grid-cols-2 gap-1.5">
+              <button type="button" onclick="exportFullSystemBackupJSON(); closeMenuDrawer();" class="py-2 px-2 rounded-lg bg-emerald-950 hover:bg-emerald-900 text-emerald-200 border border-emerald-700/70 text-[11px] font-bold text-center cursor-pointer transition flex items-center justify-center gap-1 shadow-xs">
+                <span>📥</span><span>전체 백업 다운로드</span>
+              </button>
+              <button type="button" onclick="triggerFullSystemRestoreFile(); closeMenuDrawer();" class="py-2 px-2 rounded-lg bg-indigo-950 hover:bg-indigo-900 text-indigo-200 border border-indigo-700/70 text-[11px] font-bold text-center cursor-pointer transition flex items-center justify-center gap-1 shadow-xs">
+                <span>📂</span><span>백업 파일로 복원</span>
+              </button>
+            </div>
+            <div class="text-[10px] text-slate-400 leading-tight">
+              29개실 계약대장 + 12개월 전체 수납장부 + 지출 + 전출자 이력 전체를 <strong>사용자 핸드폰/PC에 실제 파일(.json)로 저장</strong>합니다.
+            </div>
+          </div>
+          <input type="file" id="fullBackupRestoreInput" accept=".json" class="hidden" onchange="handleFullSystemRestoreFile(event)">
+
+          <button type="button" onclick="exportAllRoomsCSV(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-emerald-300 border border-emerald-800/50 font-semibold flex items-center gap-2.5 cursor-pointer transition">
+            <span class="text-base">📊</span>
+            <div>
+              <div class="text-xs font-bold text-emerald-200">계약대장 엑셀 다운로드 (CSV)</div>
+              <div class="text-[10px] text-slate-400">29개실 호실별 세입자 명단 및 당월 현황</div>
+            </div>
+          </button>
           <button type="button" onclick="closeMenuDrawer(); openSmsDepositModal();" class="w-full text-left p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-cyan-300 border border-cyan-800/50 font-semibold flex items-center gap-2.5 transition">
             <span class="text-base">📲</span>
             <div>

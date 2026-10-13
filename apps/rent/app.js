@@ -94,6 +94,9 @@ import {
   downloadTemplatePreset,
   loadTemplatePresetDemo,
   exportAllRoomsCSV,
+  exportFullSystemBackupJSON,
+  triggerFullSystemRestoreFile,
+  handleFullSystemRestoreFile,
   openSmsDepositModal,
   closeSmsDepositModal,
   fillSampleSmsText,
@@ -162,6 +165,9 @@ window.selectTemplatePreset = selectTemplatePreset;
 window.downloadTemplatePreset = downloadTemplatePreset;
 window.loadTemplatePresetDemo = loadTemplatePresetDemo;
 window.exportAllRoomsCSV = exportAllRoomsCSV;
+window.exportFullSystemBackupJSON = exportFullSystemBackupJSON;
+window.triggerFullSystemRestoreFile = triggerFullSystemRestoreFile;
+window.handleFullSystemRestoreFile = handleFullSystemRestoreFile;
 
 window.openMoveInOutQuick = openMoveInOutQuick;
 window.openContractEditModal = openContractEditModal;

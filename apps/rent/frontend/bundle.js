@@ -4806,6 +4806,148 @@ function exportAllRoomsCSV(e) {
   document.body.removeChild(link);
 }
 
+// 💾 전체 데이터 통합 백업 (스마트폰/PC 파일로 영구 다운로드 저장)
+async function exportFullSystemBackupJSON(e) {
+  if (e) {
+    e.stopPropagation();
+    e.preventDefault();
+  }
+
+  const branchName = ((state.branches || []).find(b => b.branch_id === state.currentBranch)?.name) || '시크빌';
+  const now = new Date();
+  const timeTag = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+
+  // 온라인인 경우 최신 DB 상태 확보
+  if (state.isOnline) {
+    try {
+      const rRes = await apiGetRooms(state.currentBranch);
+      if (rRes && rRes.rooms) state.rooms = rRes.rooms;
+      const eRes = await apiGetExpenses(state.currentBranch);
+      if (eRes && eRes.expenses) state.expenses = eRes.expenses;
+      const hRes = await apiGetTenantHistories(state.currentBranch);
+      if (hRes && hRes.histories) state.tenantHistories = hRes.histories;
+    } catch(err) {
+      console.warn("전체 백업 전 최신 동기화 경고:", err);
+    }
+  }
+
+  const backupPayload = {
+    version: "3.0",
+    system: "MQnet Rent SaaS Edition",
+    backup_type: "FULL_SYSTEM_BACKUP",
+    exported_at: now.toISOString(),
+    exported_at_formatted: now.toLocaleString('ko-KR'),
+    branch_id: state.currentBranch,
+    branch_name: branchName,
+    rooms_count: Object.keys(state.rooms || {}).length,
+    expenses_count: (state.expenses || []).length,
+    tenant_histories_count: (state.tenantHistories || []).length,
+    data: {
+      rooms: state.rooms,
+      expenses: state.expenses,
+      tenantHistories: state.tenantHistories
+    }
+  };
+
+  const jsonStr = JSON.stringify(backupPayload, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const filename = `${branchName}_전체데이터통합백업_${timeTag}.json`;
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  const deviceName = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? '스마트폰 [다운로드] 폴더' : 'PC [다운로드] 폴더';
+  alert(`💾 전체 데이터 통합 백업 파일이 저장되었습니다!\n\n📁 파일명: ${filename}\n📌 저장 위치: 지금 사용 중이신 ${deviceName}\n\n📦 백업된 전체 데이터 내역:\n- 29개실 전체 계약대장\n- 1월~12월 수납 내역 (전체 장부)\n- 지출 관리 장부 내역\n- 전출자 1년 보존 이력`);
+}
+
+// 📂 내 폰/PC 백업 파일 선택 열기
+function triggerFullSystemRestoreFile() {
+  const input = document.getElementById('fullBackupRestoreInput');
+  if (input) input.click();
+}
+
+// 📂 내 폰/PC 백업 파일로부터 전체 데이터 복원
+async function handleFullSystemRestoreFile(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const content = e.target.result;
+      const backup = JSON.parse(content);
+
+      if (!backup.data || !backup.data.rooms) {
+        throw new Error("올바른 전체 백업 JSON 파일 형식이 아닙니다.");
+      }
+
+      const ok = confirm(`[${backup.exported_at_formatted || backup.exported_at || '알 수 없음'}]에 생성된 백업 파일입니다.\n\n건물명: ${backup.branch_name || backup.branch_id}\n- 29개실 호실 및 12개월 수납 내역\n- 지출 내역: ${backup.expenses_count || (backup.data.expenses || []).length}건\n- 전출 이력: ${backup.tenant_histories_count || (backup.data.tenantHistories || []).length}건\n\n이 백업 파일로 시스템 전체 데이터를 복원하시겠습니까?`);
+      if (!ok) {
+        event.target.value = '';
+        return;
+      }
+
+      // 서버 DB 동기화
+      if (state.isOnline) {
+        for (const [rNumStr, rData] of Object.entries(backup.data.rooms)) {
+          const rNum = Number(rNumStr);
+          await apiUpdateContract(rNum, {
+            lease_type: rData.lease_type || '월세',
+            pay_timing: rData.pay_timing || '후불',
+            name: rData.name || '',
+            id_number: rData.id_number || '',
+            phone: rData.phone || '',
+            deposit: rData.deposit || 0,
+            rent: rData.rent || 0,
+            maintenance: rData.maintenance || 0,
+            clean_fee: rData.clean_fee || 0,
+            move_in: rData.move_in || '',
+            expiry: rData.expiry || '',
+            move_out: rData.move_out || ''
+          }, state.currentBranch);
+
+          if (rData.payments) {
+            for (const [mStr, pData] of Object.entries(rData.payments)) {
+              const mNum = Number(mStr);
+              if (mNum >= 1 && mNum <= 12 && pData) {
+                await apiUpdatePayment(rNum, mNum, {
+                  paid: !!pData.paid,
+                  paid_date: pData.paid_date || null,
+                  paid_amount: pData.paid_amount || 0,
+                  memo: pData.memo || null
+                }, state.currentBranch);
+              }
+            }
+          }
+        }
+      }
+
+      state.rooms = backup.data.rooms;
+      if (backup.data.expenses) state.expenses = backup.data.expenses;
+      if (backup.data.tenantHistories) state.tenantHistories = backup.data.tenantHistories;
+
+      saveLocalFallback();
+      if (state.selectedRoom) {
+        populateModalRoomSelector(state.selectedRoom);
+        loadRoomIntoContractModal(state.selectedRoom);
+      }
+      renderAll();
+
+      alert(`🎉 내 폰/PC의 백업 파일로부터 전체 데이터가 성공적으로 복원되었습니다!\n(백업 시점: ${backup.exported_at_formatted || backup.exported_at})`);
+    } catch (err) {
+      alert("백업 파일 복원 실패: " + err.message);
+    } finally {
+      event.target.value = '';
+    }
+  };
+  reader.readAsText(file, "UTF-8");
+}
+
 // ── 보안 관리자 로그인 & 14일 슬라이딩 세션 제어 ──
 function updateAdminProfileUI() {
   const nameEl = document.getElementById('drawerAdminName');
@@ -6174,6 +6316,9 @@ window.selectTemplatePreset = selectTemplatePreset;
 window.downloadTemplatePreset = downloadTemplatePreset;
 window.loadTemplatePresetDemo = loadTemplatePresetDemo;
 window.exportAllRoomsCSV = exportAllRoomsCSV;
+window.exportFullSystemBackupJSON = exportFullSystemBackupJSON;
+window.triggerFullSystemRestoreFile = triggerFullSystemRestoreFile;
+window.handleFullSystemRestoreFile = handleFullSystemRestoreFile;
 
 window.openMoveInOutQuick = openMoveInOutQuick;
 window.openContractEditModal = openContractEditModal;
