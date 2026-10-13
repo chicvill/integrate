@@ -28,20 +28,44 @@ class BranchService:
         return normalize_branch_id(branch_id)
 
     def list_branches(self, db: Session, active_only: bool = False) -> List[RentBranch]:
-        """등록된 모든 부동산 지점 조회 (호실/수납 데이터가 존재하는 지점 자동 감지 동기화)"""
+        """등록된 모든 부동산 지점 조회 (에일리어스 중복 데이터 자동 통합 및 정제)"""
         try:
+            # 1. 에일리어스 중복 데이터 통합 (chicvill01 -> main, chicvill02 -> branch_9027)
+            alias_1 = ["chicvill01", "chicvill", "chicvill1"]
+            db.query(RentRoom).filter(RentRoom.branch_id.in_(alias_1)).update({RentRoom.branch_id: "main"}, synchronize_session=False)
+            db.query(RentPayment).filter(RentPayment.branch_id.in_(alias_1)).update({RentPayment.branch_id: "main"}, synchronize_session=False)
+            db.query(RentExpense).filter(RentExpense.branch_id.in_(alias_1)).update({RentExpense.branch_id: "main"}, synchronize_session=False)
+            db.query(RentTenantHistory).filter(RentTenantHistory.branch_id.in_(alias_1)).update({RentTenantHistory.branch_id: "main"}, synchronize_session=False)
+            db.query(RentBranch).filter(RentBranch.branch_id.in_(alias_1)).delete(synchronize_session=False)
+
+            alias_2 = ["chicvill02", "chicvill2"]
+            db.query(RentRoom).filter(RentRoom.branch_id.in_(alias_2)).update({RentRoom.branch_id: "branch_9027"}, synchronize_session=False)
+            db.query(RentPayment).filter(RentPayment.branch_id.in_(alias_2)).update({RentPayment.branch_id: "branch_9027"}, synchronize_session=False)
+            db.query(RentExpense).filter(RentExpense.branch_id.in_(alias_2)).update({RentExpense.branch_id: "branch_9027"}, synchronize_session=False)
+            db.query(RentTenantHistory).filter(RentTenantHistory.branch_id.in_(alias_2)).update({RentTenantHistory.branch_id: "branch_9027"}, synchronize_session=False)
+            db.query(RentBranch).filter(RentBranch.branch_id.in_(alias_2)).delete(synchronize_session=False)
+            db.commit()
+
+            # 2. 메인 지점 명칭 표준화
+            main_b = db.query(RentBranch).filter(RentBranch.branch_id == "main").first()
+            if main_b:
+                main_b.name = "시크빌 1호점 (본점, 29개실)"
+                db.commit()
+
+            # 3. 호실이 존재하는 실제 지점 자동 감지
             room_branches = [r[0] for r in db.query(RentRoom.branch_id).distinct().all() if r[0]]
             existing_branches = {b.branch_id: b for b in db.query(RentBranch).all()}
 
             has_new = False
             for b_id in room_branches:
-                if b_id not in existing_branches:
-                    name = "시크빌2" if ("9027" in b_id or "2" in b_id or "3765" in b_id) else f"지점 ({b_id})"
+                canon_id = normalize_branch_id(b_id)
+                if canon_id not in existing_branches:
+                    name = "시크빌 2호점" if ("9027" in canon_id or "2" in canon_id) else f"지점 ({canon_id})"
                     new_b = RentBranch(
-                        branch_id=b_id,
+                        branch_id=canon_id,
                         name=name,
                         contact_phone="010-2345-6789",
-                        address="주소 등록됨",
+                        address="서울특별시 서초구 서초대로 456" if "2" in name else "주소 등록됨",
                         fee_plan="원룸 프리미엄 29실형",
                         monthly_fee=150000,
                         billing_due_day=25,
@@ -49,7 +73,7 @@ class BranchService:
                         is_active=True
                     )
                     db.add(new_b)
-                    existing_branches[b_id] = new_b
+                    existing_branches[canon_id] = new_b
                     has_new = True
 
             if has_new:

@@ -923,18 +923,38 @@ export function renderLeftMenuDrawer() {
     }
   }
 
-  // 3. 등록된 부동산 목록 렌더링
+  // 3. 등록된 부동산 목록 렌더링 (동일 건물 중복 제거: main과 chicvill01은 같은 1호점이므로 하나로 합침)
   if (!state.branches || state.branches.length === 0) {
     branchListContainer.innerHTML = `
       <div class="w-full text-left p-2.5 rounded-xl bg-cyan-950/60 border border-cyan-500/60 text-cyan-300 font-bold text-xs flex items-center justify-between">
-        <span>🏢 시크빌 (29개실)</span>
+        <span>🏢 시크빌 1호점 (본점, 29개실)</span>
         <span class="text-xs">✓ 선택됨</span>
       </div>
     `;
     return;
   }
 
+  // canonical ID 기준 그룹화 및 중복 제거
+  const canonicalMap = new Map();
   state.branches.forEach(b => {
+    const rawId = (b.branch_id || '').toLowerCase();
+    const cId = (rawId === 'chicvill01' || rawId === 'chicvill' || rawId === 'chicvill1' || rawId === 'main') ? 'main' :
+                (rawId === 'chicvill02' || rawId === 'chicvill2' || rawId === 'branch_9027') ? 'branch_9027' : b.branch_id;
+    
+    if (!canonicalMap.has(cId)) {
+      canonicalMap.set(cId, { ...b, branch_id: cId });
+    } else {
+      const existing = canonicalMap.get(cId);
+      // 기존 것이 '지점 (chicvill01)' 같은 임시명이면 정식 명칭으로 교체
+      if (existing.name.startsWith('지점 (') && !b.name.startsWith('지점 (')) {
+        canonicalMap.set(cId, { ...b, branch_id: cId });
+      }
+    }
+  });
+
+  const displayBranches = Array.from(canonicalMap.values());
+
+  displayBranches.forEach(b => {
     const isSelected = isSameBranchId(b.branch_id, state.currentBranch);
     const isMain = (b.branch_id === 'main');
     const isMyBranch = isSameBranchId(b.branch_id, myBranch);

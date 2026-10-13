@@ -194,18 +194,19 @@ class RentService:
 
     def ensure_default_seed(self, db: Session, branch_id: str = "main") -> None:
         """기본 지점들(본관, 별관) 및 29개실 초기 데이터 1회 시드 (메모리 플래그 캐싱)"""
+        norm_bid = self.branch_service.normalize_branch_id(branch_id)
         if self._seeded:
             # 요청된 branch_id의 호실이 아직 없으면 자동 시드
-            if db.query(RentRoom).filter(RentRoom.branch_id == branch_id).count() == 0:
-                self._seed_branch_rooms(db, branch_id, is_main=(branch_id == "main"))
+            if db.query(RentRoom).filter(RentRoom.branch_id == norm_bid).count() == 0:
+                self._seed_branch_rooms(db, norm_bid, is_main=(norm_bid == "main"))
             return
 
-        # 1. 제1부동산: 시크빌
+        # 1. 제1부동산: 시크빌 1호점 (본점)
         b1 = db.query(RentBranch).filter(RentBranch.branch_id == "main").first()
         if not b1:
             b1 = RentBranch(
                 branch_id="main",
-                name="시크빌 (29개실)",
+                name="시크빌 1호점 (본점, 29개실)",
                 contact_phone="010-2345-6789",
                 address="서울특별시 강남구 테헤란로 123",
                 fee_plan="원룸 프리미엄 29실형",
@@ -214,14 +215,16 @@ class RentService:
                 is_active=True
             )
             db.add(b1)
+        elif b1.name == "시크빌 (29개실)":
+            b1.name = "시크빌 1호점 (본점, 29개실)"
 
         db.commit()
 
         # 호실 시드 (기본 본사 시크빌)
         self._seed_branch_rooms(db, "main", is_main=True)
 
-        if branch_id != "main":
-            self._seed_branch_rooms(db, branch_id, is_main=False)
+        if norm_bid != "main":
+            self._seed_branch_rooms(db, norm_bid, is_main=False)
 
         self._seeded = True
 
