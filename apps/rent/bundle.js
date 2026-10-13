@@ -5211,16 +5211,29 @@ async function exportFullSystemBackupJSON(e) {
   };
 
   const jsonStr = JSON.stringify(backupPayload, null, 2);
-  const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const filename = `${branchName}_전체데이터통합백업_${timeTag}.json`;
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  const cleanBranch = (branchName || '시크빌').replace(/[^\w가-힣0-9_-]/g, '_');
+  const filename = `${cleanBranch}_전체백업_${timeTag}.json`;
+
+  const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+
+  if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+    window.navigator.msSaveOrOpenBlob(blob, filename);
+  } else {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = filename;
+    a.setAttribute('download', filename);
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      try {
+        if (a.parentNode) document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (_) {}
+    }, 10000);
+  }
 
   const deviceName = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? '스마트폰 [다운로드] 폴더' : 'PC [다운로드] 폴더';
   alert(`💾 전체 데이터 통합 백업 파일이 저장되었습니다!\n\n📁 파일명: ${filename}\n📌 저장 위치: 지금 사용 중이신 ${deviceName}\n\n📦 백업된 전체 데이터 내역:\n- 29개실 전체 계약대장\n- 1월~12월 수납 내역 (전체 장부)\n- 지출 관리 장부 내역\n- 전출자 1년 보존 이력`);

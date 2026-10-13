@@ -271,7 +271,7 @@
                 29개실 계약대장 + 12개월 전체 수납장부 + 지출 + 전출자 이력 전체를 실제 JSON 파일로 다운로드/복원합니다.
               </div>
             </div>
-            <input type="file" id="fullBackupRestoreInput" accept=".json" class="hidden" onchange="handleFullSystemRestoreFile(event)">
+            <input type="file" id="fullBackupRestoreInput" accept=".json,application/json,*/*" class="hidden" onchange="handleFullSystemRestoreFile(event)">
 
             <!-- 📊 엑셀/CSV 다운로드 & 일괄 등록 -->
             <div class="grid grid-cols-2 gap-1.5">
@@ -1426,6 +1426,6 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- Universal Bundle Script -->
-  <script src="./bundle.js?v=4.2"></script>
+  <script src="./bundle.js?v=4.3"></script>
 </body>
 </html>
