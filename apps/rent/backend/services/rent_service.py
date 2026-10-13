@@ -535,7 +535,7 @@ class RentService:
             "source": "fallback"
         }
 
-    def process_payment(self, db: Session, room_number: int, month: int, branch_id: str = "main", paid_date: Optional[str] = None, note: str = "정상 입금", tenant_name: Optional[str] = None, year: Optional[int] = None) -> Optional[Dict[str, Any]]:
+    def process_payment(self, db: Session, room_number: int, month: int, branch_id: str = "main", paid_date: Optional[str] = None, note: str = "정상 입금", tenant_name: Optional[str] = None, year: Optional[int] = None, rent_amount: Optional[int] = None, maintenance_amount: Optional[int] = None) -> Optional[Dict[str, Any]]:
         self.ensure_default_seed(db, branch_id)
         PaymentService.process_payment(
             db=db,
@@ -545,7 +545,9 @@ class RentService:
             paid_date=paid_date,
             note=note,
             tenant_name=tenant_name,
-            year=year
+            year=year,
+            rent_amount=rent_amount,
+            maintenance_amount=maintenance_amount
         )
         return self.get_room(db, room_number, branch_id)
 

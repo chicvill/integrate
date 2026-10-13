@@ -16,6 +16,8 @@ import {
   toggleRoomDrawer,
   togglePastAccordion,
   handleFillTenantPayments,
+  handleChangePaymentDate,
+  handleChangePaymentAmount,
   renderAll
 } from './js/ui.js?v=2.0';
 import {
@@ -77,10 +79,12 @@ import {
   handleSmsDepositProcess,
   handleCopySmsReceipt,
   handleSendSmsReceipt,
-  handlePhoneMessageClick
+  handlePhoneMessageClick,
+  calculateDepositTargetPeriods
 } from './js/modals.js?v=2.0';
 
 // ── 전역 윈도우 핸들러 바인딩 (인라인 HTML 호출 호환) ──
+window.calculateDepositTargetPeriods = calculateDepositTargetPeriods;
 window.openSmsDepositModal = openSmsDepositModal;
 window.closeSmsDepositModal = closeSmsDepositModal;
 window.fillSampleSmsText = fillSampleSmsText;
@@ -105,6 +109,8 @@ window.toggleRoomDrawer = toggleRoomDrawer;
 
 window.togglePastAccordion = togglePastAccordion;
 window.handleFillTenantPayments = handleFillTenantPayments;
+window.handleChangePaymentDate = handleChangePaymentDate;
+window.handleChangePaymentAmount = handleChangePaymentAmount;
 
 window.openVatModal = openVatModal;
 window.setVatPeriod = setVatPeriod;

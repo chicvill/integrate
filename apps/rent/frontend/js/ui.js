@@ -162,7 +162,7 @@ export function renderMainRoomCard(room) {
   if (cardRoomNumber) cardRoomNumber.textContent = `${rNum}호`;
 
   const cardTenantName = document.getElementById('cardTenantName');
-  if (cardTenantName) cardTenantName.textContent = isVacant ? '공실 (미계약)' : `${room.name} 고객`;
+  if (cardTenantName) cardTenantName.textContent = isVacant ? '공실 (미계약)' : `${room.name} 님`;
 
   const cardIdNumber = document.getElementById('cardIdNumber');
   if (cardIdNumber) {
@@ -473,8 +473,10 @@ export function renderPastHistorySection(room) {
       <td class="py-2 px-2.5 border-r border-slate-800 text-xs whitespace-nowrap">
         ${tenantLabel}
       </td>
-      <td class="py-2 px-2 border-r border-slate-800 text-right font-bold text-slate-100 font-mono text-xs whitespace-nowrap">
-        ${Number(tot).toLocaleString()}원
+      <td class="py-2 px-2 border-r border-slate-800 text-right font-mono text-xs whitespace-nowrap">
+        <button type="button" class="btn-change-payamount inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-900/90 hover:bg-emerald-950/80 text-emerald-400 hover:text-emerald-300 border border-slate-700/80 hover:border-emerald-500/60 font-mono text-[11px] font-bold transition cursor-pointer shadow-xs whitespace-nowrap" title="클릭하여 납부/청구 금액 수정" data-year="${y}" data-month="${m}" data-rent="${rAmt}" data-maint="${mAmt}" data-tot="${tot}">
+          <span>✏️</span><span>${Number(tot).toLocaleString()}원</span>
+        </button>
       </td>
       <td class="py-2 px-2 border-r border-slate-800 text-center whitespace-nowrap">
         ${payDateHtml}
@@ -497,6 +499,25 @@ export function renderPastHistorySection(room) {
       </td>
     `;
     tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('.btn-change-payamount').forEach(btn => {
+    btn.onclick = async (e) => {
+      e.stopPropagation();
+      const yr = parseInt(btn.dataset.year, 10);
+      const mo = parseInt(btn.dataset.month, 10);
+      const curTot = parseInt(btn.dataset.tot, 10) || 0;
+      const curRent = parseInt(btn.dataset.rent, 10) || 0;
+      const curMaint = parseInt(btn.dataset.maint, 10) || 0;
+
+      const newTotStr = window.prompt(`[${rNum}호 ${yr}년 ${mo}월분]\n수정할 납부/청구 금액(원)을 입력하세요:\n(현재: ${curTot.toLocaleString()}원)`, String(curTot));
+      if (newTotStr !== null && newTotStr.trim() !== '') {
+        const newTot = parseInt(newTotStr.replace(/[^\d]/g, ''), 10);
+        if (!isNaN(newTot) && newTot >= 0 && newTot !== curTot) {
+          await handleChangePaymentAmount(rNum, mo, yr, newTot, curRent, curMaint);
+        }
+      }
+    };
   });
 
   tbody.querySelectorAll('.btn-change-paydate').forEach(btn => {
@@ -813,6 +834,70 @@ export async function handleChangePaymentDate(roomNum, month, year, newDate) {
     renderAll();
   } catch (err) {
     alert("납부일자 수정 실패: " + err.message);
+  }
+}
+
+// ── 과거 납부/청구 금액 직접 수정 액션 ──
+export async function handleChangePaymentAmount(roomNum, month, year, newTotal, oldRent = 0, oldMaint = 0) {
+  try {
+    const room = state.rooms[roomNum];
+    const tenantName = (room && room.name) ? room.name : "공실";
+    const pKey = `${year}-${month}`;
+
+    const isJeonse = (room && room.lease_type === "전세");
+    let newRent = 0;
+    let newMaint = newTotal;
+
+    if (!isJeonse) {
+      const baseMaint = oldMaint || (room ? room.maintenance : 0) || 50000;
+      if (newTotal >= baseMaint) {
+        newMaint = baseMaint;
+        newRent = newTotal - baseMaint;
+      } else {
+        newMaint = newTotal;
+        newRent = 0;
+      }
+    }
+
+    const existing = (room && room.payments && (room.payments[pKey] || (year === currentYear ? room.payments[month] : {}))) || {};
+    const paidDate = existing.paid_date || `${year}-${String(month).padStart(2, '0')}-10`;
+    const note = existing.note || "금액 직접 수정";
+
+    if (state.isOnline) {
+      const res = await apiProcessPayment(
+        roomNum,
+        month,
+        state.currentBranch,
+        paidDate,
+        note,
+        tenantName,
+        year,
+        newRent,
+        newMaint
+      );
+      if (res) state.rooms[roomNum] = res;
+    }
+
+    // 로컬 상태 즉시 동기화
+    if (room && room.payments) {
+      const payObj = {
+        ...existing,
+        month,
+        year,
+        paid: existing.paid !== undefined ? existing.paid : true,
+        paid_date: paidDate,
+        rent_amount: newRent,
+        maintenance_amount: newMaint,
+        note,
+        tenant_name: existing.tenant_name || tenantName
+      };
+      room.payments[pKey] = payObj;
+      if (year === currentYear) room.payments[month] = payObj;
+    }
+    saveLocalFallback();
+    renderAll();
+  } catch (err) {
+    alert("금액 수정 실패: " + err.message);
   }
 }
 

@@ -285,7 +285,7 @@
             <span id="cardPayTimingBadge" class="text-xs px-1.5 py-0.5 rounded-md font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30">후불</span>
           </div>
           <div class="flex items-center flex-wrap gap-1.5 sm:gap-2 mt-1">
-            <h2 id="cardTenantName" class="text-base sm:text-lg font-bold text-white tracking-tight">홍길동 고객</h2>
+            <h2 id="cardTenantName" class="text-base sm:text-lg font-bold text-white tracking-tight">홍길동 님</h2>
             <span id="cardIdNumber" class="text-[11px] px-1.5 py-0.5 rounded bg-surface-850 text-slate-300 font-mono border border-slate-700/80">주민: -</span>
             <span id="cardPhone" class="text-xs text-slate-400 font-mono">010-0000-0000</span>
           </div>
@@ -941,15 +941,12 @@
             <span>📩</span> <span>은행 입금 알림 문자 붙여넣기</span>
           </label>
           <div class="flex items-center gap-1.5">
-            <button type="button" onclick="fillSampleSmsText()" class="px-2 py-0.5 rounded bg-surface-800 hover:bg-surface-700 text-cyan-300 border border-slate-700 text-[10px] cursor-pointer" title="404호 이종진 농협 예시 붙여넣기">
-              🧪 예시 문자 입력
-            </button>
-            <button type="button" onclick="pasteFromClipboardToSmsInput()" class="px-2 py-0.5 rounded bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-700/60 text-[10px] cursor-pointer">
-              📋 클립보드 붙여넣기
+            <button type="button" onclick="pasteFromClipboardToSmsInput()" class="px-2.5 py-1 rounded bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-700/60 text-xs font-semibold flex items-center gap-1 cursor-pointer active:scale-95 transition">
+              <span>📋</span> <span>클립보드 붙여넣기</span>
             </button>
           </div>
         </div>
-        <textarea id="smsRawInput" oninput="handleLiveSmsParse()" rows="5" class="w-full bg-surface-950 border border-slate-700 focus:border-cyan-500 text-slate-100 rounded-xl p-2.5 text-xs font-mono outline-none transition resize-none placeholder:text-slate-600" placeholder="핸드폰에서 받은 은행 입금 알림 문자를 여기에 붙여넣으세요.&#10;&#10;예시:&#10;알림&#10;&#10;농협&#10;입금440,000원&#10;10/06 19:40&#10;351-****-9152&#10;-93 이종진404호"></textarea>
+        <textarea id="smsRawInput" oninput="handleLiveSmsParse()" rows="5" class="w-full bg-surface-950 border border-slate-700 focus:border-cyan-500 text-slate-100 rounded-xl p-2.5 text-xs font-mono outline-none transition resize-none placeholder:text-slate-600" placeholder="핸드폰에서 복사한 은행 입금 알림 문자를 붙여넣으세요.&#10;([클립보드 붙여넣기] 버튼 또는 입력창을 길게 눌러 붙여넣기)"></textarea>
       </div>
 
       <!-- Step 2: Live Analysis Result Card -->
@@ -990,34 +987,18 @@
           </div>
         </div>
 
-        <!-- Execute Deposit Button -->
-        <button type="button" id="btnExecuteSmsDeposit" onclick="handleSmsDepositProcess()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 transition">
-          <span>⚡</span>
-          <span id="btnExecuteSmsDepositText">404호 10월분 440,000원 입금 처리 완료</span>
-        </button>
+        <!-- Action Buttons: 취소 & 입금처리 -->
+        <div class="flex items-center gap-2 pt-1">
+          <button type="button" onclick="closeSmsDepositModal()" class="w-24 py-3 rounded-xl bg-surface-800 hover:bg-surface-700 text-slate-300 font-bold text-sm border border-slate-700 flex items-center justify-center cursor-pointer active:scale-95 transition">
+            취소
+          </button>
+          <button type="button" id="btnExecuteSmsDeposit" onclick="handleSmsDepositProcess()" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 transition">
+            <span>⚡</span>
+            <span id="btnExecuteSmsDepositText">입금처리 (404호 10월분)</span>
+          </button>
+        </div>
 
         <div id="smsProcessResultAlert" class="hidden"></div>
-      </div>
-
-      <!-- Step 3: Receipt Message Transformation Preview -->
-      <div class="space-y-1.5 pt-1">
-        <div class="flex items-center justify-between text-[11px]">
-          <label class="text-slate-300 font-bold flex items-center gap-1">
-            <span>📤</span> <span>송금자 영수증 문자 (잔액 삭제 & 입금확인 대체)</span>
-          </label>
-          <span class="text-[10px] text-emerald-400">※ 잔액 삭제 완료</span>
-        </div>
-
-        <textarea id="smsReceiptText" rows="6" class="w-full bg-surface-950 border border-slate-700 text-slate-100 rounded-xl p-2.5 text-xs font-mono outline-none resize-none leading-relaxed" placeholder="입금 문자를 입력하면 잔액이 삭제되고 '입금 확인했습니다. 감사합니다.'로 대체된 영수증이 자동 생성됩니다."></textarea>
-
-        <div class="flex items-center gap-2 pt-1">
-          <button type="button" onclick="handleCopySmsReceipt()" class="flex-1 py-2 rounded-xl bg-surface-800 hover:bg-surface-700 text-cyan-300 font-bold text-xs border border-slate-700 flex items-center justify-center gap-1.5 cursor-pointer transition active:scale-98">
-            <span>📋</span> <span>영수증 내용 복사</span>
-          </button>
-          <button type="button" onclick="handleSendSmsReceipt()" class="flex-1 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs shadow-md shadow-cyan-950/50 flex items-center justify-center gap-1.5 cursor-pointer transition active:scale-98">
-            <span>💬</span> <span id="btnSendSmsTenantText">404호(이종진)로 문자 보내기</span>
-          </button>
-        </div>
       </div>
 
     </div>

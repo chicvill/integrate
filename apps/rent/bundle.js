@@ -111,8 +111,16 @@ const roomsApi = {
 };
 
 const paymentsApi = {
-  process: (roomNumber, month, branchId = 'main', paidDate = null, note = '정상 입금', tenantName = null, year = 2026) =>
-    http.post(`/rooms/${roomNumber}/payment`, { month, year, paid_date: paidDate, note, tenant_name: tenantName }, { branch_id: branchId }),
+  process: (roomNumber, month, branchId = 'main', paidDate = null, note = '정상 입금', tenantName = null, year = 2026, rentAmount = null, maintenanceAmount = null) =>
+    http.post(`/rooms/${roomNumber}/payment`, {
+      month,
+      year,
+      paid_date: paidDate,
+      note,
+      tenant_name: tenantName,
+      rent_amount: rentAmount,
+      maintenance_amount: maintenanceAmount
+    }, { branch_id: branchId }),
   cancel: (roomNumber, month, branchId = 'main', year = 2026) =>
     http.post(`/rooms/${roomNumber}/cancel-payment`, { month, year }, { branch_id: branchId }),
   matrixImport: (matrixRooms, branchId = 'main') =>
@@ -955,7 +963,7 @@ function renderMainRoomCard(room) {
   if (cardRoomNumber) cardRoomNumber.textContent = `${rNum}호`;
 
   const cardTenantName = document.getElementById('cardTenantName');
-  if (cardTenantName) cardTenantName.textContent = isVacant ? '공실 (미계약)' : `${room.name} 고객`;
+  if (cardTenantName) cardTenantName.textContent = isVacant ? '공실 (미계약)' : `${room.name} 님`;
 
   const cardIdNumber = document.getElementById('cardIdNumber');
   if (cardIdNumber) {
@@ -1266,8 +1274,10 @@ function renderPastHistorySection(room) {
       <td class="py-2 px-2.5 border-r border-slate-800 text-xs whitespace-nowrap">
         ${tenantLabel}
       </td>
-      <td class="py-2 px-2 border-r border-slate-800 text-right font-bold text-slate-100 font-mono text-xs whitespace-nowrap">
-        ${Number(tot).toLocaleString()}원
+      <td class="py-2 px-2 border-r border-slate-800 text-right font-mono text-xs whitespace-nowrap">
+        <button type="button" class="btn-change-payamount inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-900/90 hover:bg-emerald-950/80 text-emerald-400 hover:text-emerald-300 border border-slate-700/80 hover:border-emerald-500/60 font-mono text-[11px] font-bold transition cursor-pointer shadow-xs whitespace-nowrap" title="클릭하여 납부/청구 금액 수정" data-year="${y}" data-month="${m}" data-rent="${rAmt}" data-maint="${mAmt}" data-tot="${tot}">
+          <span>✏️</span><span>${Number(tot).toLocaleString()}원</span>
+        </button>
       </td>
       <td class="py-2 px-2 border-r border-slate-800 text-center whitespace-nowrap">
         ${payDateHtml}
@@ -1290,6 +1300,25 @@ function renderPastHistorySection(room) {
       </td>
     `;
     tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('.btn-change-payamount').forEach(btn => {
+    btn.onclick = async (e) => {
+      e.stopPropagation();
+      const yr = parseInt(btn.dataset.year, 10);
+      const mo = parseInt(btn.dataset.month, 10);
+      const curTot = parseInt(btn.dataset.tot, 10) || 0;
+      const curRent = parseInt(btn.dataset.rent, 10) || 0;
+      const curMaint = parseInt(btn.dataset.maint, 10) || 0;
+
+      const newTotStr = window.prompt(`[${rNum}호 ${yr}년 ${mo}월분]\n수정할 납부/청구 금액(원)을 입력하세요:\n(현재: ${curTot.toLocaleString()}원)`, String(curTot));
+      if (newTotStr !== null && newTotStr.trim() !== '') {
+        const newTot = parseInt(newTotStr.replace(/[^\d]/g, ''), 10);
+        if (!isNaN(newTot) && newTot >= 0 && newTot !== curTot) {
+          await handleChangePaymentAmount(rNum, mo, yr, newTot, curRent, curMaint);
+        }
+      }
+    };
   });
 
   tbody.querySelectorAll('.btn-change-paydate').forEach(btn => {
@@ -1606,6 +1635,70 @@ async function handleChangePaymentDate(roomNum, month, year, newDate) {
     renderAll();
   } catch (err) {
     alert("납부일자 수정 실패: " + err.message);
+  }
+}
+
+// ── 과거 납부/청구 금액 직접 수정 액션 ──
+async function handleChangePaymentAmount(roomNum, month, year, newTotal, oldRent = 0, oldMaint = 0) {
+  try {
+    const room = state.rooms[roomNum];
+    const tenantName = (room && room.name) ? room.name : "공실";
+    const pKey = `${year}-${month}`;
+
+    const isJeonse = (room && room.lease_type === "전세");
+    let newRent = 0;
+    let newMaint = newTotal;
+
+    if (!isJeonse) {
+      const baseMaint = oldMaint || (room ? room.maintenance : 0) || 50000;
+      if (newTotal >= baseMaint) {
+        newMaint = baseMaint;
+        newRent = newTotal - baseMaint;
+      } else {
+        newMaint = newTotal;
+        newRent = 0;
+      }
+    }
+
+    const existing = (room && room.payments && (room.payments[pKey] || (year === currentYear ? room.payments[month] : {}))) || {};
+    const paidDate = existing.paid_date || `${year}-${String(month).padStart(2, '0')}-10`;
+    const note = existing.note || "금액 직접 수정";
+
+    if (state.isOnline) {
+      const res = await apiProcessPayment(
+        roomNum,
+        month,
+        state.currentBranch,
+        paidDate,
+        note,
+        tenantName,
+        year,
+        newRent,
+        newMaint
+      );
+      if (res) state.rooms[roomNum] = res;
+    }
+
+    // 로컬 상태 즉시 동기화
+    if (room && room.payments) {
+      const payObj = {
+        ...existing,
+        month,
+        year,
+        paid: existing.paid !== undefined ? existing.paid : true,
+        paid_date: paidDate,
+        rent_amount: newRent,
+        maintenance_amount: newMaint,
+        note,
+        tenant_name: existing.tenant_name || tenantName
+      };
+      room.payments[pKey] = payObj;
+      if (year === currentYear) room.payments[month] = payObj;
+    }
+    saveLocalFallback();
+    renderAll();
+  } catch (err) {
+    alert("금액 수정 실패: " + err.message);
   }
 }
 
@@ -4411,23 +4504,42 @@ function fillSampleSmsText() {
 }
 
 async function pasteFromClipboardToSmsInput() {
-  try {
-    if (navigator.clipboard && navigator.clipboard.readText) {
+  const rawInput = document.getElementById('smsRawInput');
+
+  // 1. 최신 Clipboard API 시도 (HTTPS 또는 로컬 환경)
+  if (navigator.clipboard && navigator.clipboard.readText) {
+    try {
       const text = await navigator.clipboard.readText();
-      if (text) {
-        const rawInput = document.getElementById('smsRawInput');
+      if (text && text.trim()) {
         if (rawInput) {
           rawInput.value = text;
           handleLiveSmsParse();
           return;
         }
       }
+    } catch (e) {
+      console.warn("navigator.clipboard.readText() blocked or unsupported:", e);
     }
-  } catch (e) {
-    console.warn("Clipboard read not permitted:", e);
   }
-  const rawInput = document.getElementById('smsRawInput');
-  if (rawInput) rawInput.focus();
+
+  // 2. 모바일 브라우저/HTTP 환경에서는 보안 정책으로 인해 readText가 제한될 수 있음
+  // 입력창으로 즉시 포커스 이동하여 1초만에 모바일 붙여넣기를 실행할 수 있도록 지원
+  if (rawInput) {
+    rawInput.focus();
+    rawInput.select();
+
+    const banner = document.createElement('div');
+    banner.className = 'fixed top-4 left-1/2 -translate-x-1/2 z-[9999] max-w-sm w-[90%] bg-slate-900 border border-cyan-500/80 text-white p-3 rounded-2xl shadow-2xl text-xs flex items-center gap-2 animate-in fade-in duration-150';
+    banner.innerHTML = `
+      <span class="text-base">📋</span>
+      <div>
+        <strong class="text-cyan-300">입력창이 활성화되었습니다.</strong><br>
+        <span class="text-slate-300">입력창을 길게 눌러 <strong>[붙여넣기]</strong>를 터치해주세요.</span>
+      </div>
+    `;
+    document.body.appendChild(banner);
+    setTimeout(() => { banner.remove(); }, 2500);
+  }
 }
 
 /**
@@ -4551,15 +4663,112 @@ function parseBankSmsText(rawText) {
 }
 
 /**
- * 송금자 영수증 메시지 생성:
- * 은행, 일시, 계좌정보, 송금자, 호실(없으면 세입자명 검색하여) 모두를 담아 영수증 생성
+ * 호실별 체납월(미납월) 탐색 및 입금액 기반 분할 수납 대상 월 계산:
+ * 1. 전입일 이전 것은 절대 채울 수 없음 (move_in 기준 시작)
+ * 2. 가장 오래된 체납월부터 우선 충당
+ * 3. 체납된 것이 없거나 처리할 수 없는 경우 빈 배열 반환 (수동 처리 안내용)
  */
-function generateReceiptMessage(rawText, targetRoomNum = null) {
+function calculateDepositTargetPeriods(roomNum, depositAmount, parsedDateMonth = currentMonth) {
+  const room = (state.rooms && state.rooms[roomNum]) ? state.rooms[roomNum] : null;
+  if (!room) {
+    return [];
+  }
+
+  // 1. 월 납부액 (월세 + 관리비, 전세는 관리비만)
+  const isJeonse = (room.lease_type === '전세');
+  const monthlyDue = (isJeonse ? 0 : Number(room.rent || 0)) + Number(room.maintenance || 0);
+
+  // 입금액이 월납부액의 몇 개월치인지 계산 (최소 1개월)
+  let monthsToCover = 1;
+  if (monthlyDue > 0 && depositAmount >= monthlyDue) {
+    monthsToCover = Math.max(1, Math.floor(depositAmount / monthlyDue));
+  }
+
+  // 2. 세입자의 전입일 파싱 (전입일 이전 것은 절대 채울 수 없음)
+  let inYear = currentYear;
+  let inMonth = 1;
+  if (room.move_in) {
+    const dtComp = parseDateComponents(room.move_in);
+    if (dtComp) {
+      inYear = dtComp.year;
+      inMonth = dtComp.month;
+    }
+  }
+
+  // 3. 전입월부터 현재 당월(currentMonth)까지만 후보 기간 생성
+  // (전입일 이전은 절대 포함하지 않으며, 미래 월도 자동 포함하지 않음)
+  const candidatePeriods = [];
+  for (let y = inYear; y <= currentYear; y++) {
+    const startM = (y === inYear) ? inMonth : 1;
+    const endM = (y === currentYear) ? currentMonth : 12;
+    for (let m = startM; m <= endM; m++) {
+      candidatePeriods.push({ year: y, month: m });
+    }
+  }
+
+  // 4. 각 월의 미납/체납 여부 판정 (가장 오래된 과거 -> 현재 순서)
+  const unpaidPeriods = [];
+  candidatePeriods.forEach(({ year: y, month: m }) => {
+    const pKey = `${y}-${m}`;
+    const p = (room.payments && (room.payments[pKey] || (y === currentYear ? room.payments[m] : null)));
+
+    const rule = evaluatePaymentRule({
+      year: y,
+      month: m,
+      inYear,
+      inMonth,
+      leaseType: room.lease_type || '월세',
+      payTiming: room.pay_timing || '후불',
+      curYear: currentYear,
+      curMonth: currentMonth,
+      hasPrevHist: Boolean(p?.is_previous_tenant)
+    });
+
+    // 전입 이전은 절대 미납 대상 아님
+    if (rule.isBeforeMoveIn) return;
+
+    // 결제 객체가 있고 paid === true 이면 완납
+    if (p && p.paid === true) return;
+
+    const isPast = (y < currentYear) || (y === currentYear && m < currentMonth);
+    const isCur = (y === currentYear && m === currentMonth);
+
+    if (isPast) {
+      unpaidPeriods.push({ year: y, month: m, isOverdue: true });
+    } else if (isCur) {
+      unpaidPeriods.push({ year: y, month: m, isOverdue: false });
+    }
+  });
+
+  // 5. 체납/미납월이 있는 경우: 가장 오래된 월부터 monthsToCover 개수만큼만 할당
+  if (unpaidPeriods.length > 0) {
+    return unpaidPeriods.slice(0, monthsToCover);
+  }
+
+  // 6. 체납된 것이 전혀 없는 경우 (이미 당월까지 모두 완납):
+  // 빈 배열 리턴 -> 수동 처리 안내
+  return [];
+}
+
+/**
+ * 송금자 영수증 메시지 생성:
+ * 은행, 일시, 계좌정보, 송금자, 호실, 납부 월(체납/분할 포함) 모두를 담아 영수증 생성
+ */
+function generateReceiptMessage(rawText, targetRoomNum = null, customPeriods = null) {
   if (!rawText) return "";
   const parsed = parseBankSmsText(rawText);
   const detectedRoom = targetRoomNum || (parsed ? parsed.roomNumber : (state.selectedRoom || 404));
   const room = (state.rooms && state.rooms[detectedRoom]) ? state.rooms[detectedRoom] : null;
   const tenantName = (room && room.name) ? room.name : ((parsed && parsed.tenantName) ? parsed.tenantName : "");
+
+  // 충당 대상 월 목록
+  const targetPeriods = customPeriods || (parsed ? calculateDepositTargetPeriods(detectedRoom, parsed.amount, parsed.month) : null);
+  let periodNote = '';
+  if (targetPeriods && targetPeriods.length > 1) {
+    periodNote = ` (${targetPeriods.map(p => p.month + '월').join(', ')}분 납부)`;
+  } else if (targetPeriods && targetPeriods.length === 1 && targetPeriods[0].isOverdue) {
+    periodNote = ` (${targetPeriods[0].month}월 체납분 납부)`;
+  }
 
   const lines = rawText.split(/\r?\n/).map(l => l.trim());
   const cleanedLines = [];
@@ -4579,13 +4788,13 @@ function generateReceiptMessage(rawText, targetRoomNum = null) {
     // 호실이 이미 해당 라인에 명시되어 있는지 확인 (예: 404호)
     if (new RegExp(`${detectedRoom}\\s*호`).test(line) || /(\d{3})\s*호/.test(line)) {
       hasRoomInText = true;
-      cleanedLines.push(line);
+      cleanedLines.push(`${line}${periodNote}`);
       continue;
     }
 
-    // 세입자명이 들어있는 송금자 라인인데 호실이 빠져있는 경우 -> 호실(세입자명 검색 결과) 자동 부착
+    // 세입자명이 들어있는 송금자 라인인데 호실이 빠져있는 경우 -> 호실 자동 부착
     if (tenantName && line.includes(tenantName) && !hasRoomInText) {
-      cleanedLines.push(`${line} ${detectedRoom}호`);
+      cleanedLines.push(`${line} ${detectedRoom}호${periodNote}`);
       hasRoomInText = true;
       continue;
     }
@@ -4596,9 +4805,9 @@ function generateReceiptMessage(rawText, targetRoomNum = null) {
   // 만약 텍스트 전체에서 호실 번호가 어디에도 명시되지 않았던 경우:
   if (!hasRoomInText && detectedRoom) {
     if (tenantName) {
-      cleanedLines.push(`${tenantName} ${detectedRoom}호`);
+      cleanedLines.push(`${tenantName} ${detectedRoom}호${periodNote}`);
     } else {
-      cleanedLines.push(`${detectedRoom}호`);
+      cleanedLines.push(`${detectedRoom}호${periodNote}`);
     }
   }
 
@@ -4610,7 +4819,7 @@ function generateReceiptMessage(rawText, targetRoomNum = null) {
 }
 
 /**
- * 실시간 입력 시 분석 결과 및 영수증 미리보기 업데이트
+ * 실시간 입력 시 분석 결과 업데이트 (가장 오래된 체납월부터 채우고 다개월 분할 계산)
  */
 function handleLiveSmsParse() {
   const rawInput = document.getElementById('smsRawInput');
@@ -4620,6 +4829,9 @@ function handleLiveSmsParse() {
 
   const parsed = parseBankSmsText(rawText);
   if (!parsed) return;
+
+  // 체납월 및 다개월 분할 수납 대상 계산
+  const targetPeriods = calculateDepositTargetPeriods(parsed.roomNumber, parsed.amount, parsed.month);
 
   // 은행 뱃지
   const bankBadge = document.getElementById('smsBankBadge');
@@ -4639,34 +4851,58 @@ function handleLiveSmsParse() {
   const amtSpan = document.getElementById('smsDetectedAmount');
   if (amtSpan) amtSpan.textContent = `${Number(parsed.amount).toLocaleString()}원`;
 
-  // 일시 표시
+  // 일시 및 충당월 표시
   const dateSpan = document.getElementById('smsDetectedDate');
-  if (dateSpan) dateSpan.textContent = `${parsed.month}월 ${parsed.day}일 (${parsed.month}월분)`;
+  const execBtn = document.getElementById('btnExecuteSmsDeposit');
+  const execBtnText = document.getElementById('btnExecuteSmsDepositText');
+
+  if (targetPeriods.length === 0) {
+    if (dateSpan) {
+      dateSpan.innerHTML = `<span class="text-amber-400 font-bold">체납 내역 없음 (수동 처리 필요)</span>`;
+    }
+    if (execBtnText) {
+      execBtnText.textContent = `⚠️ 자동 처리 불가 (과거내역 수동 처리)`;
+    }
+    if (execBtn) {
+      execBtn.className = "flex-1 py-3 rounded-xl bg-slate-800 text-amber-300 font-bold text-xs border border-amber-500/40 flex items-center justify-center gap-1.5 cursor-pointer transition";
+    }
+  } else {
+    if (dateSpan) {
+      if (targetPeriods.length > 1) {
+        dateSpan.textContent = `${parsed.month}월 ${parsed.day}일 (${targetPeriods.map(p => p.month + '월').join(', ')}분 ${targetPeriods.length}개월 분할)`;
+      } else if (targetPeriods[0].isOverdue) {
+        dateSpan.textContent = `${parsed.month}월 ${parsed.day}일 (${targetPeriods[0].month}월 체납분 충당)`;
+      } else {
+        dateSpan.textContent = `${parsed.month}월 ${parsed.day}일 (${targetPeriods[0].month}월분)`;
+      }
+    }
+    if (execBtnText) {
+      if (targetPeriods.length > 1) {
+        execBtnText.textContent = `입금처리 (${parsed.roomNumber}호 ${targetPeriods[0].month}월~${targetPeriods[targetPeriods.length - 1].month}월 ${targetPeriods.length}개월분)`;
+      } else if (targetPeriods[0].isOverdue) {
+        execBtnText.textContent = `입금처리 (${parsed.roomNumber}호 ${targetPeriods[0].month}월 체납분)`;
+      } else {
+        execBtnText.textContent = `입금처리 (${parsed.roomNumber}호 ${targetPeriods[0].month}월분)`;
+      }
+    }
+    if (execBtn) {
+      execBtn.className = "flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 transition";
+    }
+  }
 
   // 메모 표시
   const memoSpan = document.getElementById('smsDetectedMemo');
   if (memoSpan) memoSpan.textContent = parsed.accountStr || `${parsed.bankName} 계좌`;
 
-  // 실행 버튼 텍스트
-  const execBtnText = document.getElementById('btnExecuteSmsDepositText');
-  if (execBtnText) {
-    execBtnText.textContent = `${parsed.roomNumber}호 ${parsed.month}월분 ${Number(parsed.amount).toLocaleString()}원 입금 처리 완료`;
-  }
-
-  // 영수증 문자 자동 변환 생성 (은행, 일시, 계좌, 송금자, 호실 보충 포함)
-  const receipt = generateReceiptMessage(rawText, parsed.roomNumber);
+  // 영수증 문자 자동 변환 생성
+  const receipt = generateReceiptMessage(rawText, parsed.roomNumber, targetPeriods);
   const receiptEl = document.getElementById('smsReceiptText');
   if (receiptEl) receiptEl.value = receipt;
-
-  // 세입자 문자 전송 버튼 텍스트
-  const sendBtnText = document.getElementById('btnSendSmsTenantText');
-  if (sendBtnText) {
-    sendBtnText.textContent = `${parsed.roomNumber}호(${parsed.tenantName || '세입자'})로 문자 보내기`;
-  }
 
   // 전역 상태에 보관
   state.pendingReceiptText = receipt;
   state.pendingReceiptRoom = parsed.roomNumber;
+  state.pendingTargetPeriods = targetPeriods;
   state.lastSmsDeposit = parsed;
 }
 
@@ -4678,23 +4914,68 @@ function onSmsDetectedRoomChange() {
   const tSpan = document.getElementById('smsDetectedTenant');
   if (tSpan) tSpan.textContent = (room && room.name) ? room.name : '공실';
 
-  const sendBtnText = document.getElementById('btnSendSmsTenantText');
-  if (sendBtnText) {
-    sendBtnText.textContent = `${rNum}호(${room && room.name ? room.name : '세입자'})로 문자 보내기`;
+  const rawInput = document.getElementById('smsRawInput');
+  const rawText = rawInput ? rawInput.value : '';
+  const parsed = parseBankSmsText(rawText);
+  const depAmount = parsed ? parsed.amount : (room ? (room.lease_type === '전세' ? room.maintenance : room.rent + room.maintenance) : 440000);
+  const depMonth = parsed ? parsed.month : currentMonth;
+
+  const targetPeriods = calculateDepositTargetPeriods(rNum, depAmount, depMonth);
+
+  const dateSpan = document.getElementById('smsDetectedDate');
+  const execBtn = document.getElementById('btnExecuteSmsDeposit');
+  const execBtnText = document.getElementById('btnExecuteSmsDepositText');
+
+  if (targetPeriods.length === 0) {
+    if (dateSpan) {
+      dateSpan.innerHTML = `<span class="text-amber-400 font-bold">체납 내역 없음 (수동 처리 필요)</span>`;
+    }
+    if (execBtnText) {
+      execBtnText.textContent = `⚠️ 자동 처리 불가 (과거내역 수동 처리)`;
+    }
+    if (execBtn) {
+      execBtn.className = "flex-1 py-3 rounded-xl bg-slate-800 text-amber-300 font-bold text-xs border border-amber-500/40 flex items-center justify-center gap-1.5 cursor-pointer transition";
+    }
+  } else {
+    if (dateSpan) {
+      if (targetPeriods.length > 1) {
+        dateSpan.textContent = `${depMonth}월 (${targetPeriods.map(p => p.month + '월').join(', ')}분 ${targetPeriods.length}개월 분할)`;
+      } else if (targetPeriods[0].isOverdue) {
+        dateSpan.textContent = `${depMonth}월 (${targetPeriods[0].month}월 체납분 충당)`;
+      } else {
+        dateSpan.textContent = `${depMonth}월 (${targetPeriods[0].month}월분)`;
+      }
+    }
+    if (execBtnText) {
+      if (targetPeriods.length > 1) {
+        execBtnText.textContent = `입금처리 (${rNum}호 ${targetPeriods[0].month}월~${targetPeriods[targetPeriods.length - 1].month}월 ${targetPeriods.length}개월분)`;
+      } else if (targetPeriods[0].isOverdue) {
+        execBtnText.textContent = `입금처리 (${rNum}호 ${targetPeriods[0].month}월 체납분)`;
+      } else {
+        execBtnText.textContent = `입금처리 (${rNum}호 ${targetPeriods[0].month}월분)`;
+      }
+    }
+    if (execBtn) {
+      execBtn.className = "flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 transition";
+    }
   }
 
-  const rawInput = document.getElementById('smsRawInput');
   if (rawInput && rawInput.value.trim()) {
-    const receipt = generateReceiptMessage(rawInput.value, rNum);
+    const receipt = generateReceiptMessage(rawInput.value, rNum, targetPeriods);
     const receiptEl = document.getElementById('smsReceiptText');
     if (receiptEl) receiptEl.value = receipt;
     state.pendingReceiptText = receipt;
     state.pendingReceiptRoom = rNum;
+    state.pendingTargetPeriods = targetPeriods;
   }
 }
 
 /**
- * 2. 내용을 분석하여 404호 10/6 440000원 입금 처리
+ * 메시지 분석 후 입금 처리:
+ * 가장 오래된 체납월부터 우선 충당하고, 다개월 입금 시 분할하여 수납 처리
+ * - 전입일 이전 것은 제외
+ * - 체납된 것이 없거나 처리 불가 시 수동 처리 안내
+ * - 임차료와 불일치 시 안내 팝업 후 다음 진행
  */
 async function handleSmsDepositProcess() {
   const roomSelect = document.getElementById('smsDetectedRoom');
@@ -4704,78 +4985,97 @@ async function handleSmsDepositProcess() {
   const parsed = parseBankSmsText(rawText);
 
   if (!parsed || !roomNum) {
-    alert("입금 문자를 먼저 입력해주세요.");
+    alert("입금 문자를 먼저 붙여넣어주세요.");
     return;
   }
 
   const room = state.rooms[roomNum];
   const tenantName = (room && room.name) ? room.name : (parsed.tenantName || "세입자");
-  const month = parsed.month || currentMonth;
-  const year = currentYear;
   const paidDate = parsed.fullDateStr || formattedToday;
-  const note = `은행 입금 확인 (${parsed.bankName})`;
+
+  // 1. 가장 오래된 체납월부터 분할 수납 대상 월 목록 산출 (전입일 이전 제외)
+  const targetPeriods = state.pendingTargetPeriods || calculateDepositTargetPeriods(roomNum, parsed.amount, parsed.month);
+
+  // 체납된 것이 없는데 입금 되는 등 처리할 수 없는 경우 수동 처리 안내
+  if (!targetPeriods || targetPeriods.length === 0) {
+    alert("체납된 내역이 없거나 자동 처리할 수 없는 입금입니다.\n과거납부내역에서 수동으로 처리해주세요.");
+    return;
+  }
+
+  // 2. 은행 메시지의 금액이 임차료와 일치하지 않을 때 확인 메시지 보여주고 확인 후 진행
+  const isJeonse = (room.lease_type === '전세');
+  const monthlyDue = (isJeonse ? 0 : Number(room.rent || 0)) + Number(room.maintenance || 0);
+  const expectedTotal = monthlyDue * targetPeriods.length;
+
+  if (monthlyDue > 0 && Number(parsed.amount) !== expectedTotal) {
+    alert("금액을 확인해주세요. 처리 후 과거납부내역에서 수정할 수 있습니다.");
+  }
 
   try {
-    if (state.isOnline) {
-      const res = await apiProcessPayment(roomNum, month, state.currentBranch, paidDate, note, tenantName, year);
-      state.rooms[roomNum] = res;
-    } else {
-      if (room && room.payments) {
-        const pKey = `${year}-${month}`;
-        const payObj = {
-          month,
-          year,
-          paid: true,
-          paid_date: paidDate,
-          note,
-          tenant_name: tenantName,
-          is_previous_tenant: false,
-          rent_amount: room.lease_type === "전세" ? 0 : room.rent,
-          maintenance_amount: room.maintenance
-        };
-        room.payments[month] = payObj;
-        room.payments[pKey] = payObj;
+    // 3. 분할된 각 월에 대해 전산 완납 처리 실행
+    for (const p of targetPeriods) {
+      const pMonth = p.month;
+      const pYear = p.year;
+      const pNote = (targetPeriods.length > 1)
+        ? `은행 입금 분할 (${targetPeriods.map(x => x.month + '월').join(', ')}분)`
+        : (p.isOverdue ? `은행 입금 (${pMonth}월 체납분 충당)` : `은행 입금 확인 (${parsed.bankName})`);
+
+      if (state.isOnline) {
+        const res = await apiProcessPayment(roomNum, pMonth, state.currentBranch, paidDate, pNote, tenantName, pYear);
+        state.rooms[roomNum] = res;
+      } else {
+        if (room && room.payments) {
+          const pKey = `${pYear}-${pMonth}`;
+          const payObj = {
+            month: pMonth,
+            year: pYear,
+            paid: true,
+            paid_date: paidDate,
+            note: pNote,
+            tenant_name: tenantName,
+            is_previous_tenant: false,
+            rent_amount: room.lease_type === "전세" ? 0 : room.rent,
+            maintenance_amount: room.maintenance
+          };
+          room.payments[pMonth] = payObj;
+          room.payments[pKey] = payObj;
+        }
       }
     }
     saveLocalFallback();
 
-    // 404호 선택 및 화면 갱신
+    // 호실 선택 및 메인 테이블 갱신
     state.selectedRoom = roomNum;
     renderAll();
 
-    // 영수증 자동 복사 (Step 4: 이 내용을 복사한 뒤)
-    const receiptEl = document.getElementById('smsReceiptText');
-    const receiptText = receiptEl ? receiptEl.value : generateReceiptMessage(rawText);
+    // 4. 영수증 텍스트 생성 (충당된 월 표기 포함)
+    const receiptText = generateReceiptMessage(rawText, roomNum, targetPeriods);
     state.pendingReceiptText = receiptText;
     state.pendingReceiptRoom = roomNum;
 
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      try {
+    // 5. 클립보드에 영수증 내용 복사
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(receiptText);
-      } catch (e) {}
+      }
+    } catch (e) {
+      console.warn("Clipboard write not permitted:", e);
     }
 
-    // 결과 알림
-    const resultAlert = document.getElementById('smsProcessResultAlert');
-    if (resultAlert) {
-      resultAlert.className = 'p-3 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs flex items-center justify-between gap-2 mt-2';
-      resultAlert.innerHTML = `
-        <div class="flex items-center gap-2">
-          <span class="text-lg">✅</span>
-          <div>
-            <strong>${roomNum}호 (${tenantName}) ${month}월분 ${Number(parsed.amount).toLocaleString()}원 입금 처리 완료!</strong>
-            <div class="text-[11px] text-emerald-400 mt-0.5">영수증 문자가 클립보드에 자동 복사되었습니다.</div>
-          </div>
-        </div>
-        <button type="button" onclick="handleSendSmsReceipt('${room ? room.phone : ''}')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow cursor-pointer whitespace-nowrap shrink-0">
-          💬 문자 전송
-        </button>
-      `;
-      resultAlert.classList.remove('hidden');
+    // 6. 입금 모달 닫기
+    closeSmsDepositModal();
+
+    // 7. 스마트폰 메시지 창으로 다이렉트 이동
+    const phone = room ? room.phone : '';
+    if (phone) {
+      const cleanPhone = phone.replace(/[^\d+]/g, '');
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      const smsUrl = `sms:${cleanPhone}${isIOS ? '&' : '?'}body=${encodeURIComponent(receiptText)}`;
+      window.location.href = smsUrl;
     }
 
   } catch (err) {
-    alert("입금 처리 실패: " + err.message);
+    console.error("입금 처리 실패:", err);
   }
 }
 
@@ -4936,6 +5236,7 @@ function handlePhoneMessageClick(phone, name, roomNumber) {
 
 
 // ── 전역 윈도우 핸들러 바인딩 (인라인 HTML 호출 호환) ──
+window.calculateDepositTargetPeriods = calculateDepositTargetPeriods;
 window.openSmsDepositModal = openSmsDepositModal;
 window.closeSmsDepositModal = closeSmsDepositModal;
 window.fillSampleSmsText = fillSampleSmsText;
@@ -4960,6 +5261,8 @@ window.toggleRoomDrawer = toggleRoomDrawer;
 
 window.togglePastAccordion = togglePastAccordion;
 window.handleFillTenantPayments = handleFillTenantPayments;
+window.handleChangePaymentDate = handleChangePaymentDate;
+window.handleChangePaymentAmount = handleChangePaymentAmount;
 
 window.openVatModal = openVatModal;
 window.setVatPeriod = setVatPeriod;

@@ -144,6 +144,8 @@ class PaymentProcessRequest(BaseModel):
     paid_date: Optional[str] = None
     note: Optional[str] = "정상 입금"
     tenant_name: Optional[str] = None
+    rent_amount: Optional[int] = None
+    maintenance_amount: Optional[int] = None
 
 
 # ── 지출 장부 스키마 ──

@@ -99,8 +99,16 @@ export const roomsApi = {
 };
 
 export const paymentsApi = {
-  process: (roomNumber, month, branchId = 'main', paidDate = null, note = '정상 입금', tenantName = null, year = 2026) =>
-    http.post(`/rooms/${roomNumber}/payment`, { month, year, paid_date: paidDate, note, tenant_name: tenantName }, { branch_id: branchId }),
+  process: (roomNumber, month, branchId = 'main', paidDate = null, note = '정상 입금', tenantName = null, year = 2026, rentAmount = null, maintenanceAmount = null) =>
+    http.post(`/rooms/${roomNumber}/payment`, {
+      month,
+      year,
+      paid_date: paidDate,
+      note,
+      tenant_name: tenantName,
+      rent_amount: rentAmount,
+      maintenance_amount: maintenanceAmount
+    }, { branch_id: branchId }),
   cancel: (roomNumber, month, branchId = 'main', year = 2026) =>
     http.post(`/rooms/${roomNumber}/cancel-payment`, { month, year }, { branch_id: branchId }),
   matrixImport: (matrixRooms, branchId = 'main') =>

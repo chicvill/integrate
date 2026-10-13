@@ -201,9 +201,11 @@ class PaymentService:
         paid_date: Optional[str] = None,
         note: str = "정상 입금",
         tenant_name: Optional[str] = None,
-        year: Optional[int] = None
+        year: Optional[int] = None,
+        rent_amount: Optional[int] = None,
+        maintenance_amount: Optional[int] = None
     ) -> Optional[Dict[str, Any]]:
-        """호실 월별 수납 처리 및 실입금일자 저장"""
+        """호실 월별 수납 처리 및 실입금일자/금액 저장"""
         now_date = paid_date or datetime.now().strftime("%Y-%m-%d")
         pay_year = year or datetime.now().year
         pay = db.query(RentPayment).filter(
@@ -222,18 +224,29 @@ class PaymentService:
 
         effective_name = tenant_name or room.name or "공실"
 
+        default_rent = 0 if room.lease_type == "전세" else room.rent
+        default_maint = room.maintenance
+
+        final_rent = rent_amount if rent_amount is not None else default_rent
+        final_maint = maintenance_amount if maintenance_amount is not None else default_maint
+
         if not pay:
             pay = RentPayment(
                 branch_id=branch_id,
                 room_number=room_number,
                 year=pay_year,
                 month=month,
-                rent_amount=0 if room.lease_type == "전세" else room.rent,
-                maintenance_amount=room.maintenance,
+                rent_amount=final_rent,
+                maintenance_amount=final_maint,
                 tenant_name=effective_name,
                 is_previous_tenant=False
             )
             db.add(pay)
+        else:
+            if rent_amount is not None:
+                pay.rent_amount = rent_amount
+            if maintenance_amount is not None:
+                pay.maintenance_amount = maintenance_amount
 
         pay.paid = True
         pay.paid_date = now_date
