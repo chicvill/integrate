@@ -846,7 +846,7 @@ class RentService:
         """전체 시스템 데이터(29개실, 12개월 장부, 지출, 전출이력) JSON 다운로드 생성"""
         self.ensure_default_seed(db, branch_id)
         branch = db.query(RentBranch).filter(RentBranch.branch_id == branch_id).first()
-        branch_name = branch.name if branch else "시크빌"
+        branch_name: str = str(branch.name) if (branch and branch.name) else "시크빌"
 
         now = datetime.now()
         time_tag = now.strftime("%Y%m%d_%H%M%S")
