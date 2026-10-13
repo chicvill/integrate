@@ -135,17 +135,19 @@ class VatService:
                 if not is_curr:
                     for h in room_hists:
                         h_out_y, h_out_m = None, None
-                        if h.move_out and len(h.move_out) >= 7:
+                        h_move_out_str = str(h.move_out or "")
+                        if len(h_move_out_str) >= 7:
                             try:
-                                h_out_y = int(h.move_out[:4])
-                                h_out_m = int(h.move_out[5:7])
+                                h_out_y = int(h_move_out_str[:4])
+                                h_out_m = int(h_move_out_str[5:7])
                             except (ValueError, TypeError):
                                 pass
                         h_in_y, h_in_m = 0, 0
-                        if h.move_in and len(h.move_in) >= 7:
+                        h_move_in_str = str(h.move_in or "")
+                        if len(h_move_in_str) >= 7:
                             try:
-                                h_in_y = int(h.move_in[:4])
-                                h_in_m = int(h.move_in[5:7])
+                                h_in_y = int(h_move_in_str[:4])
+                                h_in_m = int(h_move_in_str[5:7])
                             except (ValueError, TypeError):
                                 pass
 
@@ -160,30 +162,38 @@ class VatService:
                 # 공실 여부 판정: 현 세입자 계약도 아니고 전출자 거주 기간도 아님
                 is_vacant = (not is_curr and not matched_hist)
 
+                amt: int = 0
                 if is_vacant:
                     # 공실은 부가세 공급가액(수입)에서 완전 제외 (0원)
                     amt = 0
                 else:
                     # 계약 기간: 순수 임차료(월세)만으로 부가세 공급대가 산출 (공공요금 실비 관리비 제외)
-                    is_jeonse = (r.get("lease_type") == "전세") if is_curr else (matched_hist.lease_type == "전세" if matched_hist else False)
+                    matched_lease_type = str(matched_hist.lease_type or "") if matched_hist else ""
+                    matched_rent: int = cast(int, matched_hist.rent) if (matched_hist and matched_hist.rent) else 0
+                    is_jeonse = (str(r.get("lease_type") or "") == "전세") if is_curr else (matched_lease_type == "전세")
+
                     if is_jeonse:
                         amt = 0
                     elif p.get("paid"):
-                        amt = p.get("rent_amount") if p.get("rent_amount") is not None else ((r.get("rent") or 0) if is_curr else ((matched_hist.rent or 0) if matched_hist else 0))
+                        p_rent = p.get("rent_amount")
+                        if p_rent is not None:
+                            amt = int(p_rent)
+                        else:
+                            amt = int(r.get("rent") or 0) if is_curr else matched_rent
                     else:
                         if is_curr:
-                            amt = (r.get("rent") or 0)
+                            amt = int(r.get("rent") or 0)
                         elif matched_hist:
-                            amt = (matched_hist.rent or 0)
+                            amt = matched_rent
                         else:
                             amt = 0
 
                     if is_curr and r.get("name"):
-                        tenant_names_seen.add(r.get("name"))
+                        tenant_names_seen.add(str(r.get("name")))
                     elif matched_hist and matched_hist.name:
-                        tenant_names_seen.add(matched_hist.name)
+                        tenant_names_seen.add(str(matched_hist.name))
                     elif p.get("tenant_name"):
-                        tenant_names_seen.add(p.get("tenant_name"))
+                        tenant_names_seen.add(str(p.get("tenant_name")))
 
                 monthly_amounts[m] = amt
                 room_period_total += amt
