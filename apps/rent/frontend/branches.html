@@ -2,170 +2,353 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>🏢 매장 & 이용료 수납 관리 센터 - 원룸 임차료 관리 시스템 (29개실)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <title>🏛️ 본사 관리 센터 - 원룸 임차료 관리 시스템 (29개실)</title>
 
   <!-- Google Fonts: Inter & Outfit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- MQnet SaaS Standard CSS (Direct Link + Cache Busting) -->
-  <link rel="stylesheet" href="./css/variables.css?v=2.0">
-  <link rel="stylesheet" href="./css/layout.css?v=2.0">
-  <link rel="stylesheet" href="./css/components.css?v=2.0">
-  <link rel="stylesheet" href="./style.css?v=2.0">
-  <link rel="stylesheet" href="/shared/ui/theme.css?v=2.0">
+  <!-- Tailwind CSS & Custom Theme -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            surface: {
+              950: '#070b14',
+              900: '#0f172a',
+              850: '#15203b',
+              800: '#1e293b',
+              750: '#27354f',
+              700: '#334155',
+              600: '#475569'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'Apple SD Gothic Neo', 'Malgun Gothic', 'sans-serif'],
+            title: ['Outfit', 'Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- MQnet SaaS Standard CSS -->
+  <link rel="stylesheet" href="./css/variables.css?v=3.0">
+  <link rel="stylesheet" href="./css/layout.css?v=3.0">
+  <link rel="stylesheet" href="./css/components.css?v=3.0">
+  <link rel="stylesheet" href="./style.css?v=3.0">
+
   <style>
+    /* Premium Glassmorphism & Custom Table */
+    body {
+      background-color: #070b14;
+      color: #e2e8f0;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
     .billing-table {
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(51, 65, 85, 0.6);
+      border-radius: 12px;
       overflow: hidden;
     }
-    .billing-table th, .billing-table td {
+    .billing-table th {
+      background: rgba(10, 15, 30, 0.85);
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.6);
+      white-space: nowrap;
+    }
+    .billing-table td {
       padding: 0.85rem 1rem;
       text-align: left;
-      border-bottom: 1px solid var(--border-color);
-      font-size: 0.85rem;
-    }
-    .billing-table th {
-      background: rgba(15, 23, 42, 0.7);
-      font-weight: 600;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      font-size: 0.75rem;
-      letter-spacing: 0.05em;
+      font-size: 0.825rem;
+      color: #e2e8f0;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.4);
+      white-space: nowrap;
     }
     .billing-table tbody tr:hover {
       background: rgba(255, 255, 255, 0.03);
     }
     .badge-paid {
       background: rgba(16, 185, 129, 0.15);
-      color: #10b981;
-      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.35);
       padding: 2px 8px;
       border-radius: 9999px;
-      font-weight: 600;
+      font-weight: 700;
+      font-size: 0.75rem;
     }
     .badge-pending {
       background: rgba(245, 158, 11, 0.15);
-      color: #f59e0b;
-      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.35);
       padding: 2px 8px;
       border-radius: 9999px;
-      font-weight: 600;
+      font-weight: 700;
+      font-size: 0.75rem;
     }
     .badge-overdue {
       background: rgba(239, 68, 68, 0.15);
-      color: #ef4444;
-      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.35);
       padding: 2px 8px;
       border-radius: 9999px;
-      font-weight: 600;
+      font-weight: 700;
+      font-size: 0.75rem;
     }
     .actions-cell {
       display: flex;
       gap: 0.4rem;
       align-items: center;
     }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(7, 11, 20, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-card {
+      background: #0f172a;
+      border: 1px solid rgba(51, 65, 85, 0.8);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      overflow: hidden;
+    }
+    .modal-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.6);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.9);
+    }
+    .modal-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .modal-close {
+      color: #94a3b8;
+      font-size: 1.25rem;
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+    .modal-close:hover { color: #fff; }
+    .modal-body {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+    .modal-footer {
+      padding: 0.85rem 1.25rem;
+      border-top: 1px solid rgba(51, 65, 85, 0.6);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      background: rgba(10, 15, 30, 0.6);
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      text-align: left;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+    .form-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #94a3b8;
+    }
+    .form-input, .form-select {
+      background: #1e293b;
+      border: 1px solid rgba(51, 65, 85, 0.8);
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.825rem;
+      color: #fff;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .form-input:focus, .form-select:focus {
+      border-color: #06b6d4;
+    }
+    .toast-container {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
   </style>
 </head>
-<body>
-  <!-- Header / Navigation Bar -->
-  <header class="saas-header">
-    <div class="header-left">
-      <span class="app-icon">{{APP_ICON}}</span>
-      <div class="brand-titles">
-        <h1 class="brand-title">원룸 임차료 관리 시스템 (29개실)</h1>
-        <span class="brand-badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.3);">HQ 본사 관리 센터</span>
-      </div>
-    </div>
+<body class="flex flex-col min-h-screen">
 
-    <div class="header-center" style="display: flex; gap: 8px;">
-      <a href="./index.html" class="btn btn-secondary btn-sm" style="text-decoration: none;">
-        ← 메인 대시보드로 돌아가기
-      </a>
-      <a href="./manual.html" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration: none;">
-        📖 운영 매뉴얼
-      </a>
-    </div>
-
-    <div class="header-right">
-      <div class="system-status-indicator" id="systemStatusBeacon">
-        <span class="status-dot online"></span>
-        <span class="status-text" id="systemStatusText">연결 중...</span>
+  <!-- ── 1. Top Header Navigation (Mobile-responsive, No Overlapping) ── -->
+  <header class="sticky top-0 z-50 bg-surface-900/90 backdrop-blur-md border-b border-slate-800 shadow-md">
+    <div class="max-w-6xl mx-auto px-3 sm:px-5 py-2.5 flex flex-wrap items-center justify-between gap-2.5">
+      
+      <!-- Brand & Title -->
+      <div class="flex items-center gap-2.5 min-w-0">
+        <span class="text-2xl shrink-0 p-1.5 rounded-xl bg-purple-950/60 border border-purple-500/40 text-purple-300 shadow-inner">🏛️</span>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <h1 class="text-sm sm:text-base font-extrabold text-white tracking-tight font-title truncate">
+              본사 지점 & 수납 관리 센터
+            </h1>
+            <span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40 shrink-0">
+              HQ 총괄 관제
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-400 truncate hidden sm:block">
+            원룸 임차관리 멀티테넌트 센터 · 점주 가입 승인 및 이용료 수납
+          </p>
+        </div>
       </div>
-      <div id="userAuthBadge"></div>
+
+      <!-- Quick Action Buttons -->
+      <div class="flex items-center gap-2 shrink-0 flex-wrap">
+        <a href="./index.html" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-800 hover:bg-surface-750 text-slate-200 border border-slate-700/80 text-xs font-semibold transition active:scale-95 shadow-sm no-underline">
+          <span>←</span>
+          <span>메인 대시보드</span>
+        </a>
+        <a href="./manual.html" target="_blank" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-950/40 hover:bg-cyan-900/60 text-cyan-300 border border-cyan-800/60 text-xs font-semibold transition active:scale-95 shadow-sm no-underline">
+          <span>📖</span>
+          <span>운영 매뉴얼</span>
+        </a>
+
+        <!-- System Beacon Status -->
+        <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-surface-950 border border-slate-800 text-xs text-slate-300" id="systemStatusBeacon">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-[11px] font-mono" id="systemStatusText">정상 가동</span>
+        </div>
+
+        <div id="userAuthBadge"></div>
+      </div>
+
     </div>
   </header>
 
-  <!-- Main Viewport Container -->
-  <main class="saas-container">
-    <!-- Hero / KPI Banner -->
-    <section class="kpi-banner">
-      <div class="kpi-card">
-        <span class="kpi-label">총 가맹/직영 매장</span>
-        <span class="kpi-value" id="kpiTotalBranches">0</span>
+  <!-- ── 2. Main Content Viewport ── -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-5 py-4 space-y-4 box-border">
+
+    <!-- Hero / KPI Banner (2x2 on Mobile, 4x1 on Desktop) -->
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3.5">
+      <!-- KPI 1 -->
+      <div class="bg-gradient-to-br from-surface-900 to-surface-850 border border-slate-800/80 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-semibold text-slate-400">총 관리 매장</span>
+          <span class="text-xs p-1 rounded-lg bg-surface-800 text-slate-300">🏢</span>
+        </div>
+        <div class="mt-2 text-xl sm:text-2xl font-black text-white tracking-tight" id="kpiTotalBranches">0</div>
       </div>
-      <div class="kpi-card">
-        <span class="kpi-label">정상 운영 매장</span>
-        <span class="kpi-value highlight" id="kpiActiveBranches">0</span>
+
+      <!-- KPI 2 -->
+      <div class="bg-gradient-to-br from-surface-900 to-surface-850 border border-slate-800/80 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-semibold text-slate-400">정상 운영 매장</span>
+          <span class="text-xs p-1 rounded-lg bg-emerald-950/60 text-emerald-400 border border-emerald-800/50">🟢</span>
+        </div>
+        <div class="mt-2 text-xl sm:text-2xl font-black text-cyan-300 tracking-tight" id="kpiActiveBranches">0</div>
       </div>
-      <div class="kpi-card">
-        <span class="kpi-label">당월 수납 완료액</span>
-        <span class="kpi-value healthy" id="kpiCollectedAmount">₩ 0</span>
+
+      <!-- KPI 3 -->
+      <div class="bg-gradient-to-br from-surface-900 to-surface-850 border border-slate-800/80 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-semibold text-slate-400">당월 수납 완료액</span>
+          <span class="text-xs p-1 rounded-lg bg-emerald-950/60 text-emerald-400 border border-emerald-800/50">₩</span>
+        </div>
+        <div class="mt-2 text-lg sm:text-2xl font-black text-emerald-400 tracking-tight truncate" id="kpiCollectedAmount">₩ 0</div>
       </div>
-      <div class="kpi-card">
-        <span class="kpi-label">미납 / 연체 매장</span>
-        <span class="kpi-value" style="color: #f43f5e;" id="kpiOverdueBranches">0</span>
+
+      <!-- KPI 4 -->
+      <div class="bg-gradient-to-br from-surface-900 to-surface-850 border border-slate-800/80 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-semibold text-slate-400">미납 / 연체 매장</span>
+          <span class="text-xs p-1 rounded-lg bg-rose-950/60 text-rose-400 border border-rose-800/50">⚠️</span>
+        </div>
+        <div class="mt-2 text-xl sm:text-2xl font-black text-rose-400 tracking-tight" id="kpiOverdueBranches">0</div>
       </div>
     </section>
 
-    <!-- Navigation Tabs -->
-    <div style="display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
-      <button id="tabBranchesBtn" class="btn btn-primary btn-sm" style="border-radius: 6px;">
-        🏢 가맹점 & 수납 관리
+    <!-- Navigation Tabs (Sleek Glassmorphism Tab Bar) -->
+    <div class="flex items-center gap-2 border-b border-slate-800 pb-2 flex-wrap">
+      <button id="tabBranchesBtn" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-cyan-600 text-white shadow-md shadow-cyan-950/50 transition cursor-pointer">
+        <span>🏢</span>
+        <span>가맹점 & 수납 관리</span>
       </button>
-      <button id="tabUpgradesBtn" class="btn btn-secondary btn-sm" style="border-radius: 6px;">
-        👥 점주/실장 등업 신청 관리 <span id="badgePendingUpgrades" style="background:#ef4444;color:#fff;border-radius:9999px;padding:1px 6px;font-size:0.7rem;margin-left:4px;display:none;">0</span>
+
+      <button id="tabUpgradesBtn" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-surface-800 hover:bg-surface-750 text-slate-300 border border-slate-700/80 transition cursor-pointer">
+        <span>👥</span>
+        <span>점주/실장 등업 신청 관리</span>
+        <span id="badgePendingUpgrades" class="hidden bg-rose-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold animate-pulse">0</span>
       </button>
-      <button id="btnOpenLoginModal" class="btn btn-secondary btn-sm" style="margin-left: auto; border-radius: 6px; background: rgba(59,130,246,0.15); color: #93c5fd; border-color: rgba(59,130,246,0.4);">
-        🔑 관리자 계정 로그인 테스트
+
+      <button id="btnOpenLoginModal" class="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-950/40 hover:bg-blue-900/60 text-blue-300 border border-blue-800/50 text-xs font-semibold transition cursor-pointer">
+        <span>🔑</span>
+        <span>관리자 계정 로그인 테스트</span>
       </button>
     </div>
 
-    <!-- Section 1: Branches & Billing -->
-    <div id="sectionBranches">
-      <!-- Toolbar / Search / Controls -->
-      <section class="toolbar-section">
-        <div class="search-filter-box">
-          <input type="text" id="branchSearchInput" class="form-input" placeholder="매장명 또는 코드 검색..." autocomplete="off">
-          <select id="billingFilter" class="form-select">
+    <!-- ── TAB 1: Branches & Billing Section ── -->
+    <div id="sectionBranches" class="space-y-3">
+      <!-- Toolbar: Search & Action Controls -->
+      <section class="bg-surface-900 border border-slate-800 rounded-2xl p-2.5 sm:p-3 flex flex-wrap items-center justify-between gap-2.5">
+        <div class="flex items-center gap-2 flex-wrap flex-1 min-w-[260px]">
+          <input type="text" id="branchSearchInput" class="form-input flex-1 min-w-[160px]" placeholder="매장명 또는 코드 검색..." autocomplete="off">
+          <select id="billingFilter" class="form-select shrink-0">
             <option value="">모든 수납 상태</option>
             <option value="PAID">완납 (PAID)</option>
             <option value="PENDING">결제 대기 (PENDING)</option>
             <option value="OVERDUE">미납/연체 (OVERDUE)</option>
           </select>
-          <select id="activeFilter" class="form-select">
+          <select id="activeFilter" class="form-select shrink-0">
             <option value="">모든 운영 상태</option>
-            <option value="true">정상 운영 중</option>
-            <option value="false">영업 정지 / 점검</option>
+            <option value="true">정상 운영 중 🟢</option>
+            <option value="false">영업 정지 / 점검 🔴</option>
           </select>
         </div>
-        <div class="action-buttons">
-          <button id="openNewBranchBtn" class="btn btn-primary btn-sm">
-            <span>➕</span> 신규 매장(가맹점) 등록
+
+        <div class="action-buttons shrink-0">
+          <button id="openNewBranchBtn" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-cyan-950/50 transition cursor-pointer active:scale-95">
+            <span>➕</span>
+            <span>신규 매장(가맹점) 등록</span>
           </button>
         </div>
       </section>
 
-      <!-- Branch Management Table -->
-      <section class="content-section">
-        <div style="overflow-x: auto;">
+      <!-- Branch Table Container -->
+      <section class="bg-surface-900 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
           <table class="billing-table">
             <thead>
               <tr>
@@ -185,103 +368,117 @@
             </tbody>
           </table>
         </div>
-        <div id="emptyBranchState" class="empty-state" style="display: none;">
-          <span class="empty-icon">🏢</span>
-          <p class="empty-text">등록된 매장이 없습니다. 신규 매장을 등록해주세요.</p>
-          <button id="emptyNewBranchBtn" class="btn btn-primary btn-sm">첫 매장 등록하기</button>
+
+        <div id="emptyBranchState" class="p-8 text-center" style="display: none;">
+          <span class="text-4xl block mb-2">🏢</span>
+          <p class="text-sm text-slate-400 mb-3">등록된 매장이 없습니다. 신규 매장을 등록해주세요.</p>
+          <button id="emptyNewBranchBtn" class="px-4 py-2 rounded-xl bg-cyan-600 text-white font-bold text-xs hover:bg-cyan-500">
+            첫 매장 등록하기
+          </button>
         </div>
       </section>
-    </div> <!-- End of sectionBranches -->
+    </div>
 
-    <!-- Section 2: Role Upgrade Requests -->
-    <div id="sectionUpgrades" style="display: none;">
-      <section style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem;">
-        <h3 style="font-size: 1.05rem; font-weight: 700; color: #fff; margin-bottom: 0.4rem;">
-          👥 점주/실장 관리자 등업 신청 검토 및 권한 승인
+    <!-- ── TAB 2: Role Upgrade Requests Section ── -->
+    <div id="sectionUpgrades" class="space-y-3" style="display: none;">
+      <!-- Hero Banner -->
+      <section class="bg-gradient-to-r from-purple-950/60 to-indigo-950/60 border border-purple-500/40 rounded-2xl p-3.5 sm:p-4">
+        <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+          <span>👥</span>
+          <span>점주/실장 관리자 등업 신청 검토 및 권한 승인</span>
         </h3>
-        <p style="font-size: 0.85rem; color: var(--text-muted);">
-          일반 개인 회원으로 가입한 후 가맹점 점주 또는 총괄 실장 권한을 신청한 회원 목록입니다. 승인 시 해당 지점의 전용 관제 권한(branch_admin)이 즉시 부여됩니다.
+        <p class="text-xs text-purple-200/80 mt-1">
+          신규 회원이 점주 권한을 신청한 목록입니다. 본사 관리자가 <b>[승인]</b>을 클릭하면 담당 매장 관제 권한이 즉시 부여됩니다.
         </p>
       </section>
 
-      <section class="content-section" style="overflow-x: auto;">
-        <table class="billing-table">
-          <thead>
-            <tr>
-              <th>신청자 명칭</th>
-              <th>연락처</th>
-              <th>희망 지점</th>
-              <th>신청 사유</th>
-              <th>신청 일시</th>
-              <th>상태</th>
-              <th>본사 승인 조치</th>
-            </tr>
-          </thead>
-          <tbody id="upgradeTableBody">
-            <!-- Rendered by js/branches.js -->
-          </tbody>
-        </table>
+      <!-- Upgrades Table Container -->
+      <section class="bg-surface-900 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+          <table class="billing-table">
+            <thead>
+              <tr>
+                <th>신청자 명칭</th>
+                <th>연락처</th>
+                <th>희망 지점</th>
+                <th>신청 사유</th>
+                <th>신청 일시</th>
+                <th>상태</th>
+                <th>본사 승인 조치</th>
+              </tr>
+            </thead>
+            <tbody id="upgradeTableBody">
+              <!-- Rendered by js/branches.js -->
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
+
   </main>
 
-  <!-- Modal: Admin Login Test (역할 및 지점별 자동 분기 테스트) -->
+  <!-- ── Modal 1: Admin Login Test ── -->
   <div id="loginModal" class="modal-backdrop" style="display: none;">
-    <div class="modal-card" style="max-width: 440px;">
+    <div class="modal-card">
       <div class="modal-header">
-        <h3 class="modal-title">🔑 관리자 계정 로그인 (지점 자동 분기)</h3>
+        <h3 class="modal-title flex items-center gap-2">
+          <span>🔑</span>
+          <span>관리자 계정 로그인 (지점 자동 분기)</span>
+        </h3>
         <button id="closeLoginModalBtn" class="modal-close">&times;</button>
       </div>
       <form id="adminLoginForm" class="modal-body">
-        <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.8rem; background: rgba(255,255,255,0.03); padding: 0.6rem; border-radius: 6px;">
-          <div>• <strong>admin</strong> / 1212 : 본사 총괄 최고관리자 (전체 매장 포털)</div>
-          <div>• <strong>admin01</strong> / 1212 : 제1매장 본점 관제 (main)</div>
-          <div>• <strong>admin02</strong> / 1212 : 제2매장 강남점 관제 (branch-gangnam)</div>
+        <div class="text-xs text-slate-300 bg-surface-850 p-2.5 rounded-xl border border-slate-700/60 space-y-1 font-mono">
+          <div>• <strong>admin</strong> / 1212 : 본사 총괄 최고관리자 (전체 지점)</div>
+          <div>• <strong>chicvill</strong> / 1212 : 시크빌 1호점 점주실장 (main)</div>
+          <div>• <strong>chicvill2</strong> / 1212 : 시크빌 2호점 점주실장 (branch_9027)</div>
         </div>
         <div class="form-group">
           <label class="form-label">관리자 아이디</label>
-          <input type="text" id="loginUsername" class="form-input" required placeholder="예: admin, admin01, admin02">
+          <input type="text" id="loginUsername" class="form-input" required placeholder="예: admin, chicvill">
         </div>
         <div class="form-group">
           <label class="form-label">비밀번호</label>
-          <input type="password" id="loginPassword" class="form-input" required placeholder="기본: 1212">
+          <input type="password" id="loginPassword" class="form-input" required placeholder="비밀번호 입력">
         </div>
         <div class="modal-footer">
-          <button type="button" id="cancelLoginModalBtn" class="btn btn-secondary">닫기</button>
-          <button type="submit" class="btn btn-primary" style="flex: 1;">로그인 & 해당 페이지 이동</button>
+          <button type="button" id="cancelLoginModalBtn" class="px-3 py-1.5 rounded-xl bg-surface-800 text-slate-300 text-xs font-semibold hover:bg-surface-750">닫기</button>
+          <button type="submit" class="flex-1 px-3 py-1.5 rounded-xl bg-cyan-600 text-white text-xs font-bold hover:bg-cyan-500 shadow-md">로그인 & 해당 건물 이동</button>
         </div>
       </form>
     </div>
   </div>
 
-
-  <!-- Modal: Branch Create / Edit -->
+  <!-- ── Modal 2: Branch Create / Edit ── -->
   <div id="branchModal" class="modal-backdrop" style="display: none;">
     <div class="modal-card">
       <div class="modal-header">
-        <h3 id="branchModalTitle" class="modal-title">신규 매장 등록</h3>
+        <h3 id="branchModalTitle" class="modal-title flex items-center gap-2">
+          <span>🏢</span>
+          <span>신규 매장 등록</span>
+        </h3>
         <button id="closeBranchModalBtn" class="modal-close">&times;</button>
       </div>
       <form id="branchForm" class="modal-body">
         <input type="hidden" id="editBranchId">
         <div class="form-group">
           <label for="branchCode" class="form-label">매장 식별 코드 (branch_id)</label>
-          <input type="text" id="branchCode" class="form-input" required placeholder="예: branch-gangnam, sc-sinchon">
+          <input type="text" id="branchCode" class="form-input" required placeholder="예: branch_gangnam, branch_02">
         </div>
         <div class="form-group">
           <label for="branchName" class="form-label">매장명</label>
-          <input type="text" id="branchName" class="form-input" required placeholder="예: MQnet 강남역점">
+          <input type="text" id="branchName" class="form-input" required placeholder="예: 시크빌 2호점">
         </div>
         <div class="form-row">
           <div class="form-group">
             <label for="branchPhone" class="form-label">매장 연락처</label>
-            <input type="text" id="branchPhone" class="form-input" placeholder="02-1234-5678">
+            <input type="text" id="branchPhone" class="form-input" placeholder="010-1234-5678">
           </div>
           <div class="form-group">
             <label for="feePlan" class="form-label">솔루션 요금제</label>
             <select id="feePlan" class="form-select">
-              <option value="베이직">베이직 (월 5만원)</option>
-              <option value="프리미엄 관리형" selected>프리미엄 관리형 (월 15만원)</option>
+              <option value="원룸 프리미엄 29실형" selected>원룸 프리미엄 29실형 (월 15만원)</option>
+              <option value="원룸 베이직">원룸 베이직 (월 10만원)</option>
               <option value="엔터프라이즈">엔터프라이즈 (월 25만원)</option>
             </select>
           </div>
@@ -304,9 +501,9 @@
           <div class="form-group">
             <label for="billingStatusSelect" class="form-label">수납 상태</label>
             <select id="billingStatusSelect" class="form-select">
-              <option value="PAID">완납 (PAID)</option>
-              <option value="PENDING">결제 대기 (PENDING)</option>
-              <option value="OVERDUE">미납/연체 (OVERDUE)</option>
+              <option value="PAID">완납 (PAID) 🟢</option>
+              <option value="PENDING">결제 대기 (PENDING) 🟡</option>
+              <option value="OVERDUE">미납/연체 (OVERDUE) 🔴</option>
             </select>
           </div>
           <div class="form-group">
@@ -318,8 +515,8 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" id="cancelBranchModalBtn" class="btn btn-secondary">취소</button>
-          <button type="submit" class="btn btn-primary">저장하기</button>
+          <button type="button" id="cancelBranchModalBtn" class="px-3 py-1.5 rounded-xl bg-surface-800 text-slate-300 text-xs font-semibold hover:bg-surface-750">취소</button>
+          <button type="submit" class="px-4 py-1.5 rounded-xl bg-cyan-600 text-white text-xs font-bold hover:bg-cyan-500 shadow-md">저장하기</button>
         </div>
       </form>
     </div>
