@@ -16,7 +16,7 @@ from ..db.models import RentBranch, RentRoom, RentTenantHistory
 class VatService:
     @staticmethod
     def get_vat_settings(db: Session, branch_id: str = "main") -> Dict[str, Any]:
-        """지점별 부가세 대상 호실 목록 DB 조회"""
+        """지점별 부가세 대상 호실목록 DB 조회"""
         branch = db.query(RentBranch).filter(RentBranch.branch_id == branch_id).first()
         saved_rooms: Optional[List[int]] = None
         if branch and branch.metadata_json and isinstance(branch.metadata_json, dict):
