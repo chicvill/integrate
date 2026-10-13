@@ -141,6 +141,7 @@ export const historiesApi = {
 export const branchesApi = {
   list: (activeOnly = false) => http.get('/branches', { active_only: activeOnly }),
   create: (data) => http.post('/branches', data),
+  update: (branchId, data) => http.patch(`/branches/${branchId}`, data),
   delete: (branchId) => http.delete(`/branches/${branchId}`),
   updateBilling: (branchId, billingStatus, lastPaidAt = null) =>
     http.patch(`/branches/${branchId}/billing`, { billing_status: billingStatus, last_paid_at: lastPaidAt })
@@ -207,6 +208,7 @@ export const apiDeleteTenantHistory = historiesApi.delete;
 
 export const apiGetBranches = branchesApi.list;
 export const apiCreateBranch = branchesApi.create;
+export const apiUpdateBranch = branchesApi.update;
 export const apiDeleteBranch = branchesApi.delete;
 export const apiUpdateBranchBilling = branchesApi.updateBilling;
 

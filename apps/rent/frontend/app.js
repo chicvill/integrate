@@ -22,7 +22,10 @@ import {
   renderAll,
   handleDeleteSelectedBranch,
   handleDeleteBranch,
-  executeBranchDeleteConfirmed
+  executeBranchDeleteConfirmed,
+  openEditSelectedBranchModal,
+  openEditBranchModal,
+  handleEditBranchSubmit
 } from './js/ui.js?v=2.0';
 import {
   openModal,
@@ -136,6 +139,9 @@ window.toggleMenuDrawer = toggleMenuDrawer;
 window.handleDeleteSelectedBranch = handleDeleteSelectedBranch;
 window.handleDeleteBranch = handleDeleteBranch;
 window.executeBranchDeleteConfirmed = executeBranchDeleteConfirmed;
+window.openEditSelectedBranchModal = openEditSelectedBranchModal;
+window.openEditBranchModal = openEditBranchModal;
+window.handleEditBranchSubmit = handleEditBranchSubmit;
 
 window.openRoomDrawer = openRoomDrawer;
 window.closeRoomDrawer = closeRoomDrawer;

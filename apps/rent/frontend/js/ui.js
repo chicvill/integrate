@@ -4,7 +4,7 @@
  */
 
 import { state, FLOOR_STRUCTURE, currentMonth, currentYear, formattedToday, saveLocalFallback, loadInitialData, fillTenantPaymentsState, evaluatePaymentRule, parseDateComponents, STORAGE_KEY } from './state.js?v=2.0';
-import { apiProcessPayment, apiCancelPayment, apiFillTenantPayments, apiGetRooms, apiDeleteBranch } from './api.js?v=2.0';
+import { apiProcessPayment, apiCancelPayment, apiFillTenantPayments, apiGetRooms, apiDeleteBranch, apiUpdateBranch } from './api.js?v=2.0';
 
 export function selectRoom(roomNum) {
   state.selectedRoom = parseInt(roomNum, 10);
@@ -878,6 +878,19 @@ export function renderLeftMenuDrawer() {
       const rightCol = document.createElement('div');
       rightCol.className = 'flex items-center gap-1.5 shrink-0';
 
+      // ✏️ 건물 정보 수정 버튼
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'px-1.5 py-0.5 rounded text-[11px] text-amber-300 hover:text-amber-100 hover:bg-amber-900/60 border border-amber-500/40 transition cursor-pointer';
+      editBtn.title = '건물 정보 수정';
+      editBtn.textContent = '✏️ 수정';
+      editBtn.onclick = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        openEditBranchModal(b.branch_id);
+      };
+      rightCol.appendChild(editBtn);
+
       if (!isMain) {
         const delBtn = document.createElement('button');
         delBtn.type = 'button';
@@ -915,6 +928,19 @@ export function renderLeftMenuDrawer() {
 
       const rightCol = document.createElement('div');
       rightCol.className = 'flex items-center gap-1.5 shrink-0';
+
+      // ✏️ 건물 정보 수정 버튼
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'p-1 rounded text-slate-400 hover:text-amber-300 hover:bg-amber-950/50 transition cursor-pointer';
+      editBtn.title = '건물 정보 수정';
+      editBtn.textContent = '✏️';
+      editBtn.onclick = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        openEditBranchModal(b.branch_id);
+      };
+      rightCol.appendChild(editBtn);
 
       if (!isMain) {
         const delBtn = document.createElement('button');
@@ -1065,11 +1091,119 @@ export async function executeBranchDeleteConfirmed() {
   }
 }
 
+// ── 부동산 정보 수정 모달 열기 ──
+export function openEditSelectedBranchModal() {
+  const currentBranchId = state.currentBranch || 'main';
+  openEditBranchModal(currentBranchId);
+}
+
+export function openEditBranchModal(branchId) {
+  const b = (state.branches || []).find(item => item.branch_id === branchId) || {
+    branch_id: branchId,
+    name: branchId === 'main' ? '시크빌 (29개실)' : branchId,
+    address: '',
+    contact_phone: ''
+  };
+
+  const idInput = document.getElementById('editBranchIdInput');
+  const nameInput = document.getElementById('editBranchNameInput');
+  const addrInput = document.getElementById('editBranchAddressInput');
+  const phoneInput = document.getElementById('editBranchPhoneInput');
+
+  if (idInput) idInput.value = b.branch_id || '';
+  if (nameInput) nameInput.value = b.name || '';
+  if (addrInput) addrInput.value = b.address || '';
+  if (phoneInput) phoneInput.value = b.contact_phone || '';
+
+  const modal = document.getElementById('editBranchModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+}
+
+// ── 부동산 정보 수정 폼 제출 ──
+export async function handleEditBranchSubmit(e) {
+  if (e && e.preventDefault) e.preventDefault();
+
+  const idInput = document.getElementById('editBranchIdInput');
+  const nameInput = document.getElementById('editBranchNameInput');
+  const addrInput = document.getElementById('editBranchAddressInput');
+  const phoneInput = document.getElementById('editBranchPhoneInput');
+  const btn = document.getElementById('btnSaveBranchEdit');
+
+  const branchId = idInput ? idInput.value.trim() : '';
+  const newName = nameInput ? nameInput.value.trim() : '';
+  const newAddr = addrInput ? addrInput.value.trim() : '';
+  const newPhone = phoneInput ? phoneInput.value.trim() : '';
+
+  if (!branchId || !newName) {
+    alert('건물 명칭은 필수 입력 사항입니다.');
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '저장 중... ⏳';
+  }
+
+  const payload = {
+    name: newName,
+    address: newAddr,
+    contact_phone: newPhone
+  };
+
+  try {
+    if (state.isOnline) {
+      await apiUpdateBranch(branchId, payload);
+    }
+
+    // 로컬 상태 즉시 반영
+    let found = false;
+    state.branches = (state.branches || []).map(b => {
+      if (b.branch_id === branchId) {
+        found = true;
+        return { ...b, ...payload };
+      }
+      return b;
+    });
+    if (!found) {
+      state.branches.push({ branch_id: branchId, ...payload, is_active: true, billing_status: 'PAID' });
+    }
+
+    saveLocalFallback();
+
+    // 모달 닫기
+    const modal = document.getElementById('editBranchModal');
+    if (modal) {
+      modal.classList.remove('flex');
+      modal.classList.add('hidden');
+    }
+
+    // 화면 갱신
+    renderAll();
+    renderLeftMenuDrawer();
+
+    alert(`🎉 [${newName}] 부동산 정보가 성공적으로 수정되었습니다!`);
+  } catch (err) {
+    console.error('[Edit Branch Error]', err);
+    alert('부동산 정보 수정 실패: ' + (err.message || '서버 응답 오류'));
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '💾 정보 수정 저장';
+    }
+  }
+}
+
 // 전역 윈도우 즉시 노출
 if (typeof window !== 'undefined') {
   window.handleDeleteBranch = handleDeleteBranch;
   window.handleDeleteSelectedBranch = handleDeleteSelectedBranch;
   window.executeBranchDeleteConfirmed = executeBranchDeleteConfirmed;
+  window.openEditSelectedBranchModal = openEditSelectedBranchModal;
+  window.openEditBranchModal = openEditBranchModal;
+  window.handleEditBranchSubmit = handleEditBranchSubmit;
 }
 
 // ── 수납 처리 비동기 액션 ──

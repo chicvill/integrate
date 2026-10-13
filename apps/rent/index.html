@@ -136,9 +136,13 @@
       <div>
         <div class="flex items-center justify-between mb-1.5 px-1">
           <span class="text-[11px] font-bold text-cyan-400 uppercase tracking-wider">🏢 등록된 부동산 목록</span>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5 flex-wrap justify-end">
             <button type="button" onclick="openNewBranchModal(); closeMenuDrawer();" class="text-[11px] text-cyan-300 hover:text-cyan-200 font-bold flex items-center gap-0.5 cursor-pointer">
               + 신규 추가
+            </button>
+            <span class="text-slate-600 text-[10px]">|</span>
+            <button type="button" onclick="openEditSelectedBranchModal(); closeMenuDrawer();" class="text-[11px] text-amber-300 hover:text-amber-200 font-semibold flex items-center gap-0.5 cursor-pointer" title="선택된 건물 정보 수정">
+              ✏️ 수정
             </button>
             <span class="text-slate-600 text-[10px]">|</span>
             <button type="button" onclick="window.handleDeleteSelectedBranch()" class="text-[11px] text-rose-400 hover:text-rose-300 font-semibold flex items-center gap-0.5 cursor-pointer" title="현재 선택된 건물 삭제">
@@ -537,6 +541,45 @@
           🗑️ 네, 삭제합니다
         </button>
       </div>
+    </div>
+  <!-- 0-1. Branch Info Edit Modal -->
+  <div id="editBranchModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-50 hidden items-center justify-center p-3">
+    <div class="bg-surface-900 border border-amber-500/50 rounded-2xl p-4 sm:p-5 max-w-sm w-full space-y-4 shadow-2xl animate-fade-in">
+      <div class="flex items-center justify-between pb-2.5 border-b border-slate-800">
+        <div class="flex items-center gap-2 text-amber-400">
+          <span class="text-xl">🏢</span>
+          <h3 class="text-sm font-bold text-white">부동산 정보 수정</h3>
+        </div>
+        <button type="button" onclick="closeModal('editBranchModal')" class="text-slate-400 hover:text-white text-base font-bold cursor-pointer">✕</button>
+      </div>
+
+      <form id="editBranchForm" onsubmit="handleEditBranchSubmit(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-300 mb-1">건물 식별 ID</label>
+          <input type="text" id="editBranchIdInput" readonly class="w-full bg-surface-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-400 font-mono text-xs cursor-not-allowed select-none">
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-300 mb-1">건물 명칭 <span class="text-rose-400">*</span></label>
+          <input type="text" id="editBranchNameInput" required placeholder="예: 시크빌 (29개실)" class="w-full bg-surface-950 border border-slate-700 focus:border-amber-500 rounded-xl px-3 py-2 text-white font-medium text-xs">
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-300 mb-1">도로명 주소</label>
+          <input type="text" id="editBranchAddressInput" placeholder="예: 서울특별시 강남구 테헤란로 123" class="w-full bg-surface-950 border border-slate-700 focus:border-amber-500 rounded-xl px-3 py-2 text-white font-medium text-xs">
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-300 mb-1">관리실 / 대표 연락처</label>
+          <input type="text" id="editBranchPhoneInput" placeholder="예: 010-2345-6789" class="w-full bg-surface-950 border border-slate-700 focus:border-amber-500 rounded-xl px-3 py-2 text-white font-medium text-xs">
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="closeModal('editBranchModal')" class="flex-1 py-2.5 rounded-xl bg-surface-800 hover:bg-surface-750 text-slate-300 font-semibold text-xs border border-slate-700 cursor-pointer">
+            취소
+          </button>
+          <button type="submit" id="btnSaveBranchEdit" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold text-xs shadow-md shadow-amber-950/50 transition cursor-pointer">
+            💾 정보 수정 저장
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -1381,6 +1424,6 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- Universal Bundle Script -->
-  <script src="./bundle.js?v=4.0"></script>
+  <script src="./bundle.js?v=4.1"></script>
 </body>
 </html>
