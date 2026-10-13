@@ -103,7 +103,10 @@ export function toggleRoomDrawer() {
   }
 }
 
-export function togglePastAccordion() {
+export function togglePastAccordion(event) {
+  if (event && event.stopPropagation) {
+    event.stopPropagation();
+  }
   state.isPastOpen = !state.isPastOpen;
   const room = state.rooms[state.selectedRoom];
   if (room) renderPastHistorySection(room);
@@ -177,7 +180,16 @@ export function renderMainRoomCard(room) {
     if (isVacant || !room.phone) {
       cardPhone.innerHTML = `<span class="text-slate-500">연락처 없음</span>`;
     } else {
-      cardPhone.innerHTML = `<a href="tel:${room.phone}" class="text-cyan-400 underline font-mono flex items-center gap-1 hover:text-cyan-300">📞 ${room.phone}</a>`;
+      cardPhone.innerHTML = `
+        <span class="inline-flex items-center gap-1.5 bg-surface-850 px-2 py-0.5 rounded-lg border border-slate-700/80">
+          <a href="javascript:void(0)" onclick="handlePhoneMessageClick('${room.phone}', '${room.name || ''}', ${room.room_number})" class="text-cyan-300 hover:text-cyan-200 underline font-mono flex items-center gap-1 font-semibold text-xs" title="문자 메시지 창 열기 (영수증 자동 복사)">
+            <span>💬 ${room.phone}</span>
+          </a>
+          <a href="tel:${room.phone}" class="text-[10px] text-slate-400 hover:text-white px-1 py-0.5 rounded hover:bg-slate-700" title="전화 걸기">
+            📞
+          </a>
+        </span>
+      `;
     }
   }
 

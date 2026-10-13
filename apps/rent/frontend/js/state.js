@@ -43,6 +43,9 @@ export const state = {
   tenantHistories: [],
   isPastOpen: false, // 기본 전체 접힘, 펼치기 시 최근 1년간 기록 표시
   isContractOpen: false,
+  pendingReceiptText: '',
+  pendingReceiptRoom: null,
+  lastSmsDeposit: null,
   isOnline: false,
   currentUser: null // { username, role, name, branch_id }
 };
@@ -310,7 +313,7 @@ export function generateDefaultSeedRooms() {
     // 404호: 이종진 고객 (2026-06-08 전입, 월세 290,000원, 관리비 150,000원, 보증금 5,000,000원, 후불)
     if (rNum === 404) {
       tenantName = "이종진";
-      phoneNum = "010-2345-4404";
+      phoneNum = "010-4808-9078";
       rentVal = 290000;
       maintVal = 150000;
       moveInDate = `${currentYear}-06-08`;
@@ -321,13 +324,13 @@ export function generateDefaultSeedRooms() {
     // 503호: 김백찬 고객
     if (rNum === 503) {
       tenantName = "김백찬";
-      phoneNum = "010-3344-5503";
+      phoneNum = "010-8864-2674";
     }
 
     // 505호: 김정현 고객 (2026-06-29 전입, 월세 290,000원, 관리비 150,000원, 후불)
     if (rNum === 505) {
       tenantName = "김정현";
-      phoneNum = "010-4499-5505";
+      phoneNum = "010-9810-0443";
       rentVal = 290000;
       maintVal = 150000;
       moveInDate = `${currentYear}-06-29`;
@@ -467,7 +470,7 @@ export function loadLocalFallback() {
       const r503 = state.rooms[503];
       if (r503.name === "장지아" || r503.name === "김백찬" || !r503.name) {
         r503.name = "김백찬";
-        if (!r503.phone) r503.phone = "010-3344-5503";
+        if (!r503.phone || r503.phone === "010-3344-5503") r503.phone = "010-8864-2674";
       }
     }
 
@@ -476,7 +479,7 @@ export function loadLocalFallback() {
       const r404 = state.rooms[404];
       if (r404.name !== "이종진" || !r404.move_in || r404.move_in.indexOf("06") === -1) {
         r404.name = "이종진";
-        r404.phone = "010-2345-4404";
+        r404.phone = "010-4808-9078";
         r404.rent = 290000;
         r404.maintenance = 150000;
         r404.deposit = 5000000;
@@ -484,6 +487,8 @@ export function loadLocalFallback() {
         r404.pay_timing = "후불";
         r404.move_in = `${currentYear}-06-08`;
         r404.expiry = `${currentYear + 1}-06-07`;
+      } else if (!r404.phone || r404.phone === "010-2345-4404") {
+        r404.phone = "010-4808-9078";
       }
     }
 
@@ -492,7 +497,7 @@ export function loadLocalFallback() {
       const r505 = state.rooms[505];
       if (r505.name !== "김정현" || r505.move_in !== `${currentYear}-06-29`) {
         r505.name = "김정현";
-        r505.phone = "010-4499-5505";
+        r505.phone = "010-9810-0443";
         r505.rent = 290000;
         r505.maintenance = 150000;
         r505.deposit = 5000000;
@@ -500,6 +505,8 @@ export function loadLocalFallback() {
         r505.pay_timing = "후불";
         r505.move_in = `${currentYear}-06-29`;
         r505.expiry = `${currentYear + 1}-06-28`;
+      } else if (!r505.phone || r505.phone === "010-4499-5505") {
+        r505.phone = "010-9810-0443";
       }
     }
 

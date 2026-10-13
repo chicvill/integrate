@@ -80,6 +80,11 @@
           <span class="text-xs">💰</span>
           <span>지출 등록</span>
         </button>
+
+        <button type="button" onclick="openSmsDepositModal()" class="flex items-center gap-1 px-2 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 text-cyan-300 font-bold text-xs transition cursor-pointer shadow-sm active:scale-95 whitespace-nowrap shrink-0" title="은행 입금 알림 문자 자동 분석 & 영수증 발송">
+          <span class="text-xs">📲</span>
+          <span>입금문자</span>
+        </button>
       </div>
 
       <!-- Right: Room Selector Drawer Button -->
@@ -205,6 +210,12 @@
             <div>
               <div class="text-xs font-bold text-emerald-200">전체 계약대장 엑셀 백업</div>
               <div class="text-[10px] text-slate-400">29개실 전체 계약·수납 현황 CSV 저장</div>
+            </div>
+          <button type="button" onclick="closeMenuDrawer(); openSmsDepositModal();" class="w-full text-left p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-cyan-300 border border-cyan-800/50 font-semibold flex items-center gap-2.5 transition">
+            <span class="text-base">📲</span>
+            <div>
+              <div class="text-xs font-bold text-cyan-200">입금 문자 자동 인식 & 영수증</div>
+              <div class="text-[10px] text-slate-400">문자 분석, 자동 완납 및 영수증 전송</div>
             </div>
           </button>
 
@@ -344,12 +355,20 @@
         <!-- Rendered by JS -->
       </div>
 
+      <!-- 입금 알림문자 간편 연동 버튼 -->
+      <div class="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+        <span class="text-slate-400 text-[10px] sm:text-xs">은행 알림으로 자동 수납:</span>
+        <button type="button" onclick="openSmsDepositModal()" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-surface-800 hover:bg-surface-700 text-cyan-300 border border-slate-700 transition flex items-center gap-1 shadow-sm cursor-pointer shrink-0">
+          <span>📲 입금문자 간편인식</span>
+        </button>
+      </div>
+
     </section>
 
     <!-- ── CARD 3: 과거 납부 내역 (기본 전체 접힘, 펼치기 시 최근 1년간 기록 표시) ── -->
     <section class="bg-surface-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden w-full box-border">
       
-      <div class="p-3 sm:px-3.5 sm:py-3 bg-surface-850/80 cursor-pointer select-none" onclick="togglePastAccordion()">
+      <div class="p-3 sm:px-3.5 sm:py-3 bg-surface-850/80 cursor-pointer select-none" onclick="togglePastAccordion(event)">
         <!-- Top Row: Icon, Title & Toggle Button -->
         <div class="flex items-center justify-between gap-2">
           <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
@@ -363,16 +382,8 @@
             </div>
           </div>
           
-          <button type="button" id="pastToggleBtn" onclick="togglePastAccordion()" class="px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs font-semibold rounded-xl bg-surface-800 hover:bg-surface-700 text-cyan-300 border border-slate-700 transition flex items-center gap-1 shadow-sm cursor-pointer shrink-0">
+          <button type="button" id="pastToggleBtn" onclick="togglePastAccordion(event)" class="px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs font-semibold rounded-xl bg-surface-800 hover:bg-surface-700 text-cyan-300 border border-slate-700 transition flex items-center gap-1 shadow-sm cursor-pointer shrink-0">
             <span id="pastToggleBtnText">내역 펼치기 ▾</span>
-          </button>
-        </div>
-
-        <!-- Sub Row: Quick Action Button (전입일~현재 납부채우기) -->
-        <div class="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between gap-2 text-[11px]" onclick="event.stopPropagation()">
-          <span class="text-slate-400 text-[10px] sm:text-xs">전입일 기준 누락 정리:</span>
-          <button type="button" onclick="handleFillTenantPayments()" title="현재 세입자의 전입일부터 현재까지 납부내역을 완납으로 자동 채웁니다" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-cyan-950/80 hover:bg-cyan-800 text-cyan-300 border border-cyan-700/60 transition flex items-center gap-1 shadow-sm cursor-pointer shrink-0">
-            <span>⚡ 완납 자동채우기</span>
           </button>
         </div>
       </div>
@@ -899,6 +910,113 @@
             <span>일괄 등록 적용</span>
           </button>
           <button type="button" onclick="closeModal('excelImportModal')" class="px-3.5 py-2 rounded-xl bg-surface-800 hover:bg-surface-700 text-slate-300 text-xs cursor-pointer">취소</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 9. 입금 알림 문자 자동 인식 & 영수증 발송 모달 (SMS Auto-Deposit & Receipt) -->
+  <div id="smsDepositModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden items-center justify-center p-3 select-none">
+    <div class="bg-surface-900 border border-slate-800 rounded-3xl max-w-lg w-full p-4 sm:p-5 shadow-2xl flex flex-col space-y-3.5 text-xs animate-in fade-in duration-200 max-h-[92vh] overflow-y-auto">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-2.5 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-lg">
+            📲
+          </div>
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-white tracking-tight">입금 문자 자동 인식 & 영수증</h3>
+            <p class="text-[11px] text-slate-400">은행 입금 알림 문자를 붙여넣으면 즉시 완납 처리 및 영수증을 생성합니다.</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeSmsDepositModal()" class="w-7 h-7 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-white flex items-center justify-center font-bold text-sm cursor-pointer">✕</button>
+      </div>
+
+      <!-- Step 1: Input Raw SMS -->
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between text-[11px]">
+          <label class="text-slate-300 font-bold flex items-center gap-1">
+            <span>📩</span> <span>은행 입금 알림 문자 붙여넣기</span>
+          </label>
+          <div class="flex items-center gap-1.5">
+            <button type="button" onclick="fillSampleSmsText()" class="px-2 py-0.5 rounded bg-surface-800 hover:bg-surface-700 text-cyan-300 border border-slate-700 text-[10px] cursor-pointer" title="404호 이종진 농협 예시 붙여넣기">
+              🧪 예시 문자 입력
+            </button>
+            <button type="button" onclick="pasteFromClipboardToSmsInput()" class="px-2 py-0.5 rounded bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-700/60 text-[10px] cursor-pointer">
+              📋 클립보드 붙여넣기
+            </button>
+          </div>
+        </div>
+        <textarea id="smsRawInput" oninput="handleLiveSmsParse()" rows="5" class="w-full bg-surface-950 border border-slate-700 focus:border-cyan-500 text-slate-100 rounded-xl p-2.5 text-xs font-mono outline-none transition resize-none placeholder:text-slate-600" placeholder="핸드폰에서 받은 은행 입금 알림 문자를 여기에 붙여넣으세요.&#10;&#10;예시:&#10;농협&#10;입금440,000원&#10;10/06 19:40&#10;351-****-9152&#10;-93 이종진404호&#10;잔액4,788,692원"></textarea>
+      </div>
+
+      <!-- Step 2: Live Analysis Result Card -->
+      <div id="smsAnalysisCard" class="bg-surface-850 border border-slate-800 rounded-2xl p-3 space-y-2.5">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+          <span class="font-bold text-slate-200 flex items-center gap-1 text-[11px]">
+            <span>🔍</span> <span>자동 분석 결과</span>
+          </span>
+          <span id="smsBankBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold font-mono">
+            농협 입금
+          </span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 text-[11px]">
+          <div class="bg-surface-900 p-2 rounded-xl border border-slate-800">
+            <span class="text-slate-400 block text-[10px] mb-0.5">대상 호실 / 세입자</span>
+            <div class="flex items-center gap-1">
+              <select id="smsDetectedRoom" onchange="onSmsDetectedRoomChange()" class="bg-surface-950 border border-slate-700 text-cyan-300 font-bold text-xs rounded px-1.5 py-0.5 outline-none font-mono">
+                <!-- 29 rooms populated by JS -->
+              </select>
+              <span id="smsDetectedTenant" class="text-white font-bold truncate">이종진</span>
+            </div>
+          </div>
+
+          <div class="bg-surface-900 p-2 rounded-xl border border-slate-800">
+            <span class="text-slate-400 block text-[10px] mb-0.5">입금 금액</span>
+            <span id="smsDetectedAmount" class="text-emerald-400 font-black font-mono text-sm block">440,000원</span>
+          </div>
+
+          <div class="bg-surface-900 p-2 rounded-xl border border-slate-800">
+            <span class="text-slate-400 block text-[10px] mb-0.5">입금 일시 / 납부월</span>
+            <span id="smsDetectedDate" class="text-slate-200 font-mono font-medium block">10월 6일 (10월분)</span>
+          </div>
+
+          <div class="bg-surface-900 p-2 rounded-xl border border-slate-800">
+            <span class="text-slate-400 block text-[10px] mb-0.5">계좌 / 식별 메모</span>
+            <span id="smsDetectedMemo" class="text-slate-300 font-mono text-[10px] block truncate">351-****-9152</span>
+          </div>
+        </div>
+
+        <!-- Execute Deposit Button -->
+        <button type="button" id="btnExecuteSmsDeposit" onclick="handleSmsDepositProcess()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 transition">
+          <span>⚡</span>
+          <span id="btnExecuteSmsDepositText">404호 10월분 440,000원 입금 처리 완료</span>
+        </button>
+
+        <div id="smsProcessResultAlert" class="hidden"></div>
+      </div>
+
+      <!-- Step 3: Receipt Message Transformation Preview -->
+      <div class="space-y-1.5 pt-1">
+        <div class="flex items-center justify-between text-[11px]">
+          <label class="text-slate-300 font-bold flex items-center gap-1">
+            <span>📤</span> <span>송금자 영수증 문자 (잔액 삭제 & 입금확인 대체)</span>
+          </label>
+          <span class="text-[10px] text-emerald-400">※ 잔액 삭제 완료</span>
+        </div>
+
+        <textarea id="smsReceiptText" rows="6" class="w-full bg-surface-950 border border-slate-700 text-slate-100 rounded-xl p-2.5 text-xs font-mono outline-none resize-none leading-relaxed" placeholder="입금 문자를 입력하면 잔액이 삭제되고 '입금 확인했습니다. 감사합니다.'로 대체된 영수증이 자동 생성됩니다."></textarea>
+
+        <div class="flex items-center gap-2 pt-1">
+          <button type="button" onclick="handleCopySmsReceipt()" class="flex-1 py-2 rounded-xl bg-surface-800 hover:bg-surface-700 text-cyan-300 font-bold text-xs border border-slate-700 flex items-center justify-center gap-1.5 cursor-pointer transition active:scale-98">
+            <span>📋</span> <span>영수증 내용 복사</span>
+          </button>
+          <button type="button" onclick="handleSendSmsReceipt()" class="flex-1 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs shadow-md shadow-cyan-950/50 flex items-center justify-center gap-1.5 cursor-pointer transition active:scale-98">
+            <span>💬</span> <span id="btnSendSmsTenantText">404호(이종진)로 문자 보내기</span>
+          </button>
         </div>
       </div>
 

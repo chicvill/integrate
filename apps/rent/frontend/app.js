@@ -67,10 +67,30 @@ import {
   selectTemplatePreset,
   downloadTemplatePreset,
   loadTemplatePresetDemo,
-  exportAllRoomsCSV
+  exportAllRoomsCSV,
+  openSmsDepositModal,
+  closeSmsDepositModal,
+  fillSampleSmsText,
+  pasteFromClipboardToSmsInput,
+  handleLiveSmsParse,
+  onSmsDetectedRoomChange,
+  handleSmsDepositProcess,
+  handleCopySmsReceipt,
+  handleSendSmsReceipt,
+  handlePhoneMessageClick
 } from './js/modals.js?v=2.0';
 
 // ── 전역 윈도우 핸들러 바인딩 (인라인 HTML 호출 호환) ──
+window.openSmsDepositModal = openSmsDepositModal;
+window.closeSmsDepositModal = closeSmsDepositModal;
+window.fillSampleSmsText = fillSampleSmsText;
+window.pasteFromClipboardToSmsInput = pasteFromClipboardToSmsInput;
+window.handleLiveSmsParse = handleLiveSmsParse;
+window.onSmsDetectedRoomChange = onSmsDetectedRoomChange;
+window.handleSmsDepositProcess = handleSmsDepositProcess;
+window.handleCopySmsReceipt = handleCopySmsReceipt;
+window.handleSendSmsReceipt = handleSendSmsReceipt;
+window.handlePhoneMessageClick = handlePhoneMessageClick;
 window.state = state;
 window.selectRoom = selectRoom;
 window.switchBranch = switchBranch;

@@ -253,6 +253,9 @@ const state = {
   tenantHistories: [],
   isPastOpen: false, // 기본 전체 접힘, 펼치기 시 최근 1년간 기록 표시
   isContractOpen: false,
+  pendingReceiptText: '',
+  pendingReceiptRoom: null,
+  lastSmsDeposit: null,
   isOnline: false,
   currentUser: null // { username, role, name, branch_id }
 };
@@ -520,7 +523,7 @@ function generateDefaultSeedRooms() {
     // 404호: 이종진 고객 (2026-06-08 전입, 월세 290,000원, 관리비 150,000원, 보증금 5,000,000원, 후불)
     if (rNum === 404) {
       tenantName = "이종진";
-      phoneNum = "010-2345-4404";
+      phoneNum = "010-4808-9078";
       rentVal = 290000;
       maintVal = 150000;
       moveInDate = `${currentYear}-06-08`;
@@ -531,13 +534,13 @@ function generateDefaultSeedRooms() {
     // 503호: 김백찬 고객
     if (rNum === 503) {
       tenantName = "김백찬";
-      phoneNum = "010-3344-5503";
+      phoneNum = "010-8864-2674";
     }
 
     // 505호: 김정현 고객 (2026-06-29 전입, 월세 290,000원, 관리비 150,000원, 후불)
     if (rNum === 505) {
       tenantName = "김정현";
-      phoneNum = "010-4499-5505";
+      phoneNum = "010-9810-0443";
       rentVal = 290000;
       maintVal = 150000;
       moveInDate = `${currentYear}-06-29`;
@@ -677,7 +680,7 @@ function loadLocalFallback() {
       const r503 = state.rooms[503];
       if (r503.name === "장지아" || r503.name === "김백찬" || !r503.name) {
         r503.name = "김백찬";
-        if (!r503.phone) r503.phone = "010-3344-5503";
+        if (!r503.phone || r503.phone === "010-3344-5503") r503.phone = "010-8864-2674";
       }
     }
 
@@ -686,7 +689,7 @@ function loadLocalFallback() {
       const r404 = state.rooms[404];
       if (r404.name !== "이종진" || !r404.move_in || r404.move_in.indexOf("06") === -1) {
         r404.name = "이종진";
-        r404.phone = "010-2345-4404";
+        r404.phone = "010-4808-9078";
         r404.rent = 290000;
         r404.maintenance = 150000;
         r404.deposit = 5000000;
@@ -694,6 +697,8 @@ function loadLocalFallback() {
         r404.pay_timing = "후불";
         r404.move_in = `${currentYear}-06-08`;
         r404.expiry = `${currentYear + 1}-06-07`;
+      } else if (!r404.phone || r404.phone === "010-2345-4404") {
+        r404.phone = "010-4808-9078";
       }
     }
 
@@ -702,7 +707,7 @@ function loadLocalFallback() {
       const r505 = state.rooms[505];
       if (r505.name !== "김정현" || r505.move_in !== `${currentYear}-06-29`) {
         r505.name = "김정현";
-        r505.phone = "010-4499-5505";
+        r505.phone = "010-9810-0443";
         r505.rent = 290000;
         r505.maintenance = 150000;
         r505.deposit = 5000000;
@@ -710,6 +715,8 @@ function loadLocalFallback() {
         r505.pay_timing = "후불";
         r505.move_in = `${currentYear}-06-29`;
         r505.expiry = `${currentYear + 1}-06-28`;
+      } else if (!r505.phone || r505.phone === "010-4499-5505") {
+        r505.phone = "010-9810-0443";
       }
     }
 
@@ -889,7 +896,10 @@ function toggleRoomDrawer() {
   }
 }
 
-function togglePastAccordion() {
+function togglePastAccordion(event) {
+  if (event && event.stopPropagation) {
+    event.stopPropagation();
+  }
   state.isPastOpen = !state.isPastOpen;
   const room = state.rooms[state.selectedRoom];
   if (room) renderPastHistorySection(room);
@@ -963,7 +973,16 @@ function renderMainRoomCard(room) {
     if (isVacant || !room.phone) {
       cardPhone.innerHTML = `<span class="text-slate-500">연락처 없음</span>`;
     } else {
-      cardPhone.innerHTML = `<a href="tel:${room.phone}" class="text-cyan-400 underline font-mono flex items-center gap-1 hover:text-cyan-300">📞 ${room.phone}</a>`;
+      cardPhone.innerHTML = `
+        <span class="inline-flex items-center gap-1.5 bg-surface-850 px-2 py-0.5 rounded-lg border border-slate-700/80">
+          <a href="javascript:void(0)" onclick="handlePhoneMessageClick('${room.phone}', '${room.name || ''}', ${room.room_number})" class="text-cyan-300 hover:text-cyan-200 underline font-mono flex items-center gap-1 font-semibold text-xs" title="문자 메시지 창 열기 (영수증 자동 복사)">
+            <span>💬 ${room.phone}</span>
+          </a>
+          <a href="tel:${room.phone}" class="text-[10px] text-slate-400 hover:text-white px-1 py-0.5 rounded hover:bg-slate-700" title="전화 걸기">
+            📞
+          </a>
+        </span>
+      `;
     }
   }
 
@@ -4348,6 +4367,533 @@ function handleLogout() {
   handleOneTouchLogout(true);
 }
 
+// ══════════════════════════════════════════════════════════════════════
+// 9. 은행 입금 알림 문자 자동 인식 & 수납 처리 및 영수증 전송 모듈
+// ══════════════════════════════════════════════════════════════════════
+
+function openSmsDepositModal() {
+  openModal('smsDepositModal');
+  
+  // 29개실 셀렉트박스 옵션 채우기
+  const roomSelect = document.getElementById('smsDetectedRoom');
+  if (roomSelect && roomSelect.options.length <= 1) {
+    roomSelect.innerHTML = '';
+    ROOM_NUMBERS.forEach(rNum => {
+      const opt = document.createElement('option');
+      opt.value = rNum;
+      const r = state.rooms[rNum];
+      opt.textContent = `${rNum}호${r && r.name ? ' (' + r.name + ')' : ''}`;
+      if (rNum === state.selectedRoom) opt.selected = true;
+      roomSelect.appendChild(opt);
+    });
+  }
+
+  const rawInput = document.getElementById('smsRawInput');
+  if (rawInput && rawInput.value.trim()) {
+    handleLiveSmsParse();
+  } else {
+    // 기본 선택 호실로 초기 세팅
+    onSmsDetectedRoomChange();
+  }
+}
+
+function closeSmsDepositModal() {
+  closeModal('smsDepositModal');
+}
+
+function fillSampleSmsText() {
+  const sample = `알림\n\n농협\n입금440,000원\n10/06 19:40\n351-****-9152\n-93 이종진404호\n잔액4,788,692원`;
+  const rawInput = document.getElementById('smsRawInput');
+  if (rawInput) {
+    rawInput.value = sample;
+    handleLiveSmsParse();
+  }
+}
+
+async function pasteFromClipboardToSmsInput() {
+  try {
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        const rawInput = document.getElementById('smsRawInput');
+        if (rawInput) {
+          rawInput.value = text;
+          handleLiveSmsParse();
+          return;
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("Clipboard read not permitted:", e);
+  }
+  const rawInput = document.getElementById('smsRawInput');
+  if (rawInput) rawInput.focus();
+}
+
+/**
+ * 은행 입금 문자 파싱 엔진
+ */
+function parseBankSmsText(rawText) {
+  if (!rawText) return null;
+  const text = rawText.trim();
+
+  // 1. 은행 감지
+  const bankPatterns = [
+    { name: '농협', regex: /(농협|NH|농협은행)/i },
+    { name: '국민은행', regex: /(국민|KB|국민은행)/i },
+    { name: '신한은행', regex: /(신한|신한은행)/i },
+    { name: '우리은행', regex: /(우리|우리은행)/i },
+    { name: '하나은행', regex: /(하나|하나은행|KEB)/i },
+    { name: '기업은행', regex: /(기업|IBK|기업은행)/i },
+    { name: '카카오뱅크', regex: /(카카오|카카오뱅크|카뱅)/i },
+    { name: '토스뱅크', regex: /(토스|토스뱅크)/i },
+    { name: '케이뱅크', regex: /(케이뱅크)/i },
+    { name: '우체국', regex: /(우체국)/i },
+    { name: '새마을금고', regex: /(새마을|새마을금고)/i },
+    { name: 'SC제일은행', regex: /(SC|SC제일)/i }
+  ];
+  let bankName = '농협';
+  for (const b of bankPatterns) {
+    if (b.regex.test(text)) {
+      bankName = b.name;
+      break;
+    }
+  }
+
+  // 2. 입금 금액 파싱
+  let amount = 440000;
+  const amtMatch = text.match(/입금\s*([0-9,]+)\s*원?/) || text.match(/([0-9,]+)\s*원?\s*입금/);
+  if (amtMatch) {
+    amount = parseInt(amtMatch[1].replace(/,/g, ''), 10);
+  }
+
+  // 3. 일시 파싱 (월, 일, 시간)
+  let month = currentMonth;
+  let day = 6;
+  let timeStr = '';
+  let fullDateStr = `${currentYear}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+  const dateMatch = text.match(/(\d{1,2})[/.-](\d{1,2})(?:\s+(\d{1,2}:\d{2}))?/);
+  if (dateMatch) {
+    month = parseInt(dateMatch[1], 10);
+    day = parseInt(dateMatch[2], 10);
+    if (dateMatch[3]) timeStr = dateMatch[3];
+    fullDateStr = `${currentYear}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  } else {
+    const krDateMatch = text.match(/(\d{1,2})월\s*(\d{1,2})일(?:\s+(\d{1,2}:\d{2}))?/);
+    if (krDateMatch) {
+      month = parseInt(krDateMatch[1], 10);
+      day = parseInt(krDateMatch[2], 10);
+      if (krDateMatch[3]) timeStr = krDateMatch[3];
+      fullDateStr = `${currentYear}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+  }
+
+  // 4. 호실 및 세입자 매칭
+  let detectedRoom = null;
+  let detectedTenant = '';
+
+  // 4-1. '404호' 형태 검색
+  const hoMatch = text.match(/(\d{3})\s*호/);
+  if (hoMatch) {
+    const rCandidate = parseInt(hoMatch[1], 10);
+    if (ROOM_NUMBERS.includes(rCandidate)) {
+      detectedRoom = rCandidate;
+    }
+  }
+
+  // 4-2. 등록된 세입자 이름 매칭 (예: '이종진')
+  if (state.rooms) {
+    for (const rNum of ROOM_NUMBERS) {
+      const room = state.rooms[rNum];
+      if (room && room.name && room.name !== '공실' && room.name.length >= 2) {
+        if (text.includes(room.name)) {
+          if (!detectedRoom) detectedRoom = rNum;
+          detectedTenant = room.name;
+          break;
+        }
+      }
+    }
+  }
+
+  // 4-3. 호실 미감지 시 독립 3자리 숫자 체크
+  if (!detectedRoom) {
+    for (const rNum of ROOM_NUMBERS) {
+      const re = new RegExp(`\\b${rNum}\\b`);
+      if (re.test(text)) {
+        detectedRoom = rNum;
+        break;
+      }
+    }
+  }
+
+  // 기본값 fallback
+  if (!detectedRoom) detectedRoom = state.selectedRoom || 404;
+  if (state.rooms && state.rooms[detectedRoom]) {
+    detectedTenant = state.rooms[detectedRoom].name || detectedTenant;
+  }
+
+  // 5. 계좌/메모 정보 추출
+  const accMatch = text.match(/\d{3}-[\d*]+-\d+(?:-\d+)?/);
+  const accountStr = accMatch ? accMatch[0] : '';
+
+  return {
+    bankName,
+    amount,
+    month,
+    day,
+    timeStr,
+    fullDateStr,
+    roomNumber: detectedRoom,
+    tenantName: detectedTenant,
+    accountStr
+  };
+}
+
+/**
+ * 송금자 영수증 메시지 생성:
+ * 입금 내역은 유지하고 잔액을 삭제한 뒤 '입금 확인했습니다. 감사합니다.'로 대체
+ */
+function generateReceiptMessage(rawText) {
+  if (!rawText) return "";
+  const lines = rawText.split(/\r?\n/).map(l => l.trim());
+  const filtered = [];
+  let replacedBalance = false;
+
+  for (const line of lines) {
+    if (!line) continue;
+    if (line === '알림') continue;
+
+    if (line.includes('잔액')) {
+      filtered.push('입금 확인했습니다.');
+      filtered.push('감사합니다.');
+      replacedBalance = true;
+    } else {
+      filtered.push(line);
+    }
+  }
+
+  if (!replacedBalance) {
+    filtered.push('입금 확인했습니다.');
+    filtered.push('감사합니다.');
+  }
+
+  return filtered.join('\n');
+}
+
+/**
+ * 실시간 입력 시 분석 결과 및 영수증 미리보기 업데이트
+ */
+function handleLiveSmsParse() {
+  const rawInput = document.getElementById('smsRawInput');
+  if (!rawInput) return;
+  const rawText = rawInput.value;
+  if (!rawText.trim()) return;
+
+  const parsed = parseBankSmsText(rawText);
+  if (!parsed) return;
+
+  // 은행 뱃지
+  const bankBadge = document.getElementById('smsBankBadge');
+  if (bankBadge) bankBadge.textContent = `${parsed.bankName} 입금`;
+
+  // 호실 셀렉트 동기화
+  const roomSelect = document.getElementById('smsDetectedRoom');
+  if (roomSelect) {
+    roomSelect.value = parsed.roomNumber;
+  }
+
+  // 세입자명
+  const tenantSpan = document.getElementById('smsDetectedTenant');
+  if (tenantSpan) tenantSpan.textContent = parsed.tenantName || '세입자';
+
+  // 금액 표시
+  const amtSpan = document.getElementById('smsDetectedAmount');
+  if (amtSpan) amtSpan.textContent = `${Number(parsed.amount).toLocaleString()}원`;
+
+  // 일시 표시
+  const dateSpan = document.getElementById('smsDetectedDate');
+  if (dateSpan) dateSpan.textContent = `${parsed.month}월 ${parsed.day}일 (${parsed.month}월분)`;
+
+  // 메모 표시
+  const memoSpan = document.getElementById('smsDetectedMemo');
+  if (memoSpan) memoSpan.textContent = parsed.accountStr || `${parsed.bankName} 계좌`;
+
+  // 실행 버튼 텍스트
+  const execBtnText = document.getElementById('btnExecuteSmsDepositText');
+  if (execBtnText) {
+    execBtnText.textContent = `${parsed.roomNumber}호 ${parsed.month}월분 ${Number(parsed.amount).toLocaleString()}원 입금 처리 완료`;
+  }
+
+  // 영수증 문자 자동 변환 생성
+  const receipt = generateReceiptMessage(rawText);
+  const receiptEl = document.getElementById('smsReceiptText');
+  if (receiptEl) receiptEl.value = receipt;
+
+  // 세입자 문자 전송 버튼 텍스트
+  const sendBtnText = document.getElementById('btnSendSmsTenantText');
+  if (sendBtnText) {
+    sendBtnText.textContent = `${parsed.roomNumber}호(${parsed.tenantName || '세입자'})로 문자 보내기`;
+  }
+
+  // 전역 상태에 보관
+  state.pendingReceiptText = receipt;
+  state.pendingReceiptRoom = parsed.roomNumber;
+  state.lastSmsDeposit = parsed;
+}
+
+function onSmsDetectedRoomChange() {
+  const roomSelect = document.getElementById('smsDetectedRoom');
+  if (!roomSelect) return;
+  const rNum = parseInt(roomSelect.value, 10);
+  const room = state.rooms[rNum];
+  const tSpan = document.getElementById('smsDetectedTenant');
+  if (tSpan) tSpan.textContent = (room && room.name) ? room.name : '공실';
+
+  const sendBtnText = document.getElementById('btnSendSmsTenantText');
+  if (sendBtnText) {
+    sendBtnText.textContent = `${rNum}호(${room && room.name ? room.name : '세입자'})로 문자 보내기`;
+  }
+
+  const rawInput = document.getElementById('smsRawInput');
+  if (rawInput && rawInput.value.trim()) {
+    const receipt = generateReceiptMessage(rawInput.value);
+    const receiptEl = document.getElementById('smsReceiptText');
+    if (receiptEl) receiptEl.value = receipt;
+    state.pendingReceiptText = receipt;
+    state.pendingReceiptRoom = rNum;
+  }
+}
+
+/**
+ * 2. 내용을 분석하여 404호 10/6 440000원 입금 처리
+ */
+async function handleSmsDepositProcess() {
+  const roomSelect = document.getElementById('smsDetectedRoom');
+  const roomNum = roomSelect ? parseInt(roomSelect.value, 10) : 404;
+  const rawInput = document.getElementById('smsRawInput');
+  const rawText = rawInput ? rawInput.value : '';
+  const parsed = parseBankSmsText(rawText);
+
+  if (!parsed || !roomNum) {
+    alert("입금 문자를 먼저 입력해주세요.");
+    return;
+  }
+
+  const room = state.rooms[roomNum];
+  const tenantName = (room && room.name) ? room.name : (parsed.tenantName || "세입자");
+  const month = parsed.month || currentMonth;
+  const year = currentYear;
+  const paidDate = parsed.fullDateStr || formattedToday;
+  const note = `은행 입금 확인 (${parsed.bankName})`;
+
+  try {
+    if (state.isOnline) {
+      const res = await apiProcessPayment(roomNum, month, state.currentBranch, paidDate, note, tenantName, year);
+      state.rooms[roomNum] = res;
+    } else {
+      if (room && room.payments) {
+        const pKey = `${year}-${month}`;
+        const payObj = {
+          month,
+          year,
+          paid: true,
+          paid_date: paidDate,
+          note,
+          tenant_name: tenantName,
+          is_previous_tenant: false,
+          rent_amount: room.lease_type === "전세" ? 0 : room.rent,
+          maintenance_amount: room.maintenance
+        };
+        room.payments[month] = payObj;
+        room.payments[pKey] = payObj;
+      }
+    }
+    saveLocalFallback();
+
+    // 404호 선택 및 화면 갱신
+    state.selectedRoom = roomNum;
+    renderAll();
+
+    // 영수증 자동 복사 (Step 4: 이 내용을 복사한 뒤)
+    const receiptEl = document.getElementById('smsReceiptText');
+    const receiptText = receiptEl ? receiptEl.value : generateReceiptMessage(rawText);
+    state.pendingReceiptText = receiptText;
+    state.pendingReceiptRoom = roomNum;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(receiptText);
+      } catch (e) {}
+    }
+
+    // 결과 알림
+    const resultAlert = document.getElementById('smsProcessResultAlert');
+    if (resultAlert) {
+      resultAlert.className = 'p-3 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs flex items-center justify-between gap-2 mt-2';
+      resultAlert.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span class="text-lg">✅</span>
+          <div>
+            <strong>${roomNum}호 (${tenantName}) ${month}월분 ${Number(parsed.amount).toLocaleString()}원 입금 처리 완료!</strong>
+            <div class="text-[11px] text-emerald-400 mt-0.5">영수증 문자가 클립보드에 자동 복사되었습니다.</div>
+          </div>
+        </div>
+        <button type="button" onclick="handleSendSmsReceipt('${room ? room.phone : ''}')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow cursor-pointer whitespace-nowrap shrink-0">
+          💬 문자 전송
+        </button>
+      `;
+      resultAlert.classList.remove('hidden');
+    }
+
+  } catch (err) {
+    alert("입금 처리 실패: " + err.message);
+  }
+}
+
+/**
+ * Step 4: 영수증 내용 클립보드 복사
+ */
+async function handleCopySmsReceipt() {
+  const receiptEl = document.getElementById('smsReceiptText');
+  const text = receiptEl ? receiptEl.value : state.pendingReceiptText;
+  if (!text) {
+    alert("복사할 영수증 내용이 없습니다.");
+    return;
+  }
+
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+    }
+  } catch (e) {}
+
+  state.pendingReceiptText = text;
+
+  // Toast
+  const banner = document.createElement('div');
+  banner.className = 'fixed top-5 left-1/2 transform -translate-x-1/2 z-[9999] bg-emerald-600 text-white px-4 py-2.5 rounded-2xl shadow-2xl font-bold text-xs sm:text-sm flex items-center gap-2';
+  banner.innerHTML = `<span>📋 <strong>영수증 문자가 복사되었습니다!</strong> (문자창에 붙여넣기하세요)</span>`;
+  document.body.appendChild(banner);
+  setTimeout(() => banner.remove(), 2500);
+}
+
+/**
+ * Step 5 & 6: 송금자(이종진)에게 문자 창 열고 전송
+ */
+function handleSendSmsReceipt(targetPhone = null) {
+  const rNum = state.pendingReceiptRoom || state.selectedRoom;
+  const room = state.rooms[rNum];
+  const phone = targetPhone || (room ? room.phone : '');
+  const tName = (room && room.name) ? room.name : '세입자';
+
+  if (!phone) {
+    alert(`${rNum}호 세입자의 등록된 전화번호가 없습니다.`);
+    return;
+  }
+
+  const receiptEl = document.getElementById('smsReceiptText');
+  const text = receiptEl ? receiptEl.value : (state.pendingReceiptText || '');
+
+  // 클립보드 복사 보장
+  if (text && navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch(() => {});
+  }
+
+  // 모바일 문자 앱 호출 (sms: URI)
+  const cleanPhone = phone.replace(/[^\d+]/g, '');
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const smsUrl = `sms:${cleanPhone}${isIOS ? '&' : '?'}body=${encodeURIComponent(text)}`;
+
+  // 친절한 안내 팝업 토스트
+  const toast = document.createElement('div');
+  toast.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999] max-w-sm w-[92%] bg-slate-900 border border-cyan-500 text-white p-3.5 rounded-2xl shadow-2xl text-xs flex flex-col gap-2 animate-in fade-in slide-in-from-top-4 duration-200';
+  toast.innerHTML = `
+    <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+      <span class="font-bold text-cyan-300 flex items-center gap-1.5">
+        <span>📱</span> <span>문자 전송 창 연결</span>
+      </span>
+      <button type="button" onclick="this.parentElement.parentElement.remove()" class="text-slate-400 hover:text-white font-bold text-xs">✕</button>
+    </div>
+    <div class="text-slate-300 leading-snug">
+      <strong>${tName} (${phone})</strong>님에게 보낼 영수증이 <strong>클립보드에 복사</strong>되었습니다.<br>
+      열린 문자창에 붙여넣고 [전송]을 누르시면 됩니다.
+    </div>
+    <div class="flex items-center gap-2 mt-1">
+      <a href="${smsUrl}" class="flex-1 text-center py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow no-underline">
+        💬 문자 앱 열기
+      </a>
+      <button type="button" onclick="handleCopySmsReceipt();" class="px-3 py-2 rounded-xl bg-surface-800 hover:bg-surface-700 text-slate-300 font-bold text-xs border border-slate-700">
+        📋 내용 복사
+      </button>
+    </div>
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => { if (toast.parentElement) toast.remove(); }, 6000);
+
+  // 모바일 환경 즉시 SMS 앱 전환
+  window.location.href = smsUrl;
+}
+
+/**
+ * Step 5: 내가 404호 계약정보의 전화번호를 클릭했을 때 메시지 창이 열리고 붙여넣기 및 전송
+ */
+function handlePhoneMessageClick(phone, name, roomNumber) {
+  if (!phone) {
+    alert("등록된 연락처가 없습니다.");
+    return;
+  }
+  const rNum = roomNumber || state.selectedRoom;
+  const room = state.rooms[rNum];
+  const tName = name || (room ? room.name : "세입자");
+
+  // 현재 호실에 맞는 영수증 텍스트 결정
+  let receiptToSend = state.pendingReceiptText;
+  if (!receiptToSend || (state.pendingReceiptRoom && state.pendingReceiptRoom !== rNum)) {
+    receiptToSend = `[입금 확인 안내]\n농협\n입금 확인되었습니다.\n감사합니다.`;
+  }
+
+  // 1. 클립보드에 복사
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(receiptToSend).catch(() => {});
+  }
+
+  // 2. 문자 앱 URL 생성
+  const cleanPhone = phone.replace(/[^\d+]/g, '');
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const smsUrl = `sms:${cleanPhone}${isIOS ? '&' : '?'}body=${encodeURIComponent(receiptToSend)}`;
+
+  // 3. 안내 토스트 표시
+  const toast = document.createElement('div');
+  toast.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999] max-w-sm w-[92%] bg-slate-900 border border-cyan-500 text-white p-3.5 rounded-2xl shadow-2xl text-xs flex flex-col gap-2 animate-in fade-in slide-in-from-top-4 duration-200';
+  toast.innerHTML = `
+    <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+      <span class="font-bold text-cyan-300 flex items-center gap-1.5">
+        <span>📱</span> <span>${tName}님(${phone}) 문자 창 연결</span>
+      </span>
+      <button type="button" onclick="this.parentElement.parentElement.remove()" class="text-slate-400 hover:text-white font-bold text-xs">✕</button>
+    </div>
+    <div class="text-slate-300 leading-snug">
+      영수증 내용이 <strong>클립보드에 복사</strong>되었습니다.<br>
+      문자 앱 입력창을 길게 눌러 <strong>[붙여넣기]</strong> 후 전송하세요.
+    </div>
+    <div class="flex items-center gap-2 mt-1">
+      <a href="${smsUrl}" class="flex-1 text-center py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow no-underline">
+        💬 문자 앱 열기
+      </a>
+      <a href="tel:${phone}" class="px-3 py-2 rounded-xl bg-surface-800 hover:bg-surface-700 text-slate-300 font-bold text-xs border border-slate-700 no-underline">
+        📞 전화 걸기
+      </a>
+    </div>
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => { if (toast.parentElement) toast.remove(); }, 6000);
+
+  // 모바일 SMS 창 호출
+  window.location.href = smsUrl;
+}
+
+
 
 /**
  * apps/rent/frontend/app.js
@@ -4360,6 +4906,16 @@ function handleLogout() {
 
 
 // ── 전역 윈도우 핸들러 바인딩 (인라인 HTML 호출 호환) ──
+window.openSmsDepositModal = openSmsDepositModal;
+window.closeSmsDepositModal = closeSmsDepositModal;
+window.fillSampleSmsText = fillSampleSmsText;
+window.pasteFromClipboardToSmsInput = pasteFromClipboardToSmsInput;
+window.handleLiveSmsParse = handleLiveSmsParse;
+window.onSmsDetectedRoomChange = onSmsDetectedRoomChange;
+window.handleSmsDepositProcess = handleSmsDepositProcess;
+window.handleCopySmsReceipt = handleCopySmsReceipt;
+window.handleSendSmsReceipt = handleSendSmsReceipt;
+window.handlePhoneMessageClick = handlePhoneMessageClick;
 window.state = state;
 window.selectRoom = selectRoom;
 window.switchBranch = switchBranch;
