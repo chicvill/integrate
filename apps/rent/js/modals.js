@@ -4,7 +4,7 @@
  */
 
 import { state, formattedToday, saveLocalFallback, setAuthUser, clearAuthUser, getAuthSessionInfo, touchAuthSession, fillTenantPaymentsState, parseDateComponents, ROOM_NUMBERS, currentYear, currentMonth, getExpiringRoomsList } from './state.js?v=2.0';
-import { apiUpdateContract, apiCreateExpense, apiDeleteExpense, apiRequestUpgrade, apiGetVatReport, apiGetVatSettings, apiSaveVatSettings, apiCreateBranch, apiGetTenantHistories, apiDeleteTenantHistory, apiBatchImportRooms, apiBatchImportPaymentMatrix, apiOcrImportImage, apiAdminLogin, apiFillTenantPayments, apiProcessPayment, apiGetExpiringRooms } from './api.js?v=2.0';
+import { apiUpdateContract, apiCreateExpense, apiDeleteExpense, apiRequestUpgrade, apiGetVatReport, apiGetVatSettings, apiSaveVatSettings, apiCreateBranch, apiGetTenantHistories, apiDeleteTenantHistory, apiBatchImportRooms, apiBatchImportPaymentMatrix, apiOcrImportImage, apiAdminLogin, apiFillTenantPayments, apiProcessPayment, apiGetExpiringRooms, apiRestoreBackup } from './api.js?v=2.0';
 import { renderAll, switchBranch } from './ui.js?v=2.0';
 
 export function openModal(id) {
@@ -2929,50 +2929,41 @@ export async function handleFullSystemRestoreFile(event) {
         throw new Error("올바른 전체 백업 JSON 파일 형식이 아닙니다.");
       }
 
-      const ok = confirm(`[${backup.exported_at_formatted || backup.exported_at || '알 수 없음'}]에 생성된 백업 파일입니다.\n\n건물명: ${backup.branch_name || backup.branch_id}\n- 29개실 호실 및 12개월 수납 내역\n- 지출 내역: ${backup.expenses_count || (backup.data.expenses || []).length}건\n- 전출 이력: ${backup.tenant_histories_count || (backup.data.tenantHistories || []).length}건\n\n이 백업 파일로 시스템 전체 데이터를 복원하시겠습니까?`);
+      const backupBranchName = backup.branch_name || backup.branch_id || '시크빌';
+      const currentBranchObj = (state.branches || []).find(b => b.branch_id === state.currentBranch);
+      const currentBranchName = currentBranchObj ? currentBranchObj.name : (state.currentBranch || '현재 건물');
+
+      let confirmMsg = `[${backup.exported_at_formatted || backup.exported_at || '알 수 없음'}]에 생성된 백업 파일입니다.\n\n`;
+      if (backup.branch_id && state.currentBranch && backup.branch_id !== state.currentBranch) {
+        confirmMsg += `🏢 백업 파일 원본 건물: [${backupBranchName}]\n🎯 복원 대상 선택 건물: [${currentBranchName}]\n\n👉 [${currentBranchName}] 건물에 이 백업 데이터를 복원/적용하시겠습니까?\n(다른 건물 자료도 현재 건물로 안전하게 복구할 수 있습니다!)\n\n`;
+      } else {
+        confirmMsg += `건물명: ${currentBranchName}\n\n`;
+      }
+      confirmMsg += `- 29개실 호실 및 12개월 수납 내역\n`;
+      confirmMsg += `- 지출 내역: ${backup.expenses_count || (backup.data.expenses || []).length}건\n`;
+      confirmMsg += `- 전출 이력: ${backup.tenant_histories_count || (backup.data.tenantHistories || []).length}건\n\n`;
+      confirmMsg += `이 백업 파일로 시스템 전체 데이터를 복원하시겠습니까?`;
+
+      const ok = confirm(confirmMsg);
       if (!ok) {
         event.target.value = '';
         return;
       }
 
-      // 서버 DB 동기화
+      // 서버 DB 동기화 (원자적 단 1회 호출)
       if (state.isOnline) {
-        for (const [rNumStr, rData] of Object.entries(backup.data.rooms)) {
-          const rNum = Number(rNumStr);
-          await apiUpdateContract(rNum, {
-            lease_type: rData.lease_type || '월세',
-            pay_timing: rData.pay_timing || '후불',
-            name: rData.name || '',
-            id_number: rData.id_number || '',
-            phone: rData.phone || '',
-            deposit: rData.deposit || 0,
-            rent: rData.rent || 0,
-            maintenance: rData.maintenance || 0,
-            clean_fee: rData.clean_fee || 0,
-            move_in: rData.move_in || '',
-            expiry: rData.expiry || '',
-            move_out: rData.move_out || ''
-          }, state.currentBranch);
-
-          if (rData.payments) {
-            for (const [mStr, pData] of Object.entries(rData.payments)) {
-              const mNum = Number(mStr);
-              if (mNum >= 1 && mNum <= 12 && pData) {
-                await apiUpdatePayment(rNum, mNum, {
-                  paid: !!pData.paid,
-                  paid_date: pData.paid_date || null,
-                  paid_amount: pData.paid_amount || 0,
-                  memo: pData.memo || null
-                }, state.currentBranch);
-              }
-            }
-          }
+        const res = await apiRestoreBackup(backup, state.currentBranch);
+        if (res) {
+          if (res.rooms) state.rooms = res.rooms;
+          if (res.expenses) state.expenses = res.expenses;
+          if (res.tenantHistories) state.tenantHistories = res.tenantHistories;
         }
+      } else {
+        // 오프라인 로컬 저장소 폴백
+        state.rooms = backup.data.rooms;
+        if (backup.data.expenses) state.expenses = backup.data.expenses;
+        if (backup.data.tenantHistories) state.tenantHistories = backup.data.tenantHistories;
       }
-
-      state.rooms = backup.data.rooms;
-      if (backup.data.expenses) state.expenses = backup.data.expenses;
-      if (backup.data.tenantHistories) state.tenantHistories = backup.data.tenantHistories;
 
       saveLocalFallback();
       if (state.selectedRoom) {
@@ -2981,7 +2972,7 @@ export async function handleFullSystemRestoreFile(event) {
       }
       renderAll();
 
-      alert(`🎉 내 폰/PC의 백업 파일로부터 전체 데이터가 성공적으로 복원되었습니다!\n(백업 시점: ${backup.exported_at_formatted || backup.exported_at})`);
+      alert(`🎉 [${currentBranchName}] 건물에 전체 데이터가 성공적으로 복원되었습니다!\n\n(백업 시점: ${backup.exported_at_formatted || backup.exported_at})\n- 29개실 호실 및 12개월 장부 복원 완료\n- 지출 및 전출자 이력 동기화 완료`);
     } catch (err) {
       alert("백업 파일 복원 실패: " + err.message);
     } finally {

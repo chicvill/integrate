@@ -445,6 +445,20 @@ async def download_backup(
     return Response(content=content, media_type=media_type, headers=headers)
 
 
+@router.post("/backup/restore")
+async def restore_backup(
+    payload: Dict[str, Any],
+    target_branch_id: str = Query("main", description="복원 대상 건물 식별 ID"),
+    db: Session = Depends(get_db)
+):
+    """전체 시스템 백업 파일 원자적 복원 (다른 건물로도 자유롭게 복구 가능)"""
+    return service.restore_full_backup(
+        db=db,
+        backup_data=payload,
+        target_branch_id=target_branch_id
+    )
+
+
 @router.get("/vat-settings", response_model=VatSettingsResponse)
 async def get_vat_settings(
     branch_id: str = Query("main", description="건물 식별 ID"),

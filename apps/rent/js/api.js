@@ -218,3 +218,9 @@ export const apiRequestUpgrade = authApi.requestUpgrade;
 export const apiGetVatReport = vatApi.getReport;
 export const apiGetVatSettings = vatApi.getSettings;
 export const apiSaveVatSettings = vatApi.saveSettings;
+
+export const backupApi = {
+  restore: (backupData, targetBranchId = 'main') =>
+    http.post('/backup/restore', backupData, { target_branch_id: targetBranchId })
+};
+export const apiRestoreBackup = backupApi.restore;

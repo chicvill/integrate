@@ -915,6 +915,166 @@ class RentService:
         media_type = "application/json; charset=utf-8"
         return content, media_type, filename
 
+    def restore_full_backup(
+        self,
+        db: Session,
+        backup_data: Dict[str, Any],
+        target_branch_id: str = "main"
+    ) -> Dict[str, Any]:
+        """전체 시스템 백업 데이터(29개실 계약, 12개월 장부, 지출, 전출이력) 원자적 복원"""
+        self.ensure_default_seed(db, target_branch_id)
+
+        data_block = backup_data.get("data", {})
+        rooms_dict = data_block.get("rooms", {})
+        expenses_list = data_block.get("expenses", [])
+        histories_list = data_block.get("tenantHistories", [])
+
+        # 1. 호실 및 계약 복원
+        for r_num_str, r_info in rooms_dict.items():
+            try:
+                r_num = int(r_num_str)
+            except ValueError:
+                continue
+
+            room_obj = db.query(RentRoom).filter(
+                RentRoom.branch_id == target_branch_id,
+                RentRoom.room_number == r_num
+            ).first()
+
+            if not room_obj:
+                room_obj = RentRoom(branch_id=target_branch_id, room_number=r_num)
+                db.add(room_obj)
+
+            room_obj.name = r_info.get("name", "") or ""
+            room_obj.id_number = r_info.get("id_number", "") or ""
+            room_obj.phone = r_info.get("phone", "") or ""
+            room_obj.lease_type = r_info.get("lease_type", "월세") or "월세"
+            room_obj.pay_timing = r_info.get("pay_timing", "후불") or "후불"
+            room_obj.deposit = int(r_info.get("deposit") or 0)
+            room_obj.rent = int(r_info.get("rent") or 0)
+            room_obj.maintenance = int(r_info.get("maintenance") or 0)
+            room_obj.clean_fee = int(r_info.get("clean_fee") or 0)
+            room_obj.move_in = r_info.get("move_in", "") or ""
+            room_obj.expiry = r_info.get("expiry", "") or ""
+            room_obj.move_out = r_info.get("move_out", "") or ""
+
+            # payments 복원
+            payments_dict = r_info.get("payments", {})
+            for m_str, p_info in payments_dict.items():
+                try:
+                    m_num = int(m_str)
+                except ValueError:
+                    continue
+                if m_num < 1 or m_num > 12:
+                    continue
+
+                pay_obj = db.query(RentPayment).filter(
+                    RentPayment.branch_id == target_branch_id,
+                    RentPayment.room_number == r_num,
+                    RentPayment.month == m_num
+                ).first()
+
+                if not pay_obj:
+                    pay_obj = RentPayment(
+                        branch_id=target_branch_id,
+                        room_number=r_num,
+                        month=m_num,
+                        year=2026
+                    )
+                    db.add(pay_obj)
+
+                pay_obj.paid = bool(p_info.get("paid", False))
+                pay_obj.paid_date = p_info.get("paid_date", "") or ""
+                pay_obj.rent_amount = int(p_info.get("rent_amount") or 0)
+                pay_obj.maintenance_amount = int(p_info.get("maintenance_amount") or 0)
+                pay_obj.note = p_info.get("note", "") or p_info.get("memo", "") or ""
+                pay_obj.tenant_name = p_info.get("tenant_name", "") or room_obj.name
+
+        # 2. 지출 내역 복원
+        if expenses_list is not None:
+            db.query(RentExpense).filter(RentExpense.branch_id == target_branch_id).delete(synchronize_session=False)
+            for exp in expenses_list:
+                new_exp = RentExpense(
+                    id=str(uuid.uuid4()),
+                    branch_id=target_branch_id,
+                    date=exp.get("date", ""),
+                    item=exp.get("item", "") or exp.get("category", "") or "지출",
+                    amount=int(exp.get("amount") or 0),
+                    note=exp.get("note", "") or exp.get("description", "") or "",
+                    receipt_type=exp.get("receipt_type", "") or exp.get("payment_method", "") or "",
+                    receipt_info=exp.get("receipt_info", "") or exp.get("receipt_url", "") or ""
+                )
+                db.add(new_exp)
+
+        # 3. 전출자 이력 복원
+        if histories_list is not None:
+            db.query(RentTenantHistory).filter(RentTenantHistory.branch_id == target_branch_id).delete(synchronize_session=False)
+            for h in histories_list:
+                new_h = RentTenantHistory(
+                    id=str(uuid.uuid4()),
+                    branch_id=target_branch_id,
+                    room_number=int(h.get("room_number") or 101),
+                    name=h.get("name") or h.get("tenant_name") or "",
+                    id_number=h.get("id_number", "") or "",
+                    phone=h.get("phone", "") or "",
+                    lease_type=h.get("lease_type", "월세") or "월세",
+                    pay_timing=h.get("pay_timing", "후불") or "후불",
+                    deposit=int(h.get("deposit") or 0),
+                    rent=int(h.get("rent") or h.get("monthly_rent") or 0),
+                    maintenance=int(h.get("maintenance") or h.get("maintenance_fee") or 0),
+                    clean_fee=int(h.get("clean_fee") or 0),
+                    move_in=h.get("move_in") or h.get("move_in_date") or "",
+                    expiry=h.get("expiry", "") or "",
+                    move_out=h.get("move_out") or h.get("move_out_date") or "",
+                    retention_until=h.get("retention_until", "") or "",
+                    metadata_json=h.get("metadata_json") or {}
+                )
+                db.add(new_h)
+
+        db.commit()
+
+        return {
+            "success": True,
+            "message": "백업 데이터가 성공적으로 복원되었습니다.",
+            "target_branch_id": target_branch_id,
+            "rooms": self.get_rooms(db, target_branch_id),
+            "expenses": [
+                {
+                    "id": e.id,
+                    "branch_id": e.branch_id,
+                    "date": e.date,
+                    "item": e.item,
+                    "amount": e.amount,
+                    "note": e.note,
+                    "receipt_type": e.receipt_type,
+                    "receipt_info": e.receipt_info
+                }
+                for e in self.list_expenses(db, target_branch_id)
+            ],
+            "tenantHistories": [
+                {
+                    "id": h.id,
+                    "branch_id": h.branch_id,
+                    "room_number": h.room_number,
+                    "name": h.name,
+                    "id_number": h.id_number,
+                    "phone": h.phone,
+                    "lease_type": h.lease_type,
+                    "pay_timing": h.pay_timing,
+                    "deposit": h.deposit,
+                    "rent": h.rent,
+                    "maintenance": h.maintenance,
+                    "clean_fee": h.clean_fee,
+                    "move_in": h.move_in,
+                    "expiry": h.expiry,
+                    "move_out": h.move_out,
+                    "retention_until": h.retention_until,
+                    "metadata_json": h.metadata_json or {}
+                }
+                for h in self.list_tenant_histories(db, target_branch_id)
+            ]
+        }
+
 
 service = RentService()
 
