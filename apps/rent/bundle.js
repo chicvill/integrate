@@ -4552,33 +4552,79 @@ function parseBankSmsText(rawText) {
 
 /**
  * 송금자 영수증 메시지 생성:
- * 입금 내역은 유지하고 잔액을 삭제한 뒤 '입금 확인했습니다. 감사합니다.'로 대체
+ * 1. 은행에서 보낸 메시지 전체를 넣고
+ * 2. 잔액 라인만 완전 제거
+ * 3. 입금 확인 및 감사의 내용 추가
+ * 4. 거래내역 상세 (호실, 세입자, 입금일시, 입금금액, 세부내역, 처리결과) 포함
  */
-function generateReceiptMessage(rawText) {
+function generateReceiptMessage(rawText, targetRoomNum = null) {
   if (!rawText) return "";
-  const lines = rawText.split(/\r?\n/).map(l => l.trim());
-  const filtered = [];
-  let replacedBalance = false;
-
+  const lines = rawText.split(/\r?\n/);
+  
+  // 1. 은행 메시지 전체 유지하되 '잔액'이 포함된 라인만 제거
+  const cleanedBankLines = [];
   for (const line of lines) {
-    if (!line) continue;
-    if (line === '알림') continue;
-
     if (line.includes('잔액')) {
-      filtered.push('입금 확인했습니다.');
-      filtered.push('감사합니다.');
-      replacedBalance = true;
-    } else {
-      filtered.push(line);
+      continue;
     }
+    cleanedBankLines.push(line);
   }
 
-  if (!replacedBalance) {
-    filtered.push('입금 확인했습니다.');
-    filtered.push('감사합니다.');
+  // 끝부분 공백 라인 정리
+  while (cleanedBankLines.length > 0 && !cleanedBankLines[cleanedBankLines.length - 1].trim()) {
+    cleanedBankLines.pop();
   }
 
-  return filtered.join('\n');
+  const bankSection = cleanedBankLines.join('\n').trim();
+
+  // 2. 파싱 정보 및 계약 장부 데이터 연동
+  const parsed = parseBankSmsText(rawText);
+  const rNum = targetRoomNum || (parsed ? parsed.roomNumber : (state.selectedRoom || 404));
+  const room = (state.rooms && state.rooms[rNum]) ? state.rooms[rNum] : null;
+  const tenantName = (room && room.name) ? room.name : ((parsed && parsed.tenantName) ? parsed.tenantName : "세입자");
+
+  const month = parsed ? parsed.month : currentMonth;
+  const day = (parsed && parsed.day) ? parsed.day : '';
+  const timeStr = (parsed && parsed.timeStr) ? ` ${parsed.timeStr}` : '';
+  const dateDisplay = (month && day) ? `${month}/${String(day).padStart(2, '0')}${timeStr}` : formattedToday;
+
+  const amountVal = (parsed && parsed.amount) ? parsed.amount : (room ? (room.rent + room.maintenance) : 0);
+  const formattedAmount = `${Number(amountVal).toLocaleString()}원`;
+
+  // 세부 내역 (월차임 + 관리비)
+  let detailBreakdown = '';
+  if (room) {
+    if (room.lease_type === '전세') {
+      detailBreakdown = `관리비 ${Number(room.maintenance || 0).toLocaleString()}원`;
+    } else {
+      const rRent = Number(room.rent || 0);
+      const rMaint = Number(room.maintenance || 0);
+      if (rRent + rMaint === amountVal) {
+        detailBreakdown = `월차임 ${rRent.toLocaleString()}원 + 관리비 ${rMaint.toLocaleString()}원`;
+      } else {
+        detailBreakdown = `월차임/관리비 납부 (${formattedAmount})`;
+      }
+    }
+  } else {
+    detailBreakdown = `임차료 납부 (${formattedAmount})`;
+  }
+
+  // 3. 메시지 조합: 은행 원문 전체(잔액제거) + 감사 문구 + 거래내역상세
+  const receiptParts = [
+    bankSection,
+    '',
+    '입금 확인했습니다.',
+    '감사합니다.',
+    '',
+    '[거래내역 상세]',
+    `· 입금대상: ${rNum}호 (${tenantName} 님)`,
+    `· 입금일시: ${dateDisplay}`,
+    `· 입금금액: ${formattedAmount}`,
+    `· 세부내역: ${detailBreakdown}`,
+    `· 처리결과: ${month}월분 정상 완납 확인`
+  ];
+
+  return receiptParts.join('\n');
 }
 
 /**
@@ -4625,8 +4671,8 @@ function handleLiveSmsParse() {
     execBtnText.textContent = `${parsed.roomNumber}호 ${parsed.month}월분 ${Number(parsed.amount).toLocaleString()}원 입금 처리 완료`;
   }
 
-  // 영수증 문자 자동 변환 생성
-  const receipt = generateReceiptMessage(rawText);
+  // 영수증 문자 자동 변환 생성 (거래내역 상세 포함)
+  const receipt = generateReceiptMessage(rawText, parsed.roomNumber);
   const receiptEl = document.getElementById('smsReceiptText');
   if (receiptEl) receiptEl.value = receipt;
 
@@ -4657,7 +4703,7 @@ function onSmsDetectedRoomChange() {
 
   const rawInput = document.getElementById('smsRawInput');
   if (rawInput && rawInput.value.trim()) {
-    const receipt = generateReceiptMessage(rawInput.value);
+    const receipt = generateReceiptMessage(rawInput.value, rNum);
     const receiptEl = document.getElementById('smsReceiptText');
     if (receiptEl) receiptEl.value = receipt;
     state.pendingReceiptText = receipt;
@@ -4850,7 +4896,17 @@ function handlePhoneMessageClick(phone, name, roomNumber) {
   // 현재 호실에 맞는 영수증 텍스트 결정
   let receiptToSend = state.pendingReceiptText;
   if (!receiptToSend || (state.pendingReceiptRoom && state.pendingReceiptRoom !== rNum)) {
-    receiptToSend = `[입금 확인 안내]\n농협\n입금 확인되었습니다.\n감사합니다.`;
+    const amountVal = room ? (room.rent + room.maintenance) : 0;
+    const formattedAmount = `${Number(amountVal).toLocaleString()}원`;
+    let detailBreakdown = '';
+    if (room) {
+      if (room.lease_type === '전세') {
+        detailBreakdown = `관리비 ${Number(room.maintenance || 0).toLocaleString()}원`;
+      } else {
+        detailBreakdown = `월차임 ${Number(room.rent || 0).toLocaleString()}원 + 관리비 ${Number(room.maintenance || 0).toLocaleString()}원`;
+      }
+    }
+    receiptToSend = `입금 확인했습니다.\n감사합니다.\n\n[거래내역 상세]\n· 입금대상: ${rNum}호 (${tName} 님)\n· 입금일시: ${formattedToday}\n· 입금금액: ${formattedAmount}\n· 세부내역: ${detailBreakdown}\n· 처리결과: ${currentMonth}월분 정상 완납 확인`;
   }
 
   // 1. 클립보드에 복사
