@@ -5184,15 +5184,16 @@ async function exportFullSystemBackupJSON(e) {
   // 온라인 환경: Chrome/Edge 브라우저 난수 UUID 버그를 원천 차단하는 서버 직접 스트리밍 다운로드
   if (state.isOnline) {
     const downloadUrl = `/api/rent/backup/download?branch_id=${encodeURIComponent(state.currentBranch || 'main')}&_t=${Date.now()}`;
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = downloadUrl;
-    document.body.appendChild(iframe);
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
     setTimeout(() => {
       try {
-        if (iframe.parentNode) document.body.removeChild(iframe);
+        if (a.parentNode) document.body.removeChild(a);
       } catch (_) {}
-    }, 15000);
+    }, 1500);
 
     alert(`💾 전체 데이터 통합 백업 다운로드가 시작되었습니다!\n\n📁 파일명: ${filename}\n📌 저장 위치: 지금 사용 중이신 ${deviceName}\n\n📦 백업된 전체 데이터 내역:\n- 29개실 전체 계약대장\n- 1월~12월 수납 내역 (전체 장부)\n- 지출 관리 장부 내역\n- 전출자 1년 보존 이력`);
     return;
