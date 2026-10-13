@@ -67,6 +67,9 @@ import {
   toggleAllVatRooms,
   saveVatTargetRoomsSetting,
   openTenantHistoryModal,
+  restoreTenantFromHistory,
+  saveTestSnapshot,
+  restoreTestSnapshot,
   openNewBranchModal,
   handleNewBranchSubmit,
   openExcelImportModal,
@@ -182,6 +185,9 @@ window.exportExpenseLedgerExcel = exportExpenseLedgerExcel;
 window.exportCurrentRoomCSV = exportCurrentRoomCSV;
 
 window.openTenantHistoryModal = openTenantHistoryModal;
+window.restoreTenantFromHistory = restoreTenantFromHistory;
+window.saveTestSnapshot = saveTestSnapshot;
+window.restoreTestSnapshot = restoreTestSnapshot;
 window.openNewBranchModal = openNewBranchModal;
 window.handleNewBranchSubmit = handleNewBranchSubmit;
 

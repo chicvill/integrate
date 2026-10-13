@@ -3219,7 +3219,13 @@ async function openTenantHistoryModal() {
             <span class="font-bold text-slate-100 text-sm">${h.name}</span>
             <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">전출 세입자</span>
           </div>
-          <span class="text-[11px] text-slate-400 font-mono">1년 보존기한: <strong class="text-emerald-400 font-bold">${h.retention_until || '-'}</strong></span>
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] text-slate-400 font-mono">1년 보존기한: <strong class="text-emerald-400 font-bold">${h.retention_until || '-'}</strong></span>
+            <button type="button" onclick="restoreTenantFromHistory('${h.id}')" class="px-2.5 py-1 rounded-lg bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/80 text-[11px] font-bold flex items-center gap-1 transition cursor-pointer shadow-xs">
+              <span>↩️</span>
+              <span>호실로 복원 (퇴실 취소)</span>
+            </button>
+          </div>
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-[11px] text-slate-300 pt-2 border-t border-slate-800">
           <div><span class="text-slate-500 block">주민번호</span> <span class="font-mono text-cyan-300">${h.id_number || '-'}</span></div>
@@ -3232,6 +3238,123 @@ async function openTenantHistoryModal() {
     `;
   });
   container.innerHTML = html;
+}
+
+// ── 전출 세입자 호실로 원터치 복원 (퇴실 취소) ──
+async function restoreTenantFromHistory(histId) {
+  const h = (state.tenantHistories || []).find(item => String(item.id) === String(histId));
+  if (!h) {
+    alert("복원할 세입자 이력 정보를 찾을 수 없습니다.");
+    return;
+  }
+  const rNum = Number(h.room_number);
+  const currentRoom = state.rooms[rNum];
+
+  if (currentRoom && currentRoom.name && currentRoom.name.trim()) {
+    const ok = confirm(`현재 [${rNum}호]에는 이미 입주자(${currentRoom.name})가 등록되어 있습니다.\n\n전출 이력의 '${h.name}' 임차인으로 덮어써서 호실을 복원하시겠습니까?`);
+    if (!ok) return;
+  } else {
+    const ok = confirm(`[${rNum}호]의 퇴실을 취소하고, 전출 이력에 보존된 '${h.name}' 임차인을 원래 호실로 복원하시겠습니까?`);
+    if (!ok) return;
+  }
+
+  const payload = {
+    lease_type: h.lease_type || '월세',
+    pay_timing: h.pay_timing || '후불',
+    name: h.name,
+    id_number: h.id_number || '',
+    phone: h.phone || '',
+    deposit: Number(h.deposit) || 0,
+    rent: Number(h.rent) || 0,
+    maintenance: Number(h.maintenance) || 0,
+    clean_fee: Number(h.clean_fee) || 0,
+    move_in: h.move_in || '',
+    expiry: h.expiry || '',
+    move_out: '' // 퇴실 취소이므로 퇴실일 공란화
+  };
+
+  try {
+    if (state.isOnline) {
+      const res = await apiUpdateContract(rNum, payload, state.currentBranch);
+      state.rooms[rNum] = res;
+    } else {
+      Object.assign(state.rooms[rNum], payload);
+    }
+
+    saveLocalFallback();
+    populateModalRoomSelector(rNum);
+    loadRoomIntoContractModal(rNum);
+    renderAll();
+    closeModal('tenantHistoryModal');
+
+    alert(`🎉 [${rNum}호] ${h.name}님의 계약 정보가 원래 상태로 완벽히 복원되었습니다!\n(호실 상태: 거주 중으로 복귀)`);
+  } catch (err) {
+    alert("호실 복원 실패: " + err.message);
+  }
+}
+
+// 📸 테스트 직전 현재 29개실 전체 상태 스냅샷 저장
+function saveTestSnapshot() {
+  try {
+    const snapshotData = JSON.stringify(state.rooms);
+    const now = new Date();
+    const timeStr = `${now.getMonth() + 1}월 ${now.getDate()}일 ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    localStorage.setItem(`RENT_TEST_SNAPSHOT_${state.currentBranch}`, snapshotData);
+    localStorage.setItem(`RENT_TEST_SNAPSHOT_TIME_${state.currentBranch}`, timeStr);
+    alert(`📸 현재 29개실 전체 상태가 안전하게 임시 스냅샷으로 저장되었습니다!\n\n(저장 일시: ${timeStr})\n\n이제 전출(퇴실)이나 신규 전입을 마음껏 테스트해 보세요.\n테스트 후 언제든지 [↩️ 1초 롤백] 버튼을 누르면 지금 이 순간의 상태로 1초 만에 되돌릴 수 있습니다.`);
+  } catch (e) {
+    alert("스냅샷 저장 실패: " + e.message);
+  }
+}
+
+// ↩️ 스냅샷으로 1초 만에 원상 복구 (롤백)
+async function restoreTestSnapshot() {
+  const key = `RENT_TEST_SNAPSHOT_${state.currentBranch}`;
+  const saved = localStorage.getItem(key);
+  const timeStr = localStorage.getItem(`RENT_TEST_SNAPSHOT_TIME_${state.currentBranch}`) || '';
+  if (!saved) {
+    alert("저장된 테스트 스냅샷이 없습니다.\n\n먼저 [📸 스냅샷 백업] 버튼을 눌러 현재 상태를 저장해 주세요.");
+    return;
+  }
+
+  const ok = confirm(`[${timeStr}]에 저장한 스냅샷으로 29개실 전체를 1초 만에 롤백하시겠습니까?\n\n테스트 중에 수정한 모든 전출/전입 내용이 스냅샷 저장 당시 모습으로 100% 원상복구됩니다.`);
+  if (!ok) return;
+
+  try {
+    const parsedRooms = JSON.parse(saved);
+
+    // 온라인이면 서버 호실 데이터도 스냅샷 기준으로 복원
+    if (state.isOnline) {
+      for (const [rNumStr, rData] of Object.entries(parsedRooms)) {
+        const rNum = Number(rNumStr);
+        await apiUpdateContract(rNum, {
+          lease_type: rData.lease_type || '월세',
+          pay_timing: rData.pay_timing || '후불',
+          name: rData.name || '',
+          id_number: rData.id_number || '',
+          phone: rData.phone || '',
+          deposit: rData.deposit || 0,
+          rent: rData.rent || 0,
+          maintenance: rData.maintenance || 0,
+          clean_fee: rData.clean_fee || 0,
+          move_in: rData.move_in || '',
+          expiry: rData.expiry || '',
+          move_out: rData.move_out || ''
+        }, state.currentBranch);
+      }
+    }
+
+    state.rooms = parsedRooms;
+    saveLocalFallback();
+    if (state.selectedRoom) {
+      populateModalRoomSelector(state.selectedRoom);
+      loadRoomIntoContractModal(state.selectedRoom);
+    }
+    renderAll();
+    alert(`🎉 [${timeStr}] 스냅샷 시점으로 29개실 전체 데이터가 깨끗하게 100% 원상복구되었습니다!`);
+  } catch (err) {
+    alert("스냅샷 복원 중 오류: " + err.message);
+  }
 }
 
 // ── 신규 부동산(건물) 추가 모달 ──
@@ -6074,6 +6197,9 @@ window.exportExpenseLedgerExcel = exportExpenseLedgerExcel;
 window.exportCurrentRoomCSV = exportCurrentRoomCSV;
 
 window.openTenantHistoryModal = openTenantHistoryModal;
+window.restoreTenantFromHistory = restoreTenantFromHistory;
+window.saveTestSnapshot = saveTestSnapshot;
+window.restoreTestSnapshot = restoreTestSnapshot;
 window.openNewBranchModal = openNewBranchModal;
 window.handleNewBranchSubmit = handleNewBranchSubmit;
 

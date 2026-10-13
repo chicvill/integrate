@@ -200,10 +200,31 @@
           <button type="button" onclick="openTenantHistoryModal(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-slate-200 border border-slate-700/60 font-semibold flex items-center gap-2.5 cursor-pointer transition">
             <span class="text-base text-emerald-400">🗂️</span>
             <div>
-              <div class="text-xs font-bold text-white">전출자 1년 보존 이력</div>
-              <div class="text-[10px] text-slate-400">퇴실자 명단 및 법정 1년 보존 기록</div>
+              <div class="text-xs font-bold text-white">전출자 1년 보존 이력 & 호실 복원</div>
+              <div class="text-[10px] text-slate-400">퇴실자 명단 확인 및 퇴실 취소(호실 복원)</div>
             </div>
           </button>
+
+          <!-- 🛡️ 안심 테스트 스냅샷 카드 -->
+          <div class="p-2.5 rounded-xl bg-surface-950/70 border border-blue-900/40 space-y-1.5">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-bold text-blue-300 flex items-center gap-1.5">
+                <span>🛡️</span><span>안심 테스트 안전장치</span>
+              </span>
+              <span class="text-[10px] text-slate-400">1초 백업/롤백</span>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5">
+              <button type="button" onclick="saveTestSnapshot(); closeMenuDrawer();" class="py-1.5 px-2 rounded-lg bg-blue-950/80 hover:bg-blue-900 text-blue-200 border border-blue-700/60 text-[11px] font-bold text-center cursor-pointer transition">
+                📸 스냅샷 백업
+              </button>
+              <button type="button" onclick="restoreTestSnapshot(); closeMenuDrawer();" class="py-1.5 px-2 rounded-lg bg-amber-950/80 hover:bg-amber-900 text-amber-200 border border-amber-700/60 text-[11px] font-bold text-center cursor-pointer transition">
+                ↩️ 1초 롤백
+              </button>
+            </div>
+            <div class="text-[10px] text-slate-400 leading-tight">
+              전출·전입 테스트 전 스냅샷을 찍어두면 언제든 1초 만에 원래 상태로 되돌릴 수 있습니다.
+            </div>
+          </div>
 
           <button type="button" onclick="openExcelImportModal(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-slate-200 border border-emerald-500/40 font-semibold flex items-center gap-2.5 cursor-pointer transition">
             <span class="text-base text-emerald-400">📑</span>
@@ -524,6 +545,25 @@
             <span>퇴실 시 1년 법정 보존 이력 자동 아카이빙</span>
           </span>
           <span class="text-slate-500 font-mono">만기 경과 시 1년 자동 갱신</span>
+        </div>
+
+        <!-- 🛡️ 안심 테스트 안전장치 바 -->
+        <div class="mt-2 p-2 bg-slate-900/90 rounded-lg border border-slate-800 flex items-center justify-between text-[11px] flex-wrap gap-1.5">
+          <div class="flex items-center gap-1.5 text-slate-300 font-semibold">
+            <span class="text-xs">🛡️</span>
+            <span>안심 테스트:</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button type="button" onclick="saveTestSnapshot()" title="테스트 시작 전 현재 상태 백업" class="px-2 py-1 rounded-md bg-blue-950 hover:bg-blue-900 text-blue-300 border border-blue-700/60 font-bold text-[10px] cursor-pointer transition flex items-center gap-1">
+              <span>📸</span><span>스냅샷 백업</span>
+            </button>
+            <button type="button" onclick="restoreTestSnapshot()" title="저장된 스냅샷으로 1초 롤백" class="px-2 py-1 rounded-md bg-amber-950 hover:bg-amber-900 text-amber-300 border border-amber-700/60 font-bold text-[10px] cursor-pointer transition flex items-center gap-1">
+              <span>↩️</span><span>1초 롤백</span>
+            </button>
+            <button type="button" onclick="closeModal('contractModal'); openTenantHistoryModal();" title="전출된 세입자 목록 및 호실 복원" class="px-2 py-1 rounded-md bg-purple-950 hover:bg-purple-900 text-purple-300 border border-purple-700/60 font-bold text-[10px] cursor-pointer transition flex items-center gap-1">
+              <span>🗂️</span><span>전출자 복원</span>
+            </button>
+          </div>
         </div>
       </div>
 
