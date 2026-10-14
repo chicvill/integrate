@@ -6615,11 +6615,16 @@ function updateExpiryNoticeBadge() {
   const badgeEl = document.getElementById('headerExpiryNoticeBadge');
   const btnEl = document.getElementById('btnHeaderExpiryNotice');
   if (btnEl) {
+    btnEl.classList.remove('hidden');
+    const iconEl = btnEl.querySelector('span:first-child');
     if (list.length > 0) {
-      btnEl.classList.remove('hidden');
-      if (badgeEl) badgeEl.textContent = `${list.length}건`;
+      btnEl.className = 'flex-1 flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/50 text-rose-300 font-bold text-xs transition cursor-pointer shadow-sm active:scale-95 whitespace-nowrap';
+      if (iconEl) iconEl.className = 'text-xs animate-bounce';
+      if (badgeEl) badgeEl.textContent = `만기 ${list.length}건`;
     } else {
-      btnEl.classList.add('hidden');
+      btnEl.className = 'flex-1 flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl bg-surface-800/60 hover:bg-surface-700/80 border border-slate-700/70 text-slate-300 font-semibold text-xs transition cursor-pointer shadow-sm active:scale-95 whitespace-nowrap';
+      if (iconEl) iconEl.className = 'text-xs';
+      if (badgeEl) badgeEl.textContent = '만기안내';
     }
   }
 
