@@ -15,6 +15,9 @@ import {
   closeRoomDrawer,
   toggleRoomDrawer,
   togglePastAccordion,
+  switchRoomSlideView,
+  toggleRoomSlideView,
+  initRoomSwipe,
   handleFillTenantPayments,
   handleChangePaymentDate,
   handleChangePaymentAmount,
@@ -153,6 +156,8 @@ window.toggleRoomDrawer = toggleRoomDrawer;
 window.renderAll = renderAll;
 window.renderBuildingSummary = renderBuildingSummary;
 window.togglePastAccordion = togglePastAccordion;
+window.switchRoomSlideView = switchRoomSlideView;
+window.toggleRoomSlideView = toggleRoomSlideView;
 window.handleFillTenantPayments = handleFillTenantPayments;
 window.handleChangePaymentDate = handleChangePaymentDate;
 window.handleChangePaymentAmount = handleChangePaymentAmount;
@@ -265,6 +270,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   console.log("🚀 MQnet 부동산 임차관리 모바일 최적화 v3.0 초기화 중...");
   await loadInitialData();
   renderAll();
+  initRoomSwipe();
   updateAdminProfileUI();
 
   // 만기 1·2개월 전 도래 호실 확인 및 배지 갱신 (매일 07:00 자동 감지)

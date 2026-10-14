@@ -10,6 +10,9 @@ export function selectRoom(roomNum) {
   state.selectedRoom = parseInt(roomNum, 10);
   saveLocalFallback();
   closeRoomDrawer();
+  if (typeof switchRoomSlideView === 'function') {
+    switchRoomSlideView('main', false);
+  }
   renderAll();
 }
 
@@ -107,9 +110,141 @@ export function togglePastAccordion(event) {
   if (event && event.stopPropagation) {
     event.stopPropagation();
   }
-  state.isPastOpen = !state.isPastOpen;
-  const room = state.rooms[state.selectedRoom];
-  if (room) renderPastHistorySection(room);
+  toggleRoomSlideView();
+}
+
+// ── 듀얼 슬라이드 뷰 전환 (본래 화면 ↔ 과거 납부 내역) ──
+export function switchRoomSlideView(view, animate = true) {
+  state.currentSlideView = view;
+  const track = document.getElementById('roomSwipeTrack');
+  const navCurrent = document.getElementById('navCurrentScreenText');
+  const navDotMain = document.getElementById('navDotMain');
+  const navDotPast = document.getElementById('navDotPast');
+  const navHintAction = document.getElementById('navHintActionText');
+  const navHintArrow = document.getElementById('navHintArrow');
+  const navContent = document.getElementById('roomSlideNavContent');
+
+  if (!track) return;
+
+  if (!animate) {
+    track.style.transition = 'none';
+  } else {
+    track.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+  }
+
+  if (view === 'past') {
+    track.style.transform = 'translateX(-50%)';
+    if (navContent) {
+      navContent.className = 'p-2 rounded-xl bg-surface-900 border border-purple-500/50 hover:border-purple-400 text-xs shadow-md flex items-center justify-between gap-2';
+    }
+    if (navCurrent) {
+      navCurrent.textContent = '과거 납부 내역 (최근 1년)';
+      navCurrent.className = 'font-bold text-purple-300 text-[11px] sm:text-xs truncate';
+    }
+    if (navDotMain) navDotMain.className = 'w-2 h-2 rounded-full bg-slate-600';
+    if (navDotPast) navDotPast.className = 'w-2 h-2 rounded-full bg-purple-400 animate-pulse';
+    if (navHintAction) navHintAction.textContent = '우로 드래그 (본래화면)';
+    if (navHintArrow) {
+      navHintArrow.textContent = '⬅';
+      navHintArrow.className = 'text-purple-400 font-black text-sm';
+    }
+
+    const room = state.rooms[state.selectedRoom];
+    if (room) renderPastHistorySection(room);
+  } else {
+    track.style.transform = 'translateX(0%)';
+    if (navContent) {
+      navContent.className = 'p-2 rounded-xl bg-surface-900 border border-cyan-500/40 hover:border-cyan-400 text-xs shadow-md flex items-center justify-between gap-2';
+    }
+    if (navCurrent) {
+      navCurrent.textContent = '당월 계약·수납 현황';
+      navCurrent.className = 'font-bold text-cyan-300 text-[11px] sm:text-xs truncate';
+    }
+    if (navDotMain) navDotMain.className = 'w-2 h-2 rounded-full bg-cyan-400 animate-pulse';
+    if (navDotPast) navDotPast.className = 'w-2 h-2 rounded-full bg-slate-600';
+    if (navHintAction) navHintAction.textContent = '좌로 드래그 (과거내역)';
+    if (navHintArrow) {
+      navHintArrow.textContent = '➔';
+      navHintArrow.className = 'text-cyan-400 font-black text-sm';
+    }
+  }
+
+  if (!animate) {
+    setTimeout(() => {
+      if (track) track.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+    }, 50);
+  }
+}
+
+export function toggleRoomSlideView() {
+  if (state.currentSlideView === 'past') {
+    switchRoomSlideView('main');
+  } else {
+    switchRoomSlideView('past');
+  }
+}
+
+let swipeInitialized = false;
+export function initRoomSwipe() {
+  if (swipeInitialized) return;
+  const container = document.getElementById('roomSwipeContainer');
+  if (!container) return;
+
+  let startX = 0;
+  let startY = 0;
+  let isDragging = false;
+
+  // Touch Swipe (스마트폰 제스처)
+  container.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    isDragging = true;
+  }, { passive: true });
+
+  container.addEventListener('touchend', (e) => {
+    if (!isDragging || e.changedTouches.length !== 1) return;
+    isDragging = false;
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const diffX = endX - startX;
+    const diffY = endY - startY;
+
+    // 수평 이동 거리가 수직 스크롤보다 크고 35px 이상일 때
+    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 35) {
+      if (diffX < 0) {
+        // 좌로 드래그: 과거 납부 내역
+        switchRoomSlideView('past');
+      } else {
+        // 우로 드래그: 본래 화면
+        switchRoomSlideView('main');
+      }
+    }
+  }, { passive: true });
+
+  // Mouse Drag (PC 마우스 드래그)
+  container.addEventListener('mousedown', (e) => {
+    if (e.target.closest('button, input, select, textarea, a, .cursor-pointer')) return;
+    startX = e.clientX;
+    startY = e.clientY;
+    isDragging = true;
+  });
+
+  window.addEventListener('mouseup', (e) => {
+    if (!isDragging) return;
+    isDragging = false;
+    const diffX = e.clientX - startX;
+    const diffY = e.clientY - startY;
+    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 35) {
+      if (diffX < 0) {
+        switchRoomSlideView('past');
+      } else {
+        switchRoomSlideView('main');
+      }
+    }
+  });
+
+  swipeInitialized = true;
 }
 
 // ── 종합 렌더링 ──
@@ -409,20 +544,15 @@ export function renderCurrentMonthSection(room) {
 export function renderPastHistorySection(room) {
   const rNum = room.room_number;
   const tbody = document.getElementById('pastPaymentTableBody');
-  const accordionBody = document.getElementById('pastAccordionBody');
-  const pastToggleBtnText = document.getElementById('pastToggleBtnText');
+  const pastRoomTitleBadge = document.getElementById('pastRoomTitleBadge');
+  if (pastRoomTitleBadge) {
+    pastRoomTitleBadge.textContent = `${rNum}호`;
+  }
   if (!tbody) return;
 
-  if (accordionBody && pastToggleBtnText) {
-    if (state.isPastOpen) {
-      accordionBody.classList.remove('hidden');
-      pastToggleBtnText.textContent = '내역 접기 ▴';
-    } else {
-      accordionBody.classList.add('hidden');
-      pastToggleBtnText.textContent = '내역 펼치기 ▾';
-      tbody.innerHTML = '';
-      return;
-    }
+  const accordionBody = document.getElementById('pastAccordionBody');
+  if (accordionBody) {
+    accordionBody.classList.remove('hidden');
   }
 
   tbody.innerHTML = '';

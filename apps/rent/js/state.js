@@ -42,6 +42,7 @@ export const state = {
   expenses: [],
   tenantHistories: [],
   isPastOpen: false, // 기본 전체 접힘, 펼치기 시 최근 1년간 기록 표시
+  currentSlideView: 'main', // 'main' (당월 계약·수납 현황) | 'past' (과거 납부 내역)
   isContractOpen: false,
   pendingReceiptText: '',
   pendingReceiptRoom: null,
