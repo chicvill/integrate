@@ -5,6 +5,7 @@
 
 import { state, FLOOR_STRUCTURE, currentMonth, currentYear, formattedToday, saveLocalFallback, loadInitialData, fillTenantPaymentsState, evaluatePaymentRule, parseDateComponents, STORAGE_KEY } from './state.js?v=2.0';
 import { apiProcessPayment, apiCancelPayment, apiFillTenantPayments, apiGetRooms, apiDeleteBranch, apiUpdateBranch } from './api.js?v=2.0';
+import { switchRoomSlideView, toggleRoomSlideView, initRoomSwipe } from './slider.js?v=2.0';
 
 export function selectRoom(roomNum) {
   state.selectedRoom = parseInt(roomNum, 10);
@@ -113,139 +114,8 @@ export function togglePastAccordion(event) {
   toggleRoomSlideView();
 }
 
-// ── 듀얼 슬라이드 뷰 전환 (본래 화면 ↔ 과거 납부 내역) ──
-export function switchRoomSlideView(view, animate = true) {
-  state.currentSlideView = view;
-  const track = document.getElementById('roomSwipeTrack');
-  const navCurrent = document.getElementById('navCurrentScreenText');
-  const navDotMain = document.getElementById('navDotMain');
-  const navDotPast = document.getElementById('navDotPast');
-  const navHintAction = document.getElementById('navHintActionText');
-  const navHintArrow = document.getElementById('navHintArrow');
-  const navContent = document.getElementById('roomSlideNavContent');
-
-  if (!track) return;
-
-  if (!animate) {
-    track.style.transition = 'none';
-  } else {
-    track.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
-  }
-
-  if (view === 'past') {
-    track.style.transform = 'translateX(-50%)';
-    if (navContent) {
-      navContent.className = 'p-2 rounded-xl bg-surface-900 border border-purple-500/50 hover:border-purple-400 text-xs shadow-md flex items-center justify-between gap-2';
-    }
-    if (navCurrent) {
-      navCurrent.textContent = '과거 납부 내역 (최근 1년)';
-      navCurrent.className = 'font-bold text-purple-300 text-[11px] sm:text-xs truncate';
-    }
-    if (navDotMain) navDotMain.className = 'w-2 h-2 rounded-full bg-slate-600';
-    if (navDotPast) navDotPast.className = 'w-2 h-2 rounded-full bg-purple-400 animate-pulse';
-    if (navHintAction) navHintAction.textContent = '우로 드래그 (본래화면)';
-    if (navHintArrow) {
-      navHintArrow.textContent = '⬅';
-      navHintArrow.className = 'text-purple-400 font-black text-sm';
-    }
-
-    const room = state.rooms[state.selectedRoom];
-    if (room) renderPastHistorySection(room);
-  } else {
-    track.style.transform = 'translateX(0%)';
-    if (navContent) {
-      navContent.className = 'p-2 rounded-xl bg-surface-900 border border-cyan-500/40 hover:border-cyan-400 text-xs shadow-md flex items-center justify-between gap-2';
-    }
-    if (navCurrent) {
-      navCurrent.textContent = '당월 계약·수납 현황';
-      navCurrent.className = 'font-bold text-cyan-300 text-[11px] sm:text-xs truncate';
-    }
-    if (navDotMain) navDotMain.className = 'w-2 h-2 rounded-full bg-cyan-400 animate-pulse';
-    if (navDotPast) navDotPast.className = 'w-2 h-2 rounded-full bg-slate-600';
-    if (navHintAction) navHintAction.textContent = '좌로 드래그 (과거내역)';
-    if (navHintArrow) {
-      navHintArrow.textContent = '➔';
-      navHintArrow.className = 'text-cyan-400 font-black text-sm';
-    }
-  }
-
-  if (!animate) {
-    setTimeout(() => {
-      if (track) track.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
-    }, 50);
-  }
-}
-
-export function toggleRoomSlideView() {
-  if (state.currentSlideView === 'past') {
-    switchRoomSlideView('main');
-  } else {
-    switchRoomSlideView('past');
-  }
-}
-
-let swipeInitialized = false;
-export function initRoomSwipe() {
-  if (swipeInitialized) return;
-  const container = document.getElementById('roomSwipeContainer');
-  if (!container) return;
-
-  let startX = 0;
-  let startY = 0;
-  let isDragging = false;
-
-  // Touch Swipe (스마트폰 제스처)
-  container.addEventListener('touchstart', (e) => {
-    if (e.touches.length !== 1) return;
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-    isDragging = true;
-  }, { passive: true });
-
-  container.addEventListener('touchend', (e) => {
-    if (!isDragging || e.changedTouches.length !== 1) return;
-    isDragging = false;
-    const endX = e.changedTouches[0].clientX;
-    const endY = e.changedTouches[0].clientY;
-    const diffX = endX - startX;
-    const diffY = endY - startY;
-
-    // 수평 이동 거리가 수직 스크롤보다 크고 35px 이상일 때
-    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 35) {
-      if (diffX < 0) {
-        // 좌로 드래그: 과거 납부 내역
-        switchRoomSlideView('past');
-      } else {
-        // 우로 드래그: 본래 화면
-        switchRoomSlideView('main');
-      }
-    }
-  }, { passive: true });
-
-  // Mouse Drag (PC 마우스 드래그)
-  container.addEventListener('mousedown', (e) => {
-    if (e.target.closest('button, input, select, textarea, a, .cursor-pointer')) return;
-    startX = e.clientX;
-    startY = e.clientY;
-    isDragging = true;
-  });
-
-  window.addEventListener('mouseup', (e) => {
-    if (!isDragging) return;
-    isDragging = false;
-    const diffX = e.clientX - startX;
-    const diffY = e.clientY - startY;
-    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 35) {
-      if (diffX < 0) {
-        switchRoomSlideView('past');
-      } else {
-        switchRoomSlideView('main');
-      }
-    }
-  });
-
-  swipeInitialized = true;
-}
+// slider.js 모듈 함수 re-export
+export { switchRoomSlideView, toggleRoomSlideView, initRoomSwipe };
 
 // ── 종합 렌더링 ──
 export function renderAll() {
@@ -514,12 +384,12 @@ export function renderCurrentMonthSection(room) {
     }
     if (actionArea) {
       actionArea.innerHTML = `
-        <div class="flex items-center gap-2 w-full">
-          <button type="button" disabled class="flex-1 py-3 px-4 rounded-xl text-sm font-bold bg-surface-800 text-slate-400 border border-slate-700/80 cursor-not-allowed flex items-center justify-center gap-2 opacity-80">
+        <div class="flex items-center gap-1.5 w-full">
+          <button type="button" disabled class="flex-1 py-1.5 sm:py-2 px-3 rounded-xl text-xs sm:text-sm font-bold bg-surface-800 text-slate-400 border border-slate-700/80 cursor-not-allowed flex items-center justify-center gap-1.5 opacity-80">
             <span class="text-emerald-400 font-black">✓</span> 이번 달 납부 완료됨
           </button>
-          <button type="button" id="btnCancelPay" class="py-3 px-3.5 rounded-xl text-xs font-semibold bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-rose-300 border border-slate-700 transition cursor-pointer">
-            납부 취소
+          <button type="button" id="btnCancelPay" class="py-1.5 sm:py-2 px-2.5 rounded-xl text-[11px] sm:text-xs font-semibold bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-rose-300 border border-slate-700 transition cursor-pointer shrink-0">
+            취소
           </button>
         </div>
       `;
@@ -527,12 +397,12 @@ export function renderCurrentMonthSection(room) {
     }
   } else {
     if (statusBadge) {
-      statusBadge.className = 'px-3 py-1 rounded-full font-black text-sm bg-rose-500/25 text-rose-300 border border-rose-500/50 animate-pulse';
+      statusBadge.className = 'px-2 py-0.5 rounded-full font-bold text-[10px] sm:text-xs bg-rose-500/25 text-rose-300 border border-rose-500/50 animate-pulse';
       statusBadge.textContent = '● 미납 (입금대기)';
     }
     if (actionArea) {
       actionArea.innerHTML = `
-        <button type="button" id="btnProcessPay" class="w-full py-3.5 px-4 rounded-xl text-base font-black bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 transition shadow-lg shadow-cyan-950/60 flex items-center justify-center gap-2 cursor-pointer active:scale-98">
+        <button type="button" id="btnProcessPay" class="w-full py-2 sm:py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 transition shadow-md shadow-cyan-950/60 flex items-center justify-center gap-1.5 cursor-pointer active:scale-98">
           💳 ${currentMonth}월분 즉시 완납 처리 (${Number(curTotal).toLocaleString()}원)
         </button>
       `;

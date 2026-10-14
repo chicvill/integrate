@@ -13,7 +13,12 @@ Write-Host ""
 
 # 1. 최신 번들 빌드
 Write-Host "[1/4] 프론트엔드 최신 번들 빌드 중..." -ForegroundColor Yellow
-& "C:\Users\USER\AppData\Local\Programs\Python\Python314\python.exe" "$ProjectRoot\scripts\build_rent_bundle.py"
+$PythonCmd = if (Get-Command "py" -ErrorAction SilentlyContinue) { "py -3.14" } elseif (Test-Path "C:\Python314\python.exe") { "C:\Python314\python.exe" } else { "python" }
+if ($PythonCmd -eq "py -3.14") {
+    py -3.14 "$ProjectRoot\scripts\build_rent_bundle.py"
+} else {
+    & $PythonCmd "$ProjectRoot\scripts\build_rent_bundle.py"
+}
 Write-Host "  [OK] 번들 빌드 완료" -ForegroundColor Green
 
 # 2. 변경 파일 압축 (pycache 제외)

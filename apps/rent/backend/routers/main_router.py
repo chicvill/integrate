@@ -392,7 +392,7 @@ async def download_vat_report(
     start_month: int = Query(1, ge=1, le=12, description="시작월"),
     end_month: int = Query(6, ge=1, le=12, description="종료월"),
     year: int = Query(2026, description="정산 연도"),
-    format_type: str = Query("excel", regex="^(excel|csv)$", description="다운로드 포맷: excel 또는 csv"),
+    format_type: str = Query("excel", pattern="^(excel|csv)$", description="다운로드 포맷: excel 또는 csv"),
     room_numbers: Optional[str] = Query(None, description="쉼표 구분 대상 호실 목록"),
     db: Session = Depends(get_db)
 ):

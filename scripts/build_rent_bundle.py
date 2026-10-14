@@ -31,6 +31,7 @@ def build_bundle():
     state_code = open(os.path.join(FRONTEND_DIR, "js", "state.js"), "r", encoding="utf-8").read()
     api_code = open(os.path.join(FRONTEND_DIR, "js", "api.js"), "r", encoding="utf-8").read()
     ui_code = open(os.path.join(FRONTEND_DIR, "js", "ui.js"), "r", encoding="utf-8").read()
+    slider_code = open(os.path.join(FRONTEND_DIR, "js", "slider.js"), "r", encoding="utf-8").read()
     modals_code = open(os.path.join(FRONTEND_DIR, "js", "modals.js"), "r", encoding="utf-8").read()
     app_code = open(os.path.join(FRONTEND_DIR, "app.js"), "r", encoding="utf-8").read()
 
@@ -44,6 +45,7 @@ def build_bundle():
         strip_es_syntax(api_code),
         strip_es_syntax(state_code),
         strip_es_syntax(ui_code),
+        strip_es_syntax(slider_code),
         strip_es_syntax(modals_code),
         strip_es_syntax(app_code),
         "})();"
