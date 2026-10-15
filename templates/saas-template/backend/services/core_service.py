@@ -14,13 +14,27 @@ from ..schemas import ItemCreate, ItemUpdate, BranchCreate, BranchUpdate, Branch
 from ..config import settings
 
 _executor = ThreadPoolExecutor(max_workers=3, thread_name_prefix="{{APP_ID}}_worker")
+_seeded: bool = False
+
+
+def normalize_branch_id(branch_id: Optional[str]) -> str:
+    """지점 코드 에일리어스 단일 정규화 (Single Source of Truth)"""
+    if not branch_id:
+        return "main"
+    bid = branch_id.strip().lower()
+    if bid in ("chicvill01", "chicvill1", "chicvill", "main", "01", "1"):
+        return "main"
+    return branch_id
 
 
 class CoreService:
     # ── 지점(매장) & 수납 관리 ──
     @staticmethod
     def ensure_default_branches(db: Session):
-        """기본 지점 데이터 보장 (본점, 강남점 등) 및 수납 데이터 시드"""
+        """기본 지점 데이터 보장 및 1회성 메모리 플래그 캐싱 (풀스캔 방어)"""
+        global _seeded
+        if _seeded:
+            return
         try:
             count = db.query(AppBranch).count()
             if count == 0:
@@ -68,6 +82,7 @@ class CoreService:
                 for b in defaults:
                     db.add(b)
                 db.commit()
+            _seeded = True
         except Exception:
             db.rollback()
 

@@ -113,6 +113,7 @@
       </div>
       <form id="itemForm" class="modal-body">
         <input type="hidden" id="editItemId">
+        <div id="itemModalAlert" class="hidden"></div>
         <div class="form-group">
           <label for="itemBranch" class="form-label">소속 매장 (지점)</label>
           <select id="itemBranch" class="form-select">
@@ -157,6 +158,7 @@
         <button id="closeBranchModalBtn" class="modal-close">&times;</button>
       </div>
       <form id="branchForm" class="modal-body">
+        <div id="branchModalAlert" class="hidden"></div>
         <div class="form-group">
           <label for="branchCode" class="form-label">매장 코드 (branch_id)</label>
           <input type="text" id="branchCode" class="form-input" required placeholder="예: branch-sinchon, branch-pangyo">

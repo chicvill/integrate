@@ -1,8 +1,71 @@
 /**
  * templates/saas-template/frontend/js/modals.js
- * Modal open/close and form management logic.
- * Supports Item modal, AI modal, and Branch create modal.
+ * Modal open/close, alert banner system, and resilient error handling logic.
  */
+
+/**
+ * ── 표준 SaaS 예외·오류 및 상태 안내 배너 렌더러 (updateAppAlert) ──
+ * @param {string} containerId - 배너를 렌더링할 컨테이너 DOM ID (예: 'itemModalAlert')
+ * @param {'warning'|'diff'|'error'|'success'|'info'|null} type - 알림 종류
+ * @param {string} title - 굵은 제목
+ * @param {string} message - 상세 설명 HTML
+ */
+export function updateAppAlert(containerId, type, title, message) {
+  const alertEl = document.getElementById(containerId);
+  if (!alertEl) return;
+
+  if (!type || !title) {
+    alertEl.innerHTML = '';
+    alertEl.className = 'hidden';
+    return;
+  }
+
+  let styleClasses = '';
+  let icon = 'ℹ️';
+
+  if (type === 'error') {
+    styleClasses = 'bg-rose-950/70 border-rose-600/70 text-rose-200';
+    icon = '❌';
+  } else if (type === 'warning') {
+    styleClasses = 'bg-amber-950/60 border-amber-500/60 text-amber-200';
+    icon = '⚠️';
+  } else if (type === 'diff') {
+    styleClasses = 'bg-orange-950/50 border-orange-500/50 text-orange-200';
+    icon = '⚖️';
+  } else if (type === 'success') {
+    styleClasses = 'bg-emerald-950/60 border-emerald-500/60 text-emerald-200';
+    icon = '✅';
+  } else {
+    styleClasses = 'bg-cyan-950/50 border-cyan-500/50 text-cyan-200';
+    icon = 'ℹ️';
+  }
+
+  alertEl.className = `p-3 rounded-2xl border text-xs flex items-start gap-2.5 transition animate-in fade-in duration-200 mb-3 ${styleClasses}`;
+  alertEl.innerHTML = `
+    <span class="text-base shrink-0 select-none">${icon}</span>
+    <div class="leading-relaxed flex-1">
+      <strong class="font-bold block mb-0.5 text-[12px]">${title}</strong>
+      <div class="text-[11px] opacity-90">${message}</div>
+    </div>
+  `;
+}
+
+/**
+ * ── 버튼 로딩 스피너 및 비활성화(Debounce) 제어 헬퍼 ──
+ */
+export function setButtonLoading(btn, isLoading, loadingText = '처리 중... ⏳', originalText = '저장') {
+  if (!btn) return;
+  if (isLoading) {
+    btn.disabled = true;
+    btn.dataset.origText = btn.textContent;
+    btn.textContent = loadingText;
+    btn.classList.add('opacity-70', 'pointer-events-none');
+  } else {
+    btn.disabled = false;
+    btn.textContent = btn.dataset.origText || originalText;
+    btn.classList.remove('opacity-70', 'pointer-events-none');
+  }
+}
 
 export function openItemModal(item = null) {
   const modal = document.getElementById('itemModal');
