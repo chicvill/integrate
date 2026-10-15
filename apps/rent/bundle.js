@@ -5994,8 +5994,49 @@ function handleLogout() {
 // 9. 은행 입금 알림 문자 자동 인식 & 수납 처리 및 영수증 전송 모듈
 // ══════════════════════════════════════════════════════════════════════
 
+function updateSmsAlert(type, title, message) {
+  const alertEl = document.getElementById('smsProcessResultAlert');
+  if (!alertEl) return;
+
+  if (!type || !title) {
+    alertEl.innerHTML = '';
+    alertEl.className = 'hidden';
+    return;
+  }
+
+  let styleClasses = '';
+  let icon = 'ℹ️';
+
+  if (type === 'error') {
+    styleClasses = 'bg-rose-950/70 border-rose-600/70 text-rose-200';
+    icon = '❌';
+  } else if (type === 'warning') {
+    styleClasses = 'bg-amber-950/60 border-amber-500/60 text-amber-200';
+    icon = '⚠️';
+  } else if (type === 'diff') {
+    styleClasses = 'bg-orange-950/50 border-orange-500/50 text-orange-200';
+    icon = '⚖️';
+  } else if (type === 'success') {
+    styleClasses = 'bg-emerald-950/60 border-emerald-500/60 text-emerald-200';
+    icon = '✅';
+  } else {
+    styleClasses = 'bg-cyan-950/50 border-cyan-500/50 text-cyan-200';
+    icon = 'ℹ️';
+  }
+
+  alertEl.className = `p-3 rounded-2xl border text-xs flex items-start gap-2.5 transition animate-in fade-in duration-200 ${styleClasses}`;
+  alertEl.innerHTML = `
+    <span class="text-base shrink-0 select-none">${icon}</span>
+    <div class="leading-relaxed flex-1">
+      <strong class="font-bold block mb-0.5 text-[12px]">${title}</strong>
+      <div class="text-[11px] opacity-90">${message}</div>
+    </div>
+  `;
+}
+
 function openSmsDepositModal() {
   openModal('smsDepositModal');
+  updateSmsAlert(null);
   
   // 29개실 셀렉트박스 옵션 채우기
   const roomSelect = document.getElementById('smsDetectedRoom');
@@ -6406,14 +6447,19 @@ function handleLiveSmsParse() {
 
   if (targetPeriods.length === 0) {
     if (dateSpan) {
-      dateSpan.innerHTML = `<span class="text-amber-400 font-bold">체납 내역 없음 (수동 처리 필요)</span>`;
+      dateSpan.innerHTML = `<span class="text-amber-400 font-bold">체납 내역 없음 (이미 완납)</span>`;
     }
     if (execBtnText) {
-      execBtnText.textContent = `⚠️ 자동 처리 불가 (과거내역 수동 처리)`;
+      execBtnText.textContent = `⚠️ 자동 처리 불가 (체납 내역 없음)`;
     }
     if (execBtn) {
       execBtn.className = "flex-1 py-3 rounded-xl bg-slate-800 text-amber-300 font-bold text-xs border border-amber-500/40 flex items-center justify-center gap-1.5 cursor-pointer transition";
     }
+    updateSmsAlert(
+      'warning',
+      '미납 내역 없음 (이미 전액 완납)',
+      `<strong>${parsed.roomNumber}호 (${parsed.tenantName || '세입자'})</strong>는 현재 체납/미납 회차가 없는 완납 상태입니다.<br>이중입금 또는 과오납 여부를 확인하시거나, 과거/특수 납부는 <strong>[과거납부내역]</strong>에서 수동으로 확인해주세요.`
+    );
   } else {
     if (dateSpan) {
       if (targetPeriods.length > 1) {
@@ -6439,6 +6485,24 @@ function handleLiveSmsParse() {
     }
     if (execBtn) {
       execBtn.className = "flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 transition";
+    }
+
+    // 금액 불일치 여부 실시간 안내
+    const room = state.rooms ? state.rooms[parsed.roomNumber] : null;
+    const isJeonse = (room && room.lease_type === '전세');
+    const monthlyDue = room ? ((isJeonse ? 0 : Number(room.rent || 0)) + Number(room.maintenance || 0)) : 0;
+    const expectedTotal = monthlyDue * targetPeriods.length;
+
+    if (monthlyDue > 0 && Number(parsed.amount) !== expectedTotal) {
+      const diff = Number(parsed.amount) - expectedTotal;
+      const diffText = diff > 0 ? `${diff.toLocaleString()}원 초과 입금` : `${Math.abs(diff).toLocaleString()}원 부족 입금`;
+      updateSmsAlert(
+        'diff',
+        `금액 불일치 안내 (${diffText})`,
+        `입금액(<strong>${Number(parsed.amount).toLocaleString()}원</strong>)이 대상 회차(${targetPeriods.length}개월) 청구액(<strong>${expectedTotal.toLocaleString()}원</strong>)과 차이가 있습니다.<br>처리 후 <strong>[과거납부내역]</strong>에서 세부 금액을 수정할 수 있습니다.`
+      );
+    } else {
+      updateSmsAlert(null);
     }
   }
 
@@ -6480,14 +6544,19 @@ function onSmsDetectedRoomChange() {
 
   if (targetPeriods.length === 0) {
     if (dateSpan) {
-      dateSpan.innerHTML = `<span class="text-amber-400 font-bold">체납 내역 없음 (수동 처리 필요)</span>`;
+      dateSpan.innerHTML = `<span class="text-amber-400 font-bold">체납 내역 없음 (이미 완납)</span>`;
     }
     if (execBtnText) {
-      execBtnText.textContent = `⚠️ 자동 처리 불가 (과거내역 수동 처리)`;
+      execBtnText.textContent = `⚠️ 자동 처리 불가 (체납 내역 없음)`;
     }
     if (execBtn) {
       execBtn.className = "flex-1 py-3 rounded-xl bg-slate-800 text-amber-300 font-bold text-xs border border-amber-500/40 flex items-center justify-center gap-1.5 cursor-pointer transition";
     }
+    updateSmsAlert(
+      'warning',
+      '미납 내역 없음 (이미 전액 완납)',
+      `<strong>${rNum}호 (${(room && room.name) ? room.name : '세입자'})</strong>는 현재 체납/미납 회차가 없는 완납 상태입니다.<br>이중입금 또는 과오납 여부를 확인하시거나, 과거/특수 납부는 <strong>[과거납부내역]</strong>에서 수동으로 확인해주세요.`
+    );
   } else {
     if (dateSpan) {
       if (targetPeriods.length > 1) {
@@ -6513,6 +6582,22 @@ function onSmsDetectedRoomChange() {
     }
     if (execBtn) {
       execBtn.className = "flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 transition";
+    }
+
+    const isJeonse = (room && room.lease_type === '전세');
+    const monthlyDue = room ? ((isJeonse ? 0 : Number(room.rent || 0)) + Number(room.maintenance || 0)) : 0;
+    const expectedTotal = monthlyDue * targetPeriods.length;
+
+    if (monthlyDue > 0 && depAmount !== expectedTotal) {
+      const diff = depAmount - expectedTotal;
+      const diffText = diff > 0 ? `${diff.toLocaleString()}원 초과 입금` : `${Math.abs(diff).toLocaleString()}원 부족 입금`;
+      updateSmsAlert(
+        'diff',
+        `금액 불일치 안내 (${diffText})`,
+        `입금액(<strong>${Number(depAmount).toLocaleString()}원</strong>)이 대상 회차(${targetPeriods.length}개월) 청구액(<strong>${expectedTotal.toLocaleString()}원</strong>)과 차이가 있습니다.<br>처리 후 <strong>[과거납부내역]</strong>에서 세부 금액을 수정할 수 있습니다.`
+      );
+    } else {
+      updateSmsAlert(null);
     }
   }
 
@@ -6554,7 +6639,11 @@ async function handleSmsDepositProcess() {
 
   // 체납된 것이 없는데 입금 되는 등 처리할 수 없는 경우 수동 처리 안내
   if (!targetPeriods || targetPeriods.length === 0) {
-    alert("체납된 내역이 없거나 자동 처리할 수 없는 입금입니다.\n과거납부내역에서 수동으로 처리해주세요.");
+    updateSmsAlert(
+      'warning',
+      '처리 불가: 미납 내역 없음',
+      `<strong>${roomNum}호 (${tenantName})</strong>는 현재 체납/미납 회차가 없는 완납 상태입니다.<br>이중입금 또는 과오납 여부를 확인하시거나, 과거/특수 납부는 <strong>[과거납부내역]</strong>에서 수동으로 확인해주세요.`
+    );
     return;
   }
 
@@ -6564,10 +6653,28 @@ async function handleSmsDepositProcess() {
   const expectedTotal = monthlyDue * targetPeriods.length;
 
   if (monthlyDue > 0 && Number(parsed.amount) !== expectedTotal) {
-    alert("금액을 확인해주세요. 처리 후 과거납부내역에서 수정할 수 있습니다.");
+    const diff = Number(parsed.amount) - expectedTotal;
+    const diffText = diff > 0 ? `${diff.toLocaleString()}원 초과 입금` : `${Math.abs(diff).toLocaleString()}원 부족 입금`;
+    updateSmsAlert(
+      'diff',
+      `금액 불일치 확인 (${diffText})`,
+      `입금액(<strong>${Number(parsed.amount).toLocaleString()}원</strong>)과 청구액(<strong>${expectedTotal.toLocaleString()}원</strong>)이 다릅니다.<br>계속 진행하시면 완납 처리되며, 차액은 <strong>[과거납부내역]</strong>에서 수정할 수 있습니다.`
+    );
   }
 
+  const execBtn = document.getElementById('btnExecuteSmsDeposit');
+  const execBtnText = document.getElementById('btnExecuteSmsDepositText');
+  const origBtnText = execBtnText ? execBtnText.textContent : '입금처리';
+
   try {
+    if (execBtn) {
+      execBtn.disabled = true;
+      execBtn.classList.add('opacity-70', 'pointer-events-none');
+    }
+    if (execBtnText) {
+      execBtnText.textContent = '전산 완납 처리 중... ⏳';
+    }
+
     // 3. 분할된 각 월에 대해 전산 완납 처리 실행
     for (const p of targetPeriods) {
       const pMonth = p.month;
@@ -6618,20 +6725,37 @@ async function handleSmsDepositProcess() {
       console.warn("Clipboard write not permitted:", e);
     }
 
-    // 6. 입금 모달 닫기
-    closeSmsDepositModal();
+    // 성공 메시지 띄우고 모달 닫기
+    updateSmsAlert('success', '입금 완납 처리 완료', `${roomNum}호 ${targetPeriods.map(p => p.month + '월').join(', ')}분 완납이 정상 기록되었습니다.`);
 
-    // 7. 스마트폰 메시지 창으로 다이렉트 이동
-    const phone = room ? room.phone : '';
-    if (phone) {
-      const cleanPhone = phone.replace(/[^\d+]/g, '');
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-      const smsUrl = `sms:${cleanPhone}${isIOS ? '&' : '?'}body=${encodeURIComponent(receiptText)}`;
-      window.location.href = smsUrl;
-    }
+    setTimeout(() => {
+      // 6. 입금 모달 닫기
+      closeSmsDepositModal();
+
+      // 7. 스마트폰 메시지 창으로 다이렉트 이동
+      const phone = room ? room.phone : '';
+      if (phone) {
+        const cleanPhone = phone.replace(/[^\d+]/g, '');
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const smsUrl = `sms:${cleanPhone}${isIOS ? '&' : '?'}body=${encodeURIComponent(receiptText)}`;
+        window.location.href = smsUrl;
+      }
+    }, 400);
 
   } catch (err) {
     console.error("입금 처리 실패:", err);
+    if (execBtn) {
+      execBtn.disabled = false;
+      execBtn.classList.remove('opacity-70', 'pointer-events-none');
+    }
+    if (execBtnText) {
+      execBtnText.textContent = origBtnText;
+    }
+    updateSmsAlert(
+      'error',
+      '입금 처리 중 오류가 발생했습니다',
+      `${err.message || '서버 통신 실패 또는 데이터베이스 반영 오류'}<br>인터넷 연결 상태 및 게이트웨이(포트 9000) 동작을 확인해주세요.`
+    );
   }
 }
 
@@ -7146,6 +7270,7 @@ function closeSequentialSmsModal() {
 
 // ── 전역 윈도우 핸들러 바인딩 (인라인 HTML 호출 호환) ──
 window.calculateDepositTargetPeriods = calculateDepositTargetPeriods;
+window.updateSmsAlert = updateSmsAlert;
 window.openSmsDepositModal = openSmsDepositModal;
 window.closeSmsDepositModal = closeSmsDepositModal;
 window.fillSampleSmsText = fillSampleSmsText;

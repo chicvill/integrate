@@ -120,11 +120,13 @@ import {
   handleCopySmsReceipt,
   handleSendSmsReceipt,
   handlePhoneMessageClick,
-  calculateDepositTargetPeriods
+  calculateDepositTargetPeriods,
+  updateSmsAlert
 } from './js/modals.js?v=2.0';
 
 // ── 전역 윈도우 핸들러 바인딩 (인라인 HTML 호출 호환) ──
 window.calculateDepositTargetPeriods = calculateDepositTargetPeriods;
+window.updateSmsAlert = updateSmsAlert;
 window.openSmsDepositModal = openSmsDepositModal;
 window.closeSmsDepositModal = closeSmsDepositModal;
 window.fillSampleSmsText = fillSampleSmsText;
