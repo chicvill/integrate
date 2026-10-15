@@ -31,7 +31,7 @@ APP_METADATA = {
     "kiosk": {"name": "키오스크 무인 결제 시스템", "port": 8002, "category": "pos"},
 }
 
-def export_standalone_app(app_id: str, output_dir: str, create_zip: bool = False):
+def export_standalone_app(app_id: str, output_dir: str, create_zip: bool = False, include_data: bool = False):
     app_dir = os.path.join(APPS_DIR, app_id)
     if not os.path.exists(app_dir):
         print(f"❌ 오류: 앱 디렉토리를 찾을 수 없습니다: {app_dir}")
@@ -118,6 +118,21 @@ def export_standalone_app(app_id: str, output_dir: str, create_zip: bool = False
     os.makedirs(os.path.join(target_dir, "data"), exist_ok=True)
     os.makedirs(os.path.join(target_dir, "media"), exist_ok=True)
 
+    if include_data:
+        print(f"💾 실제 운영 데이터베이스 복사 중...")
+        possible_dbs = [
+            os.path.join(PROJECT_ROOT, "data", f"{app_id}.db"),
+            os.path.join(PROJECT_ROOT, f"{app_id}.db"),
+            os.path.join(PROJECT_ROOT, "integrat.db"),
+            os.path.join(app_dir, "data", f"{app_id}.db"),
+        ]
+        for src in possible_dbs:
+            if os.path.exists(src) and os.path.getsize(src) > 0:
+                dst = os.path.join(target_dir, "data", f"{app_id}.db")
+                shutil.copy2(src, dst)
+                print(f"  ✓ {src} -> {dst} ({round(os.path.getsize(dst)/1024, 1)} KB)")
+                break
+
     readme_content = f"""# 🚀 {app_name} (독립 실행형 패키지)
 
 본 패키지는 MQnet 중앙 SaaS에서 추출된 **단독 실행형(Standalone) 독립 솔루션**입니다.  
@@ -181,7 +196,8 @@ if __name__ == "__main__":
     parser.add_argument("--app", required=True, help="추출 대상 앱 ID (예: rent, studycafe)")
     parser.add_argument("--output", default="", help="출력 디렉토리 경로 (기본값: dist/{app}_standalone)")
     parser.add_argument("--zip", action="store_true", help="추출 완료 후 .zip 압축 파일 생성")
+    parser.add_argument("--include-data", action="store_true", help="실제 운영 DB(data/*.db) 포함 복사")
 
     args = parser.parse_args()
     out_dir = args.output or os.path.join(PROJECT_ROOT, "dist", f"{args.app}_standalone")
-    export_standalone_app(args.app, out_dir, create_zip=args.zip)
+    export_standalone_app(args.app, out_dir, create_zip=args.zip, include_data=args.include_data)
