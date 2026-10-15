@@ -3,7 +3,7 @@
  * 원룸 임차료 관리 시스템 모달 팝업 및 계약/지출 폼 제어 모듈.
  */
 
-import { state, formattedToday, saveLocalFallback, setAuthUser, clearAuthUser, getAuthSessionInfo, touchAuthSession, fillTenantPaymentsState, parseDateComponents, ROOM_NUMBERS, currentYear, currentMonth, getExpiringRoomsList } from './state.js?v=2.0';
+import { state, formattedToday, saveLocalFallback, setAuthUser, clearAuthUser, getAuthSessionInfo, touchAuthSession, fillTenantPaymentsState, evaluatePaymentRule, parseDateComponents, ROOM_NUMBERS, currentYear, currentMonth, getExpiringRoomsList } from './state.js?v=2.0';
 import { apiUpdateContract, apiCreateExpense, apiDeleteExpense, apiRequestUpgrade, apiGetVatReport, apiGetVatSettings, apiSaveVatSettings, apiCreateBranch, apiGetTenantHistories, apiDeleteTenantHistory, apiBatchImportRooms, apiBatchImportPaymentMatrix, apiOcrImportImage, apiAdminLogin, apiRegisterUser, apiFillTenantPayments, apiProcessPayment, apiGetExpiringRooms, apiRestoreBackup } from './api.js?v=2.0';
 import { renderAll, switchBranch } from './ui.js?v=2.0';
 
@@ -3338,16 +3338,15 @@ export function openSmsDepositModal() {
   openModal('smsDepositModal');
   updateSmsAlert(null);
   
-  // 29개실 셀렉트박스 옵션 채우기
+  // 29개실 셀렉트박스 옵션 채우기 (첫 번째에 선택 필요 기본 안내 배치)
   const roomSelect = document.getElementById('smsDetectedRoom');
-  if (roomSelect && roomSelect.options.length <= 1) {
-    roomSelect.innerHTML = '';
+  if (roomSelect) {
+    roomSelect.innerHTML = '<option value="">⚠️ [호실 선택 필요 - 직접 선택]</option>';
     ROOM_NUMBERS.forEach(rNum => {
       const opt = document.createElement('option');
       opt.value = rNum;
       const r = state.rooms[rNum];
       opt.textContent = `${rNum}호${r && r.name ? ' (' + r.name + ')' : ''}`;
-      if (rNum === state.selectedRoom) opt.selected = true;
       roomSelect.appendChild(opt);
     });
   }
@@ -3356,8 +3355,23 @@ export function openSmsDepositModal() {
   if (rawInput && rawInput.value.trim()) {
     handleLiveSmsParse();
   } else {
-    // 기본 선택 호실로 초기 세팅
-    onSmsDetectedRoomChange();
+    // 기본 미선택 상태로 초기화
+    if (roomSelect) {
+      roomSelect.value = '';
+      roomSelect.classList.remove('ring-2', 'ring-rose-500', 'border-rose-500');
+    }
+    const tenantSpan = document.getElementById('smsDetectedTenant');
+    const dateSpan = document.getElementById('smsDetectedDate');
+    const execBtn = document.getElementById('btnExecuteSmsDeposit');
+    const execBtnText = document.getElementById('btnExecuteSmsDepositText');
+    if (tenantSpan) tenantSpan.textContent = '-';
+    if (dateSpan) dateSpan.textContent = '-';
+    if (execBtn) {
+      execBtn.disabled = true;
+      execBtn.className = "flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold text-xs border border-slate-700/50 flex items-center justify-center gap-1.5 cursor-not-allowed transition opacity-70";
+    }
+    if (execBtnText) execBtnText.textContent = '입금 문자 입력 필요';
+    updateSmsAlert(null);
   }
 }
 
@@ -3472,12 +3486,27 @@ export function parseBankSmsText(rawText) {
     }
   }
 
-  // 4. 호실 및 세입자 매칭
+  // 4. 호실 및 세입자 매칭 (계좌번호, 금액, 일시로 인한 오감지 방지)
   let detectedRoom = null;
   let detectedTenant = '';
 
+  // 계좌번호 패턴 사전 추출 (줄바꿈 및 다양한 하이픈 형태 포함)
+  const accMatch = text.match(/\d{3}-[\d*]+(?:\s*-\s*[\d*]+){0,3}/);
+  const accountStr = accMatch ? accMatch[0].replace(/\s+/g, '') : '';
+
+  // 호실 및 송금자 탐색용 텍스트 (농협 계좌번호 앞 3자리 301, 302 등 오감지 방지)
+  let textForRoomSearch = text;
+  if (accMatch) {
+    textForRoomSearch = textForRoomSearch.replace(accMatch[0], ' ');
+  }
+  textForRoomSearch = textForRoomSearch
+    .replace(/입금\s*[0-9,]+원?/g, ' ')
+    .replace(/잔액\s*[0-9,]+원?/g, ' ')
+    .replace(/\d{1,2}[/.-]\d{1,2}/g, ' ')
+    .replace(/\d{1,2}:\d{2}/g, ' ');
+
   // 4-1. '404호' 형태 검색
-  const hoMatch = text.match(/(\d{3})\s*호/);
+  const hoMatch = textForRoomSearch.match(/(\d{3})\s*호/);
   if (hoMatch) {
     const rCandidate = parseInt(hoMatch[1], 10);
     if (ROOM_NUMBERS.includes(rCandidate)) {
@@ -3490,7 +3519,7 @@ export function parseBankSmsText(rawText) {
     for (const rNum of ROOM_NUMBERS) {
       const room = state.rooms[rNum];
       if (room && room.name && room.name !== '공실' && room.name.length >= 2) {
-        if (text.includes(room.name)) {
+        if (textForRoomSearch.includes(room.name)) {
           if (!detectedRoom) detectedRoom = rNum;
           detectedTenant = room.name;
           break;
@@ -3499,26 +3528,44 @@ export function parseBankSmsText(rawText) {
     }
   }
 
-  // 4-3. 호실 미감지 시 독립 3자리 숫자 체크
+  // 4-3. 호실 미감지 시 독립 3자리 숫자 체크 (계좌번호/금액/일시 제외 영역에서만)
   if (!detectedRoom) {
     for (const rNum of ROOM_NUMBERS) {
       const re = new RegExp(`\\b${rNum}\\b`);
-      if (re.test(text)) {
+      if (re.test(textForRoomSearch)) {
         detectedRoom = rNum;
         break;
       }
     }
   }
 
-  // 기본값 fallback
-  if (!detectedRoom) detectedRoom = state.selectedRoom || 404;
-  if (state.rooms && state.rooms[detectedRoom]) {
-    detectedTenant = state.rooms[detectedRoom].name || detectedTenant;
+  // 5. 송금자명(대납자명) 추출
+  let senderName = '';
+  if (accMatch) {
+    const afterAcc = text.substring(text.indexOf(accMatch[0]) + accMatch[0].length);
+    const senderMatch = afterAcc.match(/[-/\s\d*]+([가-힣a-zA-Z]{2,10}(?:\d{3}호)?)/);
+    if (senderMatch) {
+      senderName = senderMatch[1].trim();
+    }
+  }
+  if (!senderName) {
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i];
+      if (line.includes('잔액') || line.includes('입금') || line.includes('알림') || line.includes('감사') || line.includes('확인')) continue;
+      const wordMatch = line.match(/([가-힣a-zA-Z]{2,8}(?:\d{3}호)?)/);
+      if (wordMatch) {
+        senderName = wordMatch[1].trim();
+        break;
+      }
+    }
   }
 
-  // 5. 계좌/메모 정보 추출
-  const accMatch = text.match(/\d{3}-[\d*]+-\d+(?:-\d+)?/);
-  const accountStr = accMatch ? accMatch[0] : '';
+  // 호실 감지 여부 판정 (강제 404 fallback 완전 배제: 미확인 시 null 유지!)
+  const isRoomDetected = (detectedRoom !== null);
+  if (detectedRoom && state.rooms && state.rooms[detectedRoom]) {
+    detectedTenant = state.rooms[detectedRoom].name || detectedTenant;
+  }
 
   return {
     bankName,
@@ -3527,7 +3574,10 @@ export function parseBankSmsText(rawText) {
     day,
     timeStr,
     fullDateStr,
-    roomNumber: detectedRoom,
+    roomNumber: detectedRoom, // 감지 안 됐을 때는 null
+    detectedRoom,
+    isRoomDetected,
+    senderName,
     tenantName: detectedTenant,
     accountStr
   };
@@ -3714,36 +3764,83 @@ export function handleLiveSmsParse() {
   const rawInput = document.getElementById('smsRawInput');
   if (!rawInput) return;
   const rawText = rawInput.value;
-  if (!rawText.trim()) return;
+  if (!rawText.trim()) {
+    updateSmsAlert(null);
+    return;
+  }
 
   const parsed = parseBankSmsText(rawText);
   if (!parsed) return;
-
-  // 체납월 및 다개월 분할 수납 대상 계산
-  const targetPeriods = calculateDepositTargetPeriods(parsed.roomNumber, parsed.amount, parsed.month);
 
   // 은행 뱃지
   const bankBadge = document.getElementById('smsBankBadge');
   if (bankBadge) bankBadge.textContent = `${parsed.bankName} 입금`;
 
-  // 호실 셀렉트 동기화
-  const roomSelect = document.getElementById('smsDetectedRoom');
-  if (roomSelect) {
-    roomSelect.value = parsed.roomNumber;
-  }
-
-  // 세입자명
-  const tenantSpan = document.getElementById('smsDetectedTenant');
-  if (tenantSpan) tenantSpan.textContent = parsed.tenantName || '세입자';
-
   // 금액 표시
   const amtSpan = document.getElementById('smsDetectedAmount');
   if (amtSpan) amtSpan.textContent = `${Number(parsed.amount).toLocaleString()}원`;
 
-  // 일시 및 충당월 표시
+  // 메모 표시
+  const memoSpan = document.getElementById('smsDetectedMemo');
+  if (memoSpan) {
+    const memoContent = parsed.accountStr || (parsed.senderName ? `송금자: ${parsed.senderName}` : `${parsed.bankName} 계좌`);
+    memoSpan.textContent = memoContent;
+  }
+
+  const roomSelect = document.getElementById('smsDetectedRoom');
+  const tenantSpan = document.getElementById('smsDetectedTenant');
   const dateSpan = document.getElementById('smsDetectedDate');
   const execBtn = document.getElementById('btnExecuteSmsDeposit');
   const execBtnText = document.getElementById('btnExecuteSmsDepositText');
+
+  // ★ 호실이 감지되지 않은 경우 (호실 표기 없고 다른 사람이 대납)
+  if (!parsed.isRoomDetected || !parsed.roomNumber) {
+    if (roomSelect) {
+      roomSelect.value = "";
+      roomSelect.classList.add('ring-2', 'ring-rose-500', 'border-rose-500');
+    }
+    if (tenantSpan) {
+      tenantSpan.innerHTML = `<span class="text-rose-400 font-bold">호실 검색 불가 ${parsed.senderName ? '(' + parsed.senderName + ' 대납)' : ''}</span>`;
+    }
+    if (dateSpan) {
+      dateSpan.innerHTML = `<span class="text-amber-400 font-bold">⚠️ 대상 호실을 직접 선택해주세요</span>`;
+    }
+    
+    if (execBtn) {
+      execBtn.disabled = true;
+      execBtn.className = "flex-1 py-3 rounded-xl bg-slate-800 text-amber-300 font-bold text-xs border border-amber-500/40 flex items-center justify-center gap-1.5 cursor-not-allowed transition opacity-80";
+    }
+    if (execBtnText) {
+      execBtnText.textContent = "⚠️ 대상 호실을 먼저 선택해주세요";
+    }
+
+    // 영수증 영역 비우기
+    const receiptEl = document.getElementById('smsReceiptText');
+    if (receiptEl) receiptEl.value = "";
+    state.pendingReceiptText = "";
+    state.pendingReceiptRoom = null;
+    state.pendingTargetPeriods = [];
+
+    // 안내 배너: 호실 검색 불가 오류 및 선택 가이드 출력
+    updateSmsAlert(
+      'error',
+      '호실 검색 불가 (검색할 수 없음)',
+      `입금 문자에서 <strong>호실 정보</strong>나 <strong>등록된 세입자 성명</strong>을 검색할 수 없습니다.<br>` +
+      (parsed.senderName ? `(확인된 입금자명: <strong class="text-white">${parsed.senderName}</strong> - 타인 대납 추정)<br>` : '') +
+      `수납 처리할 대상 호실을 좌측 <strong>[대상 호실]</strong> 드롭다운에서 직접 선택해주세요.`
+    );
+    return;
+  }
+
+  // 호실이 정상 감지된 경우:
+  if (roomSelect) {
+    roomSelect.value = parsed.roomNumber;
+    roomSelect.classList.remove('ring-2', 'ring-rose-500', 'border-rose-500');
+  }
+  if (tenantSpan) tenantSpan.textContent = parsed.tenantName || '세입자';
+
+  // 체납월 및 다개월 분할 수납 대상 계산
+  const targetPeriods = calculateDepositTargetPeriods(parsed.roomNumber, parsed.amount, parsed.month);
 
   if (targetPeriods.length === 0) {
     if (dateSpan) {
@@ -3806,10 +3903,6 @@ export function handleLiveSmsParse() {
     }
   }
 
-  // 메모 표시
-  const memoSpan = document.getElementById('smsDetectedMemo');
-  if (memoSpan) memoSpan.textContent = parsed.accountStr || `${parsed.bankName} 계좌`;
-
   // 영수증 문자 자동 변환 생성
   const receipt = generateReceiptMessage(rawText, parsed.roomNumber, targetPeriods);
   const receiptEl = document.getElementById('smsReceiptText');
@@ -3825,10 +3918,46 @@ export function handleLiveSmsParse() {
 export function onSmsDetectedRoomChange() {
   const roomSelect = document.getElementById('smsDetectedRoom');
   if (!roomSelect) return;
-  const rNum = parseInt(roomSelect.value, 10);
-  const room = state.rooms[rNum];
-  const tSpan = document.getElementById('smsDetectedTenant');
-  if (tSpan) tSpan.textContent = (room && room.name) ? room.name : '공실';
+  const rawRoomVal = roomSelect.value;
+
+  const tenantSpan = document.getElementById('smsDetectedTenant');
+  const dateSpan = document.getElementById('smsDetectedDate');
+  const execBtn = document.getElementById('btnExecuteSmsDeposit');
+  const execBtnText = document.getElementById('btnExecuteSmsDepositText');
+
+  // 호실이 미선택 상태인 경우
+  if (!rawRoomVal) {
+    if (roomSelect) roomSelect.classList.add('ring-2', 'ring-rose-500', 'border-rose-500');
+    if (tenantSpan) tenantSpan.innerHTML = `<span class="text-rose-400 font-bold">호실 미선택</span>`;
+    if (dateSpan) dateSpan.innerHTML = `<span class="text-amber-400 font-bold">⚠️ 대상 호실을 직접 선택해주세요</span>`;
+    if (execBtn) {
+      execBtn.disabled = true;
+      execBtn.className = "flex-1 py-3 rounded-xl bg-slate-800 text-amber-300 font-bold text-xs border border-amber-500/40 flex items-center justify-center gap-1.5 cursor-not-allowed transition opacity-80";
+    }
+    if (execBtnText) {
+      execBtnText.textContent = "⚠️ 대상 호실을 먼저 선택해주세요";
+    }
+    const rawInput = document.getElementById('smsRawInput');
+    if (rawInput && rawInput.value.trim()) {
+      updateSmsAlert(
+        'error',
+        '호실 검색 불가 (선택 필요)',
+        `입금 문자에서 호실을 찾을 수 없습니다. 수납 처리할 대상 호실을 드롭다운에서 직접 선택해주세요.`
+      );
+    } else {
+      updateSmsAlert(null);
+    }
+    return;
+  }
+
+  if (roomSelect) {
+    roomSelect.classList.remove('ring-2', 'ring-rose-500', 'border-rose-500');
+  }
+
+  const rNum = parseInt(rawRoomVal, 10);
+  const room = state.rooms ? state.rooms[rNum] : null;
+  const tenantName = (room && room.name) ? room.name : '공실';
+  if (tenantSpan) tenantSpan.textContent = tenantName;
 
   const rawInput = document.getElementById('smsRawInput');
   const rawText = rawInput ? rawInput.value : '';
@@ -3836,11 +3965,15 @@ export function onSmsDetectedRoomChange() {
   const depAmount = parsed ? parsed.amount : (room ? (room.lease_type === '전세' ? room.maintenance : room.rent + room.maintenance) : 440000);
   const depMonth = parsed ? parsed.month : currentMonth;
 
-  const targetPeriods = calculateDepositTargetPeriods(rNum, depAmount, depMonth);
+  if (parsed) {
+    parsed.roomNumber = rNum;
+    parsed.detectedRoom = rNum;
+    parsed.tenantName = tenantName;
+    parsed.isRoomDetected = true;
+    state.lastSmsDeposit = parsed;
+  }
 
-  const dateSpan = document.getElementById('smsDetectedDate');
-  const execBtn = document.getElementById('btnExecuteSmsDeposit');
-  const execBtnText = document.getElementById('btnExecuteSmsDepositText');
+  const targetPeriods = calculateDepositTargetPeriods(rNum, depAmount, depMonth);
 
   if (targetPeriods.length === 0) {
     if (dateSpan) {
@@ -3850,12 +3983,13 @@ export function onSmsDetectedRoomChange() {
       execBtnText.textContent = `⚠️ 자동 처리 불가 (체납 내역 없음)`;
     }
     if (execBtn) {
-      execBtn.className = "flex-1 py-3 rounded-xl bg-slate-800 text-amber-300 font-bold text-xs border border-amber-500/40 flex items-center justify-center gap-1.5 cursor-pointer transition";
+      execBtn.disabled = true;
+      execBtn.className = "flex-1 py-3 rounded-xl bg-slate-800 text-amber-300 font-bold text-xs border border-amber-500/40 flex items-center justify-center gap-1.5 cursor-not-allowed transition opacity-80";
     }
     updateSmsAlert(
       'warning',
       '미납 내역 없음 (이미 전액 완납)',
-      `<strong>${rNum}호 (${(room && room.name) ? room.name : '세입자'})</strong>는 현재 체납/미납 회차가 없는 완납 상태입니다.<br>이중입금 또는 과오납 여부를 확인하시거나, 과거/특수 납부는 <strong>[과거납부내역]</strong>에서 수동으로 확인해주세요.`
+      `<strong>${rNum}호 (${tenantName})</strong>는 현재 체납/미납 회차가 없는 완납 상태입니다.<br>이중입금 또는 과오납 여부를 확인하시거나, 과거/특수 납부는 <strong>[과거납부내역]</strong>에서 수동으로 확인해주세요.`
     );
   } else {
     if (dateSpan) {
@@ -3881,6 +4015,7 @@ export function onSmsDetectedRoomChange() {
       }
     }
     if (execBtn) {
+      execBtn.disabled = false;
       execBtn.className = "flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 transition";
     }
 
@@ -3895,6 +4030,12 @@ export function onSmsDetectedRoomChange() {
         'diff',
         `금액 불일치 안내 (${diffText})`,
         `입금액(<strong>${Number(depAmount).toLocaleString()}원</strong>)이 대상 회차(${targetPeriods.length}개월) 청구액(<strong>${expectedTotal.toLocaleString()}원</strong>)과 차이가 있습니다.<br>처리 후 <strong>[과거납부내역]</strong>에서 세부 금액을 수정할 수 있습니다.`
+      );
+    } else if (parsed && parsed.senderName && room && room.name && parsed.senderName !== room.name) {
+      updateSmsAlert(
+        'info',
+        `타인 대납 연결 확인 (${parsed.senderName} ➡️ ${rNum}호 ${tenantName})`,
+        `입금자 <strong>${parsed.senderName}</strong>님의 입금이 <strong>${rNum}호 (${tenantName})</strong>에 수납 처리되도록 연결되었습니다.`
       );
     } else {
       updateSmsAlert(null);
@@ -3920,13 +4061,24 @@ export function onSmsDetectedRoomChange() {
  */
 export async function handleSmsDepositProcess() {
   const roomSelect = document.getElementById('smsDetectedRoom');
-  const roomNum = roomSelect ? parseInt(roomSelect.value, 10) : 404;
+  const roomVal = roomSelect ? roomSelect.value : '';
+
+  if (!roomVal) {
+    updateSmsAlert(
+      'error',
+      '호실 미선택 오류 (처리 불가)',
+      '입금 처리할 대상 호실이 선택되지 않았습니다.<br><strong>[대상 호실]</strong> 선택창에서 실제 납부할 호실을 먼저 선택해주세요.'
+    );
+    return;
+  }
+
+  const roomNum = parseInt(roomVal, 10);
   const rawInput = document.getElementById('smsRawInput');
   const rawText = rawInput ? rawInput.value : '';
   const parsed = parseBankSmsText(rawText);
 
   if (!parsed || !roomNum) {
-    alert("입금 문자를 먼저 붙여넣어주세요.");
+    updateSmsAlert('error', '입력 오류', '입금 문자를 먼저 붙여넣어주세요.');
     return;
   }
 
