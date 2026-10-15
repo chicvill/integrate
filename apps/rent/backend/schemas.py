@@ -3,7 +3,7 @@ apps/rent/backend/schemas.py
 Pydantic v2 데이터 스키마 명세 - 원룸 임차료 관리 시스템.
 """
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 # ── 건물(지점) 스키마 ──
@@ -66,6 +66,18 @@ class RoomUpdate(BaseModel):
     move_in: Optional[str] = ""
     expiry: Optional[str] = ""
     move_out: Optional[str] = ""
+
+    @field_validator("deposit", "rent", "maintenance", "clean_fee", mode="before")
+    @classmethod
+    def parse_numeric(cls, v):
+        if v is None or v == "":
+            return 0
+        if isinstance(v, str):
+            v = v.replace(",", "").strip()
+        try:
+            return int(float(v))
+        except (ValueError, TypeError):
+            return 0
 
 
 class PaymentInfo(BaseModel):

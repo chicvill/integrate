@@ -33,6 +33,7 @@ import {
 import {
   openModal,
   closeModal,
+  showTopToast,
   openMoveInOutQuick,
   openContractEditModal,
   switchModalRoom,
@@ -194,6 +195,7 @@ window.handleFullSystemRestoreFile = handleFullSystemRestoreFile;
 
 window.openMoveInOutQuick = openMoveInOutQuick;
 window.openContractEditModal = openContractEditModal;
+window.showTopToast = showTopToast;
 window.switchModalRoom = switchModalRoom;
 window.handleQuickMoveOut = handleQuickMoveOut;
 window.handleQuickMoveIn = handleQuickMoveIn;

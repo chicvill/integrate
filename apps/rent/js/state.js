@@ -238,7 +238,12 @@ export function getExpiringRoomsList(daysWindow = 65) {
         const expTime = new Date(ey, em - 1, ed).getTime();
         const diffDays = Math.ceil((expTime - todayTime) / (1000 * 60 * 60 * 24));
         if (diffDays >= 0 && diffDays <= daysWindow) {
-          const category = diffDays <= 35 ? '1개월 전' : '2개월 전';
+          let category = '2개월 전';
+          if (diffDays <= 3) {
+            category = '3일 전';
+          } else if (diffDays <= 35) {
+            category = '1개월 전';
+          }
           list.push({
             room_number: rNum,
             name: r.name,

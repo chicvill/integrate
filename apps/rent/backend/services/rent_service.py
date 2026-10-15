@@ -343,7 +343,12 @@ class RentService:
                 exp_dt = datetime.strptime(r["expiry"], "%Y-%m-%d")
                 diff_days = (exp_dt - today_dt).days + 1
                 if 0 <= diff_days <= days_window:
-                    period_category = "1개월 전" if diff_days <= 35 else "2개월 전"
+                    if diff_days <= 3:
+                        period_category = "3일 전"
+                    elif diff_days <= 35:
+                        period_category = "1개월 전"
+                    else:
+                        period_category = "2개월 전"
                     expiring.append({
                         "room_number": r_num,
                         "branch_id": branch_id,
@@ -421,6 +426,8 @@ class RentService:
                 db.add(hist)
 
         for field, val in data.model_dump(exclude_unset=True).items():
+            if field in ("deposit", "rent", "maintenance", "clean_fee") and val is None:
+                val = 0
             if field == "id_number" and not val and room.id_number:
                 # 폼에서 주민번호를 비워둔 채 수정 제출 시, 기존에 안전하게 등록된 주민번호 유실 방지
                 continue

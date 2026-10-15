@@ -519,7 +519,12 @@ function getExpiringRoomsList(daysWindow = 65) {
         const expTime = new Date(ey, em - 1, ed).getTime();
         const diffDays = Math.ceil((expTime - todayTime) / (1000 * 60 * 60 * 24));
         if (diffDays >= 0 && diffDays <= daysWindow) {
-          const category = diffDays <= 35 ? '1개월 전' : '2개월 전';
+          let category = '2개월 전';
+          if (diffDays <= 3) {
+            category = '3일 전';
+          } else if (diffDays <= 35) {
+            category = '1개월 전';
+          }
           list.push({
             room_number: rNum,
             name: r.name,
@@ -2723,6 +2728,28 @@ function closeModal(id) {
   }
 }
 
+function showTopToast(msg, type = 'info') {
+  const existing = document.getElementById('globalAppTopToast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'globalAppTopToast';
+  const borderCol = type === 'success' ? 'border-emerald-500 bg-emerald-950/90 text-emerald-200' :
+                    type === 'error' ? 'border-rose-500 bg-rose-950/90 text-rose-200' :
+                    type === 'warning' ? 'border-amber-500 bg-amber-950/90 text-amber-200' :
+                    'border-cyan-500 bg-slate-900/95 text-slate-100';
+
+  toast.className = `fixed top-4 left-1/2 transform -translate-x-1/2 z-[99999] max-w-md w-[90%] border ${borderCol} p-3.5 rounded-2xl shadow-2xl text-xs font-semibold flex items-center justify-between gap-2 backdrop-blur-md transition-all duration-200`;
+  toast.innerHTML = `
+    <div class="flex items-center gap-2">
+      <span>${msg}</span>
+    </div>
+    <button type="button" onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white text-base leading-none px-1 cursor-pointer">&times;</button>
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => { if (toast.parentElement) toast.remove(); }, 5000);
+}
+
 // ── 계약 수정 및 전입/전출 통합 모달 ──
 function openMoveInOutQuick(targetRoomNum) {
   openContractEditModal(targetRoomNum);
@@ -2781,6 +2808,12 @@ function loadRoomIntoContractModal(rNum) {
   document.getElementById('formMoveIn').value = room.move_in || '';
   document.getElementById('formExpiry').value = room.expiry || '';
   document.getElementById('formMoveOut').value = room.move_out || '';
+
+  const alertEl = document.getElementById('contractFormAlert');
+  if (alertEl) {
+    alertEl.className = 'hidden text-xs py-2 px-3 rounded-xl font-medium border text-center transition-all';
+    alertEl.textContent = '';
+  }
 
   // 상태 배지 및 정보 갱신
   const statusBadge = document.getElementById('modalRoomStatusBadge');
@@ -2951,6 +2984,33 @@ async function handleContractFormSubmit(e) {
   const room = state.rooms[rNum];
   if (!room) return;
 
+  const btnSubmit = document.getElementById('btnContractSubmit') || (e.target ? e.target.querySelector('button[type="submit"]') : null);
+  const alertEl = document.getElementById('contractFormAlert');
+
+  const setAlert = (msg, type = 'error') => {
+    if (alertEl) {
+      alertEl.classList.remove('hidden', 'bg-rose-950/60', 'border-rose-700/60', 'text-rose-200', 'bg-emerald-950/60', 'border-emerald-700/60', 'text-emerald-200', 'bg-amber-950/60', 'border-amber-700/60', 'text-amber-200');
+      if (type === 'error') {
+        alertEl.classList.add('bg-rose-950/60', 'border-rose-700/60', 'text-rose-200');
+        alertEl.innerHTML = `❌ ${msg}`;
+      } else if (type === 'success') {
+        alertEl.classList.add('bg-emerald-950/60', 'border-emerald-700/60', 'text-emerald-200');
+        alertEl.innerHTML = `✅ ${msg}`;
+      } else {
+        alertEl.classList.add('bg-amber-950/60', 'border-amber-700/60', 'text-amber-200');
+        alertEl.innerHTML = `⚠️ ${msg}`;
+      }
+      alertEl.classList.remove('hidden');
+    }
+  };
+
+  const parseSafeNum = (val) => {
+    if (!val) return 0;
+    const cleaned = String(val).replace(/,/g, '').trim();
+    const num = Number(cleaned);
+    return isNaN(num) ? 0 : num;
+  };
+
   const leaseType = document.getElementById('formLeaseType').value;
   const payload = {
     lease_type: leaseType,
@@ -2958,24 +3018,28 @@ async function handleContractFormSubmit(e) {
     name: document.getElementById('formName').value.trim(),
     id_number: document.getElementById('formIdNumber').value.trim(),
     phone: document.getElementById('formPhone').value.trim(),
-    deposit: Number(document.getElementById('formDeposit').value || 0),
-    rent: leaseType === '전세' ? 0 : Number(document.getElementById('formRent').value || 0),
-    maintenance: Number(document.getElementById('formMaintenance').value || 0),
-    clean_fee: Number(document.getElementById('formCleanFee').value || 0),
+    deposit: parseSafeNum(document.getElementById('formDeposit').value),
+    rent: leaseType === '전세' ? 0 : parseSafeNum(document.getElementById('formRent').value),
+    maintenance: parseSafeNum(document.getElementById('formMaintenance').value),
+    clean_fee: parseSafeNum(document.getElementById('formCleanFee').value),
     move_in: document.getElementById('formMoveIn').value,
     expiry: document.getElementById('formExpiry').value,
     move_out: document.getElementById('formMoveOut').value
   };
 
+  // 버튼 비활성화 및 처리 중 UI 전환 (이중 클릭 방지)
+  let origBtnText = '저장 완료';
+  if (btnSubmit) {
+    origBtnText = btnSubmit.innerHTML;
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = `<span class="inline-block animate-spin mr-1">⏳</span> 저장 처리 중...`;
+  }
+  if (alertEl) alertEl.classList.add('hidden');
+
   try {
     if (state.isOnline) {
       const res = await apiUpdateContract(rNum, payload, state.currentBranch);
       state.rooms[rNum] = res;
-      try {
-        await apiFillTenantPayments(rNum, state.currentBranch);
-      } catch (errApi) {
-        console.warn("apiFillTenantPayments 실패:", errApi);
-      }
     } else {
       // 오프라인 로컬 반영
       Object.assign(room, payload);
@@ -2988,8 +3052,21 @@ async function handleContractFormSubmit(e) {
     loadRoomIntoContractModal(rNum);
     closeModal('contractModal');
     renderAll();
+
+    // 상단 플로팅 토스트로 산뜻하게 완료 안내 (브라우저 alert 퇴출)
+    showTopToast(`✅ [${rNum}호] 계약 정보가 정상 저장되었습니다. (입주자: ${payload.name || '공실'})`, 'success');
   } catch (err) {
-    alert("계약 정보 저장 실패: " + err.message);
+    console.error("계약 정보 저장 실패:", err);
+    let userMsg = err.message || "서버 통신 오류가 발생했습니다.";
+    if (userMsg.includes("502")) {
+      userMsg = "서버 게이트웨이가 일시 재시작/통신 대기 중입니다. 잠시 후 다시 [저장 완료]를 눌러주세요.";
+    }
+    setAlert(`계약 저장 실패: ${userMsg}`, 'error');
+  } finally {
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.innerHTML = origBtnText;
+    }
   }
 }
 
@@ -7066,10 +7143,10 @@ function handlePhoneMessageClick(phone, name, roomNumber) {
 // 10. 만기 1·2개월 전 전출 의사 확인 및 차례차례 문자 발송 툴 모듈
 // ══════════════════════════════════════════════════════════════════════
 
-let currentExpiryFilter = 'ALL'; // 'ALL', '1MONTH', '2MONTH'
+let currentExpiryFilter = 'ALL'; // 'ALL', '3DAYS', '1MONTH', '2MONTH'
 let sequentialQueue = []; // [{ room_number, name, phone, expiry, diff_days, period_category, sent: false }]
 let sequentialIndex = 0;
-let defaultExpiryMessageTemplate = "만기일이 {만기일}입니다. 전출 계획이 있다면 미리 연락바랍니다. {건물명} 관리실";
+let defaultExpiryMessageTemplate = "만기일이 {만기일}입니다. 전출계획 여부를 미리 알려주세요. {건물명} 관리실";
 
 function openExpiryNoticeModal() {
   renderExpiryNoticeList(currentExpiryFilter);
@@ -7139,15 +7216,16 @@ function renderExpiryNoticeList(filter = 'ALL') {
 
   let allList = getExpiringRoomsList(65);
   const totalCount = allList.length;
+  const count3D = allList.filter(x => x.period_category === '3일 전').length;
   const count1M = allList.filter(x => x.period_category === '1개월 전').length;
   const count2M = allList.filter(x => x.period_category === '2개월 전').length;
 
   if (summaryEl) {
-    summaryEl.innerHTML = `총 <strong class="text-white">${totalCount}개실</strong> 도래 (1개월 전: <span class="text-rose-400 font-bold">${count1M}</span>실, 2개월 전: <span class="text-amber-400 font-bold">${count2M}</span>실)`;
+    summaryEl.innerHTML = `총 <strong class="text-white">${totalCount}개실</strong> 도래 (3일 전: <span class="text-emerald-400 font-bold">${count3D}</span>실, 1개월 전: <span class="text-rose-400 font-bold">${count1M}</span>실, 2개월 전: <span class="text-amber-400 font-bold">${count2M}</span>실)`;
   }
 
   // 필터 버튼 스타일 갱신
-  ['ALL', '1MONTH', '2MONTH'].forEach(f => {
+  ['ALL', '3DAYS', '1MONTH', '2MONTH'].forEach(f => {
     const btn = document.getElementById(`filterBtnExpiry_${f}`);
     if (btn) {
       if (f === filter) {
@@ -7159,7 +7237,9 @@ function renderExpiryNoticeList(filter = 'ALL') {
   });
 
   let displayList = allList;
-  if (filter === '1MONTH') {
+  if (filter === '3DAYS') {
+    displayList = allList.filter(x => x.period_category === '3일 전');
+  } else if (filter === '1MONTH') {
     displayList = allList.filter(x => x.period_category === '1개월 전');
   } else if (filter === '2MONTH') {
     displayList = allList.filter(x => x.period_category === '2개월 전');
@@ -7181,10 +7261,12 @@ function renderExpiryNoticeList(filter = 'ALL') {
 
   let html = '';
   displayList.forEach(item => {
-    const is1M = item.period_category === '1개월 전';
-    const tagClass = is1M
-      ? 'bg-rose-950/70 text-rose-300 border-rose-800/80'
-      : 'bg-amber-950/70 text-amber-300 border-amber-800/80';
+    let tagClass = 'bg-amber-950/70 text-amber-300 border-amber-800/80';
+    if (item.period_category === '3일 전') {
+      tagClass = 'bg-emerald-950/70 text-emerald-300 border-emerald-800/80 font-extrabold';
+    } else if (item.period_category === '1개월 전') {
+      tagClass = 'bg-rose-950/70 text-rose-300 border-rose-800/80';
+    }
 
     html += `
       <tr class="hover:bg-surface-800/50 transition border-b border-slate-800/60">
@@ -7497,6 +7579,7 @@ window.handleFullSystemRestoreFile = handleFullSystemRestoreFile;
 
 window.openMoveInOutQuick = openMoveInOutQuick;
 window.openContractEditModal = openContractEditModal;
+window.showTopToast = showTopToast;
 window.switchModalRoom = switchModalRoom;
 window.handleQuickMoveOut = handleQuickMoveOut;
 window.handleQuickMoveIn = handleQuickMoveIn;
