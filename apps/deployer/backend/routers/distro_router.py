@@ -54,7 +54,12 @@ async def download_package(filename: str):
     
     # 만약 파일이 없으면 온디맨드 자동 빌드
     if not os.path.exists(target_path) or os.path.getsize(target_path) == 0:
-        app_id = "rent" if "rent" in safe_name else "studycafe"
+        import shutil
+        app_id = "rent"
+        for a_id in distro_engine.APP_CATALOG.keys():
+            if a_id in safe_name.lower():
+                app_id = a_id
+                break
         print(f"⚠️ 요청된 패키지({safe_name})가 없어 온디맨드 자동 빌드를 시작합니다: app={app_id}")
         res = distro_engine.build_package({
             "selected_apps": [app_id],
@@ -65,6 +70,10 @@ async def download_package(filename: str):
         new_pkg_name = res.get("package_name")
         new_target_path = os.path.join(DIST_DIR, new_pkg_name)
         if os.path.exists(new_target_path):
+            try:
+                shutil.copy2(new_target_path, target_path)
+            except Exception:
+                pass
             target_path = new_target_path
             safe_name = new_pkg_name
         elif not os.path.exists(target_path):
@@ -81,8 +90,8 @@ async def download_package(filename: str):
 @router.get("/install/{app_id}")
 async def get_one_click_install_script(app_id: str):
     """
-    새 서버에서 curl -sSL http://34.31.10.12/install/rent | bash
-    단 한 줄로 무인 자동 설치되는 원클릭 쉘 스크립트 스트리밍
+    새 서버에서 curl -sSL http://34.31.10.12/install/{app_id} | bash
+    단 한 줄로 무인 자동 설치되는 범용 원클릭 쉘 스크립트 스트리밍
     """
     clean_id = app_id.replace(".sh", "").strip().lower()
     app_meta = distro_engine.get_apps_status()
@@ -125,11 +134,22 @@ if ! sudo docker compose version &> /dev/null; then
     fi
 fi
 
-# 3. 패키지 다운로드 및 압축 해제
-echo "📥 중앙 서버에서 공식 실데이터 패키지 다운로드 중..."
 TARGET_DIR="$HOME/{clean_id}"
-mkdir -p "$TARGET_DIR"
 
+# 3. 기존 컨테이너 및 권한 사전 정리 (Permission Denied 원천 방지)
+if [ -d "$TARGET_DIR" ]; then
+    echo "🛑 기존 설치본 점검: 컨테이너 안전 정지 및 파일 권한 정리..."
+    (cd "$TARGET_DIR" && $COMPOSE_CMD down 2>/dev/null || true)
+    sudo chown -R $USER:$USER "$TARGET_DIR" 2>/dev/null || true
+    sudo chmod -R u+rwX "$TARGET_DIR" 2>/dev/null || true
+fi
+
+mkdir -p "$TARGET_DIR/data" "$TARGET_DIR/media"
+sudo chown -R $USER:$USER "$TARGET_DIR" 2>/dev/null || true
+sudo chmod -R 777 "$TARGET_DIR/data" "$TARGET_DIR/media" 2>/dev/null || true
+
+# 4. 패키지 다운로드
+echo "📥 중앙 서버에서 공식 패키지 다운로드 중..."
 PKG_DOWNLOADED=0
 for PKG_URL in "http://34.31.10.12/api/deployer/download/{clean_id}_standalone.zip" "http://34.31.10.12/download/{clean_id}_standalone.zip" "http://34.31.10.12/api/deployer/download/rent_standalone.zip"; do
     if curl -f -sSL "$PKG_URL" -o "$TARGET_DIR/package.zip" 2>/dev/null; then
@@ -151,7 +171,10 @@ echo "📂 압축 해제 중..."
 unzip -o "$TARGET_DIR/package.zip" -d "$TARGET_DIR"
 rm -f "$TARGET_DIR/package.zip"
 
-# 4. 도커 컨테이너 빌드 및 백그라운드 기동
+# SQLite 데이터베이스 쓰기 권한 보장
+sudo chmod -R 777 "$TARGET_DIR/data" "$TARGET_DIR/media" 2>/dev/null || true
+
+# 5. 도커 컨테이너 빌드 및 백그라운드 기동
 cd "$TARGET_DIR"
 echo "⚡ 도커 컨테이너 빌드 및 기동 중..."
 $COMPOSE_CMD down 2>/dev/null || true
@@ -161,7 +184,7 @@ SERVER_IP=$(hostname -I 2>/dev/null | awk '{{print $1}}' || echo "서버IP")
 
 echo "========================================================"
 echo "🎉 {app_name} 설치 및 기동이 성공적으로 완료되었습니다!"
-echo "👉 웹 브라우저에서 서버 IP (포트 80)로 접속하세요: http://$SERVER_IP/"
+echo "👉 웹 브라우저에서 접속하세요: http://$SERVER_IP/"
 echo "========================================================"
 """
     return Response(content=script_content, media_type="text/plain; charset=utf-8")

@@ -199,6 +199,14 @@ class DistroEngine:
             zip_size = os.path.getsize(zip_filepath)
             zip_size_mb = round(zip_size / (1024 * 1024), 2)
 
+            # 표준 standalone 별칭 파일 동기화 (예: rent_standalone.zip)
+            if not is_multi:
+                std_alias = os.path.join(DIST_DIR, f"{selected_apps[0]}_standalone.zip")
+                try:
+                    shutil.copy2(zip_filepath, std_alias)
+                except Exception:
+                    pass
+
             # 가이드 명령어 생성
             install_guide = self._generate_quick_guide(
                 zip_filename=zip_filename,
@@ -276,6 +284,22 @@ class DistroEngine:
                         shutil.copy2(p, os.path.join(data_dir, fallback_name))
                     copied = True
                     break
+
+            # 백업 JSON 파일 동봉 (실데이터 원본 복구 및 무인 초기화용)
+            for j_cand in [
+                os.path.join(PROJECT_ROOT, "data", f"{app_id}_backup.json"),
+                os.path.join(PROJECT_ROOT, "data", "chicvill_backup.json"),
+                os.path.join(app_dir, "data", "chicvill_backup.json"),
+                os.path.join(app_dir, "backend", "seed_data.json"),
+                os.path.join(app_dir, "seed_data.json")
+            ]:
+                if os.path.exists(j_cand) and os.path.getsize(j_cand) > 0:
+                    shutil.copy2(j_cand, os.path.join(data_dir, "seed_data.json"))
+                    backend_dir = os.path.join(target_dir, "backend")
+                    if os.path.exists(backend_dir):
+                        shutil.copy2(j_cand, os.path.join(backend_dir, "seed_data.json"))
+                    break
+
             if not copied:
                 open(os.path.join(data_dir, ".clean_database_ready"), "w").close()
         else:
@@ -376,6 +400,7 @@ class DistroEngine:
         """Linux 환경용 원클릭 인스톨 및 업데이트 쉘 스크립트"""
         install_sh = f"""#!/bin/bash
 # MQnet {app_name} 원클릭 자동 설치 스크립트
+set -e
 echo "========================================================"
 echo "🚀 {app_name} 독립 서버 자동 설치 및 기동을 시작합니다"
 echo "========================================================"
@@ -384,17 +409,24 @@ if ! command -v docker &> /dev/null; then
     echo "⚠️ Docker가 설치되어 있지 않습니다. Docker 엔진 설치를 진행합니다..."
     curl -fsSL https://get.docker.com -o get-docker.sh
     sudo sh get-docker.sh
-    sudo usermod -aG docker $USER
-    sudo systemctl enable --now docker
+    sudo usermod -aG docker $USER || true
+    sudo systemctl enable --now docker || true
+    rm -f get-docker.sh
 fi
+
+# SQLite DB 및 미디어 쓰기 권한 확보 (Permission Denied 원천 방지)
+mkdir -p ./data ./media
+sudo chmod -R 777 ./data ./media 2>/dev/null || true
 
 echo "📦 컨테이너 빌드 및 백그라운드 기동 중..."
 sudo docker compose down 2>/dev/null || true
 sudo docker compose up -d --build
 
+sudo chmod -R 777 ./data ./media 2>/dev/null || true
+
 echo "========================================================"
 echo "✅ {app_name} 솔루션 가동이 성공적으로 완료되었습니다!"
-echo "👉 웹 브라우저에서 서버 IP (포트 80)로 접속하세요."
+echo "👉 웹 브라우저에서 서버 IP (포트 80)로 접속하세요: http://$(hostname -I 2>/dev/null | awk '{{print $1}}' || echo 'localhost')/"
 echo "========================================================"
 """
         with open(os.path.join(target_dir, "install.sh"), "w", encoding="utf-8", newline="\n") as f:
@@ -402,6 +434,7 @@ echo "========================================================"
 
         update_sh = f"""#!/bin/bash
 # MQnet {app_name} 원클릭 무중단 안전 업그레이드 스크립트
+set -e
 echo "========================================================"
 echo "🔄 {app_name} 솔루션 안전 업그레이드를 시작합니다"
 echo "========================================================"
@@ -414,8 +447,13 @@ if [ -d "./data" ]; then
     echo "🛡️ 기존 데이터가 안전하게 백업되었습니다: ./backups/data_backup_$BACKUP_DATE.tar.gz"
 fi
 
+mkdir -p ./data ./media
+sudo chmod -R 777 ./data ./media 2>/dev/null || true
+
 echo "⚡ 최신 코드 및 의존성 반영 재빌드 중..."
 sudo docker compose up -d --build
+
+sudo chmod -R 777 ./data ./media 2>/dev/null || true
 
 echo "========================================================"
 echo "✅ 업그레이드가 성공적으로 완료되었습니다! (데이터 100% 보존)"

@@ -18,6 +18,7 @@ services:
       - "${HOST_PORT:-80}:8000"
     environment:
       - RUN_MODE=standalone
+      - APP_ID={{APP_ID}}
       - APP_NAME={{APP_NAME}}
       - PORT=8000
       - DATABASE_URL=sqlite:////app/data/{{APP_ID}}.db
