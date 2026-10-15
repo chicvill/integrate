@@ -368,6 +368,7 @@ class RentService:
 
     def update_room_contract(self, db: Session, room_number: int, data: RoomUpdate, branch_id: str = "main") -> Optional[Dict[str, Any]]:
         """계약 정보 수정 및 전출자 발생 시 1년 보관 이력 테이블 자동 아카이빙"""
+        branch_id = self.branch_service.normalize_branch_id(branch_id)
         self.ensure_default_seed(db, branch_id)
         room = db.query(RentRoom).filter(
             RentRoom.branch_id == branch_id,
@@ -447,11 +448,13 @@ class RentService:
 
     def fill_tenant_payments(self, db: Session, branch_id: str = "main", room_number: Optional[int] = None) -> Dict[str, Any]:
         """현재 세입자의 전입일부터 현재월까지의 과거 납부 내역을 현재 세입자 정보 및 완납으로 동기화 채우기 (PaymentService 위임)"""
+        branch_id = self.branch_service.normalize_branch_id(branch_id)
         self.ensure_default_seed(db, branch_id)
         return PaymentService.fill_tenant_payments(db, branch_id=branch_id, room_number=room_number)
 
     def batch_import_rooms(self, db: Session, branch_id: str, rooms_data: List[Dict[str, Any]]) -> Dict[str, Any]:
         """엑셀 파일 등에서 추출한 호실 계약 정보를 일괄 등록/갱신"""
+        branch_id = self.branch_service.normalize_branch_id(branch_id)
         self.ensure_default_seed(db, branch_id)
         imported_count = 0
         updated_count = 0
@@ -618,6 +621,7 @@ class RentService:
         }
 
     def process_payment(self, db: Session, room_number: int, month: int, branch_id: str = "main", paid_date: Optional[str] = None, note: str = "정상 입금", tenant_name: Optional[str] = None, year: Optional[int] = None, rent_amount: Optional[int] = None, maintenance_amount: Optional[int] = None) -> Optional[Dict[str, Any]]:
+        branch_id = self.branch_service.normalize_branch_id(branch_id)
         self.ensure_default_seed(db, branch_id)
         PaymentService.process_payment(
             db=db,
@@ -634,6 +638,7 @@ class RentService:
         return self.get_room(db, room_number, branch_id)
 
     def cancel_payment(self, db: Session, room_number: int, month: int, branch_id: str = "main", year: Optional[int] = None) -> Optional[Dict[str, Any]]:
+        branch_id = self.branch_service.normalize_branch_id(branch_id)
         self.ensure_default_seed(db, branch_id)
         PaymentService.cancel_payment(
             db=db,
@@ -645,10 +650,12 @@ class RentService:
         return self.get_room(db, room_number, branch_id)
 
     def list_expenses(self, db: Session, branch_id: str = "main") -> List[RentExpense]:
+        branch_id = self.branch_service.normalize_branch_id(branch_id)
         self.ensure_default_seed(db, branch_id)
         return db.query(RentExpense).filter(RentExpense.branch_id == branch_id).order_by(RentExpense.date.desc(), RentExpense.created_at.desc()).all()
 
     def create_expense(self, db: Session, data: ExpenseCreate, branch_id: str = "main") -> RentExpense:
+        branch_id = self.branch_service.normalize_branch_id(branch_id)
         self.ensure_default_seed(db, branch_id)
         exp = RentExpense(
             branch_id=branch_id,

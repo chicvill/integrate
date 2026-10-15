@@ -11,6 +11,8 @@ from typing import List, Dict, Any, Optional, Tuple, cast
 from sqlalchemy.orm import Session
 
 from ..db.models import RentRoom, RentPayment, RentTenantHistory
+from .branch_service import normalize_branch_id
+
 
 
 def parse_date_to_dt(val: Any) -> Optional[datetime]:
@@ -102,6 +104,7 @@ class PaymentService:
         room_number: Optional[int] = None
     ) -> Dict[str, Any]:
         """현재 세입자의 전입일부터 현재월까지의 과거 납부 내역을 현재 세입자 정보 및 완납으로 동기화 채우기"""
+        branch_id = normalize_branch_id(branch_id)
         now = datetime.now()
         cur_year = now.year
         cur_month = now.month
@@ -206,6 +209,7 @@ class PaymentService:
         maintenance_amount: Optional[int] = None
     ) -> Optional[Dict[str, Any]]:
         """호실 월별 수납 처리 및 실입금일자/금액 저장"""
+        branch_id = normalize_branch_id(branch_id)
         now_date = paid_date or datetime.now().strftime("%Y-%m-%d")
         pay_year = year or datetime.now().year
         pay = db.query(RentPayment).filter(
@@ -245,8 +249,13 @@ class PaymentService:
         else:
             if rent_amount is not None:
                 pay.rent_amount = rent_amount
+            elif not pay.rent_amount:
+                pay.rent_amount = default_rent
+
             if maintenance_amount is not None:
                 pay.maintenance_amount = maintenance_amount
+            elif not pay.maintenance_amount:
+                pay.maintenance_amount = default_maint
 
         pay.paid = True
         pay.paid_date = now_date
@@ -254,7 +263,7 @@ class PaymentService:
         pay.tenant_name = effective_name
         pay.is_previous_tenant = False
         db.commit()
-        return None
+        return {"success": True, "room_number": room_number, "branch_id": branch_id, "month": month, "year": pay_year}
 
     @staticmethod
     def cancel_payment(
@@ -265,6 +274,7 @@ class PaymentService:
         year: Optional[int] = None
     ) -> bool:
         """수납 취소 (미납으로 환원)"""
+        branch_id = normalize_branch_id(branch_id)
         pay_year = year or datetime.now().year
         pay = db.query(RentPayment).filter(
             RentPayment.branch_id == branch_id,
@@ -294,6 +304,7 @@ class PaymentService:
         matrix_rooms: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
         """월별 수납장부 매트릭스 일괄 등록/갱신"""
+        branch_id = normalize_branch_id(branch_id)
         updated_records = 0
         rooms_db = {r.room_number: r for r in db.query(RentRoom).filter(RentRoom.branch_id == branch_id).all()}
 
