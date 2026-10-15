@@ -1,0 +1,33 @@
+version: '3.8'
+
+# ══════════════════════════════════════════════════════════════════════
+# MQnet SaaS Standalone Docker Compose
+# 단독 서버(GCP VM, AWS EC2) 또는 관리실 PC 인트라넷 1-클릭 실행 규격
+# ══════════════════════════════════════════════════════════════════════
+
+services:
+  standalone-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.standalone
+    image: mqnet-standalone-{{APP_ID}}:latest
+    container_name: mqnet-{{APP_ID}}
+    restart: always
+    ports:
+      # 외부 접속 포트: 내부 포트 (기본 80포트로 브라우저에서 IP만 치면 바로 접속)
+      - "${HOST_PORT:-80}:8000"
+    environment:
+      - RUN_MODE=standalone
+      - APP_NAME={{APP_NAME}}
+      - PORT=8000
+      - DB_URL=sqlite:////app/data/{{APP_ID}}.db
+      - SECRET_KEY=${SECRET_KEY:-mqnet-standalone-secret-key-2026}
+    volumes:
+      # ★ 고객 데이터(DB 및 첨부파일)는 컨테이너 외부 호스트 디스크에 영구 보존
+      - ./data:/app/data
+      - ./media:/app/media
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

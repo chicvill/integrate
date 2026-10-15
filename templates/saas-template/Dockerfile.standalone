@@ -1,0 +1,37 @@
+# ══════════════════════════════════════════════════════════════════════
+# MQnet SaaS Standalone Dockerfile
+# 독립 전용 클라우드(GCP, AWS) 또는 로컬 PC/인트라넷 온프레미스 배포용
+# ══════════════════════════════════════════════════════════════════════
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    RUN_MODE=standalone \
+    PORT=8000
+
+WORKDIR /app
+
+# 시스템 의존성 설치
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# 파이썬 라이브러리 설치
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 애플리케이션 코드 복사
+COPY . .
+
+# 영구 데이터 보존 디렉토리
+RUN mkdir -p /app/data /app/media
+
+VOLUME ["/app/data", "/app/media"]
+
+EXPOSE 8000
+
+# 헬스체크
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8000/api/health || exit 1
+
+CMD ["python", "standalone_runner.py"]
