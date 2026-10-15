@@ -330,8 +330,8 @@ class RentService:
 
         return result
 
-    def get_expiring_rooms(self, db: Session, branch_id: str = "main", days_window: int = 65) -> List[Dict[str, Any]]:
-        """만기 1, 2개월 전 (약 65일 이내) 도래 호실 목록 조회"""
+    def get_expiring_rooms(self, db: Session, branch_id: str = "main", days_window: int = 95) -> List[Dict[str, Any]]:
+        """만기 3일, 1개월, 3개월 전 (약 95일 이내) 도래 호실 목록 조회"""
         rooms = self.get_rooms(db, branch_id)
         today_dt = datetime.now()
         expiring = []
@@ -348,7 +348,7 @@ class RentService:
                     elif diff_days <= 35:
                         period_category = "1개월 전"
                     else:
-                        period_category = "2개월 전"
+                        period_category = "3개월 전"
                     expiring.append({
                         "room_number": r_num,
                         "branch_id": branch_id,

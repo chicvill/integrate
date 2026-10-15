@@ -494,11 +494,11 @@ function applyAutoLeaseRenewal(rooms) {
 }
 
 /**
- * 만기 1·2개월 전 (0~65일 이내) 도래 호실 목록 계산
+ * 만기 3일·1·3개월 전 (0~95일 이내) 도래 호실 목록 계산
  * ★ 1년 자동 연장은 오늘부터 만기일까지의 날짜 계산을 위한 필수 전처리 과정!
  *   만기일이 지난 호실은 자동으로 1년 연장 후 새 만기일을 기준으로 잔여 일수를 파악합니다.
  */
-function getExpiringRoomsList(daysWindow = 65) {
+function getExpiringRoomsList(daysWindow = 95) {
   // 1. 필수 전처리: 만기일 경과 호실 자동 1년 연장
   const renewed = applyAutoLeaseRenewal(state.rooms);
   if (renewed) {
@@ -519,7 +519,7 @@ function getExpiringRoomsList(daysWindow = 65) {
         const expTime = new Date(ey, em - 1, ed).getTime();
         const diffDays = Math.ceil((expTime - todayTime) / (1000 * 60 * 60 * 24));
         if (diffDays >= 0 && diffDays <= daysWindow) {
-          let category = '2개월 전';
+          let category = '3개월 전';
           if (diffDays <= 3) {
             category = '3일 전';
           } else if (diffDays <= 35) {
@@ -7143,7 +7143,7 @@ function handlePhoneMessageClick(phone, name, roomNumber) {
 // 10. 만기 1·2개월 전 전출 의사 확인 및 차례차례 문자 발송 툴 모듈
 // ══════════════════════════════════════════════════════════════════════
 
-let currentExpiryFilter = 'ALL'; // 'ALL', '3DAYS', '1MONTH', '2MONTH'
+let currentExpiryFilter = 'ALL'; // 'ALL', '3DAYS', '1MONTH', '3MONTH'
 let sequentialQueue = []; // [{ room_number, name, phone, expiry, diff_days, period_category, sent: false }]
 let sequentialIndex = 0;
 let defaultExpiryMessageTemplate = "만기일이 {만기일}입니다. 전출계획 여부를 미리 알려주세요. {건물명} 관리실";
@@ -7163,7 +7163,7 @@ function setExpiryNoticeFilter(filter) {
 }
 
 function updateExpiryNoticeBadge() {
-  const list = getExpiringRoomsList(65);
+  const list = getExpiringRoomsList(95);
   const badgeEl = document.getElementById('headerExpiryNoticeBadge');
   const btnEl = document.getElementById('btnHeaderExpiryNotice');
   if (btnEl) {
@@ -7189,7 +7189,7 @@ function updateExpiryNoticeBadge() {
 
 function checkDaily0700ExpiryNotice() {
   updateExpiryNoticeBadge();
-  const list = getExpiringRoomsList(65);
+  const list = getExpiringRoomsList(95);
   if (list.length === 0) return;
 
   const now = new Date();
@@ -7214,18 +7214,18 @@ function renderExpiryNoticeList(filter = 'ALL') {
   const summaryEl = document.getElementById('expiryNoticeSummaryText');
   if (!container) return;
 
-  let allList = getExpiringRoomsList(65);
+  let allList = getExpiringRoomsList(95);
   const totalCount = allList.length;
   const count3D = allList.filter(x => x.period_category === '3일 전').length;
   const count1M = allList.filter(x => x.period_category === '1개월 전').length;
-  const count2M = allList.filter(x => x.period_category === '2개월 전').length;
+  const count3M = allList.filter(x => x.period_category === '3개월 전').length;
 
   if (summaryEl) {
-    summaryEl.innerHTML = `총 <strong class="text-white">${totalCount}개실</strong> 도래 (3일 전: <span class="text-emerald-400 font-bold">${count3D}</span>실, 1개월 전: <span class="text-rose-400 font-bold">${count1M}</span>실, 2개월 전: <span class="text-amber-400 font-bold">${count2M}</span>실)`;
+    summaryEl.innerHTML = `총 <strong class="text-white">${totalCount}개실</strong> 도래 (3일 전: <span class="text-emerald-400 font-bold">${count3D}</span>실, 1개월 전: <span class="text-rose-400 font-bold">${count1M}</span>실, 3개월 전: <span class="text-amber-400 font-bold">${count3M}</span>실)`;
   }
 
   // 필터 버튼 스타일 갱신
-  ['ALL', '3DAYS', '1MONTH', '2MONTH'].forEach(f => {
+  ['ALL', '3DAYS', '1MONTH', '3MONTH'].forEach(f => {
     const btn = document.getElementById(`filterBtnExpiry_${f}`);
     if (btn) {
       if (f === filter) {
@@ -7241,8 +7241,8 @@ function renderExpiryNoticeList(filter = 'ALL') {
     displayList = allList.filter(x => x.period_category === '3일 전');
   } else if (filter === '1MONTH') {
     displayList = allList.filter(x => x.period_category === '1개월 전');
-  } else if (filter === '2MONTH') {
-    displayList = allList.filter(x => x.period_category === '2개월 전');
+  } else if (filter === '3MONTH') {
+    displayList = allList.filter(x => x.period_category === '3개월 전');
   }
 
   if (displayList.length === 0) {
@@ -7325,7 +7325,7 @@ function startSequentialSmsSend() {
   }
 
   const selectedRoomNums = Array.from(checkedBoxes).map(cb => Number(cb.value));
-  const allList = getExpiringRoomsList(65);
+  const allList = getExpiringRoomsList(95);
   sequentialQueue = allList
     .filter(x => selectedRoomNums.includes(x.room_number))
     .map(x => ({ ...x, sent: false }));
@@ -7342,7 +7342,7 @@ function startSequentialSmsSend() {
 }
 
 function startSingleSmsSend(roomNum) {
-  const allList = getExpiringRoomsList(65);
+  const allList = getExpiringRoomsList(95);
   const target = allList.find(x => x.room_number === roomNum);
   if (!target) return;
 

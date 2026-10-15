@@ -213,11 +213,11 @@ export function applyAutoLeaseRenewal(rooms) {
 }
 
 /**
- * 만기 1·2개월 전 (0~65일 이내) 도래 호실 목록 계산
+ * 만기 3일·1·3개월 전 (0~95일 이내) 도래 호실 목록 계산
  * ★ 1년 자동 연장은 오늘부터 만기일까지의 날짜 계산을 위한 필수 전처리 과정!
  *   만기일이 지난 호실은 자동으로 1년 연장 후 새 만기일을 기준으로 잔여 일수를 파악합니다.
  */
-export function getExpiringRoomsList(daysWindow = 65) {
+export function getExpiringRoomsList(daysWindow = 95) {
   // 1. 필수 전처리: 만기일 경과 호실 자동 1년 연장
   const renewed = applyAutoLeaseRenewal(state.rooms);
   if (renewed) {
@@ -238,7 +238,7 @@ export function getExpiringRoomsList(daysWindow = 65) {
         const expTime = new Date(ey, em - 1, ed).getTime();
         const diffDays = Math.ceil((expTime - todayTime) / (1000 * 60 * 60 * 24));
         if (diffDays >= 0 && diffDays <= daysWindow) {
-          let category = '2개월 전';
+          let category = '3개월 전';
           if (diffDays <= 3) {
             category = '3일 전';
           } else if (diffDays <= 35) {

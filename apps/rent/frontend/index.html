@@ -100,7 +100,7 @@
           <span>입금문자</span>
         </button>
 
-        <button type="button" id="btnHeaderExpiryNotice" onclick="openExpiryNoticeModal()" class="flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded-xl bg-surface-800/60 hover:bg-surface-700/80 border border-slate-700/70 text-slate-300 font-semibold text-xs transition cursor-pointer shadow-sm active:scale-95 whitespace-nowrap" title="만기 3일·1·2개월 전 전출 의사 확인">
+        <button type="button" id="btnHeaderExpiryNotice" onclick="openExpiryNoticeModal()" class="flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded-xl bg-surface-800/60 hover:bg-surface-700/80 border border-slate-700/70 text-slate-300 font-semibold text-xs transition cursor-pointer shadow-sm active:scale-95 whitespace-nowrap" title="만기 3일·1·3개월 전 전출 의사 확인">
           <span class="text-xs">🔔</span>
           <span id="headerExpiryNoticeBadge">만기안내</span>
         </button>
@@ -193,7 +193,7 @@
           <span class="text-xl">🔔</span>
           <div>
             <div class="text-xs font-bold text-white flex items-center gap-1.5">
-              <span>만기 3일·1·2개월 전 전출 확인 & 문자</span>
+              <span>만기 3일·1·3개월 전 전출 확인 & 문자</span>
               <span id="drawerExpiryNoticeCount" class="text-[9px] bg-rose-500/30 text-rose-200 border border-rose-500/50 px-1 py-0.2 rounded font-normal">확인</span>
             </div>
             <div class="text-[10px] text-rose-300/80">만기 도래 리스트 확인 및 사전 안내문자 순차 발송</div>
@@ -1274,7 +1274,7 @@
           <span class="text-xl">🔔</span>
           <div>
             <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-              <span>만기 3일·1·2개월 전 전출 의사 확인</span>
+              <span>만기 3일·1·3개월 전 전출 의사 확인</span>
               <span class="text-[10px] bg-rose-500/20 text-rose-300 border border-rose-500/40 px-1.5 py-0.5 rounded font-normal">매일 07:00 자동 감지</span>
             </h3>
             <p id="expiryNoticeSummaryText" class="text-[11px] text-slate-400 mt-0.5">만기 도래 호실 목록을 불러오는 중...</p>
@@ -1296,8 +1296,8 @@
             <button type="button" id="filterBtnExpiry_1MONTH" onclick="setExpiryNoticeFilter('1MONTH')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-surface-800 text-slate-400 hover:text-white border border-slate-700/60 cursor-pointer">
               1개월 전 (D-30)
             </button>
-            <button type="button" id="filterBtnExpiry_2MONTH" onclick="setExpiryNoticeFilter('2MONTH')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-surface-800 text-slate-400 hover:text-white border border-slate-700/60 cursor-pointer">
-              2개월 전 (D-60)
+            <button type="button" id="filterBtnExpiry_3MONTH" onclick="setExpiryNoticeFilter('3MONTH')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-surface-800 text-slate-400 hover:text-white border border-slate-700/60 cursor-pointer">
+              3개월 전 (D-90)
             </button>
           </div>
           <span id="expirySelectedCountBadge" class="text-xs font-bold text-cyan-300 bg-cyan-950/60 border border-cyan-800/60 px-2 py-0.5 rounded-lg">
