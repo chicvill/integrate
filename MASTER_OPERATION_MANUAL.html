@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MQnet 통합 플랫폼 개발·배포·운영 마스터 매뉴얼 & 차세대 스마트빌딩 IoT 확장 백서</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0b0f19;
+      --surface-900: #111827;
+      --surface-850: #172033;
+      --surface-800: #1e293b;
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-cyan: #38bdf8;
+      --accent-indigo: #818cf8;
+      --accent-purple: #c084fc;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      background: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      line-height: 1.65;
+      margin: 0;
+      padding: 1.5rem;
+    }
+
+    .manual-container {
+      max-width: 1040px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* Header */
+    .manual-header {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(129, 140, 248, 0.12), rgba(192, 132, 252, 0.08));
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 20px;
+      padding: 2rem 2.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    }
+
+    .manual-title {
+      font-size: 1.7rem;
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .manual-subtitle {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    .manual-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      margin-left: 0.5rem;
+    }
+
+    .btn-print {
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 0.75rem 1.4rem;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 15px rgba(2, 132, 199, 0.35);
+      transition: all 0.2s;
+    }
+    .btn-print:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(2, 132, 199, 0.5);
+    }
+
+    /* Section Cards */
+    .card {
+      background: var(--surface-900);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 1.75rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 0.75rem;
+    }
+
+    /* Grid Layouts */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.25rem;
+    }
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+
+    .feature-box {
+      background: var(--surface-850);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+    .feature-box h4 {
+      margin: 0 0 0.5rem;
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .feature-box p {
+      margin: 0;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    /* Diagram Block */
+    .diagram-box {
+      background: #070a13;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 14px;
+      padding: 1.25rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      color: #a5f3fc;
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+      margin-top: 0.75rem;
+    }
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    th {
+      background: var(--surface-800);
+      color: #cbd5e1;
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .pill {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 6px;
+    }
+    .pill-cyan { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+    .pill-emerald { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .pill-amber { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .pill-rose { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
+
+    .code-snippet {
+      background: #030712;
+      border: 1px solid #1f2937;
+      border-radius: 8px;
+      padding: 0.6rem 0.8rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: #38bdf8;
+      display: block;
+      margin-top: 0.5rem;
+      overflow-x: auto;
+    }
+
+    /* Print Styles (A4 최적화) */
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding: 0 !important;
+        font-size: 9.5pt;
+      }
+      .manual-container {
+        max-width: 100% !important;
+        gap: 1rem !important;
+      }
+      .manual-header {
+        background: none !important;
+        border: 2px solid #000 !important;
+        border-radius: 0 !important;
+        padding: 1rem !important;
+        box-shadow: none !important;
+      }
+      .manual-title { color: #000 !important; }
+      .manual-subtitle { color: #333 !important; }
+      .btn-print { display: none !important; }
+      .card {
+        background: none !important;
+        border: 1px solid #ccc !important;
+        border-radius: 0 !important;
+        padding: 1rem !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+      }
+      .card-title {
+        color: #000 !important;
+        border-bottom: 2px solid #000 !important;
+      }
+      .feature-box {
+        background: none !important;
+        border: 1px solid #ddd !important;
+        border-radius: 0 !important;
+      }
+      .feature-box h4 { color: #000 !important; }
+      .feature-box p { color: #333 !important; }
+      .diagram-box {
+        background: #f8fafc !important;
+        color: #000 !important;
+        border: 1px solid #999 !important;
+      }
+      table { border: 1px solid #ccc; }
+      th { background: #f1f5f9 !important; color: #000 !important; border: 1px solid #ccc; }
+      td { border: 1px solid #ccc; color: #000 !important; }
+      .pill { border: 1px solid #000 !important; color: #000 !important; background: none !important; }
+      .code-snippet { background: #f8fafc !important; color: #000 !important; border: 1px solid #ccc !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="manual-container">
+
+    <!-- Header -->
+    <header class="manual-header">
+      <div>
+        <h1 class="manual-title">
+          <span>⚡ MQnet 통합 플랫폼 마스터 매뉴얼</span>
+          <span class="manual-badge">SaaS v3.0 Master Edition</span>
+        </h1>
+        <p class="manual-subtitle">
+          중앙 멀티테넌트 개발 ↔ 단독 온프레미스 분리 배포 | 라이프사이클 표준 | 스마트빌딩 IoT 확장 백서
+        </p>
+      </div>
+      <button type="button" onclick="window.print()" class="btn-print">
+        <span>🖨️</span>
+        <span>매뉴얼 인쇄 / PDF 저장</span>
+      </button>
+    </header>
+
+    <!-- 1. 듀얼 모드 아키텍처 -->
+    <section class="card">
+      <h2 class="card-title"><span>🏛️</span> 1. 핵심 설계 철학: 듀얼 모드(Dual-Mode) 아키텍처</h2>
+      <p style="font-size:0.86rem; color:var(--text-muted); margin-top:0;">
+        MQnet의 모든 앱은 소스 코드 수정 없이 <strong>환경변수(RUN_MODE)</strong>에 따라 중앙 통합 SaaS와 완전 자립형 단독 패키지로 자동 전환됩니다.
+      </p>
+
+      <div class="diagram-box">
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       단일 모노레포 코드베이스 (Mono-Repo)                  │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │
+            ┌──────────────────────────┴──────────────────────────┐
+            ▼                                                     ▼
+ 🏢 [모드 1: 중앙 멀티테넌트 SaaS]                        📦 [모드 2: 단독 분리형 Standalone]
+ • 본사 포털(34.31.10.12)에 통합 마운트                 • 고객 전용 구글 클라우드 VM 또는 관리실 PC
+ • 다중 매장/건물(Multi-Branch) 통합 관제               • 단독 실행 (80 포트 단독 점유)
+ • 중앙 DB (integrat.db) 공유                          • 로컬 전용 DB (./data/app.db) 완벽 격리
+ • 본사 최고관리자가 원격 일괄 패치                    • 외부 인터넷 없는 100% 사내 폐쇄망 지원
+      </div>
+
+      <div class="grid-2" style="margin-top:1.25rem;">
+        <div class="feature-box">
+          <h4><span>☁️</span> 모드 1: 중앙 SaaS 모드</h4>
+          <p>
+            • 단일 서버에서 다수 매장 실시간 원격 관제<br>
+            • <code>admin/1212</code>: 본사 지점/수납 센터 (<code>/branches.html</code>)<br>
+            • 점주 실장: 소속 지점 실시간 관제 (<code>?branch=...</code>)<br>
+            • 자동 암호화 볼트(<code>.env.encrypted</code>)로 비밀키 완전 보호
+          </p>
+        </div>
+        <div class="feature-box">
+          <h4><span>🏢</span> 모드 2: 단독 분리형 (Standalone)</h4>
+          <p>
+            • 개인정보 유출을 극도로 꺼리는 개인 건물주를 위한 사내 인트라넷 폐쇄망 지원<br>
+            • 관리실 윈도우 PC 바탕화면에서 <code>START.bat</code> 더블클릭만으로 즉시 구동<br>
+            • 데이터(<code>./data/rent.db</code>)는 고객 PC에만 영구 보존되어 클라우드 유출 0%<br>
+            • <code>UPDATE.bat</code> 더블클릭으로 기존 DB 보존하며 10초 만에 새 버전 갱신
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. 전체 앱 라이프사이클 표준 -->
+    <section class="card">
+      <h2 class="card-title"><span>🔄</span> 2. 전체 앱 라이프사이클 표준 (개발-배포-운영-업그레이드)</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width:18%;">단계</th>
+            <th style="width:25%;">실행 도구 & 명령어</th>
+            <th>핵심 규칙 및 표준 동작 원리</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>1. 기획 & 생성</strong></td>
+            <td><code class="code-snippet">py scripts/create_app.py --id {app}</code></td>
+            <td>표준 템플릿(<code>saas-template</code>)을 복제하여 3초 만에 프론트/백엔드/도커 일체 자동 구성</td>
+          </tr>
+          <tr>
+            <td><strong>2. 로컬 개발</strong></td>
+            <td><code class="code-snippet">py -m uvicorn apps.{app}.backend.main:app</code></td>
+            <td><strong>번들리스 원칙:</strong> 번들링 빌드 없이 순수 Vanilla JS로 작성하여 브라우저 F5 즉시 반영</td>
+          </tr>
+          <tr>
+            <td><strong>3. 정합성 & 검증</strong></td>
+            <td><code class="code-snippet">py -m py_compile ...</code></td>
+            <td>가짜 체납 방어, 에러 배너(<code>showTopToast</code>) UX 준수, 버튼 이중 클릭 방지(<code>disabled</code>)</td>
+          </tr>
+          <tr>
+            <td><strong>4. 번들 빌드</strong></td>
+            <td><code class="code-snippet">py scripts/build_{app}_bundle.py</code></td>
+            <td>독립 실행용 단일 <code>bundle.js</code> 생성 및 캐시 버스팅 쿼리(<code>?v=X.X</code>) 적용</td>
+          </tr>
+          <tr>
+            <td><strong>5. 서버 배포</strong></td>
+            <td><code class="code-snippet">powershell -File scripts/sync_{app}_patch.ps1</code></td>
+            <td><strong>데이터 선(先)백업:</strong> 서버의 최신 <code>integrat.db</code>를 먼저 백업 후 무중단 컨테이너 핫패치</td>
+          </tr>
+          <tr>
+            <td><strong>6. 단독 추출</strong></td>
+            <td><code class="code-snippet">py scripts/export_app.py --app {app} --zip</code></td>
+            <td>고객 납품용 1-클릭 실행 파일(<code>START.bat</code>, <code>UPDATE.bat</code>) 및 ZIP 배포팩 자동 생성</td>
+          </tr>
+          <tr>
+            <td><strong>7. 운영 & 모니터링</strong></td>
+            <td><code>StorageMonitorDaemon</code> 자동 가동</td>
+            <td>SQLite WAL 파일 및 스토리지 사용량 실시간 감시, 메모리 자동 압축 및 OOM 방지</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 3. 현재 핵심 앱 운영 요약 -->
+    <section class="card">
+      <h2 class="card-title"><span>📱</span> 3. 현재 구축된 핵심 앱별 운영 가이드</h2>
+
+      <div class="grid-2">
+        <div class="feature-box">
+          <h4><span>🏢</span> 1. 원룸 임차관리 시스템 (rent)</h4>
+          <p>
+            • <strong>29개실 스마트 호실 카드:</strong> 공실/입주중/만기 도래 상태 실시간 색상 식별<br>
+            • <strong>원터치 입퇴실 & 1년 법정 보존:</strong> 퇴실 즉시 1년 보존 이력 테이블로 자동 아카이빙<br>
+            • <strong>체납/수납 장부:</strong> 최근 12개월 롤링 기간 기반 과거 미납 및 당월 완납 추적<br>
+            • <strong>만기 3일·1·3개월 전 문자 발송:</strong> 갱신거절 법정 마지노선(2개월 전) 대비 <strong>3개월 전(D-90)</strong> 사전 통보 및 문자 템플릿 치환 발송<br>
+            • <strong>엑셀 장부 & 부가세 리포트:</strong> 영수증 사진 첨부 및 매입세액 공제 자동 계산
+          </p>
+        </div>
+
+        <div class="feature-box">
+          <h4><span>📖</span> 2. 무인 스터디카페 관제 (studycafe)</h4>
+          <p>
+            • <strong>실시간 좌석 배치도:</strong> 1인실, 오픈석, 스터디룸별 잔여 좌석 및 실시간 타이머<br>
+            • <strong>시간권/기간권 요금제:</strong> 퇴실 시 잔여시간 자동 차감 및 연장 결제 처리<br>
+            • <strong>무인 출입 QR/바코드 제어:</strong> 유효 고객만 자동문 개폐 신호 전송<br>
+            • <strong>학부모 안심 포털:</strong> 자녀 입퇴실 시간 실시간 안심 조회 포털 연동
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. 템플릿 제약 사항 및 극복 방안 -->
+    <section class="card">
+      <h2 class="card-title"><span>⚙️</span> 4. SaaS 템플릿 제약 사항 및 기술적 대응 방안</h2>
+
+      <div class="grid-2">
+        <div class="feature-box">
+          <h4><span>⚠️</span> 구글 무료 티어 (RAM 1GB) 메모리 한계</h4>
+          <p>
+            <strong>문제:</strong> 컨테이너가 누적되면 OOM(Out of Memory) 프로세스 강제 종료 발생 위험.<br>
+            <strong>해결:</strong> 가변 주기 백그라운드 모니터링 데몬 도입, 비동기 <code>ThreadPoolExecutor</code> 최적화, 메모리 과다 앱은 <code>export_app.py</code>로 타 서버 즉시 분리.
+          </p>
+        </div>
+
+        <div class="feature-box">
+          <h4><span>🔒</span> SQLite 동시 쓰기 락 (Lock)</h4>
+          <p>
+            <strong>문제:</strong> 동시 입금 처리 시 <code>database is locked</code> 오류 가능성.<br>
+            <strong>해결:</strong> WAL(Write-Ahead Logging) 모드 기본 적용, 트랜잭션 범위를 0.01초 내로 극소화, 대규모 사업장은 <code>DB_URL</code> 환경변수에 PostgreSQL 주소만 넣으면 0초 마이그레이션.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. 미래 비전: 스마트빌딩 IoT 확장 -->
+    <section class="card">
+      <h2 class="card-title"><span>🚀</span> 5. 미래 확장 비전: 스마트빌딩 & IoT 무인 관제 생태계</h2>
+      <p style="font-size:0.86rem; color:var(--text-muted); margin-top:0;">
+        임대 관리(<code>rent</code>)와 공간 관제(<code>studycafe</code>)를 완성한 MQnet은 하드웨어 제어와 AI를 결합한 <strong>'스마트빌딩 통합 OS'</strong>로 확장됩니다.
+      </p>
+
+      <div class="grid-4" style="margin-top:1rem;">
+        <div class="feature-box">
+          <h4><span>📹</span> 스마트 CCTV (AI)</h4>
+          <p>
+            • 야간(23시~06시) 무단침입 및 현관 배회자 실시간 AI 감지<br>
+            • 복도 쓰레기/적치물 감지<br>
+            • WebRTC 기반 0.2초 초저지연 스마트폰 모바일 뷰어
+          </p>
+          <span class="pill pill-cyan" style="margin-top:0.6rem;">apps/cctv</span>
+        </div>
+
+        <div class="feature-box">
+          <h4><span>🚗</span> 외부차량 주차단속</h4>
+          <p>
+            • 주차장 입구 카메라로 번호판(LPR) 자동 인식<br>
+            • rent 앱 입주자 차량 DB와 실시간 대조<br>
+            • 미등록 불법주차 시 차주 경고 문자 및 관리실 즉시 알림
+          </p>
+          <span class="pill pill-emerald" style="margin-top:0.6rem;">apps/parking</span>
+        </div>
+
+        <div class="feature-box">
+          <h4><span>⚡</span> 원격 스위치 & 자동문</h4>
+          <p>
+            • 스마트 릴레이(Zigbee/Sonoff) 기반 복도등/간판 일몰 자동 점등<br>
+            • 공동 현관 자동문 원격 개폐<br>
+            • 공실 호실 보일러 동파 방지 원격 온도 제어
+          </p>
+          <span class="pill pill-amber" style="margin-top:0.6rem;">apps/smart_door</span>
+        </div>
+
+        <div class="feature-box">
+          <h4><span>🚨</span> 화재·소방 안전관제</h4>
+          <p>
+            • 무선 연기/열 감지기 화재 발생 즉시 관리실 적색 사이렌 경보<br>
+            • 전 세대 비상 대피 자동 단체 문자<br>
+            • 1층 현관문 비상 락 자동 해제<br>
+            • 소화기 압력 저하 자동 알림
+          </p>
+          <span class="pill pill-rose" style="margin-top:0.6rem;">apps/safety</span>
+        </div>
+      </div>
+
+      <!-- 하드웨어 추상화 계층 -->
+      <div style="margin-top:1.25rem;">
+        <h4 style="font-size:0.95rem; font-weight:700; color:#fff; margin-bottom:0.4rem;">🔌 표준 IoT 하드웨어 연동 아키텍처 (MQTT)</h4>
+        <p style="font-size:0.82rem; color:var(--text-muted); margin:0 0 0.5rem;">
+          모든 하드웨어는 경량 MQTT 브로커(Mosquitto)를 통해 표준 JSON 메시지로 통신하므로, 제조사가 바뀌어도 상위 SaaS 앱 코드는 단 1줄도 수정할 필요가 없습니다.
+        </p>
+        <div class="diagram-box">
+// MQTT 토픽 예시: mqnet/building_1/door/open
+{
+  "device_id": "door_main_gate",
+  "command": "unlock",
+  "duration_sec": 5,
+  "requested_by": "admin",
+  "timestamp": 1792051200
+}
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer style="text-align:center; padding:1.5rem 0; font-size:0.8rem; color:var(--text-muted);">
+      <p style="margin:0;">MQnet Integrated Platform Master Documentation • Designed for Autonomous SaaS Operations</p>
+      <p style="margin:0.25rem 0 0;">© 2026 MQnet Inc. All rights reserved.</p>
+    </footer>
+
+  </div>
+
+</body>
+</html>
