@@ -35,31 +35,35 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
 
 
 def get_database_url() -> str:
-    # 1. 환경변수 우선 확인
-    url = os.getenv("DATABASE_URL")
-    if not url:
-        # 2. .env.shared 파일 탐색
-        env_file = os.path.join(os.path.dirname(__file__), "..", "..", ".env.shared")
-        if os.path.exists(env_file):
-            try:
-                with open(env_file, "r", encoding="utf-8") as f:
-                    for line in f:
-                        if line.strip().startswith("DATABASE_URL="):
-                            url = line.strip().split("=", 1)[1].strip().strip('"').strip("'")
-                            break
-            except Exception:
-                pass
-    # 원격 DB(PostgreSQL/MySQL 등)가 명시된 경우 우선 반환
-    if url and not url.startswith("sqlite"):
-        return url
-
-    # SQLite인 경우: Docker 영구 볼륨(/media)이 존재하면 컨테이너 재부팅/재배포 시 데이터 보존을 위해 영구 볼륨 우선 사용
-    media_path = os.getenv("MEDIA_STORAGE_PATH", os.getenv("MEDIA_PATH", "/media"))
-    if os.path.exists(media_path):
-        return f"sqlite:///{os.path.join(media_path, 'integrat.db')}"
-
+    # 1. 환경변수(DATABASE_URL 또는 DB_URL) 명시 시 1순위로 즉시 반환
+    url = os.getenv("DATABASE_URL") or os.getenv("DB_URL")
     if url:
         return url
+
+    # 2. .env.shared 파일 탐색
+    env_file = os.path.join(os.path.dirname(__file__), "..", "..", ".env.shared")
+    if os.path.exists(env_file):
+        try:
+            with open(env_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip().startswith("DATABASE_URL="):
+                        url = line.strip().split("=", 1)[1].strip().strip('"').strip("'")
+                        if url:
+                            return url
+                        break
+        except Exception:
+            pass
+
+    # 3. 로컬 data 디렉토리 내 앱 전용 DB 우선 탐색 (rent.db 등)
+    for cand in ["data/rent.db", "data/integrat.db", "rent.db", "integrat.db"]:
+        if os.path.exists(cand) and os.path.getsize(cand) > 0:
+            return f"sqlite:///{os.path.abspath(cand)}"
+
+    # 4. Docker 영구 볼륨(/media)이 존재하고 기존 DB가 있으면 integrat.db
+    media_path = os.getenv("MEDIA_STORAGE_PATH", os.getenv("MEDIA_PATH", "/media"))
+    if os.path.exists(media_path) and os.path.exists(os.path.join(media_path, "integrat.db")):
+        return f"sqlite:///{os.path.join(media_path, 'integrat.db')}"
+
     return "sqlite:///./integrat.db"
 
 

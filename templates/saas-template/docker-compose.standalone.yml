@@ -20,6 +20,7 @@ services:
       - RUN_MODE=standalone
       - APP_NAME={{APP_NAME}}
       - PORT=8000
+      - DATABASE_URL=sqlite:////app/data/{{APP_ID}}.db
       - DB_URL=sqlite:////app/data/{{APP_ID}}.db
       - SECRET_KEY=${SECRET_KEY:-mqnet-standalone-secret-key-2026}
     volumes:

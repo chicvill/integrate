@@ -3,6 +3,7 @@ apps/rent/backend/services/rent_service.py
 원룸 임차료 관리 시스템 비즈니스 로직 서비스.
 Clean Architecture 규격에 맞춰 DB 조작 및 29개실 시드 캐싱을 전담합니다.
 """
+import os
 import json
 import re
 import uuid
@@ -37,13 +38,120 @@ class RentService:
         """지점 코드 정규화 (chicvill01 -> main, chicvill02 -> branch_9027)"""
         return branch_service.normalize_branch_id(branch_id)
 
+    def _import_backup_data_block(self, db: Session, branch_id: str, data_block: dict):
+        """시크빌 공식 백업 JSON 데이터 블록을 DB로 즉시 적재"""
+        rooms_dict = data_block.get("rooms", {})
+        expenses_list = data_block.get("expenses", [])
+        histories_list = data_block.get("tenantHistories", [])
+
+        for r_num_str, r_info in rooms_dict.items():
+            r_num = int(r_num_str)
+            r_obj = RentRoom(
+                id=str(uuid.uuid4()),
+                branch_id=branch_id,
+                room_number=r_num,
+                name=r_info.get("name", "") or "",
+                id_number=r_info.get("id_number", "") or "",
+                phone=r_info.get("phone", "") or "",
+                lease_type=r_info.get("lease_type", "월세") or "월세",
+                pay_timing=r_info.get("pay_timing", "후불") or "후불",
+                deposit=int(r_info.get("deposit") or 0),
+                rent=int(r_info.get("rent") or 0),
+                maintenance=int(r_info.get("maintenance") or 0),
+                clean_fee=int(r_info.get("clean_fee") or 0),
+                move_in=r_info.get("move_in", "") or "",
+                expiry=r_info.get("expiry", "") or "",
+                move_out=r_info.get("move_out", "") or "",
+                metadata_json=r_info.get("metadata_json", {})
+            )
+            db.add(r_obj)
+
+            payments_dict = r_info.get("payments", {})
+            seen = set()
+            for p_key, p_val in payments_dict.items():
+                m = p_val.get("month")
+                y = p_val.get("year", 2026)
+                if not m or (y, m) in seen:
+                    continue
+                seen.add((y, m))
+                pay_obj = RentPayment(
+                    id=str(uuid.uuid4()),
+                    branch_id=branch_id,
+                    room_number=r_num,
+                    year=y,
+                    month=m,
+                    paid=bool(p_val.get("paid", False)),
+                    paid_date=p_val.get("paid_date", "") or "",
+                    rent_amount=int(p_val.get("rent_amount") or 0),
+                    maintenance_amount=int(p_val.get("maintenance_amount") or 0),
+                    note=p_val.get("note", "") or "",
+                    tenant_name=p_val.get("tenant_name", "") or r_obj.name,
+                    tenant_id_number=p_val.get("tenant_id_number", "") or r_obj.id_number,
+                    is_previous_tenant=bool(p_val.get("is_previous_tenant", False))
+                )
+                db.add(pay_obj)
+
+        for exp in expenses_list:
+            db.add(RentExpense(
+                id=exp.get("id") or str(uuid.uuid4()),
+                branch_id=branch_id,
+                date=exp.get("date", "") or datetime.now().strftime("%Y-%m-%d"),
+                item=exp.get("item", "") or "지출",
+                amount=int(exp.get("amount") or 0),
+                note=exp.get("note", "") or "",
+                receipt_type=exp.get("receipt_type", "") or "",
+                receipt_info=exp.get("receipt_info", "") or ""
+            ))
+
+        for th in histories_list:
+            db.add(RentTenantHistory(
+                id=th.get("id") or str(uuid.uuid4()),
+                branch_id=branch_id,
+                room_number=int(th.get("room_number") or 0),
+                tenant_name=th.get("tenant_name", "") or "",
+                id_number=th.get("id_number", "") or "",
+                phone=th.get("phone", "") or "",
+                move_in=th.get("move_in", "") or "",
+                move_out=th.get("move_out", "") or "",
+                move_out_date=th.get("move_out_date", "") or "",
+                unpaid_amount=int(th.get("unpaid_amount") or 0),
+                return_deposit=int(th.get("return_deposit") or 0),
+                archive_expires_at=th.get("archive_expires_at", "") or "",
+                metadata_json=th.get("metadata_json", {})
+            ))
+
     def _seed_branch_rooms(self, db: Session, branch_id: str, is_main: bool = True) -> None:
         """지점별 29개실 및 12개월 납부 장부 / 전출자 1년 보존 이력 생성"""
         rooms_count = db.query(RentRoom).filter(RentRoom.branch_id == branch_id).count()
         if rooms_count > 0:
             return
 
-        sample_names = ["김민준", "이서연", "박도윤", "정하은", "최지우", "강예준", "조수아", "윤시우", "장지아", "임서진"]
+        # 1. 시크빌 공식 백업 JSON 파일 우선 탐색 및 원본 29개실 실데이터 적재
+        possible_json_paths = [
+            os.path.join(os.path.dirname(__file__), "seed_data.json"),
+            os.path.join(os.path.dirname(__file__), "..", "..", "data", "chicvill_backup.json"),
+            os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "data", "chicvill_backup.json"),
+            "/app/backend/seed_data.json",
+            "/app/data/chicvill_backup.json",
+            "data/chicvill_backup.json",
+            "chicvill_backup.json"
+        ]
+        for j_path in possible_json_paths:
+            if os.path.exists(j_path) and os.path.getsize(j_path) > 0:
+                try:
+                    with open(j_path, "r", encoding="utf-8") as f:
+                        b_data = json.load(f)
+                    data_block = b_data.get("data", {})
+                    rooms_dict = data_block.get("rooms", {})
+                    if rooms_dict:
+                        self._import_backup_data_block(db, branch_id, data_block)
+                        db.commit()
+                        print(f"✅ [{branch_id}] 시크빌 공식 백업({j_path})으로부터 29개실 실데이터 시딩 완료")
+                        return
+                except Exception as e:
+                    print(f"⚠️ 백업 JSON 로드 시도 오류 ({j_path}): {e}")
+
+        sample_names = ["배종봉", "김정권", "이종진", "정민준", "김백찬", "김정현", "성민병원", "김지영", "김진수", "이광훈"]
         now = datetime.now()
         cur_year = now.year
         cur_month = now.month
