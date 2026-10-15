@@ -21,25 +21,28 @@ if CURRENT_DIR not in sys.path:
     sys.path.insert(0, CURRENT_DIR)
 
 # 1. 백엔드 라우터 및 설정 로드
+main_router = None
 try:
     from backend.routers.main_router import router as main_router
-except ImportError:
+    logger.info("✅ 백엔드 라우터 임포트 성공: backend.routers.main_router")
+except Exception as e:
+    logger.error(f"⚠️ 백엔드 직접 임포트 실패, fallback 시도: {e}")
     try:
         import importlib
-        app_id_env = os.environ.get("APP_ID", "")
-        if app_id_env:
+        app_id_env = os.environ.get("APP_ID", "{{APP_ID}}")
+        if app_id_env and app_id_env != "{{APP_ID}}":
             mod = importlib.import_module(f"apps.{app_id_env}.backend.routers.main_router")
             main_router = getattr(mod, "router", None)
-        else:
-            main_router = None
-    except Exception as e:
-        logger.error(f"백엔드 라우터 임포트 실패: {e}")
-        main_router = None
+            logger.info(f"✅ 백엔드 fallback 임포트 성공: apps.{app_id_env}")
+    except Exception as e2:
+        logger.error(f"❌ 백엔드 fallback 임포트도 실패: {e2}")
+        import traceback
+        traceback.print_exc()
 
 app = FastAPI(
-    title="MQnet Standalone Service",
-    description="독립 실행형 단독 솔루션 패키지",
-    version="1.0.0"
+    title="{{APP_NAME}} (Standalone)",
+    description="MQnet 독립 솔루션 패키지",
+    version="2.0.0"
 )
 
 # CORS 허용
@@ -54,11 +57,22 @@ app.add_middleware(
 # 헬스체크 엔드포인트
 @app.get("/api/health")
 def health_check():
-    return {"status": "ok", "mode": "standalone", "version": "1.0.0"}
+    return {
+        "status": "ok",
+        "app": "{{APP_ID}}",
+        "mode": "standalone",
+        "version": "2.0.0",
+        "router_loaded": main_router is not None
+    }
 
-# 백엔드 API 라우터 마운트 (/api)
+# 백엔드 API 라우터 마운트 (/api 및 /api/{{APP_ID}} 동시 지원)
 if main_router:
     app.include_router(main_router, prefix="/api")
+    if "{{APP_ID}}" != "base":
+        app.include_router(main_router, prefix="/api/{{APP_ID}}")
+    logger.info("✅ 백엔드 API 라우터 마운트 완료 (/api, /api/{{APP_ID}})")
+else:
+    logger.critical("🚨 백엔드 라우터가 등록되지 않았습니다! API 요청이 404/405 처리될 수 있습니다.")
 
 # 프론트엔드 정적 파일 서빙
 frontend_dir = os.path.join(CURRENT_DIR, "frontend")
