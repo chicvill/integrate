@@ -6285,9 +6285,11 @@ function parseBankSmsText(rawText) {
 
 /**
  * 호실별 체납월(미납월) 탐색 및 입금액 기반 분할 수납 대상 월 계산:
- * 1. 전입일 이전 것은 절대 채울 수 없음 (move_in 기준 시작)
- * 2. 가장 오래된 체납월부터 우선 충당
- * 3. 체납된 것이 없거나 처리할 수 없는 경우 빈 배열 반환 (수동 처리 안내용)
+ * 1. 시스템 활성 롤링 장부 범위(직전 12개월: 2025.11 ~ 2026.10) 내에서만 미납월 탐색 (과거 수년 전 비관리 연도의 가짜 체납 원천 차단)
+ * 2. 전입일 이전이거나 입주월 후불(익월 청구)인 회차는 제외
+ * 3. 실제 체납된 과거 회차가 있으면 오래된 순서대로 우선 충당
+ * 4. 체납이 없고 당월(currentMonth)이 미납이면 당월분 정상 충당 (체납이 아닌 '당월분'으로 정확히 표기)
+ * 5. 당월까지 완납된 경우 익월 미래 선납으로 정상 확장
  */
 function calculateDepositTargetPeriods(roomNum, depositAmount, parsedDateMonth = currentMonth) {
   const room = (state.rooms && state.rooms[roomNum]) ? state.rooms[roomNum] : null;
@@ -6305,7 +6307,7 @@ function calculateDepositTargetPeriods(roomNum, depositAmount, parsedDateMonth =
     monthsToCover = Math.max(1, Math.floor(depositAmount / monthlyDue));
   }
 
-  // 2. 세입자의 전입일 파싱 (전입일 이전 것은 절대 채울 수 없음)
+  // 2. 세입자의 전입일 파싱
   let inYear = currentYear;
   let inMonth = 1;
   if (room.move_in) {
@@ -6318,51 +6320,50 @@ function calculateDepositTargetPeriods(roomNum, depositAmount, parsedDateMonth =
 
   const isPostpaid = (room.pay_timing === '후불' || !room.pay_timing);
 
-  // 3. 전입월부터 현재 당월(currentMonth)까지의 미납/체납월 탐색
-  const unpaidPeriods = [];
-  for (let y = inYear; y <= currentYear; y++) {
-    const startM = (y === inYear) ? inMonth : 1;
-    const endM = (y === currentYear) ? currentMonth : 12;
-    for (let m = startM; m <= endM; m++) {
-      const pKey = `${y}-${m}`;
-      const p = (room.payments && (room.payments[pKey] || (y === currentYear ? room.payments[m] : null)));
-
-      const rule = evaluatePaymentRule({
-        year: y,
-        month: m,
-        inYear,
-        inMonth,
-        leaseType: room.lease_type || '월세',
-        payTiming: room.pay_timing || '후불',
-        curYear: currentYear,
-        curMonth: currentMonth,
-        hasPrevHist: Boolean(p?.is_previous_tenant)
-      });
-
-      // 전입 이전은 절대 미납 대상 아님
-      if (rule.isBeforeMoveIn) continue;
-
-      // 결제 객체가 있고 paid === true 이면 완납
-      if (p && p.paid === true) continue;
-
-      // 입주월이 후불인 경우 당월 청구분이 아니므로(익월 납부) 과거 체납/미납 충당 대상에서 제외
-      if (rule.isMoveInMonth && isPostpaid) continue;
-
-      const isPast = (y < currentYear) || (y === currentYear && m < currentMonth);
-      unpaidPeriods.push({ year: y, month: m, isOverdue: isPast });
+  // 3. 활성 롤링 12개월 생성 (과거순: 예: 2025.11 ~ 2026.10)
+  const rollingPeriods = [];
+  for (let i = 11; i >= 0; i--) {
+    let m = currentMonth - i;
+    let y = currentYear;
+    if (m <= 0) {
+      m += 12;
+      y -= 1;
     }
+    rollingPeriods.push({ year: y, month: m });
   }
 
-  // 4. 할당 대상 월 확정
+  // 4. 활성 장부 내 미납월 탐색
+  const unpaidPeriods = [];
+  for (const { year: y, month: m } of rollingPeriods) {
+    // 4-1. 전입 이전 회차 제외
+    if (y < inYear || (y === inYear && m < inMonth)) continue;
+
+    // 4-2. 입주월 후불(익월 청구) 제외
+    if (y === inYear && m === inMonth && isPostpaid) continue;
+
+    const pKey = `${y}-${m}`;
+    const p = (room.payments && (room.payments[pKey] || (y === currentYear ? room.payments[m] : null)));
+
+    // 4-3. 이미 완납된 회차 제외
+    if (p && p.paid === true) continue;
+
+    // 4-4. 전입 이전 비고 표기된 비과세/과거 회차 제외
+    if (p && p.note && p.note.includes('전입 이전')) continue;
+
+    const isPast = (y < currentYear) || (y === currentYear && m < currentMonth);
+    unpaidPeriods.push({ year: y, month: m, isOverdue: isPast });
+  }
+
+  // 5. 할당 대상 월 확정
   const targetPeriods = [];
 
-  // 4-1. 체납/미납월이 있는 경우 오래된 순서대로 monthsToCover만큼 먼저 채움
+  // 5-1. 체납/미납월이 있는 경우 오래된 순서대로 monthsToCover만큼 충당
   for (const item of unpaidPeriods) {
     if (targetPeriods.length >= monthsToCover) break;
     targetPeriods.push(item);
   }
 
-  // 4-2. 다개월 입금 등으로 할당할 개월이 남았거나, 이미 당월까지 모두 완납되어 미래 선납인 경우
+  // 5-2. 다개월 입금 등으로 할당할 개월이 남았거나, 이미 당월까지 모두 완납되어 미래 선납인 경우
   if (targetPeriods.length < monthsToCover) {
     let baseYear = currentYear;
     let baseMonth = (targetPeriods.length > 0)
@@ -6401,12 +6402,15 @@ function generateReceiptMessage(rawText, targetRoomNum = null, customPeriods = n
   // 충당 대상 월 목록
   const targetPeriods = customPeriods || (parsed ? calculateDepositTargetPeriods(detectedRoom, parsed.amount, parsed.month) : null);
   let periodNote = '';
+  const fmtPeriod = (p) => `${p.year !== currentYear ? p.year + '년 ' : ''}${p.month}월`;
   if (targetPeriods && targetPeriods.length > 1) {
-    periodNote = ` (${targetPeriods.map(p => p.month + '월').join(', ')}분 납부)`;
+    periodNote = ` (${targetPeriods.map(fmtPeriod).join(', ')}분 납부)`;
   } else if (targetPeriods && targetPeriods.length === 1 && targetPeriods[0].isOverdue) {
-    periodNote = ` (${targetPeriods[0].month}월 체납분 납부)`;
+    periodNote = ` (${fmtPeriod(targetPeriods[0])} 체납분 납부)`;
   } else if (targetPeriods && targetPeriods.length === 1 && targetPeriods[0].isAdvance) {
-    periodNote = ` (${targetPeriods[0].month}월분 선납)`;
+    periodNote = ` (${fmtPeriod(targetPeriods[0])}분 선납)`;
+  } else if (targetPeriods && targetPeriods.length === 1) {
+    periodNote = ` (${fmtPeriod(targetPeriods[0])}분 납부)`;
   }
 
   const lines = rawText.split(/\r?\n/).map(l => l.trim());
@@ -6558,26 +6562,28 @@ function handleLiveSmsParse() {
       `<strong>${parsed.roomNumber}호 (${parsed.tenantName || '세입자'})</strong>는 현재 체납/미납 회차가 없는 완납 상태입니다.<br>이중입금 또는 과오납 여부를 확인하시거나, 과거/특수 납부는 <strong>[과거납부내역]</strong>에서 수동으로 확인해주세요.`
     );
   } else {
+    const fmt = (p) => `${p.year !== currentYear ? p.year + '년 ' : ''}${p.month}월`;
+    const dayStr = parsed.day ? `${parsed.day}일 ` : '';
     if (dateSpan) {
       if (targetPeriods.length > 1) {
-        dateSpan.textContent = `${parsed.month}월 ${parsed.day}일 (${targetPeriods.map(p => p.month + '월').join(', ')}분 ${targetPeriods.length}개월 분할)`;
+        dateSpan.textContent = `${parsed.month}월 ${dayStr}(${targetPeriods.map(fmt).join(', ')}분 ${targetPeriods.length}개월 분할)`;
       } else if (targetPeriods[0].isOverdue) {
-        dateSpan.textContent = `${parsed.month}월 ${parsed.day}일 (${targetPeriods[0].month}월 체납분 충당)`;
+        dateSpan.textContent = `${parsed.month}월 ${dayStr}(${fmt(targetPeriods[0])} 체납분 충당)`;
       } else if (targetPeriods[0].isAdvance) {
-        dateSpan.textContent = `${parsed.month}월 ${parsed.day}일 (${targetPeriods[0].month}월분 선납)`;
+        dateSpan.textContent = `${parsed.month}월 ${dayStr}(${fmt(targetPeriods[0])}분 선납)`;
       } else {
-        dateSpan.textContent = `${parsed.month}월 ${parsed.day}일 (${targetPeriods[0].month}월분)`;
+        dateSpan.textContent = `${parsed.month}월 ${dayStr}(${fmt(targetPeriods[0])}분)`;
       }
     }
     if (execBtnText) {
       if (targetPeriods.length > 1) {
-        execBtnText.textContent = `입금처리 (${parsed.roomNumber}호 ${targetPeriods[0].month}월~${targetPeriods[targetPeriods.length - 1].month}월 ${targetPeriods.length}개월분)`;
+        execBtnText.textContent = `입금처리 (${parsed.roomNumber}호 ${fmt(targetPeriods[0])}~${fmt(targetPeriods[targetPeriods.length - 1])} ${targetPeriods.length}개월분)`;
       } else if (targetPeriods[0].isOverdue) {
-        execBtnText.textContent = `입금처리 (${parsed.roomNumber}호 ${targetPeriods[0].month}월 체납분)`;
+        execBtnText.textContent = `입금처리 (${parsed.roomNumber}호 ${fmt(targetPeriods[0])} 체납분)`;
       } else if (targetPeriods[0].isAdvance) {
-        execBtnText.textContent = `입금처리 (${parsed.roomNumber}호 ${targetPeriods[0].month}월분 선납)`;
+        execBtnText.textContent = `입금처리 (${parsed.roomNumber}호 ${fmt(targetPeriods[0])}분 선납)`;
       } else {
-        execBtnText.textContent = `입금처리 (${parsed.roomNumber}호 ${targetPeriods[0].month}월분)`;
+        execBtnText.textContent = `입금처리 (${parsed.roomNumber}호 ${fmt(targetPeriods[0])}분)`;
       }
     }
     if (execBtn) {
@@ -6692,26 +6698,27 @@ function onSmsDetectedRoomChange() {
       `<strong>${rNum}호 (${tenantName})</strong>는 현재 체납/미납 회차가 없는 완납 상태입니다.<br>이중입금 또는 과오납 여부를 확인하시거나, 과거/특수 납부는 <strong>[과거납부내역]</strong>에서 수동으로 확인해주세요.`
     );
   } else {
+    const fmt = (p) => `${p.year !== currentYear ? p.year + '년 ' : ''}${p.month}월`;
     if (dateSpan) {
       if (targetPeriods.length > 1) {
-        dateSpan.textContent = `${depMonth}월 (${targetPeriods.map(p => p.month + '월').join(', ')}분 ${targetPeriods.length}개월 분할)`;
+        dateSpan.textContent = `${depMonth}월 (${targetPeriods.map(fmt).join(', ')}분 ${targetPeriods.length}개월 분할)`;
       } else if (targetPeriods[0].isOverdue) {
-        dateSpan.textContent = `${depMonth}월 (${targetPeriods[0].month}월 체납분 충당)`;
+        dateSpan.textContent = `${depMonth}월 (${fmt(targetPeriods[0])} 체납분 충당)`;
       } else if (targetPeriods[0].isAdvance) {
-        dateSpan.textContent = `${depMonth}월 (${targetPeriods[0].month}월분 선납)`;
+        dateSpan.textContent = `${depMonth}월 (${fmt(targetPeriods[0])}분 선납)`;
       } else {
-        dateSpan.textContent = `${depMonth}월 (${targetPeriods[0].month}월분)`;
+        dateSpan.textContent = `${depMonth}월 (${fmt(targetPeriods[0])}분)`;
       }
     }
     if (execBtnText) {
       if (targetPeriods.length > 1) {
-        execBtnText.textContent = `입금처리 (${rNum}호 ${targetPeriods[0].month}월~${targetPeriods[targetPeriods.length - 1].month}월 ${targetPeriods.length}개월분)`;
+        execBtnText.textContent = `입금처리 (${rNum}호 ${fmt(targetPeriods[0])}~${fmt(targetPeriods[targetPeriods.length - 1])} ${targetPeriods.length}개월분)`;
       } else if (targetPeriods[0].isOverdue) {
-        execBtnText.textContent = `입금처리 (${rNum}호 ${targetPeriods[0].month}월 체납분)`;
+        execBtnText.textContent = `입금처리 (${rNum}호 ${fmt(targetPeriods[0])} 체납분)`;
       } else if (targetPeriods[0].isAdvance) {
-        execBtnText.textContent = `입금처리 (${rNum}호 ${targetPeriods[0].month}월분 선납)`;
+        execBtnText.textContent = `입금처리 (${rNum}호 ${fmt(targetPeriods[0])}분 선납)`;
       } else {
-        execBtnText.textContent = `입금처리 (${rNum}호 ${targetPeriods[0].month}월분)`;
+        execBtnText.textContent = `입금처리 (${rNum}호 ${fmt(targetPeriods[0])}분)`;
       }
     }
     if (execBtn) {
