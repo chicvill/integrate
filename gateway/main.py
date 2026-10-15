@@ -65,7 +65,7 @@ from apps.videoBooth.backend.routers import videobooth_router
 from apps.grammer.backend.routers.grammer_router import router as grammer_router
 from apps.files.backend.routers import files_router
 from apps.rent.backend.routers.main_router import router as rent_router
-from apps.deployer.backend.routers.distro_router import router as deployer_router
+from apps.deployer.backend.routers.distro_router import router as deployer_router, get_one_click_install_script, download_package
 from shared.core.base_database import Base, get_database_service
 from apps.YTDownloader.backend.db import models as yt_models
 from shared.monitoring.router import router as monitoring_router
@@ -231,6 +231,8 @@ app.include_router(rent_router, prefix="/api/rent", tags=["원룸 임차료 관�
 
 # 13. 솔루션 분리 배포 & 패키징 센터 (Deployer & Distro Studio)
 app.include_router(deployer_router, prefix="/api/deployer", tags=["솔루션 배포 & 패키징 센터"])
+app.add_api_route("/install/{app_id}", get_one_click_install_script, methods=["GET"], include_in_schema=False)
+app.add_api_route("/download/{filename}", download_package, methods=["GET"], include_in_schema=False)
 
 
 # ── 원본 레거시 앱 API 호환 라우팅 (prefix 생략 호환용) ──
@@ -411,6 +413,13 @@ if os.path.exists(media_storage_dir):
 
 
 
+
+
+# ── 원클릭 무인 자동 인스톨러 스크립트 엔드포인트 ──
+@app.get("/install/{app_id}", tags=["솔루션 배포 & 패키징 센터"])
+async def root_quick_install_alias(app_id: str):
+    from apps.deployer.backend.routers.distro_router import get_one_click_install_script
+    return await get_one_click_install_script(app_id)
 
 
 # ─── 메인 웹 대시보드 포털 (GET /) ──────────────────────
