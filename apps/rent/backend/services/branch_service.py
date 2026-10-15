@@ -163,6 +163,92 @@ class BranchService:
             "message": f"'{branch_name}' 부동산과 관련 데이터가 성공적으로 삭제되었습니다."
         }
 
+    def reset_branch_data(self, db: Session, branch_id: str, new_branch_name: Optional[str] = None) -> Dict[str, Any]:
+        """특정 부동산의 입주자/수납/지출/이력 데이터를 초기화하여 깨끗한 공실 상태로 리셋"""
+        canon_id = self.normalize_branch_id(branch_id)
+        b = self.get_branch(db, canon_id)
+        if not b:
+            return {"success": False, "message": "초기화할 부동산 정보를 찾을 수 없습니다."}
+
+        # 1. 수납, 지출, 퇴실이력 완전 삭제
+        db.query(RentPayment).filter(RentPayment.branch_id == canon_id).delete(synchronize_session=False)
+        db.query(RentExpense).filter(RentExpense.branch_id == canon_id).delete(synchronize_session=False)
+        db.query(RentTenantHistory).filter(RentTenantHistory.branch_id == canon_id).delete(synchronize_session=False)
+
+        # 2. 모든 호실 공실화 (호실 번호는 보존, 입주자/연락처/임대조건 초기화)
+        rooms = db.query(RentRoom).filter(RentRoom.branch_id == canon_id).all()
+        for r in rooms:
+            r.name = ""
+            r.phone = ""
+            r.deposit = 0
+            r.rent = 0
+            r.maintenance = 0
+            r.pay_day = 25
+            r.start_date = None
+            r.end_date = None
+            r.move_out = False
+            r.move_out_date = None
+            r.note = ""
+
+        # 3. 건물명 변경 요청이 있으면 반영
+        if new_branch_name and new_branch_name.strip():
+            b.name = new_branch_name.strip()
+
+        db.commit()
+        return {
+            "success": True,
+            "branch_id": canon_id,
+            "branch_name": b.name,
+            "total_rooms": len(rooms),
+            "message": f"'{b.name}' 부동산의 모든 수납 장부와 임차인 정보가 초기화(공실화)되었습니다."
+        }
+
+    def factory_reset(self, db: Session, new_building_name: str = "새로운 임대건물 (29개실)") -> Dict[str, Any]:
+        """독립 서버 전산 공장 초기화 (테스트 데이터 완전 청소 후 백지 상태로 리셋)"""
+        # 모든 장부 및 이력 일괄 삭제
+        db.query(RentPayment).delete(synchronize_session=False)
+        db.query(RentExpense).delete(synchronize_session=False)
+        db.query(RentTenantHistory).delete(synchronize_session=False)
+
+        # 서브 지점 삭제 (main만 보존)
+        db.query(RentBranch).filter(RentBranch.branch_id != "main").delete(synchronize_session=False)
+        main_b = db.query(RentBranch).filter(RentBranch.branch_id == "main").first()
+        if main_b:
+            main_b.name = new_building_name
+        else:
+            main_b = RentBranch(
+                branch_id="main",
+                name=new_building_name,
+                contact_phone="010-0000-0000",
+                address="주소 미지정",
+                fee_plan="원룸 프리미엄 29실형",
+                monthly_fee=0,
+                billing_status="PAID",
+                is_active=True
+            )
+            db.add(main_b)
+
+        # 메인 29개실 공실화
+        rooms = db.query(RentRoom).filter(RentRoom.branch_id == "main").all()
+        for r in rooms:
+            r.name = ""
+            r.phone = ""
+            r.deposit = 0
+            r.rent = 0
+            r.maintenance = 0
+            r.pay_day = 25
+            r.start_date = None
+            r.end_date = None
+            r.move_out = False
+            r.move_out_date = None
+            r.note = ""
+
+        db.commit()
+        return {
+            "success": True,
+            "message": f"시스템이 성공적으로 초기화되었습니다. ('{new_building_name}' 29개실 공실 상태)"
+        }
+
 
 # 싱글톤 인스턴스
 branch_service = BranchService()

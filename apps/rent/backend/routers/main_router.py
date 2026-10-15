@@ -109,6 +109,32 @@ async def delete_branch(branch_id: str, db: Session = Depends(get_db)):
     return res
 
 
+@router.post("/branches/{branch_id}/reset")
+async def reset_branch_data(
+    branch_id: str,
+    payload: Dict[str, Any] = Body(default={}),
+    db: Session = Depends(get_db)
+):
+    """지점 입주자/장부 데이터 일괄 초기화 (깨끗한 공실 상태 리셋 및 건물명 변경)"""
+    new_name = payload.get("new_name") if isinstance(payload, dict) else None
+    res = service.branch_service.reset_branch_data(db, branch_id=branch_id, new_branch_name=new_name)
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res.get("message"))
+    return res
+
+
+@router.post("/system/factory-reset")
+async def system_factory_reset(
+    payload: Dict[str, Any] = Body(default={}),
+    db: Session = Depends(get_db)
+):
+    """시스템 공장 초기화 (테스트 데이터 완전 청소 후 신규 건물 백지 상태 전환)"""
+    building_name = payload.get("building_name", "새로운 임대건물 (29개실)")
+    res = service.branch_service.factory_reset(db, new_building_name=building_name)
+    return res
+
+
+
 # ── 호실 및 임대차 계약 라우트 ──
 @router.get("/rooms", response_model=RoomListResponse)
 async def get_all_rooms(

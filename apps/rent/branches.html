@@ -339,10 +339,18 @@
           </select>
         </div>
 
-        <div class="action-buttons shrink-0">
+        <div class="action-buttons shrink-0 flex items-center gap-2 flex-wrap">
+          <button id="btnImportBuilding" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-800 hover:bg-surface-750 text-slate-200 border border-slate-700/80 font-semibold text-xs transition cursor-pointer active:scale-95 shadow-sm" title="외부에서 추출한 건물 JSON 데이터를 현재 서버에 복원합니다">
+            <span>📥</span>
+            <span>데이터 가져오기(복원)</span>
+          </button>
+          <button id="btnResetCleanBuilding" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 border border-amber-800/60 font-semibold text-xs transition cursor-pointer active:scale-95 shadow-sm" title="100% 공실 상태의 신규 건물로 완전 클린 초기화합니다">
+            <span>✨</span>
+            <span>신규 클린 건물(초기화)</span>
+          </button>
           <button id="openNewBranchBtn" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-cyan-950/50 transition cursor-pointer active:scale-95">
             <span>➕</span>
-            <span>신규 매장(가맹점) 등록</span>
+            <span>신규 매장 등록</span>
           </button>
         </div>
       </section>

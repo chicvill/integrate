@@ -207,6 +207,23 @@ APP_REGISTRY: Dict[str, Dict[str, Any]] = {
             "A4 인쇄 최적화 운영 매뉴얼",
         ],
     },
+    "deployer": {
+        "app_id": "deployer",
+        "app_name": "솔루션 배포 & 패키징 센터",
+        "icon": "📦",
+        "category": "infrastructure",
+        "description": "원하는 솔루션 앱과 데이터를 선택하여 고객 전용 클라우드/로컬 PC 독립 패키지(.ZIP) 자동 생성",
+        "backend_port": 9016,
+        "route_path": "/deployer",
+        "modules": ["core", "utils"],
+        "features": [
+            "단일/다중(Multi-App) 솔루션 번들링",
+            "Linux Docker / Windows PC 온프레미스 선택",
+            "클린 설치 vs 실데이터 이관 vs 업그레이드 패치",
+            "원클릭 ZIP 생성 및 다운로드",
+            "서버 자동 설치/업그레이드 스크립트 주입"
+        ],
+    },
 }
 
 

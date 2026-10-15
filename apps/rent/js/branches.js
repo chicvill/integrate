@@ -120,6 +120,9 @@ function render() {
           <a href="./index.html?branch=${encodeURIComponent(b.branch_id)}" class="btn btn-primary btn-xs" style="text-decoration: none;">
             관제
           </a>
+          <button class="btn btn-secondary btn-xs export-btn" title="이 건물의 모든 계약/장부/지출 데이터를 JSON으로 추출하여 새 서버로 전송">
+            💾 추출
+          </button>
           <button class="btn btn-secondary btn-xs edit-btn">수정</button>
           <button class="btn btn-danger btn-xs delete-btn">삭제</button>
         </div>
@@ -127,6 +130,7 @@ function render() {
     `;
 
     tr.querySelector('.toggle-pay-btn')?.addEventListener('click', () => handleTogglePayment(b));
+    tr.querySelector('.export-btn')?.addEventListener('click', () => handleExportBuilding(b));
     tr.querySelector('.edit-btn')?.addEventListener('click', () => openBranchModal(b));
     tr.querySelector('.delete-btn')?.addEventListener('click', () => handleDeleteBranch(b));
 
@@ -163,6 +167,104 @@ async function handleDeleteBranch(branch) {
     showToast('매장 삭제 실패: ' + err.message, 'error');
   }
 }
+
+/**
+ * 특정 건물 데이터 패키지 JSON 다운로드 추출 (Export)
+ */
+async function handleExportBuilding(branch) {
+  try {
+    showToast(`'${branch.name}' 건물 전체 데이터 패키지 추출 중...`, 'info');
+    const res = await fetch(`${API_BASE}/buildings/${encodeURIComponent(branch.branch_id)}/export`);
+    if (!res.ok) throw new Error(`추출 실패 (HTTP ${res.status})`);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const safeName = (branch.name || branch.branch_id).replace(/[^a-zA-Z0-9가-힣]/g, '_');
+    a.download = `building_${safeName}_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast(`🎉 '${branch.name}' 데이터 추출 완료! (JSON 파일 다운로드됨)`, 'success');
+  } catch (err) {
+    showToast('데이터 추출 오류: ' + err.message, 'error');
+  }
+}
+
+/**
+ * 외부에서 추출한 건물 JSON 데이터를 현재 서버에 복원 (Import)
+ */
+function handleImportBuildingModal() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      showToast('건물 데이터 파일 분석 중...', 'info');
+      const text = await file.text();
+      const jsonData = JSON.parse(text);
+
+      const targetBranchId = prompt('가져온 데이터를 적용할 건물 ID를 입력하세요 (새 서버 기본값은 main):', 'main');
+      if (!targetBranchId) return;
+
+      if (!confirm(`주의: '${targetBranchId}' 건물의 기존 호실 및 장부 데이터가 파일 내용으로 완전 대체됩니다. 진행하시겠습니까?`)) {
+        return;
+      }
+
+      showToast('서버로 데이터 전송 및 복원 중...', 'info');
+      const res = await fetch(`${API_BASE}/buildings/${encodeURIComponent(targetBranchId)}/import`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(jsonData)
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || `HTTP ${res.status}`);
+      }
+
+      const resData = await res.json();
+      showToast(resData.message || '건물 데이터가 성공적으로 복원되었습니다!', 'success');
+      await loadBranches();
+    } catch (err) {
+      showToast('데이터 복원 실패: ' + err.message, 'error');
+    }
+  };
+  input.click();
+}
+
+/**
+ * 100% 공실 상태의 신규 건물로 완전 클린 초기화 (Clean Reset)
+ */
+async function handleResetCleanBuilding() {
+  const newName = prompt('신규 설치할 건물의 이름을 입력하세요:', '시크빌 신규 빌딩');
+  if (!newName) return;
+
+  const targetBranchId = prompt('초기화할 건물 ID를 입력하세요 (새 서버는 main 권장):', 'main');
+  if (!targetBranchId) return;
+
+  if (!confirm(`경고: '${targetBranchId}' (${newName}) 건물의 모든 계약 및 장부를 완전히 비우고 100% 공실 상태로 초기화합니다. 계속하시겠습니까?`)) {
+    return;
+  }
+
+  try {
+    showToast(`'${newName}' 건물 100% 공실 클린 초기화 중...`, 'info');
+    const res = await fetch(`${API_BASE}/buildings/${encodeURIComponent(targetBranchId)}/reset?new_name=${encodeURIComponent(newName)}`, {
+      method: 'POST'
+    });
+    if (!res.ok) throw new Error(`초기화 실패 (HTTP ${res.status})`);
+    const resData = await res.json();
+    showToast(resData.message || '신규 건물 클린 초기화 완료!', 'success');
+    await loadBranches();
+  } catch (err) {
+    showToast('초기화 오류: ' + err.message, 'error');
+  }
+}
+
 
 function openBranchModal(branch = null) {
   const modal = document.getElementById('branchModal');
@@ -530,6 +632,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // 모달 버튼들
   document.getElementById('openNewBranchBtn')?.addEventListener('click', () => openBranchModal(null));
   document.getElementById('emptyNewBranchBtn')?.addEventListener('click', () => openBranchModal(null));
+  document.getElementById('btnImportBuilding')?.addEventListener('click', handleImportBuildingModal);
+  document.getElementById('btnResetCleanBuilding')?.addEventListener('click', handleResetCleanBuilding);
   document.getElementById('closeBranchModalBtn')?.addEventListener('click', closeBranchModal);
   document.getElementById('cancelBranchModalBtn')?.addEventListener('click', closeBranchModal);
   document.getElementById('branchForm')?.addEventListener('submit', handleSaveBranch);
