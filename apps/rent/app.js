@@ -124,8 +124,24 @@ import {
   calculateDepositTargetPeriods,
   updateSmsAlert
 } from './js/modals.js?v=2.0';
+import {
+  startVoiceRecognition,
+  stopVoiceRecognition,
+  openVoiceModal,
+  closeVoiceModal,
+  confirmVoicePayment,
+  cancelVoicePayment,
+  speakText
+} from './js/voice.js?v=1.0';
 
 // ── 전역 윈도우 핸들러 바인딩 (인라인 HTML 호출 호환) ──
+window.startVoiceRecognition = startVoiceRecognition;
+window.stopVoiceRecognition = stopVoiceRecognition;
+window.openVoiceModal = openVoiceModal;
+window.closeVoiceModal = closeVoiceModal;
+window.confirmVoicePayment = confirmVoicePayment;
+window.cancelVoicePayment = cancelVoicePayment;
+window.speakText = speakText;
 window.calculateDepositTargetPeriods = calculateDepositTargetPeriods;
 window.updateSmsAlert = updateSmsAlert;
 window.openSmsDepositModal = openSmsDepositModal;

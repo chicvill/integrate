@@ -16377,6 +16377,626 @@ function closeSequentialSmsModal() {
 
 
 /**
+ * apps/rent/frontend/js/voice.js
+ * 원룸 임차료 관리 시스템 음성인식(STT) 및 말로 입력 컨트롤러.
+ * Web Speech API 기반 한국어 음성 명령 파싱 및 입금 2단계 대화형 승인 처리.
+ */
+
+
+
+
+
+// 2단계 승인 대기 상태 저장 객체
+let pendingVoicePayment = null;
+
+// 음성 합성(TTS) 지원 (콜백 지원)
+function speakText(text, onEndCallback = null) {
+  if (!('speechSynthesis' in window)) {
+    if (onEndCallback) onEndCallback();
+    return;
+  }
+  try {
+    window.speechSynthesis.cancel(); // 이전 재생 취소
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ko-KR';
+    utterance.rate = 1.05;
+    utterance.pitch = 1.0;
+    
+    if (onEndCallback) {
+      utterance.onend = () => { onEndCallback(); };
+      utterance.onerror = () => { onEndCallback(); };
+    }
+    
+    window.speechSynthesis.speak(utterance);
+  } catch (e) {
+    console.warn("TTS 실행 실패:", e);
+    if (onEndCallback) onEndCallback();
+  }
+}
+
+// 한글 말소리 숫자를 아라비아 숫자로 변환
+function parseKoreanNumber(str) {
+  if (!str) return null;
+  const clean = str.replace(/\s+/g, '');
+  
+  // 이미 아라비아 숫자가 포함된 경우 (예: "203", "203호")
+  const numMatch = clean.match(/(\d{3})/);
+  if (numMatch) {
+    return parseInt(numMatch[1], 10);
+  }
+
+  // 한글 숫자 매핑 (예: "이백삼", "칠백일", "백일")
+  const digitMap = { '영': 0, '공': 0, '일': 1, '이': 2, '삼': 3, '사': 4, '오': 5, '육': 6, '칠': 7, '팔': 8, '구': 9 };
+  
+  // 백단위 패턴: (일|이|삼|사|오|육|칠)?백 (영|공|일|이|삼|사|오|육|칠|팔|구)? (일|이|삼|사|오)?
+  const baekMatch = clean.match(/(일|이|삼|사|오|육|칠)?백(.*)/);
+  if (baekMatch) {
+    const hDigit = baekMatch[1] ? digitMap[baekMatch[1]] : 1;
+    let rest = baekMatch[2] || '';
+    rest = rest.replace(/호.*/, ''); // "호" 이후 제거
+    
+    let tDigit = 0;
+    let uDigit = 0;
+    
+    if (rest.includes('십')) {
+      const parts = rest.split('십');
+      tDigit = parts[0] ? (digitMap[parts[0]] || 1) : 1;
+      uDigit = parts[1] ? (digitMap[parts[1]] || 0) : 0;
+    } else if (rest.length === 2) {
+      tDigit = digitMap[rest[0]] || 0;
+      uDigit = digitMap[rest[1]] || 0;
+    } else if (rest.length === 1) {
+      uDigit = digitMap[rest[0]] || 0;
+    }
+    
+    const val = (hDigit * 100) + (tDigit * 10) + uDigit;
+    if (val >= 101 && val <= 705) return val;
+  }
+  
+  return null;
+}
+
+/**
+ * 특정 호실의 전입 이후 가장 오래된 미납 회차 탐색
+ */
+function findOldestUnpaidPeriod(roomNumber) {
+  const room = state.rooms[roomNumber];
+  if (!room) {
+    return { error: `${roomNumber}호 정보를 찾을 수 없습니다.` };
+  }
+  if (!room.name) {
+    return { error: `${roomNumber}호는 현재 세입자가 없는 공실입니다.` };
+  }
+
+  // 1. 전입일 파싱 (YYYY-MM-DD 등)
+  let moveInYear = 0;
+  let moveInMonth = 0;
+  if (room.move_in) {
+    const m = String(room.move_in).match(/(\d{4})[-./년\s]*(\d{1,2})/);
+    if (m) {
+      moveInYear = parseInt(m[1], 10);
+      moveInMonth = parseInt(m[2], 10);
+    }
+  }
+
+  // 2. 납부 내역 정규화 및 수집 (복합키/단순키 중복 제거)
+  const paymentsList = [];
+  const seen = new Set();
+  if (room.payments) {
+    for (const p of Object.values(room.payments)) {
+      if (!p || typeof p !== 'object' || !p.year || !p.month) continue;
+      const key = `${p.year}-${p.month}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        paymentsList.push(p);
+      }
+    }
+  }
+
+  // 과거부터 최신순으로 정렬 (오름차순)
+  paymentsList.sort((a, b) => (a.year - b.year) || (a.month - b.month));
+
+  // 3. 전입일 이후 & 미납 회차 필터링
+  const unpaidList = paymentsList.filter(p => {
+    // 전입일 이전 회차는 전 세입자 영역이므로 제외
+    if (moveInYear > 0) {
+      if (p.year < moveInYear || (p.year === moveInYear && p.month < moveInMonth)) {
+        return false;
+      }
+    }
+    // 미납 상태인 것만
+    return !p.paid;
+  });
+
+  if (unpaidList.length === 0) {
+    return {
+      allPaid: true,
+      room: room,
+      message: `${roomNumber}호 (${room.name})는 이미 전액 완납되어 미납 내역이 없습니다.`
+    };
+  }
+
+  const oldest = unpaidList[0];
+  const isMoveInMonth = (moveInYear > 0 && oldest.year === moveInYear && oldest.month === moveInMonth);
+  const isPostpaid = (room.pay_timing === "후불" || !room.pay_timing);
+  const totalRent = (room.lease_type === "전세" ? 0 : (room.rent || 0)) + (room.maintenance || 0);
+
+  return {
+    success: true,
+    target: oldest,
+    room: room,
+    isMoveInMonth: isMoveInMonth,
+    isPostpaid: isPostpaid,
+    unpaidCount: unpaidList.length,
+    totalRent: totalRent
+  };
+}
+
+// 음성인식 인스턴스 싱글톤
+let recognition = null;
+let isListening = false;
+let isProcessingVoice = false;
+
+function initVoiceRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    console.warn("이 브라우저는 Web Speech API를 지원하지 않습니다.");
+    return null;
+  }
+
+  const rec = new SpeechRecognition();
+  rec.lang = 'ko-KR';
+  rec.continuous = false; // 단발 명령 위주
+  rec.interimResults = true;
+  rec.maxAlternatives = 1;
+
+  rec.onstart = () => {
+    isListening = true;
+    updateVoiceUIState('listening');
+  };
+
+  rec.onresult = (event) => {
+    let interimTranscript = '';
+    let finalTranscript = '';
+
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+      if (event.results[i].isFinal) {
+        finalTranscript += event.results[i][0].transcript;
+      } else {
+        interimTranscript += event.results[i][0].transcript;
+      }
+    }
+
+    const displayText = finalTranscript || interimTranscript;
+    updateVoiceTranscript(displayText);
+
+    if (finalTranscript) {
+      handleVoiceCommand(finalTranscript.trim());
+    }
+  };
+
+  rec.onerror = (event) => {
+    console.warn("음성 인식 오류:", event.error);
+    isListening = false;
+    if (event.error !== 'no-speech') {
+      updateVoiceUIState('error', `음성 인식 오류 (${event.error})`);
+    } else {
+      updateVoiceUIState('idle');
+    }
+  };
+
+  rec.onend = () => {
+    isListening = false;
+    if (!isProcessingVoice) {
+      updateVoiceUIState('idle');
+    }
+  };
+
+  return rec;
+}
+
+function startVoiceRecognition() {
+  if (!recognition) {
+    recognition = initVoiceRecognition();
+  }
+
+  if (!recognition) {
+    alert("현재 브라우저에서는 음성 인식을 지원하지 않거나 마이크 권한이 차단되었습니다.\n(Chrome 또는 Safari 최신 버전 및 HTTPS/localhost 환경 권장)");
+    return;
+  }
+
+  openVoiceModal();
+  try {
+    recognition.start();
+  } catch (e) {
+    console.warn("음성 인식 이미 동작 중이거나 시작 실패:", e);
+  }
+}
+
+function resumeListening() {
+  if (!recognition) {
+    recognition = initVoiceRecognition();
+  }
+  if (recognition) {
+    try { recognition.stop(); } catch (e) {}
+    setTimeout(() => {
+      try {
+        recognition.start();
+        updateVoiceUIState('listening');
+      } catch (e) {
+        console.warn("마이크 재개 대기 중:", e);
+      }
+    }, 250);
+  }
+}
+
+function stopVoiceRecognition() {
+  if (recognition && isListening) {
+    try { recognition.stop(); } catch (e) {}
+  }
+  isListening = false;
+  closeVoiceModal();
+}
+
+/**
+ * 인식된 음성 문장 처리 핸들러 (대화형 2단계 승인 지원)
+ */
+async function handleVoiceCommand(rawText) {
+  if (isProcessingVoice) return;
+  isProcessingVoice = true;
+
+  try {
+    updateVoiceTranscript(`🗣️ "${rawText}" 분석 중...`);
+
+    // ── 1. 승인 대기 중(Pending)일 때: 예/응/ok/yes 또는 아니오/취소 판정 ──
+    if (pendingVoicePayment) {
+      const clean = rawText.replace(/\s+/g, '').toLowerCase();
+
+      // 긍정 확인 패턴: 예, 네, 응, 어, 그래, 맞아, 오케이, ok, yes, y, 진행, 수납, 입금, 확인, 처리
+      const isAffirmative = /^(예|네|응|어|그래|맞아|오케이|ok|yes|y|진행|수납|입금|확인|처리|해줘|할래)/i.test(clean) ||
+                            /예|네|응|오케이|ok|yes|진행|확인|수납/i.test(clean);
+
+      // 부정 취소 패턴: 아니, 아니오, 아니요, 취소, 싫어, no, n, 하지마, 그만, 멈춰
+      const isNegative = /^(아니|아니오|아니요|취소|싫어|no|n|하지마|그만|멈춰)/i.test(clean) ||
+                         /아니|취소|no|하지마/i.test(clean);
+
+      if (isAffirmative) {
+        await confirmVoicePayment();
+        isProcessingVoice = false;
+        return;
+      } else if (isNegative) {
+        cancelVoicePayment();
+        isProcessingVoice = false;
+        return;
+      } else {
+        // 호실 번호가 새로 들어온 경우 신규 명령으로 대체
+        const newRoomNum = parseKoreanNumber(rawText);
+        if (newRoomNum && /입금|수납/.test(rawText)) {
+          pendingVoicePayment = null;
+          await executeVoicePayment(newRoomNum);
+          isProcessingVoice = false;
+          return;
+        }
+
+        const retryMsg = "확인을 위해 '예' 또는 '아니오'로 말씀하시거나 확인 버튼을 눌러주세요.";
+        updateVoiceStatus('warning', retryMsg);
+        speakText(retryMsg, () => {
+          resumeListening();
+        });
+        isProcessingVoice = false;
+        return;
+      }
+    }
+
+    // ── 2. 신규 명령어 파싱 ──
+    const roomNumber = parseKoreanNumber(rawText);
+
+    if (!roomNumber) {
+      const msg = `호실 번호를 인식하지 못했습니다. ("203호 입금" 처럼 말씀해주세요)`;
+      updateVoiceStatus('warning', msg);
+      speakText(msg, () => {
+        resumeListening();
+      });
+      isProcessingVoice = false;
+      return;
+    }
+
+    // 명령어 유형 분석 (입금 / 조회 / 취소)
+    const isPayment = /입금|수납|완납|납부|넣었/.test(rawText);
+    const isCancel = /취소|미납/.test(rawText);
+
+    if (isPayment) {
+      // 2단계 승인 질문 시작
+      await executeVoicePayment(roomNumber);
+    } else if (isCancel) {
+      const msg = `${roomNumber}호 납부 취소는 안전을 위해 관리자 화면에서 직접 처리해주세요.`;
+      updateVoiceStatus('warning', msg);
+      speakText(msg);
+      selectRoom(roomNumber);
+    } else {
+      // 단순 호실 선택/조회
+      selectRoom(roomNumber);
+      const room = state.rooms[roomNumber];
+      const name = (room && room.name) ? room.name : "공실";
+      const msg = `${roomNumber}호 (${name}) 카드를 열었습니다.`;
+      updateVoiceStatus('success', msg);
+      speakText(msg);
+      setTimeout(() => closeVoiceModal(), 1500);
+    }
+  } catch (err) {
+    updateVoiceStatus('error', "명령 처리 중 오류: " + err.message);
+  } finally {
+    isProcessingVoice = false;
+  }
+}
+
+/**
+ * "203호 입금" 발화 시:
+ * 전입 이후 가장 오래된 미납 회차 1건을 탐색하고 사용자에게 승인 확인(y/n)을 질의
+ */
+async function executeVoicePayment(roomNumber) {
+  const result = findOldestUnpaidPeriod(roomNumber);
+
+  if (result.error) {
+    updateVoiceStatus('error', result.error);
+    speakText(result.error);
+    return;
+  }
+
+  if (result.allPaid) {
+    updateVoiceStatus('info', result.message);
+    speakText(`${roomNumber}호는 이미 전액 완납되어 미납 내역이 없습니다.`);
+    selectRoom(roomNumber);
+    setTimeout(() => closeVoiceModal(), 2000);
+    return;
+  }
+
+  const { target, room, isMoveInMonth, isPostpaid, unpaidCount, totalRent } = result;
+  const payYear = target.year;
+  const payMonth = target.month;
+  const tenantName = room.name;
+  const rentFormatted = totalRent.toLocaleString();
+
+  // 대기 상태(pendingVoicePayment) 보관
+  pendingVoicePayment = {
+    roomNumber,
+    year: payYear,
+    month: payMonth,
+    tenantName,
+    totalRent,
+    unpaidCount,
+    isMoveInMonth,
+    isPostpaid,
+    room,
+    target
+  };
+
+  selectRoom(roomNumber);
+
+  let noticeExtra = "";
+  if (isMoveInMonth && isPostpaid) {
+    noticeExtra = `<div class="text-[10px] text-amber-300 mt-1">⚠️ 입주월 후불 청구 회차입니다.</div>`;
+  }
+
+  // 안내문 구성: '203호 2월분 (350,000원) 수납 처리하시겠습니까? y/n'
+  const promptHtml = `
+    <div class="p-2">
+      <div class="text-xs text-slate-300 font-semibold mb-1">
+        ${tenantName} 님 · 남은 미납 <b class="text-rose-400">${unpaidCount}건</b>
+      </div>
+      <div class="text-sm font-extrabold text-white">
+        🔔 <span class="text-cyan-300 font-mono">${roomNumber}호</span> <span class="text-slate-100">${payMonth}월분</span>
+        <span class="text-emerald-400 font-mono">(${rentFormatted}원)</span>
+      </div>
+      <div class="text-xs text-cyan-200 font-bold mt-1.5">
+        수납 처리하시겠습니까? <span class="text-amber-400 font-mono underline font-black">y/n</span>
+      </div>
+      ${noticeExtra}
+      <div class="text-[10px] text-slate-400 mt-2 bg-slate-900/80 px-2 py-1 rounded-lg border border-slate-700/60">
+        🗣️ <b>'예/응/ok/yes'</b>로 대답하거나 아래 <b>확인 버튼</b>을 누르세요.
+      </div>
+    </div>
+  `;
+
+  updateVoiceStatus('confirm', promptHtml);
+  showVoiceConfirmButtons(true);
+
+  // 음성(TTS)으로 질의 후 자동으로 마이크 재개
+  const ttsQuestion = `${roomNumber}호 ${payMonth}월분 ${totalRent}원 수납 처리하시겠습니까?`;
+  speakText(ttsQuestion, () => {
+    resumeListening();
+  });
+}
+
+/**
+ * 2단계 승인 확정 (사용자가 '예' 또는 확인 버튼 클릭 시)
+ */
+async function confirmVoicePayment() {
+  if (!pendingVoicePayment) return;
+  const { roomNumber, year, month, tenantName, totalRent, unpaidCount, room } = pendingVoicePayment;
+  pendingVoicePayment = null;
+  showVoiceConfirmButtons(false);
+
+  const rentFormatted = totalRent.toLocaleString();
+  const defaultPayDate = `${year}-${String(month).padStart(2, '0')}-10`;
+  const note = `[음성승인] ${year}년 ${month}월분`;
+
+  updateVoiceStatus('success', `⏳ ${roomNumber}호 ${month}월분 (${rentFormatted}원) 수납 승인 처리 중...`);
+
+  try {
+    if (state.isOnline) {
+      const updatedRoom = await apiProcessPayment(
+        roomNumber,
+        month,
+        state.currentBranch,
+        defaultPayDate,
+        note,
+        tenantName,
+        year
+      );
+      state.rooms[roomNumber] = updatedRoom;
+    } else {
+      // 오프라인 폴백
+      if (room.payments) {
+        const pKey = `${year}-${month}`;
+        const payObj = {
+          month: month,
+          year: year,
+          paid: true,
+          paid_date: defaultPayDate,
+          note: note,
+          tenant_name: tenantName,
+          is_previous_tenant: false,
+          rent_amount: room.lease_type === "전세" ? 0 : room.rent,
+          maintenance_amount: room.maintenance
+        };
+        room.payments[month] = payObj;
+        room.payments[pKey] = payObj;
+      }
+    }
+
+    selectRoom(roomNumber);
+    renderAll();
+
+    const successMsg = `✅ ${roomNumber}호 ${tenantName} 님, ${year}년 ${month}월분 (${rentFormatted}원) 수납 완료! (남은 미납: ${unpaidCount - 1}건)`;
+    updateVoiceStatus('success', successMsg);
+    speakText(`${roomNumber}호 ${month}월분 수납 처리가 완료되었습니다.`);
+
+    setTimeout(() => {
+      closeVoiceModal();
+    }, 2500);
+
+  } catch (err) {
+    updateVoiceStatus('error', `수납 처리 실패: ${err.message}`);
+    speakText(`수납 처리에 실패했습니다.`);
+  }
+}
+
+/**
+ * 2단계 승인 거절 / 취소 (사용자가 '아니오' 또는 취소 버튼 클릭 시)
+ */
+function cancelVoicePayment() {
+  if (!pendingVoicePayment) {
+    closeVoiceModal();
+    return;
+  }
+  const { roomNumber, month } = pendingVoicePayment;
+  pendingVoicePayment = null;
+  showVoiceConfirmButtons(false);
+
+  const cancelMsg = `❌ ${roomNumber}호 ${month}월분 수납 처리가 취소되었습니다.`;
+  updateVoiceStatus('warning', cancelMsg);
+  speakText("수납 처리가 취소되었습니다.");
+
+  setTimeout(() => {
+    closeVoiceModal();
+  }, 1800);
+}
+
+// ── UI 제어 헬퍼들 ──
+function openVoiceModal() {
+  const modal = document.getElementById('voiceInputModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    updateVoiceUIState('listening');
+    updateVoiceTranscript('말씀해주세요... (예: "203호 입금", "501호 선택")');
+    updateVoiceStatus('idle', '');
+    showVoiceConfirmButtons(false);
+  }
+}
+
+function closeVoiceModal() {
+  const modal = document.getElementById('voiceInputModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+  if (recognition && isListening) {
+    try { recognition.stop(); } catch (e) {}
+  }
+  pendingVoicePayment = null;
+  showVoiceConfirmButtons(false);
+  isListening = false;
+  isProcessingVoice = false;
+}
+
+function updateVoiceUIState(status, message = '') {
+  const micPulse = document.getElementById('voiceMicPulse');
+  const micStatus = document.getElementById('voiceMicStatus');
+  if (!micPulse || !micStatus) return;
+
+  if (status === 'listening') {
+    micPulse.classList.add('animate-ping', 'bg-rose-500/40');
+    micPulse.classList.remove('bg-cyan-500/30', 'hidden');
+    micStatus.textContent = pendingVoicePayment ? '🎙️ 답변(예/아니오)을 듣고 있습니다...' : '🎙️ 음성을 듣고 있습니다...';
+    micStatus.className = 'text-xs font-bold text-rose-400 animate-pulse';
+  } else if (status === 'idle') {
+    micPulse.classList.remove('animate-ping', 'bg-rose-500/40');
+    micPulse.classList.add('hidden');
+    micStatus.textContent = pendingVoicePayment ? '답변 대기 중 (예 / 아니오 또는 버튼 터치)' : '대기 중 (마이크를 탭하여 다시 말하기)';
+    micStatus.className = 'text-xs font-medium text-slate-400';
+  } else if (status === 'error') {
+    micPulse.classList.add('hidden');
+    micStatus.textContent = message || '음성 인식 대기';
+    micStatus.className = 'text-xs font-semibold text-rose-400';
+  }
+}
+
+function updateVoiceTranscript(text) {
+  const el = document.getElementById('voiceTranscriptText');
+  if (el) el.textContent = text;
+}
+
+function updateVoiceStatus(type, message) {
+  const box = document.getElementById('voiceResultBox');
+  if (!box) return;
+
+  if (!message) {
+    box.classList.add('hidden');
+    return;
+  }
+
+  box.classList.remove('hidden', 'bg-emerald-950/40', 'border-emerald-700/50', 'text-emerald-300', 'bg-rose-950/40', 'border-rose-700/50', 'text-rose-300', 'bg-amber-950/40', 'border-amber-700/50', 'text-amber-300', 'bg-cyan-950/40', 'border-cyan-700/50', 'text-cyan-300', 'bg-indigo-950/50', 'border-indigo-600/60');
+
+  if (type === 'success') {
+    box.classList.add('bg-emerald-950/40', 'border-emerald-700/50', 'text-emerald-300');
+  } else if (type === 'error') {
+    box.classList.add('bg-rose-950/40', 'border-rose-700/50', 'text-rose-300');
+  } else if (type === 'warning') {
+    box.classList.add('bg-amber-950/40', 'border-amber-700/50', 'text-amber-300');
+  } else if (type === 'confirm') {
+    box.classList.add('bg-indigo-950/50', 'border-indigo-600/60');
+  } else {
+    box.classList.add('bg-cyan-950/40', 'border-cyan-700/50', 'text-cyan-300');
+  }
+
+  box.innerHTML = message;
+}
+
+function showVoiceConfirmButtons(show) {
+  const el = document.getElementById('voiceConfirmActions');
+  if (el) {
+    if (show) {
+      el.classList.remove('hidden');
+      el.classList.add('flex');
+    } else {
+      el.classList.add('hidden');
+      el.classList.remove('flex');
+    }
+  }
+}
+
+// 글로벌 바인딩 (HTML onclick용)
+if (typeof window !== 'undefined') {
+  window.startVoiceRecognition = startVoiceRecognition;
+  window.stopVoiceRecognition = stopVoiceRecognition;
+  window.closeVoiceModal = closeVoiceModal;
+  window.confirmVoicePayment = confirmVoicePayment;
+  window.cancelVoicePayment = cancelVoicePayment;
+}
+
+/**
  * apps/rent/frontend/app.js
  * MQnet Canonical SaaS 번들리스 프론트엔드 메인 진입점.
  * 모바일 최적화 및 좌/우 슬라이드 드로어, 다중 부동산 선택, 전출자 1년 보존 지원.
@@ -16386,7 +17006,15 @@ function closeSequentialSmsModal() {
 
 
 
+
 // ── 전역 윈도우 핸들러 바인딩 (인라인 HTML 호출 호환) ──
+window.startVoiceRecognition = startVoiceRecognition;
+window.stopVoiceRecognition = stopVoiceRecognition;
+window.openVoiceModal = openVoiceModal;
+window.closeVoiceModal = closeVoiceModal;
+window.confirmVoicePayment = confirmVoicePayment;
+window.cancelVoicePayment = cancelVoicePayment;
+window.speakText = speakText;
 window.calculateDepositTargetPeriods = calculateDepositTargetPeriods;
 window.updateSmsAlert = updateSmsAlert;
 window.openSmsDepositModal = openSmsDepositModal;

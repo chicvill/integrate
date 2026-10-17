@@ -88,21 +88,26 @@
         </div>
       </div>
 
-      <!-- 2nd Row: Quick Action Bar (지출 등록 / 입금문자 / 만기안내) -->
+      <!-- 2nd Row: Quick Action Bar (지출 등록 / 입금문자 / 만기안내 / 말로입력) -->
       <div class="flex items-center gap-1 pt-0.5 border-t border-slate-800/60">
-        <button type="button" onclick="openExpenseModal()" class="flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 font-bold text-xs transition cursor-pointer shadow-sm active:scale-95 whitespace-nowrap" title="지출 등록">
+        <button type="button" onclick="openExpenseModal()" class="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 font-bold text-xs transition cursor-pointer shadow-sm active:scale-95 whitespace-nowrap" title="지출 등록">
           <span class="text-xs">💰</span>
-          <span>지출 등록</span>
+          <span>지출</span>
         </button>
 
-        <button type="button" onclick="openSmsDepositModal()" class="flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 text-cyan-300 font-bold text-xs transition cursor-pointer shadow-sm active:scale-95 whitespace-nowrap" title="은행 입금 알림 문자 자동 분석 & 영수증 발송">
+        <button type="button" onclick="openSmsDepositModal()" class="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 text-cyan-300 font-bold text-xs transition cursor-pointer shadow-sm active:scale-95 whitespace-nowrap" title="은행 입금 알림 문자 자동 분석 & 영수증 발송">
           <span class="text-xs">📲</span>
           <span>입금문자</span>
         </button>
 
-        <button type="button" id="btnHeaderExpiryNotice" onclick="openExpiryNoticeModal()" class="flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded-xl bg-surface-800/60 hover:bg-surface-700/80 border border-slate-700/70 text-slate-300 font-semibold text-xs transition cursor-pointer shadow-sm active:scale-95 whitespace-nowrap" title="만기 3일·1·3개월 전 전출 의사 확인">
+        <button type="button" id="btnHeaderExpiryNotice" onclick="openExpiryNoticeModal()" class="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 rounded-xl bg-surface-800/60 hover:bg-surface-700/80 border border-slate-700/70 text-slate-300 font-semibold text-xs transition cursor-pointer shadow-sm active:scale-95 whitespace-nowrap" title="만기 3일·1·3개월 전 전출 의사 확인">
           <span class="text-xs">🔔</span>
           <span id="headerExpiryNoticeBadge">만기안내</span>
+        </button>
+
+        <button type="button" onclick="startVoiceRecognition()" class="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/50 text-rose-300 font-bold text-xs transition cursor-pointer shadow-sm active:scale-95 whitespace-nowrap" title="스마트폰/PC 말로 입력 (예: '203호 입금')">
+          <span class="text-xs animate-pulse">🎙️</span>
+          <span>말로입력</span>
         </button>
       </div>
 
@@ -1528,10 +1533,81 @@
     </div>
   </div>
 
+  <!-- ── Floating Action Button: 말로 입력 (STT) ── -->
+  <aside class="fixed bottom-4 right-4 z-40 sm:bottom-6 sm:right-6">
+    <button type="button" onclick="startVoiceRecognition()" class="flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-gradient-to-r from-rose-600 via-pink-600 to-indigo-600 hover:from-rose-500 hover:to-indigo-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-rose-950/60 border border-rose-300/30 transition transform hover:scale-105 active:scale-95 cursor-pointer backdrop-blur" title="말로 입력 (예: '203호 입금')">
+      <span class="relative flex h-3 w-3">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+      </span>
+      <span>🎙️ 말로 입력</span>
+    </button>
+  </aside>
+
+  <!-- ── Voice Input Modal (말로 입력 모달) ── -->
+  <div id="voiceInputModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden items-center justify-center p-3">
+    <div class="bg-surface-900 border border-slate-700/80 w-full max-w-sm rounded-2xl shadow-2xl p-5 text-center relative overflow-hidden">
+      <!-- Close Button -->
+      <button type="button" onclick="closeVoiceModal()" class="absolute top-3.5 right-3.5 text-slate-400 hover:text-white text-base font-bold w-7 h-7 rounded-lg bg-surface-800 flex items-center justify-center cursor-pointer">✕</button>
+
+      <div class="mb-3">
+        <span class="text-xs font-bold text-rose-400 tracking-wider uppercase bg-rose-950/50 border border-rose-800/40 px-2.5 py-0.5 rounded-full">Voice Assistant</span>
+        <h3 class="text-base font-black text-white mt-1.5">🎙️ 말로 입력 (STT)</h3>
+        <p class="text-[11px] text-slate-400 mt-0.5">스마트폰이나 PC 마이크로 편하게 말씀하세요.</p>
+      </div>
+
+      <!-- Mic Animation Container -->
+      <div class="relative w-20 h-20 mx-auto my-3 flex items-center justify-center">
+        <div id="voiceMicPulse" class="absolute inset-0 rounded-full bg-rose-500/30 animate-ping"></div>
+        <button type="button" onclick="startVoiceRecognition()" class="relative z-10 w-16 h-16 rounded-full bg-gradient-to-tr from-rose-600 to-indigo-600 text-white flex items-center justify-center text-2xl shadow-lg shadow-rose-900/50 hover:scale-105 active:scale-95 transition cursor-pointer">
+          🎙️
+        </button>
+      </div>
+
+      <div id="voiceMicStatus" class="text-xs font-bold text-rose-400 animate-pulse mb-2">
+        음성을 듣고 있습니다...
+      </div>
+
+      <!-- Live Transcript Display -->
+      <div class="p-3 rounded-xl bg-surface-950 border border-slate-800 text-left min-h-[60px] flex items-center justify-center text-center mb-3">
+        <p id="voiceTranscriptText" class="text-xs font-semibold text-slate-200">
+          "203호 입금" 또는 "101호 선택" 처럼 말씀해주세요.
+        </p>
+      </div>
+
+      <!-- Dynamic Result / Alert Box -->
+      <div id="voiceResultBox" class="hidden p-2.5 rounded-xl border text-xs font-bold mb-3 leading-snug">
+      </div>
+
+      <!-- 2-Step Confirmation Actions (승인 / 취소 버튼) -->
+      <div id="voiceConfirmActions" class="hidden mb-3 pt-2 border-t border-slate-800/80 items-center gap-2">
+        <button type="button" onclick="cancelVoicePayment()" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 border border-slate-700 font-bold text-xs transition cursor-pointer active:scale-95 flex items-center justify-center gap-1 shadow-sm">
+          <span>❌ 아니오 (No)</span>
+        </button>
+        <button type="button" onclick="confirmVoicePayment()" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs shadow-lg shadow-emerald-950/60 border border-emerald-400/30 transition cursor-pointer active:scale-95 flex items-center justify-center gap-1">
+          <span>✅ 확인 승인 (Yes)</span>
+        </button>
+      </div>
+
+      <!-- Guide Hints -->
+      <div class="text-[10px] text-slate-400 bg-surface-850 p-2 rounded-xl text-left space-y-1 border border-slate-800">
+        <div class="font-bold text-slate-300">💡 음성 대화 예시:</div>
+        <div>• <b>명령:</b> <span class="text-cyan-300">"203호 입금"</span></div>
+        <div>• <b>확인 질문 시:</b> <span class="text-emerald-300">"예 / 응 / ok / yes"</span> 또는 <span class="text-rose-300">"아니오 / 취소"</span></div>
+      </div>
+
+      <div class="mt-4 flex gap-2">
+        <button type="button" onclick="closeVoiceModal()" class="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition cursor-pointer">
+          닫기 (종료)
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- SheetJS Library for Excel (.xlsx, .xls) Parsing -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- Universal Bundle Script -->
-  <script src="./bundle.js?v=5.3"></script>
+  <script src="./bundle.js?v=5.4"></script>
 </body>
 </html>

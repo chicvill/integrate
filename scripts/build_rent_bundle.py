@@ -33,6 +33,7 @@ def build_bundle():
     ui_code = open(os.path.join(FRONTEND_DIR, "js", "ui.js"), "r", encoding="utf-8").read()
     slider_code = open(os.path.join(FRONTEND_DIR, "js", "slider.js"), "r", encoding="utf-8").read()
     modals_code = open(os.path.join(FRONTEND_DIR, "js", "modals.js"), "r", encoding="utf-8").read()
+    voice_code = open(os.path.join(FRONTEND_DIR, "js", "voice.js"), "r", encoding="utf-8").read()
     app_code = open(os.path.join(FRONTEND_DIR, "app.js"), "r", encoding="utf-8").read()
 
     combined = [
@@ -47,6 +48,7 @@ def build_bundle():
         strip_es_syntax(ui_code),
         strip_es_syntax(slider_code),
         strip_es_syntax(modals_code),
+        strip_es_syntax(voice_code),
         strip_es_syntax(app_code),
         "})();"
     ]
