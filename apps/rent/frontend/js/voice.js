@@ -91,8 +91,9 @@ export function parseKoreanNumber(str) {
 
 /**
  * 특정 호실의 전입 이후 가장 오래된 미납 회차 탐색
+ * (후불 입주월 비과세/익월 청구 원칙 적용: 후불 전입월은 구두 입금 대상에서 원천 배제 및 승인 차단)
  */
-export function findOldestUnpaidPeriod(roomNumber) {
+export function findOldestUnpaidPeriod(roomNumber, specificMonth = null) {
   const room = state.rooms[roomNumber];
   if (!room) {
     return { error: `${roomNumber}호 정보를 찾을 수 없습니다.` };
@@ -110,6 +111,18 @@ export function findOldestUnpaidPeriod(roomNumber) {
       moveInYear = parseInt(m[1], 10);
       moveInMonth = parseInt(m[2], 10);
     }
+  }
+
+  const isPostpaid = (room.pay_timing === "후불" || !room.pay_timing);
+
+  // ⚠️ 특정 월(예: 1월)을 명시했을 때, 그것이 후불 입주월인 경우 즉시 승인 차단 반환
+  if (specificMonth !== null && moveInYear > 0 && Number(specificMonth) === moveInMonth && isPostpaid) {
+    return {
+      blockedMoveInPostpaid: true,
+      room: room,
+      moveInMonth: moveInMonth,
+      error: `${roomNumber}호 (${room.name})는 ${moveInMonth}월 전입 세입자(후불)입니다. 후불 익월 납부 원칙에 따라 입주월인 ${moveInMonth}월 입금 처리는 승인되지 않습니다.`
+    };
   }
 
   // 2. 납부 내역 정규화 및 수집 (복합키/단순키 중복 제거)
@@ -131,9 +144,18 @@ export function findOldestUnpaidPeriod(roomNumber) {
 
   // 3. 전입일 이후 & 미납 회차 필터링
   const unpaidList = paymentsList.filter(p => {
+    // 특정 월이 지정된 경우 해당 월만 필터링
+    if (specificMonth !== null && Number(p.month) !== Number(specificMonth)) {
+      return false;
+    }
+
     // 전입일 이전 회차는 전 세입자 영역이므로 제외
     if (moveInYear > 0) {
       if (p.year < moveInYear || (p.year === moveInYear && p.month < moveInMonth)) {
+        return false;
+      }
+      // ⚠️ 후불 입주월 비과세/익월 청구 원칙: 후불인 경우 입주월 자체는 당월 청구/수납 대상이 아니므로 원천 제외
+      if (p.year === moveInYear && p.month === moveInMonth && isPostpaid) {
         return false;
       }
     }
@@ -142,23 +164,39 @@ export function findOldestUnpaidPeriod(roomNumber) {
   });
 
   if (unpaidList.length === 0) {
+    if (specificMonth !== null) {
+      return {
+        allPaid: true,
+        room: room,
+        message: `${roomNumber}호 (${room.name})의 ${specificMonth}월분은 수납 대상 미납 내역이 없거나 이미 완납되었습니다.`
+      };
+    }
     return {
       allPaid: true,
       room: room,
-      message: `${roomNumber}호 (${room.name})는 이미 전액 완납되어 미납 내역이 없습니다.`
+      message: `${roomNumber}호 (${room.name})는 이미 전액 완납되어 미납 내역이 없습니다. (입주월 후불 비과세 제외)`
     };
   }
 
   const oldest = unpaidList[0];
   const isMoveInMonth = (moveInYear > 0 && oldest.year === moveInYear && oldest.month === moveInMonth);
-  const isPostpaid = (room.pay_timing === "후불" || !room.pay_timing);
   const totalRent = (room.lease_type === "전세" ? 0 : (room.rent || 0)) + (room.maintenance || 0);
+
+  // 2중 보호막: 만에 하나 남아있는 후불 입주월인 경우 승인 차단
+  if (isMoveInMonth && isPostpaid) {
+    return {
+      blockedMoveInPostpaid: true,
+      room: room,
+      moveInMonth: moveInMonth,
+      error: `${roomNumber}호 (${room.name})는 ${moveInMonth}월 전입 세입자(후불)이므로 입주월인 ${moveInMonth}월 입금 처리는 승인되지 않습니다.`
+    };
+  }
 
   return {
     success: true,
     target: oldest,
     room: room,
-    isMoveInMonth: isMoveInMonth,
+    isMoveInMonth: false,
     isPostpaid: isPostpaid,
     unpaidCount: unpaidList.length,
     totalRent: totalRent
@@ -603,7 +641,9 @@ export async function handleVoiceCommand(rawText) {
         const newRoomNum = parseKoreanNumber(rawText);
         if (newRoomNum && /입금|수납/.test(rawText)) {
           pendingVoicePayment = null;
-          await executeVoicePayment(newRoomNum);
+          const newMonthMatch = rawText.match(/(\d{1,2})\s*월/);
+          const newMonth = newMonthMatch ? parseInt(newMonthMatch[1], 10) : null;
+          await executeVoicePayment(newRoomNum, newMonth);
           isProcessingVoice = false;
           return;
         }
@@ -621,9 +661,15 @@ export async function handleVoiceCommand(rawText) {
     // ── 2. 번호 기반 구두 명령 파싱 ("1번", "2번", ..., "12번") ──
     const menuNum = parseMenuNumber(rawText);
     const roomNumber = parseKoreanNumber(rawText);
+    const monthMatch = rawText.match(/(\d{1,2})\s*월/);
+    const specificMonth = monthMatch ? parseInt(monthMatch[1], 10) : null;
 
     if (menuNum) {
-      await executeVoiceCommandById(menuNum, roomNumber);
+      if (menuNum === 1) {
+        await executeVoicePayment(roomNumber, specificMonth);
+      } else {
+        await executeVoiceCommandById(menuNum, roomNumber);
+      }
       isProcessingVoice = false;
       return;
     }
@@ -631,7 +677,7 @@ export async function handleVoiceCommand(rawText) {
     // ── 3. 키워드 기반 자연어 구두 명령 파싱 ──
     // 1. 수납 / 입금
     if (/수납|입금|완납|납부|넣었/.test(rawText)) {
-      await executeVoiceCommandById(1, roomNumber);
+      await executeVoicePayment(roomNumber, specificMonth);
       isProcessingVoice = false;
       return;
     }
@@ -742,8 +788,16 @@ export async function handleVoiceCommand(rawText) {
  * "203호 입금" 발화 시:
  * 전입 이후 가장 오래된 미납 회차 1건을 탐색하고 사용자에게 승인 확인(y/n)을 질의
  */
-async function executeVoicePayment(roomNumber) {
-  const result = findOldestUnpaidPeriod(roomNumber);
+async function executeVoicePayment(roomNumber, specificMonth = null) {
+  const result = findOldestUnpaidPeriod(roomNumber, specificMonth);
+
+  // ⚠️ 후불 전입월 구두 입금 승인 원천 차단
+  if (result.blockedMoveInPostpaid) {
+    updateVoiceStatus('warning', `⚠️ ${result.error}`);
+    speakText(`${roomNumber}호는 전입월 후불 비과세 대상이므로 입금 처리가 승인되지 않습니다.`);
+    selectRoom(roomNumber);
+    return;
+  }
 
   if (result.error) {
     updateVoiceStatus('error', result.error);
@@ -760,6 +814,16 @@ async function executeVoicePayment(roomNumber) {
   }
 
   const { target, room, isMoveInMonth, isPostpaid, unpaidCount, totalRent } = result;
+
+  // ⚠️ 안전 보호막: 입주월 후불 회차 승인 차단
+  if (isMoveInMonth && isPostpaid) {
+    const blockMsg = `⚠️ ${roomNumber}호 (${room.name})는 ${target.month}월 전입 세입자(후불)이므로 입주월 입금 처리가 승인되지 않습니다. (후불 익월 납부 대상)`;
+    updateVoiceStatus('warning', blockMsg);
+    speakText(`${roomNumber}호는 입주월 후불 대상이므로 입금 처리가 승인되지 않습니다.`);
+    selectRoom(roomNumber);
+    return;
+  }
+
   const payYear = target.year;
   const payMonth = target.month;
   const tenantName = room.name;
@@ -781,11 +845,6 @@ async function executeVoicePayment(roomNumber) {
 
   selectRoom(roomNumber);
 
-  let noticeExtra = "";
-  if (isMoveInMonth && isPostpaid) {
-    noticeExtra = `<div class="text-[10px] text-amber-300 mt-1">⚠️ 입주월 후불 청구 회차입니다.</div>`;
-  }
-
   // 안내문 구성: '203호 2월분 (350,000원) 수납 처리하시겠습니까? y/n'
   const promptHtml = `
     <div class="p-2">
@@ -799,7 +858,6 @@ async function executeVoicePayment(roomNumber) {
       <div class="text-xs text-cyan-200 font-bold mt-1.5">
         수납 처리하시겠습니까? <span class="text-amber-400 font-mono underline font-black">y/n</span>
       </div>
-      ${noticeExtra}
       <div class="text-[10px] text-slate-400 mt-2 bg-slate-900/80 px-2 py-1 rounded-lg border border-slate-700/60">
         🗣️ <b>'예/응/ok/yes'</b>로 대답하거나 아래 <b>확인 버튼</b>을 누르세요.
       </div>
@@ -821,7 +879,18 @@ async function executeVoicePayment(roomNumber) {
  */
 export async function confirmVoicePayment() {
   if (!pendingVoicePayment) return;
-  const { roomNumber, year, month, tenantName, totalRent, unpaidCount, room } = pendingVoicePayment;
+  const { roomNumber, year, month, tenantName, totalRent, unpaidCount, room, isMoveInMonth, isPostpaid } = pendingVoicePayment;
+
+  // ⚠️ 후불 입주월 최종 확정 단계 차단 보호막
+  if (isMoveInMonth && isPostpaid) {
+    pendingVoicePayment = null;
+    showVoiceConfirmButtons(false);
+    const blockMsg = `🚫 ${roomNumber}호는 ${month}월 전입 세입자(후불)이므로 입주월 입금 처리가 승인되지 않습니다.`;
+    updateVoiceStatus('warning', blockMsg);
+    speakText("입주월 후불 비과세 대상이므로 입금 처리가 승인되지 않습니다.");
+    return;
+  }
+
   pendingVoicePayment = null;
   showVoiceConfirmButtons(false);
 

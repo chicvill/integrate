@@ -603,12 +603,16 @@ export function renderPastHistorySection(room) {
       payDateHtml = `<span class="text-slate-600 font-mono text-[11px]">-</span>`;
     }
 
+    const isMoveInPostpaid = Boolean(isCurrentTenant && (y === inYear && m === inMonth && (room.pay_timing === '후불' || !room.pay_timing)));
+
     // 상태 배지 생성
     let statusHtml = '';
     if (isVacancy) {
       statusHtml = `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap bg-slate-800 text-slate-400 border border-slate-700">공실</span>`;
     } else if (p.paid) {
       statusHtml = `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">완납</span>`;
+    } else if (isMoveInPostpaid) {
+      statusHtml = `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap bg-amber-500/25 text-amber-300 border border-amber-500/40" title="후불 입주월은 익월 납부 대상입니다">입주월</span>`;
     } else {
       statusHtml = `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap bg-rose-500/20 text-rose-300 border border-rose-500/30">미납</span>`;
     }
