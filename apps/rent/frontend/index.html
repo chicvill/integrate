@@ -56,58 +56,35 @@
     }
   </style>
 </head>
-<body class="bg-surface-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-cyan-500 selection:text-slate-900 pb-1 safe-bottom">
+<body class="bg-surface-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-cyan-500 selection:text-slate-900 pb-20 safe-bottom">
 
-  <!-- ── 1. Minimal Header (Compact 2-Row Layout on Mobile) ── -->
-  <header class="border-b border-slate-800/90 bg-surface-900/95 backdrop-blur sticky top-0 z-30 px-2 py-1 sm:px-3 sm:py-1.5">
-    <div class="w-full max-w-xl mx-auto flex flex-col gap-1">
+  <!-- ── 1. Clean Minimal Header (간소화된 1행 헤더: 부동산 & 1순위 호실 선택) ── -->
+  <header class="border-b border-slate-800/90 bg-surface-900/95 backdrop-blur sticky top-0 z-30 px-2 py-1.5 sm:px-3">
+    <div class="w-full max-w-xl mx-auto flex items-center justify-between gap-1.5">
       
-      <!-- 1st Row: System Context & Room Navigation (메뉴 / 권한 / 부동산 / 호실) -->
-      <div class="flex items-center justify-between gap-1.5">
-        <!-- Left: Menu Drawer Toggle Button & Role Indicator Badge -->
-        <div class="flex items-center gap-1.5 shrink-0">
-          <button type="button" onclick="openMenuDrawer()" class="p-1.5 sm:p-2 rounded-xl bg-surface-800/80 hover:bg-surface-700 text-slate-200 border border-slate-700/80 transition flex items-center gap-1 cursor-pointer shadow-sm active:scale-95 shrink-0" title="메뉴 열기">
-            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
-            <span class="text-xs font-bold hidden sm:inline">메뉴</span>
-          </button>
-          <div id="headerRoleBadge" onclick="openAdminModal()" class="cursor-pointer" title="관리자 계정 및 권한"></div>
-        </div>
-
-        <!-- Right: Active Property / Building Switcher + Room Selector Drawer Button -->
-        <div class="flex items-center gap-1.5 min-w-0 justify-end">
-          <button type="button" onclick="openMenuDrawer()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-surface-850 hover:bg-surface-800 border border-cyan-500/40 text-cyan-300 transition cursor-pointer shadow-inner active:scale-95 min-w-0 max-w-[130px] sm:max-w-[200px]" title="부동산 변경">
-            <span class="text-xs sm:text-sm shrink-0">🏢</span>
-            <span id="headerBranchName" class="text-xs sm:text-sm font-bold tracking-tight truncate">시크빌</span>
-            <span class="text-[10px] text-cyan-400/80 font-mono shrink-0">▾</span>
-          </button>
-
-          <button type="button" onclick="openRoomDrawer()" class="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black text-xs sm:text-sm border border-cyan-400/30 transition flex items-center gap-1 shadow-md shadow-cyan-950/60 cursor-pointer active:scale-95 shrink-0" title="호실 선택">
-            <span>🚪</span>
-            <span id="headerRoomBadge" class="font-mono">101호 ▾</span>
-          </button>
-        </div>
+      <!-- Left: Active Property / Building Switcher + Admin Role Badge -->
+      <div class="flex items-center gap-1.5 min-w-0">
+        <button type="button" onclick="openMenuDrawer()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-surface-850 hover:bg-surface-800 border border-cyan-500/40 text-cyan-300 transition cursor-pointer shadow-inner active:scale-95 min-w-0 max-w-[140px] sm:max-w-[220px]" title="부동산(건물) 선택 및 관리">
+          <span class="text-xs sm:text-sm shrink-0">🏢</span>
+          <span id="headerBranchName" class="text-xs sm:text-sm font-bold tracking-tight truncate">시크빌</span>
+          <span class="text-[10px] text-cyan-400/80 font-mono shrink-0">▾</span>
+        </button>
+        <div id="headerRoleBadge" onclick="openAdminModal()" class="cursor-pointer shrink-0" title="관리자 계정 및 권한"></div>
       </div>
 
-      <!-- 2nd Row: Quick Action Bar (지출 등록 / 입금문자 / 만기안내 / 말로입력) -->
-      <div class="flex items-center gap-1 pt-0.5 border-t border-slate-800/60">
-        <button type="button" onclick="openExpenseModal()" class="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 font-bold text-xs transition cursor-pointer shadow-sm active:scale-95 whitespace-nowrap" title="지출 등록">
-          <span class="text-xs">💰</span>
-          <span>지출</span>
+      <!-- Right: 1순위 호실 선택기 (◀ 이전 / 🚪 101호 ▾ / 다음 ▶) -->
+      <div class="flex items-center gap-1 shrink-0">
+        <button type="button" onclick="navigatePrevRoom()" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-surface-850 hover:bg-surface-800 text-slate-300 hover:text-white border border-slate-700/80 flex items-center justify-center text-xs font-bold transition cursor-pointer active:scale-95 shadow-sm" title="이전 호실 선택">
+          ◀
         </button>
 
-        <button type="button" onclick="openSmsDepositModal()" class="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 text-cyan-300 font-bold text-xs transition cursor-pointer shadow-sm active:scale-95 whitespace-nowrap" title="은행 입금 알림 문자 자동 분석 & 영수증 발송">
-          <span class="text-xs">📲</span>
-          <span>입금문자</span>
+        <button type="button" onclick="openRoomDrawer()" class="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black text-xs sm:text-sm border border-cyan-400/30 transition flex items-center gap-1 shadow-md shadow-cyan-950/60 cursor-pointer active:scale-95 shrink-0" title="전체 호실 목록 열기">
+          <span>🚪</span>
+          <span id="headerRoomBadge" class="font-mono">101호 ▾</span>
         </button>
 
-        <button type="button" id="btnHeaderExpiryNotice" onclick="openExpiryNoticeModal()" class="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 rounded-xl bg-surface-800/60 hover:bg-surface-700/80 border border-slate-700/70 text-slate-300 font-semibold text-xs transition cursor-pointer shadow-sm active:scale-95 whitespace-nowrap" title="만기 3일·1·3개월 전 전출 의사 확인">
-          <span class="text-xs">🔔</span>
-          <span id="headerExpiryNoticeBadge">만기안내</span>
-        </button>
-
-        <button type="button" onclick="startVoiceRecognition()" class="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/50 text-rose-300 font-bold text-xs transition cursor-pointer shadow-sm active:scale-95 whitespace-nowrap" title="스마트폰/PC 말로 입력 (예: '203호 입금')">
-          <span class="text-xs animate-pulse">🎙️</span>
-          <span>말로입력</span>
+        <button type="button" onclick="navigateNextRoom()" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-surface-850 hover:bg-surface-800 text-slate-300 hover:text-white border border-slate-700/80 flex items-center justify-center text-xs font-bold transition cursor-pointer active:scale-95 shadow-sm" title="다음 호실 선택">
+          ▶
         </button>
       </div>
 
@@ -571,6 +548,23 @@
     </div>
 
   </main>
+
+  <!-- ── 2순위: 하단 고정 와이드 말로 입력 바 (스마트폰 엄지 터치 최적화 & 1~17대 명령) ── -->
+  <footer class="fixed bottom-0 left-0 right-0 z-30 bg-surface-950/95 backdrop-blur-md border-t border-slate-800/90 px-3 py-2 shadow-2xl safe-bottom">
+    <div class="w-full max-w-xl mx-auto">
+      <button type="button" onclick="startVoiceRecognition()" class="w-full py-2.5 sm:py-3 px-3.5 sm:px-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-rose-600 via-purple-600 to-indigo-600 hover:from-rose-500 hover:to-indigo-500 text-white font-black text-xs sm:text-sm flex items-center justify-between shadow-lg shadow-purple-950/80 border border-rose-400/40 transition cursor-pointer active:scale-[0.98]">
+        <span class="flex items-center gap-2">
+          <span class="text-base sm:text-lg animate-pulse">🎙️</span>
+          <span class="tracking-tight text-white font-black text-xs sm:text-sm">말로 입력</span>
+          <span class="text-[10px] sm:text-[11px] font-bold text-rose-100 bg-rose-950/70 border border-rose-400/40 px-2 py-0.5 rounded-full">1~17대 명령 원터치</span>
+        </span>
+        <span class="text-[11px] text-rose-200 flex items-center gap-1 font-semibold">
+          <span>음성 · 번호선택</span>
+          <span class="text-sm font-bold">➔</span>
+        </span>
+      </button>
+    </div>
+  </footer>
 
   <!-- ── MODALS ── -->
 

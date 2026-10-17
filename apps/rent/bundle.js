@@ -9840,6 +9840,24 @@ function selectRoom(roomNum) {
   renderAll();
 }
 
+function navigatePrevRoom() {
+  const roomKeys = Object.keys(state.rooms || {});
+  const roomList = roomKeys.length > 0 ? roomKeys.map(Number).sort((a,b)=>a-b) : ROOM_NUMBERS;
+  if (!roomList.length) return;
+  const curIdx = roomList.indexOf(Number(state.selectedRoom));
+  const newIdx = (curIdx <= 0) ? (roomList.length - 1) : (curIdx - 1);
+  selectRoom(roomList[newIdx]);
+}
+
+function navigateNextRoom() {
+  const roomKeys = Object.keys(state.rooms || {});
+  const roomList = roomKeys.length > 0 ? roomKeys.map(Number).sort((a,b)=>a-b) : ROOM_NUMBERS;
+  if (!roomList.length) return;
+  const curIdx = roomList.indexOf(Number(state.selectedRoom));
+  const newIdx = (curIdx < 0 || curIdx >= roomList.length - 1) ? 0 : (curIdx + 1);
+  selectRoom(roomList[newIdx]);
+}
+
 async function switchBranch(branchId) {
   if (state.currentBranch === branchId) return;
   state.currentBranch = branchId;
@@ -18014,6 +18032,8 @@ window.handleSendSmsReceipt = handleSendSmsReceipt;
 window.handlePhoneMessageClick = handlePhoneMessageClick;
 window.state = state;
 window.selectRoom = selectRoom;
+window.navigatePrevRoom = navigatePrevRoom;
+window.navigateNextRoom = navigateNextRoom;
 window.switchBranch = switchBranch;
 
 window.openMenuDrawer = openMenuDrawer;

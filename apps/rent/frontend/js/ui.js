@@ -3,7 +3,7 @@
  * 원룸 임차료 관리 시스템 모바일 최적화 DOM 렌더링 및 UI 슬라이드 드로어 제어.
  */
 
-import { state, FLOOR_STRUCTURE, currentMonth, currentYear, formattedToday, saveLocalFallback, loadInitialData, fillTenantPaymentsState, evaluatePaymentRule, parseDateComponents, STORAGE_KEY } from './state.js?v=2.0';
+import { state, FLOOR_STRUCTURE, ROOM_NUMBERS, currentMonth, currentYear, formattedToday, saveLocalFallback, loadInitialData, fillTenantPaymentsState, evaluatePaymentRule, parseDateComponents, STORAGE_KEY } from './state.js?v=2.0';
 import { apiProcessPayment, apiCancelPayment, apiFillTenantPayments, apiGetRooms, apiDeleteBranch, apiUpdateBranch } from './api.js?v=2.0';
 import { switchRoomSlideView, toggleRoomSlideView, initRoomSwipe } from './slider.js?v=2.0';
 
@@ -15,6 +15,24 @@ export function selectRoom(roomNum) {
     switchRoomSlideView('main', false);
   }
   renderAll();
+}
+
+export function navigatePrevRoom() {
+  const roomKeys = Object.keys(state.rooms || {});
+  const roomList = roomKeys.length > 0 ? roomKeys.map(Number).sort((a,b)=>a-b) : ROOM_NUMBERS;
+  if (!roomList.length) return;
+  const curIdx = roomList.indexOf(Number(state.selectedRoom));
+  const newIdx = (curIdx <= 0) ? (roomList.length - 1) : (curIdx - 1);
+  selectRoom(roomList[newIdx]);
+}
+
+export function navigateNextRoom() {
+  const roomKeys = Object.keys(state.rooms || {});
+  const roomList = roomKeys.length > 0 ? roomKeys.map(Number).sort((a,b)=>a-b) : ROOM_NUMBERS;
+  if (!roomList.length) return;
+  const curIdx = roomList.indexOf(Number(state.selectedRoom));
+  const newIdx = (curIdx < 0 || curIdx >= roomList.length - 1) ? 0 : (curIdx + 1);
+  selectRoom(roomList[newIdx]);
 }
 
 export async function switchBranch(branchId) {

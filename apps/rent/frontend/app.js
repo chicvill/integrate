@@ -7,6 +7,8 @@
 import { state, loadInitialData, touchAuthSession } from './js/state.js?v=2.0';
 import {
   selectRoom,
+  navigatePrevRoom,
+  navigateNextRoom,
   switchBranch,
   openMenuDrawer,
   closeMenuDrawer,
@@ -158,6 +160,8 @@ window.handleSendSmsReceipt = handleSendSmsReceipt;
 window.handlePhoneMessageClick = handlePhoneMessageClick;
 window.state = state;
 window.selectRoom = selectRoom;
+window.navigatePrevRoom = navigatePrevRoom;
+window.navigateNextRoom = navigateNextRoom;
 window.switchBranch = switchBranch;
 
 window.openMenuDrawer = openMenuDrawer;
