@@ -29,6 +29,7 @@ tar -czf $TarFile -C $ProjectRoot `
     apps/rent/frontend/js/ui.js `
     apps/rent/frontend/js/modals.js `
     apps/rent/frontend/js/state.js `
+    apps/rent/frontend/js/voice.js `
     apps/rent/app.js `
     apps/rent/bundle.js `
     apps/rent/index.html `
@@ -42,7 +43,8 @@ tar -czf $TarFile -C $ProjectRoot `
     apps/rent/js/branches.js `
     apps/rent/js/ui.js `
     apps/rent/js/modals.js `
-    apps/rent/js/state.js
+    apps/rent/js/state.js `
+    apps/rent/js/voice.js
 
 Write-Host "Uploading patch archive and integrat.db to GCP VM..." -ForegroundColor Cyan
 gcloud compute scp $TarFile "integrated:rent_patch.tar.gz" --zone=us-central1-a
