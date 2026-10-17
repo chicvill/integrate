@@ -281,13 +281,28 @@ export function parseContractVoiceFields(text) {
  * 특정 호실의 전입 이후 가장 오래된 미납 회차 탐색
  * (후불 입주월 비과세/익월 청구 원칙 적용: 후불 전입월은 구두 입금 대상에서 원천 배제 및 승인 차단)
  */
-export function findOldestUnpaidPeriod(roomNumber, specificMonth = null) {
-  const room = state.rooms[roomNumber];
+export function findOldestUnpaidPeriod(roomNumber, specificMonth = null, rawText = '') {
+  let targetRoom = roomNumber;
+  // 호실 번호가 없으면 rawText에서 세입자 이름으로 검색 시도
+  if (!targetRoom && rawText && state.rooms) {
+    for (const [rNum, rData] of Object.entries(state.rooms)) {
+      if (rData && rData.name && rawText.includes(rData.name)) {
+        targetRoom = Number(rNum);
+        break;
+      }
+    }
+  }
+
+  if (!targetRoom) {
+    return { error: '호실명이나 세입자명을 찾을 수 없습니다. [확인 후 수동 처리]해 주세요.' };
+  }
+
+  const room = state.rooms[targetRoom];
   if (!room) {
-    return { error: `${roomNumber}호 정보를 찾을 수 없습니다.` };
+    return { error: `${targetRoom}호 정보를 찾을 수 없습니다. [확인 후 수동 처리]해 주세요.` };
   }
   if (!room.name) {
-    return { error: `${roomNumber}호는 현재 세입자가 없는 공실입니다.` };
+    return { error: `${targetRoom}호는 현재 세입자가 없는 공실입니다. [확인 후 수동 처리]해 주세요.` };
   }
 
   // 1. 전입일 파싱 (YYYY-MM-DD 등)
@@ -309,20 +324,23 @@ export function findOldestUnpaidPeriod(roomNumber, specificMonth = null) {
       blockedMoveInPostpaid: true,
       room: room,
       moveInMonth: moveInMonth,
-      error: `${roomNumber}호 (${room.name})는 ${moveInMonth}월 전입 세입자(후불)입니다. 후불 익월 납부 원칙에 따라 입주월인 ${moveInMonth}월 입금 처리는 승인되지 않습니다.`
+      error: `${targetRoom}호 (${room.name})는 ${moveInMonth}월 전입 세입자(후불)입니다. 후불 익월 납부 원칙에 따라 입주월인 ${moveInMonth}월 입금 처리는 승인되지 않습니다. [확인 후 수동 처리]해 주세요.`
     };
   }
 
-  // 2. 납부 내역 정규화 및 수집 (복합키/단순키 중복 제거)
+  // 2. 납부 내역 정규화 및 수집 (복합키/단순키 중복 제거 및 년/월 안전 파싱)
   const paymentsList = [];
   const seen = new Set();
   if (room.payments) {
-    for (const p of Object.values(room.payments)) {
-      if (!p || typeof p !== 'object' || !p.year || !p.month) continue;
-      const key = `${p.year}-${p.month}`;
+    for (const [k, p] of Object.entries(room.payments)) {
+      if (!p || typeof p !== 'object') continue;
+      const yr = p.year || (String(k).includes('-') ? parseInt(String(k).split('-')[0], 10) : currentYear);
+      const mo = p.month || (String(k).includes('-') ? parseInt(String(k).split('-')[1], 10) : parseInt(k, 10));
+      if (!mo) continue;
+      const key = `${yr}-${mo}`;
       if (!seen.has(key)) {
         seen.add(key);
-        paymentsList.push(p);
+        paymentsList.push({ ...p, year: yr, month: mo });
       }
     }
   }
@@ -335,6 +353,13 @@ export function findOldestUnpaidPeriod(roomNumber, specificMonth = null) {
     // 특정 월이 지정된 경우 해당 월만 필터링
     if (specificMonth !== null && Number(p.month) !== Number(specificMonth)) {
       return false;
+    }
+
+    // 특정 월이 명시되지 않은 일반 입금 명령인 경우: 현재 월(currentYear, currentMonth)까지의 미납만 탐색 (미래 월 배제!)
+    if (specificMonth === null) {
+      if (p.year > currentYear || (p.year === currentYear && p.month > currentMonth)) {
+        return false;
+      }
     }
 
     // 전입일 이전 회차는 전 세입자 영역이므로 제외
@@ -356,13 +381,15 @@ export function findOldestUnpaidPeriod(roomNumber, specificMonth = null) {
       return {
         allPaid: true,
         room: room,
-        message: `${roomNumber}호 (${room.name})의 ${specificMonth}월분은 수납 대상 미납 내역이 없거나 이미 완납되었습니다.`
+        targetRoom: targetRoom,
+        message: `${targetRoom}호 (${room.name})의 ${specificMonth}월분은 수납 대상 미납 내역이 없거나 이미 완납되었습니다. [확인 후 수동 처리]해 주세요.`
       };
     }
     return {
       allPaid: true,
       room: room,
-      message: `${roomNumber}호 (${room.name})는 이미 전액 완납되어 미납 내역이 없습니다. (입주월 후불 비과세 제외)`
+      targetRoom: targetRoom,
+      message: `${targetRoom}호 (${room.name})는 전입월부터 현재 월(${currentMonth}월)까지 이미 전액 완납되어 미납 내역이 없습니다. 선납이나 기타 입금은 [확인 후 수동 처리]해 주세요.`
     };
   }
 
@@ -376,7 +403,7 @@ export function findOldestUnpaidPeriod(roomNumber, specificMonth = null) {
       blockedMoveInPostpaid: true,
       room: room,
       moveInMonth: moveInMonth,
-      error: `${roomNumber}호 (${room.name})는 ${moveInMonth}월 전입 세입자(후불)이므로 입주월인 ${moveInMonth}월 입금 처리는 승인되지 않습니다.`
+      error: `${targetRoom}호 (${room.name})는 ${moveInMonth}월 전입 세입자(후불)이므로 입주월인 ${moveInMonth}월 입금 처리는 승인되지 않습니다. [확인 후 수동 처리]해 주세요.`
     };
   }
 
@@ -1013,7 +1040,7 @@ export async function handleVoiceCommand(rawText) {
 
     if (menuNum) {
       if (menuNum === 1) {
-        await executeVoicePayment(roomNumber, specificMonth);
+        await executeVoicePayment(roomNumber, specificMonth, rawText);
       } else {
         await executeVoiceCommandById(menuNum, roomNumber);
       }
@@ -1036,9 +1063,9 @@ export async function handleVoiceCommand(rawText) {
       return;
     }
 
-    // 1. 호실 수납 / 입금 처리 ("203호 입금", "203호 5월 완납")
+    // 1. 호실 수납 / 입금 처리 ("203호 입금", "203호 5월 완납", "배종봉 입금")
     if (/수납|입금|완납|납부|넣었/.test(rawText)) {
-      await executeVoicePayment(roomNumber, specificMonth);
+      await executeVoicePayment(roomNumber, specificMonth, rawText);
       isProcessingVoice = false;
       return;
     }
@@ -1156,9 +1183,9 @@ export async function handleVoiceCommand(rawText) {
     }
 
     // ── 5. 인식 불가 시 예문 가이드 ──
-    const msg = `인식된 명령이 없습니다. 예문의 번호(1~12번)나 "203호 입금" 처럼 말씀해주세요.`;
+    const msg = `인식된 명령이 없습니다. 예문의 번호(1~17번)나 "101호 입금" 처럼 말씀해 주시거나, [확인 후 수동 처리]해 주세요.`;
     updateVoiceStatus('warning', msg);
-    speakText(msg, () => {
+    speakText("인식된 명령이 없습니다. 다시 말씀해 주시거나 확인 후 수동 처리해 주세요.", () => {
       resumeListening();
     });
   } catch (err) {
@@ -1192,14 +1219,15 @@ export async function executeVoiceCancelPayment(roomNumber, specificMonth = null
  * "203호 입금" 발화 시:
  * 전입 이후 가장 오래된 미납 회차 1건을 탐색하고 사용자에게 승인 확인(y/n)을 질의
  */
-async function executeVoicePayment(roomNumber, specificMonth = null) {
-  const result = findOldestUnpaidPeriod(roomNumber, specificMonth);
+async function executeVoicePayment(roomNumber, specificMonth = null, rawText = '') {
+  const result = findOldestUnpaidPeriod(roomNumber, specificMonth, rawText);
+  const targetRoomNum = result.targetRoom || roomNumber;
 
   // ⚠️ 후불 전입월 구두 입금 승인 원천 차단
   if (result.blockedMoveInPostpaid) {
     updateVoiceStatus('warning', `⚠️ ${result.error}`);
-    speakText(`${roomNumber}호는 전입월 후불 비과세 대상이므로 입금 처리가 승인되지 않습니다.`);
-    selectRoom(roomNumber);
+    speakText(`${targetRoomNum}호는 전입월 후불 비과세 대상입니다. 확인 후 수동 처리해 주세요.`);
+    if (targetRoomNum) selectRoom(targetRoomNum);
     return;
   }
 
@@ -1211,9 +1239,8 @@ async function executeVoicePayment(roomNumber, specificMonth = null) {
 
   if (result.allPaid) {
     updateVoiceStatus('info', result.message);
-    speakText(`${roomNumber}호는 이미 전액 완납되어 미납 내역이 없습니다.`);
-    selectRoom(roomNumber);
-    setTimeout(() => closeVoiceModal(), 2000);
+    speakText(`${targetRoomNum}호는 전입월부터 현재 월까지 이미 전액 완납되었습니다. 확인 후 수동 처리해 주세요.`);
+    if (targetRoomNum) selectRoom(targetRoomNum);
     return;
   }
 
@@ -1343,17 +1370,20 @@ export async function confirmVoicePayment() {
     updateVoiceStatus('success', successMsg);
     speakText(`${roomNumber}호 ${month}월분 수납 처리가 완료되었습니다.`);
 
-    // 수납 후 영수 문자 발송 연동
+    // 수납 후 영수 문자 발송 연동 (사용자 확인 후 발송)
     const curBranchObj = state.branches.find(b => b.branch_id === state.currentBranch);
     const branchName = state.currentBranch === 'main' ? '시크빌' : (curBranchObj ? curBranchObj.name : '시크빌');
-    const receiptText = `[${branchName} 임차료 수납 영수증]\n${roomNumber}호 ${tenantName} 님\n- 귀속: ${year}년 ${month}월분\n- 수납액: ${rentFormatted}원\n- 수납일자: ${payDate}\n정상 수납(완납) 처리되었습니다. 감사합니다.`;
+    const receiptText = `[${branchName} 임차료 수납 영수증]\n${roomNumber}호 ${tenantName} 님\n- 귀속: ${year}년 ${month}월분\n- 수납액: ${rentFormatted}원\n- 수납일자: ${defaultPayDate}\n정상 수납(완납) 처리되었습니다. 감사합니다.`;
     state.pendingReceiptText = receiptText;
     state.pendingReceiptRoom = roomNumber;
 
     setTimeout(() => {
       closeVoiceModal();
-      if (room && room.phone && typeof window.handleSendSmsReceipt === 'function') {
-        window.handleSendSmsReceipt(room.phone);
+      if (room && room.phone) {
+        const sendReceipt = confirm(`✅ [${roomNumber}호 ${tenantName}님] ${year}년 ${month}월분 수납이 정상 완료되었습니다.\n\n세입자에게 영수증 문자를 발송하시겠습니까?`);
+        if (sendReceipt && typeof window.handleSendSmsReceipt === 'function') {
+          window.handleSendSmsReceipt(room.phone);
+        }
       }
     }, 1500);
 

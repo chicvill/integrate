@@ -4370,8 +4370,11 @@ export function handleSendSmsReceipt(targetPhone = null) {
   document.body.appendChild(toast);
   setTimeout(() => { if (toast.parentElement) toast.remove(); }, 6000);
 
-  // 모바일 환경 즉시 SMS 앱 전환
-  window.location.href = smsUrl;
+  // 모바일 환경에서만 즉시 SMS 앱 전환 (PC 브라우저에서는 프로토콜 연결 팝업 방지)
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (isMobile) {
+    window.location.href = smsUrl;
+  }
 }
 
 /**
@@ -4430,8 +4433,11 @@ export function handlePhoneMessageClick(phone, name, roomNumber) {
   document.body.appendChild(toast);
   setTimeout(() => { if (toast.parentElement) toast.remove(); }, 6000);
 
-  // 모바일 SMS 창 호출
-  window.location.href = smsUrl;
+  // 모바일 환경에서만 즉시 SMS 앱 전환 (PC 브라우저에서는 프로토콜 연결 팝업 방지)
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (isMobile) {
+    window.location.href = smsUrl;
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════
