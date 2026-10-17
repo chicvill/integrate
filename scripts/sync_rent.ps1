@@ -74,9 +74,10 @@ echo "Successfully hot-synced rent app to container $CID!"
 
 # Execute via gcloud compute ssh
 $ScriptFile = "$ProjectRoot\scratch_deploy_rent.sh"
-[System.IO.File]::WriteAllText($ScriptFile, $RemoteCommand, [System.Text.Encoding]::ASCII)
+$UnixCommand = $RemoteCommand.Replace("`r`n", "`n").Replace("`r", "`n")
+[System.IO.File]::WriteAllText($ScriptFile, $UnixCommand, (New-Object System.Text.UTF8Encoding $False))
 gcloud compute scp $ScriptFile "integrated:deploy_rent.sh" --zone=us-central1-a
-gcloud compute ssh integrated --zone=us-central1-a --command "bash deploy_rent.sh; rm deploy_rent.sh"
+gcloud compute ssh integrated --zone=us-central1-a --command "tr -d '\r' < deploy_rent.sh > deploy_rent_clean.sh && bash deploy_rent_clean.sh && rm -f deploy_rent.sh deploy_rent_clean.sh"
 Remove-Item $ScriptFile -Force
 
 if (Test-Path $TarFile) {
