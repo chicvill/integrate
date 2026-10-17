@@ -9,11 +9,8 @@
 
 // ── 1. API Base & Auth Helper ──
 export function getApiBase(appName = 'rent') {
-  const p = window.location.pathname.toLowerCase();
-  if (p.startsWith(`/${appName.toLowerCase()}`)) {
-    return `/api/${appName}`;
-  }
-  return '/api';
+  // 게이트웨이 통합 포털 및 서브패스 환경에서 항상 /api/rent 단일 진입점 보장
+  return `/api/${appName}`;
 }
 
 export function getAuthHeaders() {

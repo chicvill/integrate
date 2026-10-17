@@ -131,6 +131,7 @@ import {
   closeVoiceModal,
   confirmVoicePayment,
   cancelVoicePayment,
+  requestMicrophonePermissionAndStart,
   speakText
 } from './js/voice.js?v=1.0';
 
@@ -141,6 +142,7 @@ window.openVoiceModal = openVoiceModal;
 window.closeVoiceModal = closeVoiceModal;
 window.confirmVoicePayment = confirmVoicePayment;
 window.cancelVoicePayment = cancelVoicePayment;
+window.requestMicrophonePermissionAndStart = requestMicrophonePermissionAndStart;
 window.speakText = speakText;
 window.calculateDepositTargetPeriods = calculateDepositTargetPeriods;
 window.updateSmsAlert = updateSmsAlert;

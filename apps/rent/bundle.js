@@ -21,11 +21,8 @@
 
 // ── 1. API Base & Auth Helper ──
 function getApiBase(appName = 'rent') {
-  const p = window.location.pathname.toLowerCase();
-  if (p.startsWith(`/${appName.toLowerCase()}`)) {
-    return `/api/${appName}`;
-  }
-  return '/api';
+  // 게이트웨이 통합 포털 및 서브패스 환경에서 항상 /api/rent 단일 진입점 보장
+  return `/api/${appName}`;
 }
 
 function getAuthHeaders() {
@@ -16578,7 +16575,18 @@ function initVoiceRecognition() {
   rec.onerror = (event) => {
     console.warn("음성 인식 오류:", event.error);
     isListening = false;
-    if (event.error !== 'no-speech') {
+    if (event.error === 'not-allowed') {
+      updateVoiceUIState('error', '🎙️ 마이크 권한 차단됨 (not-allowed)');
+      const helpHtml = `
+        <div class="text-[11px] text-rose-300 font-bold mb-1">⚠️ 브라우저 마이크 권한이 차단되었습니다</div>
+        <div class="text-[10px] text-slate-300 leading-relaxed text-left bg-slate-900/90 p-2.5 rounded-lg border border-rose-800/40 space-y-1">
+          <div>• <b>원인:</b> 스마트폰/크롬 보안 정책상 HTTP(IP 접속) 사이트에서는 마이크가 자동 차단됩니다.</div>
+          <div class="pt-1">• <b>해결 (1):</b> 주소창 왼쪽 <b>설정/자물쇠 아이콘 탭 ➡️ 마이크 '허용'</b></div>
+          <div>• <b>해결 (2) 크롬 모바일:</b> 주소창에 <code class="text-cyan-300">chrome://flags</code> 접속 ➡️ <code class="text-amber-300">unsafely-treat-insecure-origin-as-secure</code> 검색 후 <b>Enabled</b> 및 <code class="text-cyan-300">http://34.31.10.12</code> 입력 후 Relaunch</div>
+        </div>
+      `;
+      updateVoiceStatus('error', helpHtml);
+    } else if (event.error !== 'no-speech') {
       updateVoiceUIState('error', `음성 인식 오류 (${event.error})`);
     } else {
       updateVoiceUIState('idle');
@@ -16595,17 +16603,111 @@ function initVoiceRecognition() {
   return rec;
 }
 
-function startVoiceRecognition() {
+async function startVoiceRecognition() {
+  openVoiceModal();
+
+  const isPermissionGranted = localStorage.getItem('RENT_MIC_PERMISSION_GRANTED') === 'true';
+
+  // 처음 실행하거나 권한 확인이 필요한 경우: 명시적 승인 안내 화면 표시
+  if (!isPermissionGranted) {
+    showMicrophonePermissionPrompt();
+    return;
+  }
+
+  // 이미 승인 이력이 있는 경우 바로 음성 수신 세션 시작
+  await startListeningSession();
+}
+
+/**
+ * 최초 사용자 마이크 사용 승인 요청 화면 표시
+ */
+function showMicrophonePermissionPrompt() {
+  updateVoiceUIState('idle');
+  updateVoiceTranscript('말로 입력을 사용하려면 마이크 권한 승인이 필요합니다.');
+  
+  const promptHtml = `
+    <div class="p-2 text-center">
+      <div class="text-sm font-extrabold text-white mb-1 flex items-center justify-center gap-1.5">
+        <span class="text-rose-400">🎙️</span> 마이크 사용 승인
+      </div>
+      <p class="text-[11px] text-slate-300 leading-snug mb-3">
+        "203호 입금" 같은 음성 명령을 편리하게 사용하시려면<br>
+        마이크 사용 권한 승인이 필요합니다.
+      </p>
+      <button type="button" onclick="requestMicrophonePermissionAndStart()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-indigo-600 hover:from-rose-500 hover:to-indigo-500 text-white font-black text-xs shadow-lg shadow-rose-950/60 border border-rose-300/30 transition cursor-pointer active:scale-95 flex items-center justify-center gap-2">
+        <span class="text-base">🎙️</span>
+        <span>마이크 사용 허용하고 시작하기</span>
+      </button>
+      <div class="text-[10px] text-slate-400 mt-2">
+        ※ 버튼을 누르면 브라우저의 <b>[허용]</b> 팝업이 표시됩니다.
+      </div>
+    </div>
+  `;
+  updateVoiceStatus('confirm', promptHtml);
+}
+
+/**
+ * '마이크 사용 허용하고 시작하기' 버튼 터치 시 호출 (명시적 User Gesture)
+ */
+async function requestMicrophonePermissionAndStart() {
+  updateVoiceStatus('confirm', `
+    <div class="p-2 text-center text-xs font-bold text-cyan-300">
+      ⏳ 마이크 권한 확인 중...<br>
+      <span class="text-[10px] text-slate-300 font-normal">화면에 팝업이 뜨면 <b>[허용]</b>을 눌러주세요.</span>
+    </div>
+  `);
+
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // 권한 허용 성공! 스트림 즉시 해제
+      stream.getTracks().forEach(t => t.stop());
+      localStorage.setItem('RENT_MIC_PERMISSION_GRANTED', 'true');
+      
+      updateVoiceStatus('success', '✅ 마이크 사용이 승인되었습니다! 음성을 듣습니다.');
+      setTimeout(() => {
+        startListeningSession();
+      }, 500);
+      return;
+    } catch (err) {
+      console.warn("마이크 getUserMedia 요청 거절/오류:", err);
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        updateVoiceUIState('error', '🎙️ 마이크 권한 차단됨');
+        const helpHtml = `
+          <div class="text-[11px] text-rose-300 font-bold mb-1">⚠️ 브라우저 마이크 권한이 차단되었습니다</div>
+          <div class="text-[10px] text-slate-300 leading-relaxed text-left bg-slate-900/90 p-2.5 rounded-lg border border-rose-800/40 space-y-1">
+            <div>• <b>원인:</b> 브라우저에서 사이트의 마이크 권한이 차단 상태입니다.</div>
+            <div class="pt-1">• <b>해결 방법:</b> 주소창 왼쪽 <b>설정/자물쇠(Tune) 아이콘</b>을 눌러 <b>마이크를 '허용'</b>으로 변경한 뒤 다시 눌러주세요.</div>
+          </div>
+        `;
+        updateVoiceStatus('error', helpHtml);
+        return;
+      }
+    }
+  }
+
+  // getUserMedia 미지원 브라우저 폴백
+  localStorage.setItem('RENT_MIC_PERMISSION_GRANTED', 'true');
+  startListeningSession();
+}
+
+/**
+ * 실제 음성인식 세션 시작
+ */
+async function startListeningSession() {
   if (!recognition) {
     recognition = initVoiceRecognition();
   }
 
   if (!recognition) {
-    alert("현재 브라우저에서는 음성 인식을 지원하지 않거나 마이크 권한이 차단되었습니다.\n(Chrome 또는 Safari 최신 버전 및 HTTPS/localhost 환경 권장)");
+    alert("현재 브라우저에서는 음성 인식을 지원하지 않습니다.\n(Chrome 또는 Safari 최신 버전 권장)");
     return;
   }
 
-  openVoiceModal();
+  updateVoiceStatus('idle', '');
+  updateVoiceUIState('listening');
+  updateVoiceTranscript('말씀해주세요... (예: "203호 입금", "501호 선택")');
+
   try {
     recognition.start();
   } catch (e) {
@@ -16994,6 +17096,7 @@ if (typeof window !== 'undefined') {
   window.closeVoiceModal = closeVoiceModal;
   window.confirmVoicePayment = confirmVoicePayment;
   window.cancelVoicePayment = cancelVoicePayment;
+  window.requestMicrophonePermissionAndStart = requestMicrophonePermissionAndStart;
 }
 
 /**
@@ -17014,6 +17117,7 @@ window.openVoiceModal = openVoiceModal;
 window.closeVoiceModal = closeVoiceModal;
 window.confirmVoicePayment = confirmVoicePayment;
 window.cancelVoicePayment = cancelVoicePayment;
+window.requestMicrophonePermissionAndStart = requestMicrophonePermissionAndStart;
 window.speakText = speakText;
 window.calculateDepositTargetPeriods = calculateDepositTargetPeriods;
 window.updateSmsAlert = updateSmsAlert;
