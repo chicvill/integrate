@@ -16383,6 +16383,7 @@ function closeSequentialSmsModal() {
 
 
 
+
 // 2단계 승인 대기 상태 저장 객체
 let pendingVoicePayment = null;
 
@@ -16741,7 +16742,199 @@ function stopVoiceRecognition() {
 }
 
 /**
- * 인식된 음성 문장 처리 핸들러 (대화형 2단계 승인 지원)
+ * 한국어 구두 명령 번호 파싱 ("1번", "2번", ..., "12번" 또는 "일번", "이번" 등)
+ */
+function parseMenuNumber(rawText) {
+  if (!rawText) return null;
+  const clean = rawText.replace(/\s+/g, '').toLowerCase();
+
+  // "1번", "1", "12번" 등 순수 숫자 매칭
+  const numMatch = clean.match(/^(\d{1,2})번?$/);
+  if (numMatch) {
+    const n = parseInt(numMatch[1], 10);
+    if (n >= 1 && n <= 12) return n;
+  }
+
+  // 문장 중에 "1번", "12번" 등이 포함된 경우
+  const insideMatch = clean.match(/(\d{1,2})번/);
+  if (insideMatch) {
+    const n = parseInt(insideMatch[1], 10);
+    if (n >= 1 && n <= 12) return n;
+  }
+
+  const map = {
+    '일번': 1, '첫번째': 1, '하나': 1,
+    '이번': 2, '두번째': 2, '둘': 2,
+    '삼번': 3, '세번째': 3, '셋': 3,
+    '사번': 4, '네번째': 4, '넷': 4,
+    '오번': 5, '다섯번째': 5, '다섯': 5,
+    '육번': 6, '여섯번째': 6, '여섯': 6,
+    '칠번': 7, '일곱번째': 7, '일곱': 7,
+    '팔번': 8, '여덟번째': 8, '여덟': 8,
+    '구번': 9, '아홉번째': 9, '아홉': 9,
+    '십번': 10, '열번째': 10, '열': 10,
+    '십일번': 11, '열한번째': 11,
+    '십이번': 12, '열두번째': 12
+  };
+
+  for (const [k, v] of Object.entries(map)) {
+    if (clean.includes(k)) return v;
+  }
+  return null;
+}
+
+/**
+ * Rent 구두 명령 1~12번 실행기 (말, 터치, 번호 선택 공통 단일 진입점)
+ */
+async function executeVoiceCommandById(cmdId, targetRoom = null) {
+  const rNum = targetRoom || parseKoreanNumber(String(targetRoom)) || state.selectedRoom || 203;
+
+  switch (Number(cmdId)) {
+    case 1: // 1. 203호 수납(입금 등) -> 입금 처리
+      await executeVoicePayment(rNum);
+      break;
+
+    case 2: // 2. 203호 전출(퇴실, 공실처리, 이사 등) -> 전출 처리
+      closeVoiceModal();
+      selectRoom(rNum);
+      if (typeof openContractEditModal === 'function') {
+        openContractEditModal(rNum);
+      } else if (window.openContractEditModal) {
+        window.openContractEditModal(rNum);
+      }
+      setTimeout(() => {
+        const moveOutEl = document.getElementById('formMoveOut');
+        if (moveOutEl) {
+          if (!moveOutEl.value) {
+            moveOutEl.value = new Date().toISOString().split('T')[0];
+          }
+          moveOutEl.focus();
+        }
+      }, 200);
+      speakText(`${rNum}호 전출 및 퇴실 처리 창을 열었습니다.`);
+      break;
+
+    case 3: // 3. 203호 전입(등록 등) -> 계약서 사진, 엑셀 붙여넣기 등록
+      closeVoiceModal();
+      selectRoom(rNum);
+      if (typeof openExcelImportModal === 'function') {
+        openExcelImportModal();
+      } else if (window.openExcelImportModal) {
+        window.openExcelImportModal();
+      }
+      speakText(`${rNum}호 전입 및 계약서 사진/엑셀 등록 창을 열었습니다.`);
+      break;
+
+    case 4: // 4. 203호 수정, 삭제
+      closeVoiceModal();
+      selectRoom(rNum);
+      if (typeof openContractEditModal === 'function') {
+        openContractEditModal(rNum);
+      } else if (window.openContractEditModal) {
+        window.openContractEditModal(rNum);
+      }
+      speakText(`${rNum}호 계약 정보 수정 및 삭제 창을 열었습니다.`);
+      break;
+
+    case 5: // 5. 203호 납입현황(월별, 1년간) 엑셀, pdf
+      closeVoiceModal();
+      selectRoom(rNum);
+      if (typeof exportCurrentRoomCSV === 'function') {
+        exportCurrentRoomCSV();
+      } else if (window.exportCurrentRoomCSV) {
+        window.exportCurrentRoomCSV();
+      }
+      speakText(`${rNum}호 월별 납입현황 엑셀을 다운로드하고 인쇄 화면을 준비합니다.`);
+      setTimeout(() => {
+        if (confirm(`${rNum}호 납입현황 엑셀(CSV)이 다운로드되었습니다.\n\nA4 인쇄 / PDF 저장을 실행하시겠습니까?`)) {
+          window.print();
+        }
+      }, 600);
+      break;
+
+    case 6: // 6. 일괄 등록 -> 사진, 엑셀 붙여넣기
+      closeVoiceModal();
+      if (typeof openExcelImportModal === 'function') {
+        openExcelImportModal();
+      } else if (window.openExcelImportModal) {
+        window.openExcelImportModal();
+      }
+      speakText("사진 및 엑셀 일괄 등록 창을 열었습니다.");
+      break;
+
+    case 7: // 7. 만기 확인
+      closeVoiceModal();
+      if (typeof openExpiryNoticeModal === 'function') {
+        openExpiryNoticeModal();
+      } else if (window.openExpiryNoticeModal) {
+        window.openExpiryNoticeModal();
+      }
+      speakText("만기 도래 호실 확인 창을 열었습니다.");
+      break;
+
+    case 8: // 8. 지출등록
+      closeVoiceModal();
+      if (typeof openExpenseModal === 'function') {
+        openExpenseModal();
+      } else if (window.openExpenseModal) {
+        window.openExpenseModal();
+      }
+      speakText("오늘의 지출 내역 등록 창을 열었습니다.");
+      break;
+
+    case 9: // 9. 데이터 백업 및 복구 -> json/엑셀
+      const promptHtml = `
+        <div class="p-2 text-center space-y-2">
+          <div class="text-xs font-bold text-emerald-300">💾 데이터 백업 및 복구</div>
+          <p class="text-[11px] text-slate-300">원하시는 데이터 관리 작업을 선택해주세요.</p>
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button type="button" onclick="exportFullSystemBackupJSON(); closeVoiceModal();" class="py-2 px-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs shadow cursor-pointer active:scale-95 transition">
+              💾 전체 백업 다운로드
+            </button>
+            <button type="button" onclick="triggerFullSystemRestoreFile(); closeVoiceModal();" class="py-2 px-1.5 rounded-xl bg-indigo-700 hover:bg-indigo-600 text-white font-bold text-xs shadow cursor-pointer active:scale-95 transition">
+              📂 백업 파일 복원
+            </button>
+          </div>
+        </div>
+      `;
+      updateVoiceStatus('confirm', promptHtml);
+      speakText("전체 데이터 백업 다운로드 또는 복원 작업을 선택해주세요.");
+      break;
+
+    case 10: // 10. 월별 통계-> 엑셀, pdf
+      closeVoiceModal();
+      if (typeof exportAllRoomsCSV === 'function') {
+        exportAllRoomsCSV();
+      } else if (window.exportAllRoomsCSV) {
+        window.exportAllRoomsCSV();
+      }
+      speakText("전체 호실의 월별 수납 및 계약대장 엑셀을 다운로드합니다.");
+      break;
+
+    case 11: // 11. 부가가치세(부가세, 부가세 자료 산출 등)
+      closeVoiceModal();
+      if (typeof openVatModal === 'function') {
+        openVatModal();
+      } else if (window.openVatModal) {
+        window.openVatModal();
+      }
+      speakText("부가가치세 신고 및 세무 자료 산출 창을 열었습니다.");
+      break;
+
+    case 12: // 12. 도움말(사용법 등)
+      window.open('./manual.html', '_blank');
+      closeVoiceModal();
+      speakText("운영 매뉴얼 도움말을 새 창으로 열었습니다.");
+      break;
+
+    default:
+      console.warn("알 수 없는 구두 명령 번호:", cmdId);
+      break;
+  }
+}
+
+/**
+ * 인식된 음성 문장 처리 핸들러 (대화형 2단계 승인 및 1~12번 구두 명령 지원)
  */
 async function handleVoiceCommand(rawText) {
   if (isProcessingVoice) return;
@@ -16790,41 +16983,119 @@ async function handleVoiceCommand(rawText) {
       }
     }
 
-    // ── 2. 신규 명령어 파싱 ──
+    // ── 2. 번호 기반 구두 명령 파싱 ("1번", "2번", ..., "12번") ──
+    const menuNum = parseMenuNumber(rawText);
     const roomNumber = parseKoreanNumber(rawText);
 
-    if (!roomNumber) {
-      const msg = `호실 번호를 인식하지 못했습니다. ("203호 입금" 처럼 말씀해주세요)`;
-      updateVoiceStatus('warning', msg);
-      speakText(msg, () => {
-        resumeListening();
-      });
+    if (menuNum) {
+      await executeVoiceCommandById(menuNum, roomNumber);
       isProcessingVoice = false;
       return;
     }
 
-    // 명령어 유형 분석 (입금 / 조회 / 취소)
-    const isPayment = /입금|수납|완납|납부|넣었/.test(rawText);
-    const isCancel = /취소|미납/.test(rawText);
+    // ── 3. 키워드 기반 자연어 구두 명령 파싱 ──
+    // 1. 수납 / 입금
+    if (/수납|입금|완납|납부|넣었/.test(rawText)) {
+      await executeVoiceCommandById(1, roomNumber);
+      isProcessingVoice = false;
+      return;
+    }
 
-    if (isPayment) {
-      // 2단계 승인 질문 시작
-      await executeVoicePayment(roomNumber);
-    } else if (isCancel) {
-      const msg = `${roomNumber}호 납부 취소는 안전을 위해 관리자 화면에서 직접 처리해주세요.`;
-      updateVoiceStatus('warning', msg);
-      speakText(msg);
-      selectRoom(roomNumber);
-    } else {
-      // 단순 호실 선택/조회
+    // 2. 전출 / 퇴실 / 공실처리 / 이사
+    if (/전출|퇴실|공실처리|공실|이사/.test(rawText)) {
+      await executeVoiceCommandById(2, roomNumber);
+      isProcessingVoice = false;
+      return;
+    }
+
+    // 3. 전입 / 신규 계약 / 등록
+    if (/전입|신규계약|등록/.test(rawText) && !/지출|일괄/.test(rawText)) {
+      await executeVoiceCommandById(3, roomNumber);
+      isProcessingVoice = false;
+      return;
+    }
+
+    // 4. 수정 / 삭제 / 변경
+    if (/수정|삭제|변경|고치|바꿔/.test(rawText)) {
+      await executeVoiceCommandById(4, roomNumber);
+      isProcessingVoice = false;
+      return;
+    }
+
+    // 5. 납입현황 / 현황 / 1년간 / 엑셀
+    if (/납입현황|납부현황|현황|1년/.test(rawText)) {
+      await executeVoiceCommandById(5, roomNumber);
+      isProcessingVoice = false;
+      return;
+    }
+
+    // 6. 일괄 등록
+    if (/일괄|일괄등록|사진등록|엑셀붙여넣기/.test(rawText)) {
+      await executeVoiceCommandById(6);
+      isProcessingVoice = false;
+      return;
+    }
+
+    // 7. 만기 확인
+    if (/만기|만기확인|만기안내/.test(rawText)) {
+      await executeVoiceCommandById(7);
+      isProcessingVoice = false;
+      return;
+    }
+
+    // 8. 지출등록
+    if (/지출|지출등록|비용|영수증/.test(rawText)) {
+      await executeVoiceCommandById(8);
+      isProcessingVoice = false;
+      return;
+    }
+
+    // 9. 데이터 백업 및 복구
+    if (/백업|복구|복원|데이터백업|데이터복구/.test(rawText)) {
+      await executeVoiceCommandById(9);
+      isProcessingVoice = false;
+      return;
+    }
+
+    // 10. 월별 통계
+    if (/통계|월별통계|종합통계/.test(rawText)) {
+      await executeVoiceCommandById(10);
+      isProcessingVoice = false;
+      return;
+    }
+
+    // 11. 부가가치세 / 부가세
+    if (/부가가치세|부가세|세무|홈택스/.test(rawText)) {
+      await executeVoiceCommandById(11);
+      isProcessingVoice = false;
+      return;
+    }
+
+    // 12. 도움말 / 매뉴얼
+    if (/도움말|사용법|매뉴얼|설명서/.test(rawText)) {
+      await executeVoiceCommandById(12);
+      isProcessingVoice = false;
+      return;
+    }
+
+    // ── 4. 호실 단독 선택 ──
+    if (roomNumber) {
       selectRoom(roomNumber);
       const room = state.rooms[roomNumber];
       const name = (room && room.name) ? room.name : "공실";
-      const msg = `${roomNumber}호 (${name}) 카드를 열었습니다.`;
+      const msg = `${roomNumber}호 (${name}) 카드를 열었습니다. "입금", "전출", "수정", "현황" 등 구두 명령을 말씀하세요.`;
       updateVoiceStatus('success', msg);
       speakText(msg);
-      setTimeout(() => closeVoiceModal(), 1500);
+      isProcessingVoice = false;
+      return;
     }
+
+    // ── 5. 인식 불가 시 예문 가이드 ──
+    const msg = `인식된 명령이 없습니다. 예문의 번호(1~12번)나 "203호 입금" 처럼 말씀해주세요.`;
+    updateVoiceStatus('warning', msg);
+    speakText(msg, () => {
+      resumeListening();
+    });
   } catch (err) {
     updateVoiceStatus('error', "명령 처리 중 오류: " + err.message);
   } finally {
@@ -17097,6 +17368,8 @@ if (typeof window !== 'undefined') {
   window.confirmVoicePayment = confirmVoicePayment;
   window.cancelVoicePayment = cancelVoicePayment;
   window.requestMicrophonePermissionAndStart = requestMicrophonePermissionAndStart;
+  window.executeVoiceCommandById = executeVoiceCommandById;
+  window.parseMenuNumber = parseMenuNumber;
 }
 
 /**

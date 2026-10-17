@@ -1003,4 +1003,6 @@ if (typeof window !== 'undefined') {
   window.confirmVoicePayment = confirmVoicePayment;
   window.cancelVoicePayment = cancelVoicePayment;
   window.requestMicrophonePermissionAndStart = requestMicrophonePermissionAndStart;
+  window.executeVoiceCommandById = executeVoiceCommandById;
+  window.parseMenuNumber = parseMenuNumber;
 }
