@@ -5,13 +5,18 @@
  */
 
 import { state, currentYear, currentMonth } from './state.js?v=2.0';
-import { handleProcessPayment, handleCancelPayment, selectRoom, renderAll } from './ui.js?v=2.0';
+import { handleProcessPayment, handleCancelPayment, selectRoom, renderAll, openMenuDrawer } from './ui.js?v=2.0';
 import { apiProcessPayment } from './api.js?v=2.0';
 import {
   openContractEditModal,
   openExcelImportModal,
   openExpiryNoticeModal,
   openExpenseModal,
+  openSmsDepositModal,
+  openTenantHistoryModal,
+  saveTestSnapshot,
+  restoreTestSnapshot,
+  handlePhoneMessageClick,
   exportFullSystemBackupJSON,
   triggerFullSystemRestoreFile,
   exportAllRoomsCSV,
@@ -598,24 +603,24 @@ export function stopVoiceRecognition() {
 }
 
 /**
- * 한국어 구두 명령 번호 파싱 ("1번", "2번", ..., "12번" 또는 "일번", "이번" 등)
+ * 한국어 구두 명령 번호 파싱 ("1번", "2번", ..., "17번" 또는 "일번", "십칠번" 등)
  */
 export function parseMenuNumber(rawText) {
   if (!rawText) return null;
   const clean = rawText.replace(/\s+/g, '').toLowerCase();
 
-  // "1번", "1", "12번" 등 순수 숫자 매칭
+  // "1번", "1", "17번" 등 순수 숫자 매칭
   const numMatch = clean.match(/^(\d{1,2})번?$/);
   if (numMatch) {
     const n = parseInt(numMatch[1], 10);
-    if (n >= 1 && n <= 12) return n;
+    if (n >= 1 && n <= 17) return n;
   }
 
-  // 문장 중에 "1번", "12번" 등이 포함된 경우
+  // 문장 중에 "1번", "17번" 등이 포함된 경우
   const insideMatch = clean.match(/(\d{1,2})번/);
   if (insideMatch) {
     const n = parseInt(insideMatch[1], 10);
-    if (n >= 1 && n <= 12) return n;
+    if (n >= 1 && n <= 17) return n;
   }
 
   const map = {
@@ -630,7 +635,12 @@ export function parseMenuNumber(rawText) {
     '구번': 9, '아홉번째': 9, '아홉': 9,
     '십번': 10, '열번째': 10, '열': 10,
     '십일번': 11, '열한번째': 11,
-    '십이번': 12, '열두번째': 12
+    '십이번': 12, '열두번째': 12,
+    '십삼번': 13, '열세번째': 13,
+    '십사번': 14, '열네번째': 14,
+    '십오번': 15, '열다섯번째': 15,
+    '십육번': 16, '열여섯번째': 16,
+    '십칠번': 17, '열일곱번째': 17
   };
 
   for (const [k, v] of Object.entries(map)) {
@@ -640,17 +650,72 @@ export function parseMenuNumber(rawText) {
 }
 
 /**
- * Rent 구두 명령 1~12번 실행기 (말, 터치, 번호 선택 공통 단일 진입점)
+ * Rent 구두 명령 1~17번 실행기 (목적별 완전 분리, 사용 빈도순 배치, 관리자 전용 메뉴 후방 배치)
+ * (말, 터치, 번호 선택 공통 단일 진입점)
  */
 export async function executeVoiceCommandById(cmdId, targetRoom = null, extraFields = {}) {
   const rNum = targetRoom || parseKoreanNumber(String(targetRoom)) || state.selectedRoom || 203;
 
   switch (Number(cmdId)) {
-    case 1: // 1. 203호 수납(입금 등) -> 입금 처리
+    // ── [그룹 1: 실시간 일상 업무 - 최다 빈도] ──
+    case 1: // 1. 203호 수납(입금 등) -> 최장기 미납 탐색 및 2단계 음성 승인
       await executeVoicePayment(rNum);
       break;
 
-    case 2: // 2. 203호 전출(퇴실, 공실처리, 이사 등) -> 전출 처리
+    case 2: // 2. 입금문자 간편인식 -> 은행 SMS 복사 붙여넣기로 즉시 수납
+      closeVoiceModal();
+      if (typeof openSmsDepositModal === 'function') {
+        openSmsDepositModal();
+      } else if (window.openSmsDepositModal) {
+        window.openSmsDepositModal();
+      }
+      speakText("은행 입금문자 간편 수납 창을 열었습니다.");
+      break;
+
+    case 3: // 3. 수납 취소 (미납 환원) -> 지정 호실의 완납을 미납으로 원클릭 롤백
+      await executeVoiceCancelPayment(rNum);
+      break;
+
+    case 4: // 4. 지출등록 -> 수리비, 비품비, 공과금 영수증 기록
+      closeVoiceModal();
+      if (typeof openExpenseModal === 'function') {
+        openExpenseModal();
+      } else if (window.openExpenseModal) {
+        window.openExpenseModal();
+      }
+      speakText("오늘의 지출 내역 등록 창을 열었습니다.");
+      break;
+
+    case 5: // 5. 영수증 발급 및 전송 -> 납부 영수증 / 미납 청구서 문자 발송
+      closeVoiceModal();
+      selectRoom(rNum);
+      if (typeof handlePhoneMessageClick === 'function') {
+        handlePhoneMessageClick(rNum);
+      } else if (window.handlePhoneMessageClick) {
+        window.handlePhoneMessageClick(rNum);
+      }
+      speakText(`${rNum}호 영수증 및 안내 문자 발송 창을 열었습니다.`);
+      break;
+
+    // ── [그룹 2: 계약 및 호실 관리 - 수시 업무] ──
+    case 6: // 6. 203호 전입 (신규 세입자 단건 등록) -> 공실에 새 세입자 계약 입력
+      closeVoiceModal();
+      selectRoom(rNum);
+      if (typeof openContractEditModal === 'function') {
+        openContractEditModal(rNum);
+      } else if (window.openContractEditModal) {
+        window.openContractEditModal(rNum);
+      }
+      setTimeout(() => {
+        const nameEl = document.getElementById('formName');
+        if (nameEl) {
+          nameEl.focus();
+        }
+      }, 200);
+      speakText(`${rNum}호 신규 세입자 전입 등록 창을 열었습니다.`);
+      break;
+
+    case 7: // 7. 203호 전출(퇴실, 공실처리) -> 퇴실일자 자동 설정 및 정산 포커스
       closeVoiceModal();
       selectRoom(rNum);
       if (typeof openContractEditModal === 'function') {
@@ -670,18 +735,7 @@ export async function executeVoiceCommandById(cmdId, targetRoom = null, extraFie
       speakText(`${rNum}호 전출 및 퇴실 처리 창을 열었습니다.`);
       break;
 
-    case 3: // 3. 203호 전입(등록 등) -> 계약서 사진, 엑셀 붙여넣기 등록
-      closeVoiceModal();
-      selectRoom(rNum);
-      if (typeof openExcelImportModal === 'function') {
-        openExcelImportModal();
-      } else if (window.openExcelImportModal) {
-        window.openExcelImportModal();
-      }
-      speakText(`${rNum}호 전입 및 계약서 사진/엑셀 등록 창을 열었습니다.`);
-      break;
-
-    case 4: // 4. 203호 수정, 삭제 (세입자명/보증금 등 구두 추출 필드 자동 입력 지원)
+    case 8: // 8. 203호 수정, 삭제 -> 세입자명/보증금/월세/관리비 구두 추출 필드 자동 입력 지원
       closeVoiceModal();
       selectRoom(rNum);
       if (typeof openContractEditModal === 'function') {
@@ -784,7 +838,18 @@ export async function executeVoiceCommandById(cmdId, targetRoom = null, extraFie
       }, 150);
       break;
 
-    case 5: // 5. 203호 납입현황(월별, 1년간) 엑셀, pdf
+    case 9: // 9. 만기 확인 및 갱신 안내 -> 만기 도래 호실 목록 & 재계약 문자 통보
+      closeVoiceModal();
+      if (typeof openExpiryNoticeModal === 'function') {
+        openExpiryNoticeModal();
+      } else if (window.openExpiryNoticeModal) {
+        window.openExpiryNoticeModal();
+      }
+      speakText("만기 도래 호실 확인 및 갱신 안내 창을 열었습니다.");
+      break;
+
+    // ── [그룹 3: 장부, 출력 및 통계 - 세입자 교부용 vs 건물주 결산용 완전 분리] ──
+    case 10: // 10. 203호 납입현황 (세입자 교부·출력용 1년 납부 영수대장 엑셀 & A4 인쇄)
       closeVoiceModal();
       selectRoom(rNum);
       if (typeof exportCurrentRoomCSV === 'function') {
@@ -792,74 +857,81 @@ export async function executeVoiceCommandById(cmdId, targetRoom = null, extraFie
       } else if (window.exportCurrentRoomCSV) {
         window.exportCurrentRoomCSV();
       }
-      speakText(`${rNum}호 월별 납입현황 엑셀을 다운로드하고 인쇄 화면을 준비합니다.`);
+      speakText(`${rNum}호 세입자 교부용 납입현황 엑셀을 다운로드하고 인쇄 화면을 준비합니다.`);
       setTimeout(() => {
-        if (confirm(`${rNum}호 납입현황 엑셀(CSV)이 다운로드되었습니다.\n\nA4 인쇄 / PDF 저장을 실행하시겠습니까?`)) {
+        if (confirm(`${rNum}호 납입현황 엑셀(CSV)이 다운로드되었습니다.\n\n세입자 교부용 A4 인쇄 / PDF 저장을 실행하시겠습니까?`)) {
           window.print();
         }
       }, 600);
       break;
 
-    case 6: // 6. 일괄 등록 -> 사진, 엑셀 붙여넣기
-      closeVoiceModal();
-      if (typeof openExcelImportModal === 'function') {
-        openExcelImportModal();
-      } else if (window.openExcelImportModal) {
-        window.openExcelImportModal();
-      }
-      speakText("사진 및 엑셀 일괄 등록 창을 열었습니다.");
-      break;
-
-    case 7: // 7. 만기 확인
-      closeVoiceModal();
-      if (typeof openExpiryNoticeModal === 'function') {
-        openExpiryNoticeModal();
-      } else if (window.openExpiryNoticeModal) {
-        window.openExpiryNoticeModal();
-      }
-      speakText("만기 도래 호실 확인 창을 열었습니다.");
-      break;
-
-    case 8: // 8. 지출등록
-      closeVoiceModal();
-      if (typeof openExpenseModal === 'function') {
-        openExpenseModal();
-      } else if (window.openExpenseModal) {
-        window.openExpenseModal();
-      }
-      speakText("오늘의 지출 내역 등록 창을 열었습니다.");
-      break;
-
-    case 9: // 9. 데이터 백업 및 복구 -> json/엑셀
-      const promptHtml = `
-        <div class="p-2 text-center space-y-2">
-          <div class="text-xs font-bold text-emerald-300">💾 데이터 백업 및 복구</div>
-          <p class="text-[11px] text-slate-300">원하시는 데이터 관리 작업을 선택해주세요.</p>
-          <div class="grid grid-cols-2 gap-2 pt-1">
-            <button type="button" onclick="exportFullSystemBackupJSON(); closeVoiceModal();" class="py-2 px-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs shadow cursor-pointer active:scale-95 transition">
-              💾 전체 백업 다운로드
-            </button>
-            <button type="button" onclick="triggerFullSystemRestoreFile(); closeVoiceModal();" class="py-2 px-1.5 rounded-xl bg-indigo-700 hover:bg-indigo-600 text-white font-bold text-xs shadow cursor-pointer active:scale-95 transition">
-              📂 백업 파일 복원
-            </button>
-          </div>
-        </div>
-      `;
-      updateVoiceStatus('confirm', promptHtml);
-      speakText("전체 데이터 백업 다운로드 또는 복원 작업을 선택해주세요.");
-      break;
-
-    case 10: // 10. 월별 통계-> 엑셀, pdf
+    case 11: // 11. 건물 전체 월별 통계 (건물주 결산용 연간 누적 합계 및 호실별/월별 종합 통계)
       closeVoiceModal();
       if (typeof exportAllRoomsCSV === 'function') {
         exportAllRoomsCSV();
       } else if (window.exportAllRoomsCSV) {
         window.exportAllRoomsCSV();
       }
-      speakText("전체 호실의 월별 수납 및 계약대장 엑셀을 다운로드합니다.");
+      speakText("건물 전체 연간 누적 합계 및 월별 통계 엑셀을 다운로드합니다.");
       break;
 
-    case 11: // 11. 부가가치세(부가세, 부가세 자료 산출 등)
+    case 12: // 12. 전출자 1년 보존 이력 -> 퇴실자 과거 계약 대장 & 납부 이력 1년 영구 보존 조회
+      closeVoiceModal();
+      if (typeof openTenantHistoryModal === 'function') {
+        openTenantHistoryModal();
+      } else if (window.openTenantHistoryModal) {
+        window.openTenantHistoryModal();
+      }
+      speakText("퇴실자 1년 보존 이력 및 과거 장부 창을 열었습니다.");
+      break;
+
+    // ── [그룹 4: 시스템 및 관리자 전용 메뉴 - 뒤편 배치] ──
+    case 13: // 13. 건물 전체 일괄등록 (건물 전체 데이터를 사진 및 엑셀 붙여넣기로 일괄 구축)
+      closeVoiceModal();
+      if (typeof openExcelImportModal === 'function') {
+        openExcelImportModal();
+      } else if (window.openExcelImportModal) {
+        window.openExcelImportModal();
+      }
+      speakText("건물 전체 데이터 엑셀 및 사진 일괄 등록 창을 열었습니다.");
+      break;
+
+    case 14: // 14. 1초 롤백 & 스냅샷 백업 (실수 직전 1초 롤백, 스냅샷 저장 및 JSON 풀 백업/복구)
+      const promptHtml = `
+        <div class="p-2 text-center space-y-2">
+          <div class="text-xs font-bold text-emerald-300">↩️ 1초 롤백 & 백업 관리 센터</div>
+          <p class="text-[11px] text-slate-300">원하시는 백업 또는 롤백 작업을 선택하세요.</p>
+          <div class="grid grid-cols-2 gap-1.5 pt-1">
+            <button type="button" onclick="saveTestSnapshot(); closeVoiceModal();" class="py-2 px-1 rounded-xl bg-teal-800 hover:bg-teal-700 text-white font-bold text-xs shadow cursor-pointer active:scale-95 transition">
+              📸 스냅샷 즉시 저장
+            </button>
+            <button type="button" onclick="restoreTestSnapshot(); closeVoiceModal();" class="py-2 px-1 rounded-xl bg-amber-800 hover:bg-amber-700 text-white font-bold text-xs shadow cursor-pointer active:scale-95 transition">
+              ↩️ 1초 전 즉시 롤백
+            </button>
+            <button type="button" onclick="exportFullSystemBackupJSON(); closeVoiceModal();" class="py-2 px-1 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-white font-bold text-xs shadow cursor-pointer active:scale-95 transition">
+              💾 JSON 전체 백업
+            </button>
+            <button type="button" onclick="triggerFullSystemRestoreFile(); closeVoiceModal();" class="py-2 px-1 rounded-xl bg-indigo-800 hover:bg-indigo-700 text-white font-bold text-xs shadow cursor-pointer active:scale-95 transition">
+              📂 파일에서 복원
+            </button>
+          </div>
+        </div>
+      `;
+      updateVoiceStatus('confirm', promptHtml);
+      speakText("1초 롤백 또는 시스템 백업 복구 작업을 선택해주세요.");
+      break;
+
+    case 15: // 15. 건물 / 지점 변경 -> 원룸 매장 선택 드로어
+      closeVoiceModal();
+      if (typeof openMenuDrawer === 'function') {
+        openMenuDrawer();
+      } else if (window.openMenuDrawer) {
+        window.openMenuDrawer();
+      }
+      speakText("건물 및 지점 선택 메뉴를 열었습니다.");
+      break;
+
+    case 16: // 16. 부가가치세(VAT) 신고 자료 산출 -> 국세청 홈택스 세무 서식
       closeVoiceModal();
       if (typeof openVatModal === 'function') {
         openVatModal();
@@ -869,7 +941,7 @@ export async function executeVoiceCommandById(cmdId, targetRoom = null, extraFie
       speakText("부가가치세 신고 및 세무 자료 산출 창을 열었습니다.");
       break;
 
-    case 12: // 12. 도움말(사용법 등)
+    case 17: // 17. 도움말 (공식 운영 매뉴얼 & 인쇄/PDF)
       window.open('./manual.html', '_blank');
       closeVoiceModal();
       speakText("운영 매뉴얼 도움말을 새 창으로 열었습니다.");
@@ -882,7 +954,7 @@ export async function executeVoiceCommandById(cmdId, targetRoom = null, extraFie
 }
 
 /**
- * 인식된 음성 문장 처리 핸들러 (대화형 2단계 승인 및 1~12번 구두 명령 지원)
+ * 인식된 음성 문장 처리 핸들러 (대화형 2단계 승인 및 1~17번 구두 명령 지원)
  */
 export async function handleVoiceCommand(rawText) {
   if (isProcessingVoice) return;
@@ -933,7 +1005,7 @@ export async function handleVoiceCommand(rawText) {
       }
     }
 
-    // ── 2. 번호 기반 구두 명령 파싱 ("1번", "2번", ..., "12번") ──
+    // ── 2. 번호 기반 구두 명령 파싱 ("1번", "2번", ..., "17번") ──
     const menuNum = parseMenuNumber(rawText);
     const roomNumber = parseKoreanNumber(rawText);
     const monthMatch = rawText.match(/(\d{1,2})\s*월/);
@@ -949,96 +1021,124 @@ export async function handleVoiceCommand(rawText) {
       return;
     }
 
-    // ── 3. 키워드 기반 자연어 구두 명령 파싱 ──
-    // 0. 수납 취소 / 미납 환원 ("302호 10월 수납 취소", "302호 10월 미납으로 처리", "10월 납부 취소")
+    // ── 3. 키워드 기반 자연어 구두 명령 파싱 (빈도 순서 기반 디스패치) ──
+    // 2. 입금문자 간편인식 ("문자 수납", "입금문자", "SMS 수납")
+    if (/문자|sms|문자로/.test(rawText) && /수납|입금|인식/.test(rawText)) {
+      await executeVoiceCommandById(2);
+      isProcessingVoice = false;
+      return;
+    }
+
+    // 3. 수납 취소 / 미납 환원 ("302호 10월 수납 취소", "302호 10월 미납으로 처리", "10월 납부 취소")
     if (/취소|미납/.test(rawText) && /수납|입금|완납|납부|월/.test(rawText)) {
       await executeVoiceCancelPayment(roomNumber, specificMonth);
       isProcessingVoice = false;
       return;
     }
 
-    // 1. 수납 / 입금
+    // 1. 호실 수납 / 입금 처리 ("203호 입금", "203호 5월 완납")
     if (/수납|입금|완납|납부|넣었/.test(rawText)) {
       await executeVoicePayment(roomNumber, specificMonth);
       isProcessingVoice = false;
       return;
     }
 
-    // 2. 전출 / 퇴실 / 공실처리 / 이사
-    if (/전출|퇴실|공실처리|공실|이사/.test(rawText)) {
-      await executeVoiceCommandById(2, roomNumber);
+    // 4. 지출 등록 ("지출 등록", "수리비 기록", "비용")
+    if (/지출|비용|수리비|비품비/.test(rawText)) {
+      await executeVoiceCommandById(4);
       isProcessingVoice = false;
       return;
     }
 
-    // 3. 전입 / 신규 계약 / 등록
-    if (/전입|신규계약|등록/.test(rawText) && !/지출|일괄/.test(rawText)) {
-      await executeVoiceCommandById(3, roomNumber);
-      isProcessingVoice = false;
-      return;
-    }
-
-    // 4. 수정 / 삭제 / 변경 또는 계약 필드(세입자명/보증금/월세/관리비/연락처) 발화
-    const contractFields = parseContractVoiceFields(rawText);
-    const hasContractFields = Object.keys(contractFields).length > 0;
-    if (hasContractFields || /수정|삭제|변경|고치|바꿔/.test(rawText)) {
-      await executeVoiceCommandById(4, roomNumber, contractFields);
-      isProcessingVoice = false;
-      return;
-    }
-
-    // 5. 납입현황 / 현황 / 1년간 / 엑셀
-    if (/납입현황|납부현황|현황|1년/.test(rawText)) {
+    // 5. 영수증 발급 및 전송 ("영수증 발급", "영수증 보내줘", "문자 전송")
+    if (/영수증|청구서|안내문자/.test(rawText)) {
       await executeVoiceCommandById(5, roomNumber);
       isProcessingVoice = false;
       return;
     }
 
-    // 6. 일괄 등록
-    if (/일괄|일괄등록|사진등록|엑셀붙여넣기/.test(rawText)) {
-      await executeVoiceCommandById(6);
+    // 7. 전출 / 퇴실 / 공실처리 / 이사
+    if (/전출|퇴실|공실처리|공실|이사/.test(rawText)) {
+      await executeVoiceCommandById(7, roomNumber);
       isProcessingVoice = false;
       return;
     }
 
-    // 7. 만기 확인
-    if (/만기|만기확인|만기안내/.test(rawText)) {
-      await executeVoiceCommandById(7);
+    // 13. 건물 전체 일괄 등록 (엑셀/사진 일괄)
+    if (/일괄|일괄등록|사진등록|엑셀붙여넣기|전체등록/.test(rawText)) {
+      await executeVoiceCommandById(13);
       isProcessingVoice = false;
       return;
     }
 
-    // 8. 지출등록
-    if (/지출|지출등록|비용|영수증/.test(rawText)) {
-      await executeVoiceCommandById(8);
+    // 6. 호실 전입 / 신규 계약 / 새 세입자 등록
+    if (/전입|신규계약|새세입자|입주/.test(rawText)) {
+      await executeVoiceCommandById(6, roomNumber);
       isProcessingVoice = false;
       return;
     }
 
-    // 9. 데이터 백업 및 복구
-    if (/백업|복구|복원|데이터백업|데이터복구/.test(rawText)) {
+    // 8. 계약 수정 / 삭제 / 변경 또는 계약 필드(세입자명/보증금/월세/관리비/연락처) 발화
+    const contractFields = parseContractVoiceFields(rawText);
+    const hasContractFields = Object.keys(contractFields).length > 0;
+    if (hasContractFields || /수정|삭제|변경|고치|바꿔/.test(rawText)) {
+      await executeVoiceCommandById(8, roomNumber, contractFields);
+      isProcessingVoice = false;
+      return;
+    }
+
+    // 9. 만기 확인 및 갱신 안내
+    if (/만기|만기확인|만기안내|갱신/.test(rawText)) {
       await executeVoiceCommandById(9);
       isProcessingVoice = false;
       return;
     }
 
-    // 10. 월별 통계
-    if (/통계|월별통계|종합통계/.test(rawText)) {
-      await executeVoiceCommandById(10);
+    // 10. 호실별 납입현황 (세입자 교부용)
+    if (roomNumber && /납입현황|납부현황|현황|1년/.test(rawText)) {
+      await executeVoiceCommandById(10, roomNumber);
       isProcessingVoice = false;
       return;
     }
 
-    // 11. 부가가치세 / 부가세
-    if (/부가가치세|부가세|세무|홈택스/.test(rawText)) {
+    // 11. 건물 전체 월별 통계 (연간 누적/종합 통계)
+    if (/통계|월별통계|종합통계|전체현황|누적/.test(rawText)) {
       await executeVoiceCommandById(11);
       isProcessingVoice = false;
       return;
     }
 
-    // 12. 도움말 / 매뉴얼
-    if (/도움말|사용법|매뉴얼|설명서/.test(rawText)) {
+    // 12. 전출자 1년 보존 이력
+    if (/전출자|퇴실자|이력|과거|보존/.test(rawText)) {
       await executeVoiceCommandById(12);
+      isProcessingVoice = false;
+      return;
+    }
+
+    // 14. 1초 롤백 & 스냅샷 / 데이터 백업 및 복구
+    if (/롤백|스냅샷|되돌리기|백업|복구|복원/.test(rawText)) {
+      await executeVoiceCommandById(14);
+      isProcessingVoice = false;
+      return;
+    }
+
+    // 15. 건물 / 지점 변경
+    if (/건물|지점|매장|지점변경|건물변경/.test(rawText)) {
+      await executeVoiceCommandById(15);
+      isProcessingVoice = false;
+      return;
+    }
+
+    // 16. 부가가치세 / 부가세
+    if (/부가가치세|부가세|세무|홈택스/.test(rawText)) {
+      await executeVoiceCommandById(16);
+      isProcessingVoice = false;
+      return;
+    }
+
+    // 17. 도움말 / 매뉴얼
+    if (/도움말|사용법|매뉴얼|설명서/.test(rawText)) {
+      await executeVoiceCommandById(17);
       isProcessingVoice = false;
       return;
     }

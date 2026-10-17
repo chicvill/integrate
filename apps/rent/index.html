@@ -1557,7 +1557,7 @@
           <span>Voice & Command Assistant</span>
         </div>
         <h3 class="text-base font-black text-white mt-1">🎙️ 말로 입력 & Rent 구두 명령</h3>
-        <p class="text-[11px] text-slate-400">말씀하시거나, 메뉴를 터치하거나 번호(1~12)를 선택하면 즉시 실행됩니다.</p>
+        <p class="text-[11px] text-slate-400">말씀하시거나, 메뉴를 터치하거나 번호(1~17)를 선택하면 즉시 실행됩니다.</p>
       </div>
 
       <!-- Compact Mic Action Bar -->
@@ -1592,149 +1592,225 @@
         </button>
       </div>
 
-      <!-- ── Rent 구두 명령 예문 리스트 (사진 스타일 깔끔한 메모지 테마) ── -->
-      <div class="flex-1 overflow-y-auto text-left rounded-xl border border-teal-500/40 bg-[#091816]/95 p-2.5 sm:p-3 shadow-inner space-y-1 custom-scrollbar">
-        <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-teal-500/30">
+      <!-- ── Rent 구두 명령 예문 리스트 (사진 스타일 깔끔한 메모지 테마 - 17대 표준) ── -->
+      <div class="flex-1 overflow-y-auto text-left rounded-xl border border-teal-500/40 bg-[#091816]/95 p-2.5 sm:p-3 shadow-inner space-y-2 custom-scrollbar">
+        <div class="flex items-center justify-between pb-1.5 mb-1 border-b border-teal-500/30">
           <div class="text-xs font-black text-teal-300 flex items-center gap-1.5">
             <span class="text-sm">📝</span>
-            <span class="tracking-wide">Rent 구두 명령</span>
+            <span class="tracking-wide">Rent 구두 명령 (실무 빈도순 17대 표준)</span>
           </div>
-          <span class="text-[10px] text-teal-400/90 font-medium">말 · 터치 · 번호 모두 즉시 작동</span>
+          <span class="text-[10px] text-teal-400/90 font-medium">말 · 터치 · 번호(1~17) 즉시 실행</span>
         </div>
 
-        <div class="space-y-1 text-xs">
-          <!-- 1. 수납 -->
+        <!-- 그룹 1: 실시간 일상 업무 (Daily Ops - 최다 빈도) -->
+        <div class="space-y-1">
+          <div class="text-[10px] font-bold text-teal-400/80 px-1 pt-0.5 flex items-center gap-1">
+            <span>⚡ 실시간 일상 업무</span>
+          </div>
+
+          <!-- 1. 수납 처리 -->
           <div onclick="executeVoiceCommandById(1)" class="group flex items-center gap-2 p-1.5 rounded-lg bg-teal-950/40 hover:bg-teal-900/60 cursor-pointer transition border border-teal-800/40 hover:border-teal-400/60 shadow-xs">
             <button type="button" onclick="event.stopPropagation(); executeVoiceCommandById(1)" class="w-6 h-6 rounded-md bg-teal-500/20 text-teal-300 border border-teal-400/50 font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-teal-400 group-hover:text-slate-950 transition">1</button>
             <div class="min-w-0 flex-1 leading-snug">
               <span class="font-bold text-slate-100">203호 수납(입금 등)</span>
-              <span class="text-teal-400/90 text-[11px]"> ➔ 입금 처리 (2단계 승인)</span>
+              <span class="text-teal-400/90 text-[11px]"> ➔ 최장기 미납 탐색 및 2단계 음성 승인</span>
             </div>
             <span class="text-[9px] text-teal-400 bg-teal-950/80 border border-teal-700/50 px-1 py-0.5 rounded shrink-0">실행</span>
           </div>
 
-          <!-- 2. 전출 -->
+          <!-- 2. 입금문자 간편인식 -->
           <div onclick="executeVoiceCommandById(2)" class="group flex items-center gap-2 p-1.5 rounded-lg bg-teal-950/40 hover:bg-teal-900/60 cursor-pointer transition border border-teal-800/40 hover:border-teal-400/60 shadow-xs">
             <button type="button" onclick="event.stopPropagation(); executeVoiceCommandById(2)" class="w-6 h-6 rounded-md bg-teal-500/20 text-teal-300 border border-teal-400/50 font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-teal-400 group-hover:text-slate-950 transition">2</button>
             <div class="min-w-0 flex-1 leading-snug">
-              <span class="font-bold text-slate-100">203호 전출(퇴실, 공실처리, 이사 등)</span>
-              <span class="text-teal-400/90 text-[11px]"> ➔ 전출 처리</span>
+              <span class="font-bold text-slate-100">입금문자 간편인식</span>
+              <span class="text-teal-400/90 text-[11px]"> ➔ 은행 SMS 복사 붙여넣기로 즉시 수납</span>
             </div>
             <span class="text-[9px] text-teal-400 bg-teal-950/80 border border-teal-700/50 px-1 py-0.5 rounded shrink-0">실행</span>
           </div>
 
-          <!-- 3. 전입 -->
+          <!-- 3. 수납 취소 / 미납 환원 -->
           <div onclick="executeVoiceCommandById(3)" class="group flex items-center gap-2 p-1.5 rounded-lg bg-teal-950/40 hover:bg-teal-900/60 cursor-pointer transition border border-teal-800/40 hover:border-teal-400/60 shadow-xs">
-            <button type="button" onclick="event.stopPropagation(); executeVoiceCommandById(3)" class="w-6 h-6 rounded-md bg-teal-500/20 text-teal-300 border border-teal-400/50 font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-teal-400 group-hover:text-slate-950 transition">3</button>
+            <button type="button" onclick="event.stopPropagation(); executeVoiceCommandById(3)" class="w-6 h-6 rounded-md bg-rose-500/20 text-rose-300 border border-rose-400/50 font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-rose-400 group-hover:text-slate-950 transition">3</button>
             <div class="min-w-0 flex-1 leading-snug">
-              <span class="font-bold text-slate-100">203호 전입(등록 등)</span>
-              <span class="text-teal-400/90 text-[11px]"> ➔ 계약서 사진, 엑셀 붙여넣기 등록</span>
+              <span class="font-bold text-slate-100">수납 취소 (미납 환원)</span>
+              <span class="text-rose-400/90 text-[11px]"> ➔ 잘못 수납된 내역을 '미납'으로 원클릭 롤백</span>
             </div>
-            <span class="text-[9px] text-teal-400 bg-teal-950/80 border border-teal-700/50 px-1 py-0.5 rounded shrink-0">실행</span>
+            <span class="text-[9px] text-rose-400 bg-rose-950/80 border border-rose-700/50 px-1 py-0.5 rounded shrink-0">실행</span>
           </div>
 
-          <!-- 4. 수정, 삭제 -->
+          <!-- 4. 지출등록 -->
           <div onclick="executeVoiceCommandById(4)" class="group flex items-center gap-2 p-1.5 rounded-lg bg-teal-950/40 hover:bg-teal-900/60 cursor-pointer transition border border-teal-800/40 hover:border-teal-400/60 shadow-xs">
             <button type="button" onclick="event.stopPropagation(); executeVoiceCommandById(4)" class="w-6 h-6 rounded-md bg-teal-500/20 text-teal-300 border border-teal-400/50 font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-teal-400 group-hover:text-slate-950 transition">4</button>
             <div class="min-w-0 flex-1 leading-snug">
-              <span class="font-bold text-slate-100">203호 수정, 삭제</span>
-              <span class="text-teal-400/90 text-[11px]"> ➔ 호실 정보·계약 수정 및 삭제</span>
+              <span class="font-bold text-slate-100">지출등록</span>
+              <span class="text-teal-400/90 text-[11px]"> ➔ 수리비, 비품비, 공과금 영수증 기록</span>
             </div>
             <span class="text-[9px] text-teal-400 bg-teal-950/80 border border-teal-700/50 px-1 py-0.5 rounded shrink-0">실행</span>
           </div>
 
-          <!-- 5. 납입현황 엑셀, pdf -->
+          <!-- 5. 영수증 발급/전송 -->
           <div onclick="executeVoiceCommandById(5)" class="group flex items-center gap-2 p-1.5 rounded-lg bg-teal-950/40 hover:bg-teal-900/60 cursor-pointer transition border border-teal-800/40 hover:border-teal-400/60 shadow-xs">
             <button type="button" onclick="event.stopPropagation(); executeVoiceCommandById(5)" class="w-6 h-6 rounded-md bg-teal-500/20 text-teal-300 border border-teal-400/50 font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-teal-400 group-hover:text-slate-950 transition">5</button>
             <div class="min-w-0 flex-1 leading-snug">
-              <span class="font-bold text-slate-100">203호 납입현황(월별, 1년간)</span>
-              <span class="text-teal-400/90 text-[11px]"> ➔ 엑셀, PDF 납부대장</span>
+              <span class="font-bold text-slate-100">영수증 발급 및 전송</span>
+              <span class="text-teal-400/90 text-[11px]"> ➔ 세입자 납부 영수증 / 미납 청구서 문자 발송</span>
             </div>
             <span class="text-[9px] text-teal-400 bg-teal-950/80 border border-teal-700/50 px-1 py-0.5 rounded shrink-0">실행</span>
           </div>
+        </div>
 
-          <!-- 6. 일괄 등록 -->
+        <!-- 그룹 2: 계약 및 호실 관리 (Tenancy & Rooms) -->
+        <div class="space-y-1 pt-1 border-t border-teal-900/50">
+          <div class="text-[10px] font-bold text-emerald-400/80 px-1 pt-0.5 flex items-center gap-1">
+            <span>🔑 계약 및 호실 관리</span>
+          </div>
+
+          <!-- 6. 203호 전입 (신규 세입자 등록) -->
           <div onclick="executeVoiceCommandById(6)" class="group flex items-center gap-2 p-1.5 rounded-lg bg-teal-950/40 hover:bg-teal-900/60 cursor-pointer transition border border-teal-800/40 hover:border-teal-400/60 shadow-xs">
             <button type="button" onclick="event.stopPropagation(); executeVoiceCommandById(6)" class="w-6 h-6 rounded-md bg-teal-500/20 text-teal-300 border border-teal-400/50 font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-teal-400 group-hover:text-slate-950 transition">6</button>
             <div class="min-w-0 flex-1 leading-snug">
-              <span class="font-bold text-slate-100">일괄 등록</span>
-              <span class="text-teal-400/90 text-[11px]"> ➔ 사진, 엑셀 붙여넣기 일괄 등록</span>
+              <span class="font-bold text-slate-100">203호 전입 (신규 세입자 등록)</span>
+              <span class="text-teal-400/90 text-[11px]"> ➔ 공실 호실에 새 세입자 계약 단건 입력</span>
             </div>
             <span class="text-[9px] text-teal-400 bg-teal-950/80 border border-teal-700/50 px-1 py-0.5 rounded shrink-0">실행</span>
           </div>
 
-          <!-- 7. 만기 확인 -->
+          <!-- 7. 전출 및 퇴실 처리 -->
           <div onclick="executeVoiceCommandById(7)" class="group flex items-center gap-2 p-1.5 rounded-lg bg-teal-950/40 hover:bg-teal-900/60 cursor-pointer transition border border-teal-800/40 hover:border-teal-400/60 shadow-xs">
             <button type="button" onclick="event.stopPropagation(); executeVoiceCommandById(7)" class="w-6 h-6 rounded-md bg-teal-500/20 text-teal-300 border border-teal-400/50 font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-teal-400 group-hover:text-slate-950 transition">7</button>
             <div class="min-w-0 flex-1 leading-snug">
-              <span class="font-bold text-slate-100">만기 확인</span>
-              <span class="text-teal-400/90 text-[11px]"> ➔ 3일·1·3개월 전 만기 리스트 & 문자</span>
+              <span class="font-bold text-slate-100">203호 전출(퇴실, 공실처리)</span>
+              <span class="text-teal-400/90 text-[11px]"> ➔ 퇴실일자 설정 및 정산 처리</span>
             </div>
             <span class="text-[9px] text-teal-400 bg-teal-950/80 border border-teal-700/50 px-1 py-0.5 rounded shrink-0">실행</span>
           </div>
 
-          <!-- 8. 지출등록 -->
+          <!-- 8. 계약 정보 수정 및 삭제 -->
           <div onclick="executeVoiceCommandById(8)" class="group flex items-center gap-2 p-1.5 rounded-lg bg-teal-950/40 hover:bg-teal-900/60 cursor-pointer transition border border-teal-800/40 hover:border-teal-400/60 shadow-xs">
             <button type="button" onclick="event.stopPropagation(); executeVoiceCommandById(8)" class="w-6 h-6 rounded-md bg-teal-500/20 text-teal-300 border border-teal-400/50 font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-teal-400 group-hover:text-slate-950 transition">8</button>
             <div class="min-w-0 flex-1 leading-snug">
-              <span class="font-bold text-slate-100">지출등록</span>
-              <span class="text-teal-400/90 text-[11px]"> ➔ 수리비, 비품비, 영수증 간편 기록</span>
+              <span class="font-bold text-slate-100">203호 수정, 삭제</span>
+              <span class="text-teal-400/90 text-[11px]"> ➔ 세입자명·보증금·월세 구두인식 자동입력</span>
             </div>
             <span class="text-[9px] text-teal-400 bg-teal-950/80 border border-teal-700/50 px-1 py-0.5 rounded shrink-0">실행</span>
           </div>
 
-          <!-- 9. 데이터 백업 및 복구 -->
+          <!-- 9. 만기 확인 및 갱신 안내 -->
           <div onclick="executeVoiceCommandById(9)" class="group flex items-center gap-2 p-1.5 rounded-lg bg-teal-950/40 hover:bg-teal-900/60 cursor-pointer transition border border-teal-800/40 hover:border-teal-400/60 shadow-xs">
             <button type="button" onclick="event.stopPropagation(); executeVoiceCommandById(9)" class="w-6 h-6 rounded-md bg-teal-500/20 text-teal-300 border border-teal-400/50 font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-teal-400 group-hover:text-slate-950 transition">9</button>
             <div class="min-w-0 flex-1 leading-snug">
-              <span class="font-bold text-slate-100">데이터 백업 및 복구</span>
-              <span class="text-teal-400/90 text-[11px]"> ➔ JSON / 엑셀 다운로드 및 복원</span>
+              <span class="font-bold text-slate-100">만기 확인 및 갱신 안내</span>
+              <span class="text-teal-400/90 text-[11px]"> ➔ 3일·1·3개월 전 만기 리스트 & 재계약 문자</span>
             </div>
             <span class="text-[9px] text-teal-400 bg-teal-950/80 border border-teal-700/50 px-1 py-0.5 rounded shrink-0">실행</span>
           </div>
+        </div>
 
-          <!-- 10. 월별 통계 -->
+        <!-- 그룹 3: 장부, 출력 및 통계 (Ledger, Output & Stats) -->
+        <div class="space-y-1 pt-1 border-t border-teal-900/50">
+          <div class="text-[10px] font-bold text-cyan-400/80 px-1 pt-0.5 flex items-center gap-1">
+            <span>📑 장부, 출력 및 통계 (세입자용 vs 건물주용)</span>
+          </div>
+
+          <!-- 10. 203호 납입현황 (세입자 교부용) -->
           <div onclick="executeVoiceCommandById(10)" class="group flex items-center gap-2 p-1.5 rounded-lg bg-teal-950/40 hover:bg-teal-900/60 cursor-pointer transition border border-teal-800/40 hover:border-teal-400/60 shadow-xs">
             <button type="button" onclick="event.stopPropagation(); executeVoiceCommandById(10)" class="w-6 h-6 rounded-md bg-teal-500/20 text-teal-300 border border-teal-400/50 font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-teal-400 group-hover:text-slate-950 transition">10</button>
             <div class="min-w-0 flex-1 leading-snug">
-              <span class="font-bold text-slate-100">월별 통계</span>
-              <span class="text-teal-400/90 text-[11px]"> ➔ 전체 호실 계약대장 엑셀, PDF</span>
+              <span class="font-bold text-slate-100">203호 납입현황 (세입자 교부용)</span>
+              <span class="text-teal-400/90 text-[11px]"> ➔ 당해 호실 1년간 납부 영수대장 엑셀 & A4 인쇄</span>
             </div>
             <span class="text-[9px] text-teal-400 bg-teal-950/80 border border-teal-700/50 px-1 py-0.5 rounded shrink-0">실행</span>
           </div>
 
-          <!-- 11. 부가가치세 -->
+          <!-- 11. 건물 전체 월별 통계 (건물주 결산용) -->
           <div onclick="executeVoiceCommandById(11)" class="group flex items-center gap-2 p-1.5 rounded-lg bg-teal-950/40 hover:bg-teal-900/60 cursor-pointer transition border border-teal-800/40 hover:border-teal-400/60 shadow-xs">
             <button type="button" onclick="event.stopPropagation(); executeVoiceCommandById(11)" class="w-6 h-6 rounded-md bg-teal-500/20 text-teal-300 border border-teal-400/50 font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-teal-400 group-hover:text-slate-950 transition">11</button>
             <div class="min-w-0 flex-1 leading-snug">
-              <span class="font-bold text-slate-100">부가가치세</span>
-              <span class="text-teal-400/90 text-[11px]">(부가세, 부가세 자료 산출 등)</span>
+              <span class="font-bold text-slate-100">건물 전체 월별 통계 (연간 누적)</span>
+              <span class="text-teal-400/90 text-[11px]"> ➔ 연간 누적 합계 및 전체 호실 결산 엑셀</span>
             </div>
             <span class="text-[9px] text-teal-400 bg-teal-950/80 border border-teal-700/50 px-1 py-0.5 rounded shrink-0">실행</span>
           </div>
 
-          <!-- 12. 도움말 -->
+          <!-- 12. 전출자 1년 보존 이력 -->
           <div onclick="executeVoiceCommandById(12)" class="group flex items-center gap-2 p-1.5 rounded-lg bg-teal-950/40 hover:bg-teal-900/60 cursor-pointer transition border border-teal-800/40 hover:border-teal-400/60 shadow-xs">
             <button type="button" onclick="event.stopPropagation(); executeVoiceCommandById(12)" class="w-6 h-6 rounded-md bg-teal-500/20 text-teal-300 border border-teal-400/50 font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-teal-400 group-hover:text-slate-950 transition">12</button>
             <div class="min-w-0 flex-1 leading-snug">
-              <span class="font-bold text-slate-100">도움말</span>
-              <span class="text-teal-400/90 text-[11px]">(사용법 등 공식 매뉴얼)</span>
+              <span class="font-bold text-slate-100">전출자 1년 보존 이력</span>
+              <span class="text-teal-400/90 text-[11px]"> ➔ 퇴실자 과거 계약 대장 & 납부 이력 1년 영구 보존</span>
             </div>
             <span class="text-[9px] text-teal-400 bg-teal-950/80 border border-teal-700/50 px-1 py-0.5 rounded shrink-0">실행</span>
+          </div>
+        </div>
+
+        <!-- 그룹 4: 관리자 및 시스템 전용 (Admin - 뒤편 배치) -->
+        <div class="space-y-1 pt-1 border-t border-teal-900/50">
+          <div class="text-[10px] font-bold text-amber-400/80 px-1 pt-0.5 flex items-center gap-1">
+            <span>⚙️ 관리자 전용 메뉴 (System Admin)</span>
+          </div>
+
+          <!-- 13. 건물 전체 일괄등록 -->
+          <div onclick="executeVoiceCommandById(13)" class="group flex items-center gap-2 p-1.5 rounded-lg bg-amber-950/30 hover:bg-amber-900/50 cursor-pointer transition border border-amber-800/40 hover:border-amber-400/60 shadow-xs">
+            <button type="button" onclick="event.stopPropagation(); executeVoiceCommandById(13)" class="w-6 h-6 rounded-md bg-amber-500/20 text-amber-300 border border-amber-400/50 font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-amber-400 group-hover:text-slate-950 transition">13</button>
+            <div class="min-w-0 flex-1 leading-snug">
+              <span class="font-bold text-amber-100">건물 전체 일괄등록 (사진/엑셀)</span>
+              <span class="text-amber-400/90 text-[11px]"> ➔ 건물 전체 데이터 사진 및 엑셀 일괄 구축</span>
+            </div>
+            <span class="text-[9px] text-amber-400 bg-amber-950/80 border border-amber-700/50 px-1 py-0.5 rounded shrink-0">실행</span>
+          </div>
+
+          <!-- 14. 1초 롤백 & 백업 -->
+          <div onclick="executeVoiceCommandById(14)" class="group flex items-center gap-2 p-1.5 rounded-lg bg-amber-950/30 hover:bg-amber-900/50 cursor-pointer transition border border-amber-800/40 hover:border-amber-400/60 shadow-xs">
+            <button type="button" onclick="event.stopPropagation(); executeVoiceCommandById(14)" class="w-6 h-6 rounded-md bg-amber-500/20 text-amber-300 border border-amber-400/50 font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-amber-400 group-hover:text-slate-950 transition">14</button>
+            <div class="min-w-0 flex-1 leading-snug">
+              <span class="font-bold text-amber-100">1초 롤백 & 스냅샷 백업</span>
+              <span class="text-amber-400/90 text-[11px]"> ➔ 실수 시 1초 즉시 복구 및 JSON 풀 백업</span>
+            </div>
+            <span class="text-[9px] text-amber-400 bg-amber-950/80 border border-amber-700/50 px-1 py-0.5 rounded shrink-0">실행</span>
+          </div>
+
+          <!-- 15. 건물 / 지점 변경 -->
+          <div onclick="executeVoiceCommandById(15)" class="group flex items-center gap-2 p-1.5 rounded-lg bg-amber-950/30 hover:bg-amber-900/50 cursor-pointer transition border border-amber-800/40 hover:border-amber-400/60 shadow-xs">
+            <button type="button" onclick="event.stopPropagation(); executeVoiceCommandById(15)" class="w-6 h-6 rounded-md bg-amber-500/20 text-amber-300 border border-amber-400/50 font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-amber-400 group-hover:text-slate-950 transition">15</button>
+            <div class="min-w-0 flex-1 leading-snug">
+              <span class="font-bold text-amber-100">건물 / 지점 변경</span>
+              <span class="text-amber-400/90 text-[11px]"> ➔ 지점 전환 및 매장 선택 메뉴 열기</span>
+            </div>
+            <span class="text-[9px] text-amber-400 bg-amber-950/80 border border-amber-700/50 px-1 py-0.5 rounded shrink-0">실행</span>
+          </div>
+
+          <!-- 16. 부가가치세(VAT) -->
+          <div onclick="executeVoiceCommandById(16)" class="group flex items-center gap-2 p-1.5 rounded-lg bg-amber-950/30 hover:bg-amber-900/50 cursor-pointer transition border border-amber-800/40 hover:border-amber-400/60 shadow-xs">
+            <button type="button" onclick="event.stopPropagation(); executeVoiceCommandById(16)" class="w-6 h-6 rounded-md bg-amber-500/20 text-amber-300 border border-amber-400/50 font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-amber-400 group-hover:text-slate-950 transition">16</button>
+            <div class="min-w-0 flex-1 leading-snug">
+              <span class="font-bold text-amber-100">부가가치세(VAT)</span>
+              <span class="text-amber-400/90 text-[11px]"> ➔ 국세청 홈택스 세무 신고 자료 산출</span>
+            </div>
+            <span class="text-[9px] text-amber-400 bg-amber-950/80 border border-amber-700/50 px-1 py-0.5 rounded shrink-0">실행</span>
+          </div>
+
+          <!-- 17. 도움말 -->
+          <div onclick="executeVoiceCommandById(17)" class="group flex items-center gap-2 p-1.5 rounded-lg bg-amber-950/30 hover:bg-amber-900/50 cursor-pointer transition border border-amber-800/40 hover:border-amber-400/60 shadow-xs">
+            <button type="button" onclick="event.stopPropagation(); executeVoiceCommandById(17)" class="w-6 h-6 rounded-md bg-amber-500/20 text-amber-300 border border-amber-400/50 font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-amber-400 group-hover:text-slate-950 transition">17</button>
+            <div class="min-w-0 flex-1 leading-snug">
+              <span class="font-bold text-amber-100">도움말 (공식 매뉴얼)</span>
+              <span class="text-amber-400/90 text-[11px]"> ➔ 운영 매뉴얼 & 인쇄/PDF 저장</span>
+            </div>
+            <span class="text-[9px] text-amber-400 bg-amber-950/80 border border-amber-700/50 px-1 py-0.5 rounded shrink-0">실행</span>
           </div>
         </div>
       </div>
 
-      <!-- Quick Number Selection Bar (1 ~ 12 원터치 버튼) -->
+      <!-- Quick Number Selection Bar (1 ~ 17 원터치 버튼) -->
       <div class="shrink-0 pt-2 border-t border-slate-800/80 mt-2">
         <div class="text-[10px] text-slate-400 mb-1 flex items-center justify-between px-1">
           <span>🔢 <b>번호 선택</b> (원터치 또는 "1번" 음성):</span>
-          <span class="text-[9px] text-teal-400 font-bold">1~12번 지원</span>
+          <span class="text-[9px] text-teal-400 font-bold">1~17번 원클릭 실행</span>
         </div>
-        <div class="grid grid-cols-6 sm:grid-cols-12 gap-1">
+        <div class="grid grid-cols-6 sm:grid-cols-9 md:grid-cols-17 gap-1">
           <button type="button" onclick="executeVoiceCommandById(1)" class="py-1 rounded-lg bg-surface-800 hover:bg-teal-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-teal-400 transition cursor-pointer active:scale-95">1</button>
           <button type="button" onclick="executeVoiceCommandById(2)" class="py-1 rounded-lg bg-surface-800 hover:bg-teal-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-teal-400 transition cursor-pointer active:scale-95">2</button>
-          <button type="button" onclick="executeVoiceCommandById(3)" class="py-1 rounded-lg bg-surface-800 hover:bg-teal-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-teal-400 transition cursor-pointer active:scale-95">3</button>
+          <button type="button" onclick="executeVoiceCommandById(3)" class="py-1 rounded-lg bg-surface-800 hover:bg-rose-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-rose-400 transition cursor-pointer active:scale-95">3</button>
           <button type="button" onclick="executeVoiceCommandById(4)" class="py-1 rounded-lg bg-surface-800 hover:bg-teal-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-teal-400 transition cursor-pointer active:scale-95">4</button>
           <button type="button" onclick="executeVoiceCommandById(5)" class="py-1 rounded-lg bg-surface-800 hover:bg-teal-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-teal-400 transition cursor-pointer active:scale-95">5</button>
           <button type="button" onclick="executeVoiceCommandById(6)" class="py-1 rounded-lg bg-surface-800 hover:bg-teal-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-teal-400 transition cursor-pointer active:scale-95">6</button>
@@ -1744,6 +1820,11 @@
           <button type="button" onclick="executeVoiceCommandById(10)" class="py-1 rounded-lg bg-surface-800 hover:bg-teal-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-teal-400 transition cursor-pointer active:scale-95">10</button>
           <button type="button" onclick="executeVoiceCommandById(11)" class="py-1 rounded-lg bg-surface-800 hover:bg-teal-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-teal-400 transition cursor-pointer active:scale-95">11</button>
           <button type="button" onclick="executeVoiceCommandById(12)" class="py-1 rounded-lg bg-surface-800 hover:bg-teal-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-teal-400 transition cursor-pointer active:scale-95">12</button>
+          <button type="button" onclick="executeVoiceCommandById(13)" class="py-1 rounded-lg bg-surface-800 hover:bg-amber-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-amber-400 transition cursor-pointer active:scale-95">13</button>
+          <button type="button" onclick="executeVoiceCommandById(14)" class="py-1 rounded-lg bg-surface-800 hover:bg-amber-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-amber-400 transition cursor-pointer active:scale-95">14</button>
+          <button type="button" onclick="executeVoiceCommandById(15)" class="py-1 rounded-lg bg-surface-800 hover:bg-amber-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-amber-400 transition cursor-pointer active:scale-95">15</button>
+          <button type="button" onclick="executeVoiceCommandById(16)" class="py-1 rounded-lg bg-surface-800 hover:bg-amber-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-amber-400 transition cursor-pointer active:scale-95">16</button>
+          <button type="button" onclick="executeVoiceCommandById(17)" class="py-1 rounded-lg bg-surface-800 hover:bg-amber-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-amber-400 transition cursor-pointer active:scale-95">17</button>
         </div>
       </div>
 
