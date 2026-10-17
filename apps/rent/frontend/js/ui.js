@@ -1623,3 +1623,108 @@ export async function handleFillTenantPayments(roomNum = null) {
     alert(`[${targetRoom}호 ${room.name}] 전입일 기준 납부내역이 로컬에 채워졌습니다!`);
   }
 }
+
+// ── 맥락별 컬러 안내 배너 (AGENTS.md 표준 Alert UX) ──
+let alertTimeout = null;
+export function updateAppAlert(type, message, duration = 4000) {
+  let box = document.getElementById('appGlobalAlert');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'appGlobalAlert';
+    box.className = 'fixed top-3 left-1/2 -translate-x-1/2 z-50 max-w-md w-[92%] transition-all duration-300';
+    document.body.appendChild(box);
+  }
+
+  if (alertTimeout) {
+    clearTimeout(alertTimeout);
+    alertTimeout = null;
+  }
+
+  if (!message) {
+    box.classList.add('hidden');
+    box.innerHTML = '';
+    return;
+  }
+
+  let bgClass = 'bg-slate-900 border-slate-700 text-slate-100';
+  let icon = 'ℹ️';
+
+  if (type === 'success') {
+    bgClass = 'bg-emerald-950/95 border-emerald-600/70 text-emerald-200 shadow-emerald-950/50';
+    icon = '✅';
+  } else if (type === 'error') {
+    bgClass = 'bg-rose-950/95 border-rose-600/70 text-rose-200 shadow-rose-950/50';
+    icon = '❌';
+  } else if (type === 'warning') {
+    bgClass = 'bg-amber-950/95 border-amber-600/70 text-amber-200 shadow-amber-950/50';
+    icon = '⚠️';
+  } else if (type === 'diff' || type === 'mismatch') {
+    bgClass = 'bg-orange-950/95 border-orange-600/70 text-orange-200 shadow-orange-950/50';
+    icon = '⚖️';
+  }
+
+  box.className = `fixed top-3 left-1/2 -translate-x-1/2 z-50 max-w-md w-[92%] transition-all duration-300 transform scale-100`;
+  box.innerHTML = `
+    <div class="p-3 rounded-2xl border ${bgClass} shadow-xl flex items-center justify-between gap-3 text-xs font-semibold backdrop-blur-md">
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="text-base shrink-0">${icon}</span>
+        <span class="leading-relaxed break-words">${message}</span>
+      </div>
+      <button type="button" onclick="this.closest('#appGlobalAlert').classList.add('hidden')" class="w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center shrink-0 cursor-pointer font-bold">✕</button>
+    </div>
+  `;
+  box.classList.remove('hidden');
+
+  if (duration > 0) {
+    alertTimeout = setTimeout(() => {
+      box.classList.add('hidden');
+    }, duration);
+  }
+}
+
+// ── 백엔드 서버 즉시 재연결 핸들러 (버튼 디바운스 & 즉각 피드백) ──
+export async function handleReconnectBackend(btnEl = null) {
+  const btn = btnEl || document.querySelector('#serverStatusBanner button');
+  const originalText = btn ? btn.innerHTML : '🔄 재연결';
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="inline-block animate-spin mr-1">⏳</span> 연결 중...`;
+    btn.classList.add('opacity-75', 'cursor-not-allowed');
+  }
+
+  try {
+    await loadInitialData();
+    renderAll();
+
+    if (state.isOnline) {
+      const banner = document.getElementById('serverStatusBanner');
+      if (banner) banner.classList.add('hidden');
+      updateAppAlert('success', '✅ 백엔드 DB 서버와 정상 연결되었습니다! 실시간 데이터가 연동되었습니다.');
+    } else {
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const helpMsg = isLocal
+        ? '⚠️ 백엔드 서버(포트 8000)가 아직 미실행 상태입니다. START_RENT.bat을 실행하신 후 다시 눌러주세요.'
+        : '⚠️ 백엔드 API 게이트웨이 응답 대기 중입니다. 잠시 후 다시 눌러주세요.';
+      updateAppAlert('warning', helpMsg);
+    }
+  } catch (err) {
+    console.error("재연결 실패:", err);
+    updateAppAlert('error', `❌ 재연결 오류: ${err.message || '네트워크 응답 없음'}`);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+      btn.classList.remove('opacity-75', 'cursor-not-allowed');
+    }
+  }
+}
+
+// ── 글로벌 바인딩 (HTML onclick 직결) ──
+if (typeof window !== 'undefined') {
+  window.loadInitialData = loadInitialData;
+  window.renderAll = renderAll;
+  window.handleReconnectBackend = handleReconnectBackend;
+  window.updateAppAlert = updateAppAlert;
+}
+

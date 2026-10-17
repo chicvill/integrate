@@ -114,6 +114,9 @@
     </div>
   </header>
  
+  <!-- ── 1-0. App Global Alert Container (AGENTS.md 표준 Alert UX) ── -->
+  <div id="appGlobalAlert" class="hidden fixed top-3 left-1/2 -translate-x-1/2 z-50 max-w-md w-[92%] transition-all duration-300"></div>
+
   <!-- ── 1-1. Server Connection Status Banner (오프라인/서버 미연결 시 명확한 안내) ── -->
   <div id="serverStatusBanner" class="hidden max-w-xl mx-auto px-3 pt-2">
     <div class="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs flex items-center justify-between gap-2 shadow-sm">
@@ -124,7 +127,7 @@
           <p class="text-[11px] text-amber-300/80 mt-0.5 leading-snug">PC를 다시 켠 후에는 <b>START_RENT.bat</b>을 실행하시면 DB에 영구 저장된 최신 임차 정보가 즉시 연동됩니다.</p>
         </div>
       </div>
-      <button type="button" onclick="loadInitialData().then(renderAll)" class="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold text-[11px] hover:bg-amber-400 active:scale-95 cursor-pointer whitespace-nowrap shrink-0">
+      <button type="button" onclick="handleReconnectBackend(this)" class="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold text-[11px] hover:bg-amber-400 active:scale-95 cursor-pointer whitespace-nowrap shrink-0 transition flex items-center gap-1 shadow-sm">
         🔄 재연결
       </button>
     </div>
