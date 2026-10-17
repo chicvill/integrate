@@ -11196,30 +11196,40 @@ async function handleProcessPayment(roomNum, month, year = currentYear) {
     const pKey = `${year}-${month}`;
     const defaultPayDate = `${year}-${String(month).padStart(2, '0')}-10`;
 
-    if (state.isOnline) {
-      const res = await apiProcessPayment(roomNum, month, state.currentBranch, defaultPayDate, "정상 입금", tenantName, year);
-      state.rooms[roomNum] = res;
-    } else {
-      // 오프라인 폴백
-      if (room && room.payments) {
-        const payObj = {
-          month,
-          year,
-          paid: true,
-          paid_date: defaultPayDate,
-          note: "정상 입금",
-          tenant_name: tenantName,
-          is_previous_tenant: false,
-          rent_amount: room.lease_type === "전세" ? 0 : room.rent,
-          maintenance_amount: room.maintenance
-        };
+    // 1. 낙관적 UI 즉각 반영
+    if (room && room.payments) {
+      const existing = room.payments[pKey] || (year === currentYear ? room.payments[month] : null) || {};
+      const payObj = {
+        ...existing,
+        month,
+        year,
+        paid: true,
+        paid_date: defaultPayDate,
+        note: existing.note || "정상 입금",
+        tenant_name: tenantName,
+        is_previous_tenant: false,
+        rent_amount: room.lease_type === "전세" ? 0 : (existing.rent_amount !== undefined ? existing.rent_amount : room.rent),
+        maintenance_amount: existing.maintenance_amount !== undefined ? existing.maintenance_amount : room.maintenance
+      };
+      room.payments[pKey] = payObj;
+      if (year === currentYear) {
         room.payments[month] = payObj;
-        room.payments[pKey] = payObj;
       }
     }
     saveLocalFallback();
     renderAll();
+
+    // 2. 서버 동기화
+    if (state.isOnline) {
+      const res = await apiProcessPayment(roomNum, month, state.currentBranch, defaultPayDate, "정상 입금", tenantName, year);
+      if (res) {
+        state.rooms[roomNum] = res;
+        saveLocalFallback();
+        renderAll();
+      }
+    }
   } catch (err) {
+    console.error("수납 처리 실패:", err);
     alert("수납 처리 실패: " + err.message);
   }
 }
@@ -11227,28 +11237,49 @@ async function handleProcessPayment(roomNum, month, year = currentYear) {
 async function handleCancelPayment(roomNum, month, year = currentYear) {
   try {
     const pKey = `${year}-${month}`;
-    if (state.isOnline) {
-      const res = await apiCancelPayment(roomNum, month, state.currentBranch, year);
-      state.rooms[roomNum] = res;
-    } else {
-      // 오프라인 폴백
-      const r = state.rooms[roomNum];
-      if (r && r.payments) {
-        if (r.payments[month]) {
-          r.payments[month].paid = false;
-          r.payments[month].paid_date = "";
-          r.payments[month].note = "납부 취소";
-        }
-        if (r.payments[pKey]) {
-          r.payments[pKey].paid = false;
-          r.payments[pKey].paid_date = "";
-          r.payments[pKey].note = "납부 취소";
-        }
+
+    // 1. 낙관적 UI 즉각 반영 (화면에서 즉시 미납으로 전환)
+    const r = state.rooms[roomNum];
+    if (r && r.payments) {
+      const existing = r.payments[pKey] || (year === currentYear ? r.payments[month] : null) || {};
+      const updatedPay = {
+        ...existing,
+        month,
+        year,
+        paid: false,
+        paid_date: "",
+        note: "납부 취소"
+      };
+      r.payments[pKey] = updatedPay;
+      if (year === currentYear) {
+        r.payments[month] = updatedPay;
       }
     }
     saveLocalFallback();
     renderAll();
+
+    // 2. 서버 영구 반영
+    if (state.isOnline) {
+      const res = await apiCancelPayment(roomNum, month, state.currentBranch, year);
+      if (res) {
+        // 서버 응답 데이터에서도 해당 월 paid=false 보장
+        if (res.payments) {
+          if (res.payments[pKey]) {
+            res.payments[pKey].paid = false;
+            res.payments[pKey].paid_date = "";
+          }
+          if (year === currentYear && res.payments[month]) {
+            res.payments[month].paid = false;
+            res.payments[month].paid_date = "";
+          }
+        }
+        state.rooms[roomNum] = res;
+        saveLocalFallback();
+        renderAll();
+      }
+    }
   } catch (err) {
+    console.error("납부 취소 실패:", err);
     alert("납부 취소 실패: " + err.message);
   }
 }
@@ -16459,6 +16490,189 @@ function parseKoreanNumber(str) {
 }
 
 /**
+ * 한글 금액 단위(억, 만, 천, 백, 십 등)를 아라비아 숫자(정수)로 변환
+ * 예: '일천만원', '천만원', '1000만원', '500만원', '사십오만원', '45만원', '오만원', '1억'
+ */
+function parseKoreanAmount(str) {
+  if (!str) return null;
+  let clean = String(str).replace(/[\s,]/g, '').replace(/원$/, '').replace(/(?:으로|로)$/, '');
+  const digitMap = { '일': 1, '이': 2, '삼': 3, '사': 4, '오': 5, '육': 6, '칠': 7, '팔': 8, '구': 9 };
+
+  let total = 0;
+  // 억 단위
+  const ukMatch = clean.match(/([0-9가-힣]+)억/);
+  if (ukMatch) {
+    const part = ukMatch[1];
+    let num = 0;
+    if (/^\d+$/.test(part)) {
+      num = parseInt(part, 10);
+    } else {
+      for (const ch of part) {
+        if (digitMap[ch]) num += digitMap[ch];
+      }
+      if (num === 0) num = 1;
+    }
+    total += num * 100000000;
+    clean = clean.slice(ukMatch.index + ukMatch[0].length);
+  }
+
+  // 만 단위
+  const manMatch = clean.match(/([0-9가-힣]+)만/);
+  if (manMatch) {
+    const part = manMatch[1];
+    let num = 0;
+    if (/^\d+$/.test(part)) {
+      num = parseInt(part, 10);
+    } else {
+      let temp = part;
+      let cheon = 0, baek = 0, ship = 0, il = 0;
+
+      const mCheon = temp.match(/([일이삼사오육칠팔구0-9]?)천/);
+      if (mCheon) {
+        const d = mCheon[1];
+        cheon = /^\d+$/.test(d) ? parseInt(d, 10) : (digitMap[d] || 1);
+        temp = temp.slice(mCheon.index + mCheon[0].length);
+      }
+
+      const mBaek = temp.match(/([일이삼사오육칠팔구0-9]?)백/);
+      if (mBaek) {
+        const d = mBaek[1];
+        baek = /^\d+$/.test(d) ? parseInt(d, 10) : (digitMap[d] || 1);
+        temp = temp.slice(mBaek.index + mBaek[0].length);
+      }
+
+      const mShip = temp.match(/([일이삼사오육칠팔구0-9]?)십/);
+      if (mShip) {
+        const d = mShip[1];
+        ship = /^\d+$/.test(d) ? parseInt(d, 10) : (digitMap[d] || 1);
+        temp = temp.slice(mShip.index + mShip[0].length);
+      }
+
+      for (const ch of temp) {
+        if (digitMap[ch]) il = digitMap[ch];
+        else if (/^\d$/.test(ch)) il = parseInt(ch, 10);
+      }
+      num = (cheon * 1000) + (baek * 100) + (ship * 10) + il;
+    }
+    total += num * 10000;
+    clean = clean.slice(manMatch.index + manMatch[0].length);
+  }
+
+  // 남아있는 순수 아라비아 숫자
+  if (/^\d+$/.test(clean)) {
+    total += parseInt(clean, 10);
+  }
+
+  return total > 0 ? total : null;
+}
+
+/**
+ * 자연어 구두 발화에서 계약 수정 항목(세입자명, 보증금, 월세, 관리비, 연락처) 자동 추출
+ * 예: "302호 세입자명을 홍길동, 보증금을 일천만원으로 수정"
+ */
+function parseContractVoiceFields(text) {
+  if (!text) return {};
+  const fields = {};
+  const isDeleteIntent = /삭제|지워|지우|비워|초기화|없애/.test(text);
+
+  // 1. 임대형태 (전세/월세)
+  if (/전세(?:로)?\s*(?:수정|변경|전환|바꿔)?/.test(text) && !/월세/.test(text)) {
+    fields.lease_type = '전세';
+  } else if (/월세(?:로)?\s*(?:수정|변경|전환|바꿔)?/.test(text) && !/보증금|관리비|월세금|월세는/.test(text)) {
+    fields.lease_type = '월세';
+  }
+
+  // 2. 납부방식 (선불/후불)
+  if (/선불(?:로)?\s*(?:수정|변경|바꿔)?/.test(text)) {
+    fields.pay_timing = '선불';
+  } else if (/후불(?:로)?\s*(?:수정|변경|바꿔)?/.test(text)) {
+    fields.pay_timing = '후불';
+  }
+
+  // 3. 세입자명
+  const mName = text.match(/(?:세입자(?:명)?|이름|임차인|계약자)(?:을|를|은|는)?\s*([가-힣a-zA-Z]{2,8})/);
+  if (mName) {
+    const rawName = mName[1].replace(/(?:으로|로)$/, '');
+    if (!/수정|삭제|변경|확인|등록|처리|지워|비워/.test(rawName)) {
+      fields.name = rawName;
+    } else if (isDeleteIntent) {
+      fields.name = '';
+    }
+  } else if (isDeleteIntent && /세입자|이름|임차인/.test(text)) {
+    fields.name = '';
+  }
+
+  // 4. 보증금
+  if (isDeleteIntent && /보증금/.test(text) && !/[0-9일이삼사오육칠팔구]/.test(text)) {
+    fields.deposit = 0;
+  } else {
+    const mDep = text.match(/(?:보증금)(?:을|를|은|는)?\s*([0-9가-힣]+)/);
+    if (mDep) {
+      const amt = parseKoreanAmount(mDep[1]);
+      if (amt !== null) fields.deposit = amt;
+    }
+  }
+
+  // 5. 월세 / 임대료
+  if (isDeleteIntent && /월세|임대료/.test(text) && !/[0-9일이삼사오육칠팔구]/.test(text)) {
+    fields.rent = 0;
+  } else {
+    const mRent = text.match(/(?:월세|임대료)(?:를|을|은|는)?\s*([0-9가-힣]+)/);
+    if (mRent) {
+      const amt = parseKoreanAmount(mRent[1]);
+      if (amt !== null) fields.rent = amt;
+    }
+  }
+
+  // 6. 관리비
+  if (isDeleteIntent && /관리비/.test(text) && !/[0-9일이삼사오육칠팔구]/.test(text)) {
+    fields.maintenance = 0;
+  } else {
+    const mMaint = text.match(/(?:관리비)(?:를|을|은|는)?\s*([0-9가-힣]+)/);
+    if (mMaint) {
+      const amt = parseKoreanAmount(mMaint[1]);
+      if (amt !== null) fields.maintenance = amt;
+    }
+  }
+
+  // 7. 청소비
+  const mClean = text.match(/(?:청소비|퇴실청소비)(?:를|을|은|는)?\s*([0-9가-힣]+)/);
+  if (mClean) {
+    const amt = parseKoreanAmount(mClean[1]);
+    if (amt !== null) fields.clean_fee = amt;
+  }
+
+  // 8. 연락처
+  if (isDeleteIntent && /연락처|전화번호|폰번호|핸드폰/.test(text)) {
+    fields.phone = '';
+  } else {
+    const mPhone = text.match(/(?:연락처|전화번호|폰번호|핸드폰)(?:를|을|은|는)?\s*([0-9]{2,4}[-\s]?[0-9]{3,4}[-\s]?[0-9]{4})/);
+    if (mPhone) {
+      fields.phone = mPhone[1].replace(/\s+/g, '-');
+    }
+  }
+
+  // 9. 주민등록번호
+  const mIdNum = text.match(/(?:주민번호|주민등록번호)(?:를|을|은|는)?\s*([0-9]{6}[-\s]?[0-9]{7})/);
+  if (mIdNum) {
+    fields.id_number = mIdNum[1].replace(/\s+/g, '-');
+  }
+
+  // 10. 전입일 / 만기일 날짜
+  const mMoveIn = text.match(/(?:전입일|입주일)(?:을|를|은|는)?\s*(\d{4}[-./년\s]*\d{1,2}[-./월\s]*\d{1,2})/);
+  if (mMoveIn) {
+    fields.move_in = mMoveIn[1].replace(/[년월일\s]/g, '-').replace(/--+/g, '-').replace(/-$/, '');
+  }
+  const mExpiry = text.match(/(?:만기일|만료일)(?:을|를|은|는)?\s*(\d{4}[-./년\s]*\d{1,2}[-./월\s]*\d{1,2})/);
+  if (mExpiry) {
+    fields.expiry = mExpiry[1].replace(/[년월일\s]/g, '-').replace(/--+/g, '-').replace(/-$/, '');
+  }
+
+  return fields;
+}
+
+
+/**
  * 특정 호실의 전입 이후 가장 오래된 미납 회차 탐색
  * (후불 입주월 비과세/익월 청구 원칙 적용: 후불 전입월은 구두 입금 대상에서 원천 배제 및 승인 차단)
  */
@@ -16828,7 +17042,7 @@ function parseMenuNumber(rawText) {
 /**
  * Rent 구두 명령 1~12번 실행기 (말, 터치, 번호 선택 공통 단일 진입점)
  */
-async function executeVoiceCommandById(cmdId, targetRoom = null) {
+async function executeVoiceCommandById(cmdId, targetRoom = null, extraFields = {}) {
   const rNum = targetRoom || parseKoreanNumber(String(targetRoom)) || state.selectedRoom || 203;
 
   switch (Number(cmdId)) {
@@ -16867,7 +17081,7 @@ async function executeVoiceCommandById(cmdId, targetRoom = null) {
       speakText(`${rNum}호 전입 및 계약서 사진/엑셀 등록 창을 열었습니다.`);
       break;
 
-    case 4: // 4. 203호 수정, 삭제
+    case 4: // 4. 203호 수정, 삭제 (세입자명/보증금 등 구두 추출 필드 자동 입력 지원)
       closeVoiceModal();
       selectRoom(rNum);
       if (typeof openContractEditModal === 'function') {
@@ -16875,7 +17089,99 @@ async function executeVoiceCommandById(cmdId, targetRoom = null) {
       } else if (window.openContractEditModal) {
         window.openContractEditModal(rNum);
       }
-      speakText(`${rNum}호 계약 정보 수정 및 삭제 창을 열었습니다.`);
+
+      const modifiedLabels = [];
+      setTimeout(() => {
+        if (extraFields && typeof extraFields === 'object') {
+          if (extraFields.name) {
+            const el = document.getElementById('formName');
+            if (el) {
+              el.value = extraFields.name;
+              el.classList.add('ring-2', 'ring-cyan-400');
+              modifiedLabels.push(`세입자명 '${extraFields.name}'`);
+            }
+          }
+          if (extraFields.deposit !== undefined && extraFields.deposit !== null) {
+            const el = document.getElementById('formDeposit');
+            if (el) {
+              el.value = extraFields.deposit;
+              el.classList.add('ring-2', 'ring-cyan-400');
+              modifiedLabels.push(`보증금 '${Number(extraFields.deposit).toLocaleString()}원'`);
+            }
+          }
+          if (extraFields.rent !== undefined && extraFields.rent !== null) {
+            const el = document.getElementById('formRent');
+            if (el) {
+              el.value = extraFields.rent;
+              el.classList.add('ring-2', 'ring-cyan-400');
+              modifiedLabels.push(`월세 '${Number(extraFields.rent).toLocaleString()}원'`);
+            }
+          }
+          if (extraFields.maintenance !== undefined && extraFields.maintenance !== null) {
+            const el = document.getElementById('formMaintenance');
+            if (el) {
+              el.value = extraFields.maintenance;
+              el.classList.add('ring-2', 'ring-cyan-400');
+              modifiedLabels.push(`관리비 '${Number(extraFields.maintenance).toLocaleString()}원'`);
+            }
+          }
+          if (extraFields.lease_type) {
+            const el = document.getElementById('formLeaseType');
+            if (el) {
+              el.value = extraFields.lease_type;
+              el.classList.add('ring-2', 'ring-cyan-400');
+              modifiedLabels.push(`임대형태 '${extraFields.lease_type}'`);
+            }
+          }
+          if (extraFields.pay_timing) {
+            const el = document.getElementById('formPayTiming');
+            if (el) {
+              el.value = extraFields.pay_timing;
+              el.classList.add('ring-2', 'ring-cyan-400');
+              modifiedLabels.push(`납부방식 '${extraFields.pay_timing}'`);
+            }
+          }
+          if (extraFields.clean_fee !== undefined && extraFields.clean_fee !== null) {
+            const el = document.getElementById('formCleanFee');
+            if (el) {
+              el.value = extraFields.clean_fee;
+              el.classList.add('ring-2', 'ring-cyan-400');
+              modifiedLabels.push(`청소비 '${Number(extraFields.clean_fee).toLocaleString()}원'`);
+            }
+          }
+          if (extraFields.id_number) {
+            const el = document.getElementById('formIdNumber');
+            if (el) {
+              el.value = extraFields.id_number;
+              el.classList.add('ring-2', 'ring-cyan-400');
+              modifiedLabels.push(`주민번호 '${extraFields.id_number}'`);
+            }
+          }
+          if (extraFields.move_in) {
+            const el = document.getElementById('formMoveIn');
+            if (el) {
+              el.value = extraFields.move_in;
+              el.classList.add('ring-2', 'ring-cyan-400');
+              modifiedLabels.push(`전입일 '${extraFields.move_in}'`);
+            }
+          }
+          if (extraFields.expiry) {
+            const el = document.getElementById('formExpiry');
+            if (el) {
+              el.value = extraFields.expiry;
+              el.classList.add('ring-2', 'ring-cyan-400');
+              modifiedLabels.push(`만기일 '${extraFields.expiry}'`);
+            }
+          }
+        }
+
+        if (modifiedLabels.length > 0) {
+          const speakMsg = `${rNum}호 ${modifiedLabels.join(', ')}을 입력했습니다. 확인 후 [저장 완료]를 눌러주세요.`;
+          speakText(speakMsg);
+        } else {
+          speakText(`${rNum}호 계약 정보 수정 및 삭제 창을 열었습니다.`);
+        }
+      }, 150);
       break;
 
     case 5: // 5. 203호 납입현황(월별, 1년간) 엑셀, pdf
@@ -17044,6 +17350,13 @@ async function handleVoiceCommand(rawText) {
     }
 
     // ── 3. 키워드 기반 자연어 구두 명령 파싱 ──
+    // 0. 수납 취소 / 미납 환원 ("302호 10월 수납 취소", "302호 10월 미납으로 처리", "10월 납부 취소")
+    if (/취소|미납/.test(rawText) && /수납|입금|완납|납부|월/.test(rawText)) {
+      await executeVoiceCancelPayment(roomNumber, specificMonth);
+      isProcessingVoice = false;
+      return;
+    }
+
     // 1. 수납 / 입금
     if (/수납|입금|완납|납부|넣었/.test(rawText)) {
       await executeVoicePayment(roomNumber, specificMonth);
@@ -17065,9 +17378,11 @@ async function handleVoiceCommand(rawText) {
       return;
     }
 
-    // 4. 수정 / 삭제 / 변경
-    if (/수정|삭제|변경|고치|바꿔/.test(rawText)) {
-      await executeVoiceCommandById(4, roomNumber);
+    // 4. 수정 / 삭제 / 변경 또는 계약 필드(세입자명/보증금/월세/관리비/연락처) 발화
+    const contractFields = parseContractVoiceFields(rawText);
+    const hasContractFields = Object.keys(contractFields).length > 0;
+    if (hasContractFields || /수정|삭제|변경|고치|바꿔/.test(rawText)) {
+      await executeVoiceCommandById(4, roomNumber, contractFields);
       isProcessingVoice = false;
       return;
     }
@@ -17151,6 +17466,26 @@ async function handleVoiceCommand(rawText) {
   } finally {
     isProcessingVoice = false;
   }
+}
+
+/**
+ * "302호 10월 수납 취소" / "302호 10월 미납으로 처리" 발화 시:
+ * 해당 호실의 특정 월(또는 당월) 수납을 즉시 취소하여 미납으로 환원
+ */
+async function executeVoiceCancelPayment(roomNumber, specificMonth = null) {
+  const rNum = roomNumber || state.selectedRoom || 203;
+  const m = specificMonth || currentMonth;
+  closeVoiceModal();
+  selectRoom(rNum);
+
+  if (typeof handleCancelPayment === 'function') {
+    await handleCancelPayment(rNum, m);
+  } else if (window.handleCancelPayment) {
+    await window.handleCancelPayment(rNum, m);
+  }
+
+  const msg = `${rNum}호 ${m}월분 수납이 취소되어 '미납'으로 변경되었습니다.`;
+  speakText(msg);
 }
 
 /**

@@ -334,6 +334,7 @@ class RentService:
         if norm_bid != "main":
             self._seed_branch_rooms(db, norm_bid, is_main=False)
 
+        PaymentService.clean_duplicate_payments(db, norm_bid)
         self._seeded = True
 
     def get_rooms(self, db: Session, branch_id: str = "main") -> Dict[int, Any]:

@@ -212,12 +212,18 @@ class PaymentService:
         branch_id = normalize_branch_id(branch_id)
         now_date = paid_date or datetime.now().strftime("%Y-%m-%d")
         pay_year = year or datetime.now().year
-        pay = db.query(RentPayment).filter(
+        pays = db.query(RentPayment).filter(
             RentPayment.branch_id == branch_id,
             RentPayment.room_number == room_number,
             RentPayment.year == pay_year,
             RentPayment.month == month
-        ).first()
+        ).all()
+        if not pays:
+            pays = db.query(RentPayment).filter(
+                RentPayment.branch_id == branch_id,
+                RentPayment.room_number == room_number,
+                RentPayment.month == month
+            ).all()
 
         room = db.query(RentRoom).filter(
             RentRoom.branch_id == branch_id,
@@ -234,7 +240,7 @@ class PaymentService:
         final_rent = rent_amount if rent_amount is not None else default_rent
         final_maint = maintenance_amount if maintenance_amount is not None else default_maint
 
-        if not pay:
+        if not pays:
             pay = RentPayment(
                 branch_id=branch_id,
                 room_number=room_number,
@@ -247,6 +253,7 @@ class PaymentService:
             )
             db.add(pay)
         else:
+            pay = pays[0]
             if rent_amount is not None:
                 pay.rent_amount = rent_amount
             elif not pay.rent_amount:
@@ -257,6 +264,12 @@ class PaymentService:
             elif not pay.maintenance_amount:
                 pay.maintenance_amount = default_maint
 
+            # 중복 레코드 정리
+            for extra in pays[1:]:
+                db.delete(extra)
+
+        pay.year = pay_year
+        pay.month = month
         pay.paid = True
         pay.paid_date = now_date
         pay.note = note
@@ -273,29 +286,86 @@ class PaymentService:
         branch_id: str = "main",
         year: Optional[int] = None
     ) -> bool:
-        """수납 취소 (미납으로 환원)"""
+        """수납 취소 (미납으로 환원 및 중복 레코드 원천 제거)"""
         branch_id = normalize_branch_id(branch_id)
         pay_year = year or datetime.now().year
-        pay = db.query(RentPayment).filter(
+        pays = db.query(RentPayment).filter(
             RentPayment.branch_id == branch_id,
             RentPayment.room_number == room_number,
             RentPayment.year == pay_year,
             RentPayment.month == month
-        ).first()
-        if not pay:
-            pay = db.query(RentPayment).filter(
+        ).all()
+        if not pays:
+            pays = db.query(RentPayment).filter(
                 RentPayment.branch_id == branch_id,
                 RentPayment.room_number == room_number,
                 RentPayment.month == month
-            ).first()
+            ).all()
 
-        if pay:
-            pay.paid = False
-            pay.paid_date = ""
-            pay.note = "납부 취소"
+        if pays:
+            primary = pays[0]
+            primary.year = pay_year
+            primary.month = month
+            primary.paid = False
+            primary.paid_date = ""
+            primary.note = "납부 취소"
+            # 중복 레코드는 모두 삭제하여 단일성 유지
+            for extra in pays[1:]:
+                db.delete(extra)
             db.commit()
             return True
+        else:
+            # DB에 레코드가 아직 없는 경우 명시적 미납 레코드 생성
+            room = db.query(RentRoom).filter(
+                RentRoom.branch_id == branch_id,
+                RentRoom.room_number == room_number
+            ).first()
+            if room:
+                def_rent = 0 if room.lease_type == "전세" else room.rent
+                new_pay = RentPayment(
+                    branch_id=branch_id,
+                    room_number=room_number,
+                    year=pay_year,
+                    month=month,
+                    paid=False,
+                    paid_date="",
+                    rent_amount=def_rent,
+                    maintenance_amount=room.maintenance,
+                    note="납부 취소",
+                    tenant_name=room.name or "",
+                    tenant_id_number=room.id_number or "",
+                    is_previous_tenant=False
+                )
+                db.add(new_pay)
+                db.commit()
+                return True
         return False
+
+    @staticmethod
+    def clean_duplicate_payments(db: Session, branch_id: Optional[str] = None) -> int:
+        """중복된 (branch_id, room_number, year, month) 레코드 정리"""
+        branch_id = normalize_branch_id(branch_id) if branch_id else None
+        query = db.query(RentPayment)
+        if branch_id:
+            query = query.filter(RentPayment.branch_id == branch_id)
+        all_pays = query.all()
+
+        grouped: Dict[Any, List[RentPayment]] = {}
+        for p in all_pays:
+            key = (p.branch_id, p.room_number, p.year, p.month)
+            grouped.setdefault(key, []).append(p)
+
+        deleted_count = 0
+        for key, p_list in grouped.items():
+            if len(p_list) > 1:
+                # 완납 또는 내용이 있는 레코드를 우선 보존 (모두 동일하면 첫 번째 보존)
+                p_list.sort(key=lambda x: (1 if x.paid else 0, len(x.paid_date or ""), len(x.note or "")), reverse=True)
+                for extra in p_list[1:]:
+                    db.delete(extra)
+                    deleted_count += 1
+        if deleted_count > 0:
+            db.commit()
+        return deleted_count
 
     @staticmethod
     def batch_import_monthly_matrix(

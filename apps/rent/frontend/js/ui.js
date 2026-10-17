@@ -1374,30 +1374,40 @@ export async function handleProcessPayment(roomNum, month, year = currentYear) {
     const pKey = `${year}-${month}`;
     const defaultPayDate = `${year}-${String(month).padStart(2, '0')}-10`;
 
-    if (state.isOnline) {
-      const res = await apiProcessPayment(roomNum, month, state.currentBranch, defaultPayDate, "정상 입금", tenantName, year);
-      state.rooms[roomNum] = res;
-    } else {
-      // 오프라인 폴백
-      if (room && room.payments) {
-        const payObj = {
-          month,
-          year,
-          paid: true,
-          paid_date: defaultPayDate,
-          note: "정상 입금",
-          tenant_name: tenantName,
-          is_previous_tenant: false,
-          rent_amount: room.lease_type === "전세" ? 0 : room.rent,
-          maintenance_amount: room.maintenance
-        };
+    // 1. 낙관적 UI 즉각 반영
+    if (room && room.payments) {
+      const existing = room.payments[pKey] || (year === currentYear ? room.payments[month] : null) || {};
+      const payObj = {
+        ...existing,
+        month,
+        year,
+        paid: true,
+        paid_date: defaultPayDate,
+        note: existing.note || "정상 입금",
+        tenant_name: tenantName,
+        is_previous_tenant: false,
+        rent_amount: room.lease_type === "전세" ? 0 : (existing.rent_amount !== undefined ? existing.rent_amount : room.rent),
+        maintenance_amount: existing.maintenance_amount !== undefined ? existing.maintenance_amount : room.maintenance
+      };
+      room.payments[pKey] = payObj;
+      if (year === currentYear) {
         room.payments[month] = payObj;
-        room.payments[pKey] = payObj;
       }
     }
     saveLocalFallback();
     renderAll();
+
+    // 2. 서버 동기화
+    if (state.isOnline) {
+      const res = await apiProcessPayment(roomNum, month, state.currentBranch, defaultPayDate, "정상 입금", tenantName, year);
+      if (res) {
+        state.rooms[roomNum] = res;
+        saveLocalFallback();
+        renderAll();
+      }
+    }
   } catch (err) {
+    console.error("수납 처리 실패:", err);
     alert("수납 처리 실패: " + err.message);
   }
 }
@@ -1405,28 +1415,49 @@ export async function handleProcessPayment(roomNum, month, year = currentYear) {
 export async function handleCancelPayment(roomNum, month, year = currentYear) {
   try {
     const pKey = `${year}-${month}`;
-    if (state.isOnline) {
-      const res = await apiCancelPayment(roomNum, month, state.currentBranch, year);
-      state.rooms[roomNum] = res;
-    } else {
-      // 오프라인 폴백
-      const r = state.rooms[roomNum];
-      if (r && r.payments) {
-        if (r.payments[month]) {
-          r.payments[month].paid = false;
-          r.payments[month].paid_date = "";
-          r.payments[month].note = "납부 취소";
-        }
-        if (r.payments[pKey]) {
-          r.payments[pKey].paid = false;
-          r.payments[pKey].paid_date = "";
-          r.payments[pKey].note = "납부 취소";
-        }
+
+    // 1. 낙관적 UI 즉각 반영 (화면에서 즉시 미납으로 전환)
+    const r = state.rooms[roomNum];
+    if (r && r.payments) {
+      const existing = r.payments[pKey] || (year === currentYear ? r.payments[month] : null) || {};
+      const updatedPay = {
+        ...existing,
+        month,
+        year,
+        paid: false,
+        paid_date: "",
+        note: "납부 취소"
+      };
+      r.payments[pKey] = updatedPay;
+      if (year === currentYear) {
+        r.payments[month] = updatedPay;
       }
     }
     saveLocalFallback();
     renderAll();
+
+    // 2. 서버 영구 반영
+    if (state.isOnline) {
+      const res = await apiCancelPayment(roomNum, month, state.currentBranch, year);
+      if (res) {
+        // 서버 응답 데이터에서도 해당 월 paid=false 보장
+        if (res.payments) {
+          if (res.payments[pKey]) {
+            res.payments[pKey].paid = false;
+            res.payments[pKey].paid_date = "";
+          }
+          if (year === currentYear && res.payments[month]) {
+            res.payments[month].paid = false;
+            res.payments[month].paid_date = "";
+          }
+        }
+        state.rooms[roomNum] = res;
+        saveLocalFallback();
+        renderAll();
+      }
+    }
   } catch (err) {
+    console.error("납부 취소 실패:", err);
     alert("납부 취소 실패: " + err.message);
   }
 }

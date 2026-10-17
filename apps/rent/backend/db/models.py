@@ -5,12 +5,13 @@ shared.core.base_database.Base 및 TimestampMixin 상속.
 """
 import uuid
 from typing import Optional, Dict, Any
-from sqlalchemy import String, Text, JSON, Boolean, Integer
+from sqlalchemy import String, Text, JSON, Boolean, Integer, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from shared.core.base_database import Base, TimestampMixin
 
 
 class RentBranch(Base, TimestampMixin):
+
     """원룸 건물/빌딩 (지점) 관리 모델"""
     __tablename__ = "rent_branches"
 
@@ -59,6 +60,9 @@ class RentRoom(Base, TimestampMixin):
 class RentPayment(Base, TimestampMixin):
     """월별 임차료/관리비 수납 장부 모델 (세입자별 추적 지원)"""
     __tablename__ = "rent_payments"
+    __table_args__ = (
+        UniqueConstraint('branch_id', 'room_number', 'year', 'month', name='uq_rent_payments_branch_room_year_month'),
+    )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     branch_id: Mapped[str] = mapped_column(String(50), default="main", nullable=False, index=True)

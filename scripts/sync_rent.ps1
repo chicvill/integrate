@@ -50,23 +50,8 @@ tar -xzf rent_patch.tar.gz -C /tmp/rent_patch
 sudo docker cp /tmp/rent_patch/. "$CID:/app/apps/rent/"
 rm -rf /tmp/rent_patch rent_patch.tar.gz
 
-# DB 컬럼 및 건물명 마이그레이션 (integrat.db)
-sudo docker exec "$CID" python -c "
-import sqlite3
-conn = sqlite3.connect('/app/integrat.db')
-c = conn.cursor()
-cols = [r[1] for r in c.execute('PRAGMA table_info(rent_expenses)').fetchall()]
-if 'receipt_type' not in cols:
-    c.execute('ALTER TABLE rent_expenses ADD COLUMN receipt_type VARCHAR(50) DEFAULT \"\"')
-if 'receipt_info' not in cols:
-    c.execute('ALTER TABLE rent_expenses ADD COLUMN receipt_info TEXT DEFAULT \"\"')
-try:
-    c.execute(\"UPDATE rent_branches SET name = '시크빌 (29개실)' WHERE branch_id = 'main'\")
-except Exception as e:
-    pass
-conn.commit()
-print('DB Migration Completed!')
-"
+# DB 마이그레이션 및 중복 정리 실행
+sudo docker exec "$CID" python /app/apps/rent/backend/db_dedup.py
 
 sudo docker exec "$CID" touch /app/gateway/main.py
 echo "Successfully hot-synced rent app to container $CID!"
