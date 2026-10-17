@@ -205,12 +205,16 @@ export function renderBuildingSummary() {
   const mProgEl = document.getElementById('sumMonthlyProgressText');
   if (mProgEl) {
     mProgEl.innerHTML = `
-      <span class="inline-flex items-center gap-1 flex-wrap">
-        <span class="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold text-[10px] sm:text-[11px]">[보증금 누계]</span>
-        <span class="text-amber-300 font-mono font-bold">${totalDeposit.toLocaleString()}원</span>,
-        <span class="px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold text-[10px] sm:text-[11px]">[${currentYear}.${String(currentMonth).padStart(2, '0')} 누계]</span>
-        <span class="text-cyan-200 font-mono font-bold">${monthlyPaid.toLocaleString()}/${monthlyGoal.toLocaleString()}원(${payRateFormatted}%)</span>
-      </span>
+      <div class="w-full flex items-center justify-between flex-wrap gap-x-2 gap-y-0.5 text-[10px] sm:text-[11px] font-mono font-bold leading-tight">
+        <span class="inline-flex items-center gap-1 shrink-0 whitespace-nowrap">
+          <span class="px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold text-[9px] sm:text-[10px]">[보증금 누계]</span>
+          <span class="text-amber-300">${totalDeposit.toLocaleString()}원</span>
+        </span>
+        <span class="inline-flex items-center gap-1 shrink-0 whitespace-nowrap">
+          <span class="px-1 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold text-[9px] sm:text-[10px]">[${currentYear}.${String(currentMonth).padStart(2, '0')} 누계]</span>
+          <span class="text-cyan-200">${monthlyPaid.toLocaleString()}/${monthlyGoal.toLocaleString()}원(${payRateFormatted}%)</span>
+        </span>
+      </div>
     `;
   }
 
@@ -447,12 +451,12 @@ export function renderCurrentMonthSection(room) {
     }
     if (actionArea) {
       actionArea.innerHTML = `
-        <button type="button" onclick="handleSendSmsReceipt()" class="w-full py-1 px-3 rounded-lg sm:rounded-xl bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-black text-xs sm:text-sm flex items-center justify-between shadow-sm border border-cyan-400/40 transition cursor-pointer active:scale-[0.98]" title="클릭하여 영수증 문자 전송">
-          <span class="flex items-center gap-1.5">
-            <span class="text-sm sm:text-base text-emerald-300 font-black">✓</span>
-            <span class="tracking-tight text-white font-black">${rNum}호 ${currentYear}.${String(currentMonth).padStart(2, '0')}월분 ${Number(curTotal).toLocaleString()}원</span>
+        <button type="button" onclick="handleSendSmsReceipt()" class="w-full py-1 px-2.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-black text-xs sm:text-sm flex items-center justify-between shadow-sm border border-cyan-400/40 transition cursor-pointer active:scale-[0.98]" title="클릭하여 영수증 문자 전송">
+          <span class="flex items-center gap-1.5 min-w-0">
+            <span class="text-sm sm:text-base text-emerald-300 font-black shrink-0">✓</span>
+            <span class="tracking-tight text-white font-black truncate">${rNum}호 ${currentYear}.${String(currentMonth).padStart(2, '0')}월분 ${Number(curTotal).toLocaleString()}원</span>
           </span>
-          <span class="text-[10px] sm:text-[11px] text-cyan-200 flex items-center gap-1 font-semibold">
+          <span class="text-[10px] sm:text-[11px] text-cyan-200 flex items-center gap-1 font-semibold shrink-0">
             <span>영수문자 전송</span>
             <span class="text-xs font-bold">➔</span>
           </span>
@@ -466,13 +470,13 @@ export function renderCurrentMonthSection(room) {
     }
     if (actionArea) {
       actionArea.innerHTML = `
-        <button type="button" id="btnProcessPay" class="w-full py-1 px-3 rounded-lg sm:rounded-xl bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-black text-xs sm:text-sm flex items-center justify-between shadow-sm border border-cyan-400/40 transition cursor-pointer active:scale-[0.98]">
-          <span class="flex items-center gap-1.5">
-            <span class="text-sm sm:text-base">💳</span>
-            <span class="tracking-tight text-white font-black">${rNum}호 ${currentYear}.${String(currentMonth).padStart(2, '0')}월분 즉시 완납</span>
-            <span class="text-[9px] sm:text-[10px] font-bold text-cyan-100 bg-cyan-950/70 border border-cyan-400/40 px-1.5 py-0.1 rounded-full">${Number(curTotal).toLocaleString()}원</span>
+        <button type="button" id="btnProcessPay" class="w-full py-1 px-2.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-black text-xs sm:text-sm flex items-center justify-between shadow-sm border border-cyan-400/40 transition cursor-pointer active:scale-[0.98]">
+          <span class="flex items-center gap-1.5 min-w-0">
+            <span class="text-sm sm:text-base shrink-0">💳</span>
+            <span class="tracking-tight text-white font-black truncate">${rNum}호 ${currentYear}.${String(currentMonth).padStart(2, '0')}월분</span>
+            <span class="text-[9px] sm:text-[10px] font-bold text-cyan-100 bg-cyan-950/70 border border-cyan-400/40 px-1.5 py-0.1 rounded-full shrink-0">${Number(curTotal).toLocaleString()}원</span>
           </span>
-          <span class="text-[10px] sm:text-[11px] text-cyan-200 flex items-center gap-1 font-semibold">
+          <span class="text-[10px] sm:text-[11px] text-cyan-200 flex items-center gap-1 font-semibold shrink-0">
             <span>수납 후 영수증</span>
             <span class="text-xs font-bold">➔</span>
           </span>

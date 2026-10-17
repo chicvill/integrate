@@ -468,10 +468,13 @@ export function initVoiceRecognition() {
       updateVoiceUIState('error', '🎙️ 마이크 권한 차단됨 (not-allowed)');
       const helpHtml = `
         <div class="text-[11px] text-rose-300 font-bold mb-1">⚠️ 브라우저 마이크 권한이 차단되었습니다</div>
-        <div class="text-[10px] text-slate-300 leading-relaxed text-left bg-slate-900/90 p-2.5 rounded-lg border border-rose-800/40 space-y-1">
-          <div>• <b>원인:</b> 스마트폰/크롬 보안 정책상 HTTP(IP 접속) 사이트에서는 마이크가 자동 차단됩니다.</div>
-          <div class="pt-1">• <b>해결 (1):</b> 주소창 왼쪽 <b>설정/자물쇠 아이콘 탭 ➡️ 마이크 '허용'</b></div>
-          <div>• <b>해결 (2) 크롬 모바일:</b> 주소창에 <code class="text-cyan-300">chrome://flags</code> 접속 ➡️ <code class="text-amber-300">unsafely-treat-insecure-origin-as-secure</code> 검색 후 <b>Enabled</b> 및 <code class="text-cyan-300">http://34.31.10.12</code> 입력 후 Relaunch</div>
+        <div class="text-[10px] text-slate-300 leading-relaxed text-left bg-slate-900/90 p-2.5 rounded-lg border border-rose-800/40 space-y-1.5">
+          <div>• <b>원인:</b> 스마트폰/크롬 보안 정책상 <b>HTTP(일반 IP)</b> 접속 시에는 마이크가 원천 차단됩니다.</div>
+          <div>• <b>1초 해결:</b> 아래 버튼을 눌러 <b>보안(HTTPS) 주소</b>로 접속하시면 마이크 권한 팝업이 뜨고 즉시 활성화됩니다.</div>
+          <a href="https://34-31-10-12.sslip.io/rent/" class="block text-center py-2 px-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs mt-1 shadow-md no-underline">
+            🔒 마이크 지원 보안(HTTPS) 주소로 이동
+          </a>
+          <div class="pt-1 text-slate-400">• 또는 주소창 왼쪽 <b>설정/자물쇠 아이콘 탭 ➡️ 마이크 '허용'</b>으로 변경 후 새로고침하세요.</div>
         </div>
       `;
       updateVoiceStatus('error', helpHtml);
@@ -677,13 +680,77 @@ export function parseMenuNumber(rawText) {
 }
 
 /**
+ * 현재 로그인 사용자가 최고관리자(admin)인지 판별
+ */
+export function isAdminUser() {
+  const user = state.currentUser;
+  if (!user) return false;
+  if (user.expiresAt && new Date(user.expiresAt).getTime() < Date.now()) {
+    return false;
+  }
+  return user.username === 'admin' || user.role === 'superadmin' || user.role === 'admin';
+}
+
+/**
+ * 음성 모달 내 관리자 전용 뱃지 상태 업데이트
+ */
+export function updateVoiceAdminBadge() {
+  const badge = document.getElementById('voiceAdminBadge');
+  if (badge) {
+    if (isAdminUser()) {
+      badge.className = 'text-[9px] px-1.5 py-0.2 rounded font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold';
+      badge.innerHTML = '👑 admin 승인됨';
+    } else {
+      badge.className = 'text-[9px] px-1.5 py-0.2 rounded font-mono bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold';
+      badge.innerHTML = '🔒 admin 전용 (잠김)';
+    }
+  }
+}
+
+/**
  * Rent 구두 명령 1~17번 실행기 (목적별 완전 분리, 사용 빈도순 배치, 관리자 전용 메뉴 후방 배치)
  * (말, 터치, 번호 선택 공통 단일 진입점)
  */
 export async function executeVoiceCommandById(cmdId, targetRoom = null, extraFields = {}) {
+  const cNum = Number(cmdId);
+
+  // 🛡️ admin 이외 관리자 권한 메뉴 차단 (13: 일괄등록, 14: 롤백/백업, 15: 지점관리, 16: 부가세, 3: 수납취소)
+  const ADMIN_ONLY_COMMANDS = {
+    3: "수납 취소 (미납 환원)",
+    13: "건물 전체 일괄등록",
+    14: "1초 롤백 & 백업 복원",
+    15: "건물 / 지점 관리 및 변경",
+    16: "부가가치세(VAT) 신고 자료"
+  };
+
+  if (ADMIN_ONLY_COMMANDS[cNum] && !isAdminUser()) {
+    const cmdTitle = ADMIN_ONLY_COMMANDS[cNum];
+    const warnHtml = `
+      <div class="p-2 text-center space-y-1.5">
+        <div class="text-xs font-bold text-rose-300 flex items-center justify-center gap-1.5">
+          <span>🔒</span> <span>관리자(admin) 전용 권한 제한</span>
+        </div>
+        <div class="text-[11px] text-slate-200">
+          <b>[${cNum}번: ${cmdTitle}]</b>은(는)<br>
+          <span class="text-amber-300 font-bold">최고관리자(admin)</span> 전용 메뉴입니다.
+        </div>
+        <p class="text-[10px] text-slate-400 leading-snug">
+          admin 이외의 계정이나 미인증 상태에서는 실행할 수 없습니다.<br>
+          admin 계정으로 로그인 후 다시 실행해 주세요.
+        </p>
+        <button type="button" onclick="closeVoiceModal(); openAdminModal();" class="mt-1 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-indigo-600 hover:from-amber-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md cursor-pointer active:scale-95 transition flex items-center justify-center gap-1.5 mx-auto">
+          <span>🔑</span> <span>admin 계정 로그인</span>
+        </button>
+      </div>
+    `;
+    updateVoiceStatus('warning', warnHtml);
+    speakText("관리자 전용 메뉴입니다. admin 계정으로 로그인 후 이용해 주세요.");
+    return;
+  }
+
   const rNum = targetRoom || parseKoreanNumber(String(targetRoom)) || state.selectedRoom || 203;
 
-  switch (Number(cmdId)) {
+  switch (cNum) {
     // ── [그룹 1: 실시간 일상 업무 - 최다 빈도] ──
     case 1: // 1. 203호 수납(입금 등) -> 최장기 미납 탐색 및 2단계 음성 승인
       await executeVoicePayment(rNum);
@@ -1200,6 +1267,30 @@ export async function handleVoiceCommand(rawText) {
  * 해당 호실의 특정 월(또는 당월) 수납을 즉시 취소하여 미납으로 환원
  */
 export async function executeVoiceCancelPayment(roomNumber, specificMonth = null) {
+  if (!isAdminUser()) {
+    const warnHtml = `
+      <div class="p-2 text-center space-y-1.5">
+        <div class="text-xs font-bold text-rose-300 flex items-center justify-center gap-1.5">
+          <span>🔒</span> <span>관리자(admin) 전용 권한 제한</span>
+        </div>
+        <div class="text-[11px] text-slate-200">
+          <b>[수납 취소 및 미납 환원]</b>은(는)<br>
+          <span class="text-amber-300 font-bold">최고관리자(admin)</span> 전용 기능입니다.
+        </div>
+        <p class="text-[10px] text-slate-400 leading-snug">
+          admin 이외의 계정에서는 임의로 수납을 취소할 수 없습니다.<br>
+          admin 계정으로 로그인 후 이용해 주세요.
+        </p>
+        <button type="button" onclick="closeVoiceModal(); openAdminModal();" class="mt-1 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-indigo-600 hover:from-amber-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md cursor-pointer active:scale-95 transition flex items-center justify-center gap-1.5 mx-auto">
+          <span>🔑</span> <span>admin 계정 로그인</span>
+        </button>
+      </div>
+    `;
+    updateVoiceStatus('warning', warnHtml);
+    speakText("수납 취소는 관리자 전용 권한입니다. admin 계정으로 로그인 후 이용해 주세요.");
+    return;
+  }
+
   const rNum = roomNumber || state.selectedRoom || 203;
   const m = specificMonth || currentMonth;
   closeVoiceModal();
@@ -1424,6 +1515,7 @@ export function openVoiceModal() {
     updateVoiceTranscript('말씀해주세요... (예: "203호 입금", "501호 선택")');
     updateVoiceStatus('idle', '');
     showVoiceConfirmButtons(false);
+    updateVoiceAdminBadge();
   }
 }
 
@@ -1518,4 +1610,6 @@ if (typeof window !== 'undefined') {
   window.requestMicrophonePermissionAndStart = requestMicrophonePermissionAndStart;
   window.executeVoiceCommandById = executeVoiceCommandById;
   window.parseMenuNumber = parseMenuNumber;
+  window.isAdminUser = isAdminUser;
+  window.updateVoiceAdminBadge = updateVoiceAdminBadge;
 }
