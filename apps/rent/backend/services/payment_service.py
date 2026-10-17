@@ -83,9 +83,9 @@ def evaluate_payment_status(
         return False, "전입 이전 (기록 없음/미납)"
 
     if is_move_in_month:
-        # 입주월: 월세/후불인 경우 익월 납부이므로 미납 처리!
+        # 입주월: 월세/후불인 경우 익월 청구 원칙 적용 (가짜 체납 Ghost Overdue 방지)
         if is_monthly and is_postpaid:
-            return False, "입주월 (후불 익월 청구/미납)"
+            return True, "입주월 (후불 익월 청구/정상)"
         return True, "입주월 선납 완납"
 
     if not is_future:

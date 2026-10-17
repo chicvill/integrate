@@ -1165,7 +1165,17 @@
             </button>
           </div>
         </div>
-        <textarea id="smsRawInput" oninput="handleLiveSmsParse()" rows="5" class="w-full bg-surface-950 border border-slate-700 focus:border-cyan-500 text-slate-100 rounded-xl p-2.5 text-xs font-mono outline-none transition resize-none placeholder:text-slate-600" placeholder="핸드폰에서 복사한 은행 입금 알림 문자를 붙여넣으세요.&#10;([클립보드 붙여넣기] 버튼 또는 입력창을 길게 눌러 붙여넣기)"></textarea>
+        <textarea id="smsRawInput" oninput="handleLiveSmsParse()" rows="4" class="w-full bg-surface-950 border border-slate-700 focus:border-cyan-500 text-slate-100 rounded-xl p-2.5 text-xs font-mono outline-none transition resize-none placeholder:text-slate-600" placeholder="핸드폰에서 복사한 은행 입금 알림 문자를 붙여넣으세요.&#10;([클립보드 붙여넣기] 버튼 또는 입력창을 길게 눌러 붙여넣기)"></textarea>
+        <!-- 은행별 실무 예제 빠른 입력 버튼바 -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-[10px] text-slate-400 no-scrollbar">
+          <span class="shrink-0 font-bold text-slate-400">⚡ 테스트 예제:</span>
+          <button type="button" onclick="fillBankPresetSms('nh')" class="px-2 py-0.5 rounded-lg bg-surface-800 hover:bg-surface-750 text-emerald-300 border border-emerald-500/30 whitespace-nowrap active:scale-95 transition">🌾 농협(404호)</button>
+          <button type="button" onclick="fillBankPresetSms('kb')" class="px-2 py-0.5 rounded-lg bg-surface-800 hover:bg-surface-750 text-amber-300 border border-amber-500/30 whitespace-nowrap active:scale-95 transition">🦁 국민(201호)</button>
+          <button type="button" onclick="fillBankPresetSms('shinhan')" class="px-2 py-0.5 rounded-lg bg-surface-800 hover:bg-surface-750 text-blue-300 border border-blue-500/30 whitespace-nowrap active:scale-95 transition">🟦 신한(101호)</button>
+          <button type="button" onclick="fillBankPresetSms('kakao')" class="px-2 py-0.5 rounded-lg bg-surface-800 hover:bg-surface-750 text-yellow-300 border border-yellow-500/30 whitespace-nowrap active:scale-95 transition">🟡 카카오(302호전세)</button>
+          <button type="button" onclick="fillBankPresetSms('diff')" class="px-2 py-0.5 rounded-lg bg-surface-800 hover:bg-surface-750 text-orange-300 border border-orange-500/30 whitespace-nowrap active:scale-95 transition">⚖️ 차액(20만입금)</button>
+          <button type="button" onclick="fillBankPresetSms('unknown')" class="px-2 py-0.5 rounded-lg bg-surface-800 hover:bg-surface-750 text-purple-300 border border-purple-500/30 whitespace-nowrap active:scale-95 transition">❓ 미확인호실</button>
+        </div>
       </div>
 
       <!-- Step 2: Live Analysis Result Card -->

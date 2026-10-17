@@ -443,7 +443,20 @@ export function renderCurrentMonthSection(room) {
       statusBadge.className = 'px-2 py-0.5 rounded-full font-bold text-xs bg-slate-800 text-slate-400 border border-slate-700 shrink-0';
       statusBadge.textContent = '공실 (미부과)';
     }
-    if (actionArea) actionArea.innerHTML = `<span class="text-xs text-slate-500 py-2 block text-center">계약 등록 후 납부 가능</span>`;
+    if (actionArea) {
+      actionArea.innerHTML = `
+        <button type="button" onclick="openContractEditModal(${rNum})" class="w-full py-1 px-2.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-black text-xs sm:text-sm flex items-center justify-between shadow-sm border border-emerald-400/40 transition cursor-pointer active:scale-[0.98]" title="공실 신규 입주 계약 등록">
+          <span class="flex items-center gap-1.5 min-w-0">
+            <span class="text-sm sm:text-base shrink-0">🚪</span>
+            <span class="tracking-tight text-white font-black truncate">${rNum}호 신규 입주 계약 등록하기</span>
+          </span>
+          <span class="text-[10px] sm:text-[11px] text-emerald-200 flex items-center gap-1 font-semibold shrink-0">
+            <span>입주 등록</span>
+            <span class="text-xs font-bold">➔</span>
+          </span>
+        </button>
+      `;
+    }
   } else if (curPay.paid) {
     if (statusBadge) {
       statusBadge.className = 'px-2 py-0.5 rounded-full font-bold text-xs bg-emerald-500/25 text-emerald-300 border border-emerald-500/50 shrink-0';

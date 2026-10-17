@@ -149,11 +149,12 @@ class RentService:
 
         # 1. 시크빌 공식 백업 JSON 파일 우선 탐색 및 원본 29개실 실데이터 적재
         possible_json_paths = [
+            os.path.join(os.path.dirname(__file__), "..", "seed_data.json"),
             os.path.join(os.path.dirname(__file__), "seed_data.json"),
             os.path.join(os.path.dirname(__file__), "..", "..", "data", "chicvill_backup.json"),
-            os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "data", "chicvill_backup.json"),
+            "/app/apps/rent/backend/seed_data.json",
             "/app/backend/seed_data.json",
-            "/app/data/chicvill_backup.json",
+            "apps/rent/backend/seed_data.json",
             "data/chicvill_backup.json",
             "chicvill_backup.json"
         ]

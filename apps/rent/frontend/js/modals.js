@@ -3452,7 +3452,33 @@ export function closeSmsDepositModal() {
 }
 
 export function fillSampleSmsText() {
-  const sample = `알림\n\n농협\n입금440,000원\n10/06 19:40\n351-****-9152\n-93 이종진404호`;
+  fillBankPresetSms('nh');
+}
+
+export function fillBankPresetSms(presetType) {
+  let sample = '';
+  switch (presetType) {
+    case 'nh':
+      sample = `알림\n\n농협\n입금440,000원\n10/06 19:40\n351-****-9152\n-93 이종진404호`;
+      break;
+    case 'kb':
+      sample = `[KB국민] 10/17 14:05 201호 정민준 440,000원 입금 잔액 23,450,000`;
+      break;
+    case 'shinhan':
+      sample = `[신한은행] 10/17 09:30 입금:배종봉(101호) 250,000원 잔액 12,300,000`;
+      break;
+    case 'kakao':
+      sample = `[카카오뱅크] 10/17 16:12 302호 150,000원 입금 (김지영) 잔액 8,920,000`;
+      break;
+    case 'diff':
+      sample = `[KB국민] 10/17 15:30 101호 배종봉 200,000원 입금 잔액 12,500,000`;
+      break;
+    case 'unknown':
+      sample = `[NH농협] 10/17 17:00 홍길동 440,000원 입금 잔액 3,400,000`;
+      break;
+    default:
+      sample = `알림\n\n농협\n입금440,000원\n10/06 19:40\n351-****-9152\n-93 이종진404호`;
+  }
   const rawInput = document.getElementById('smsRawInput');
   if (rawInput) {
     rawInput.value = sample;
@@ -4795,6 +4821,11 @@ export function finishSequentialSmsSend() {
 
 export function closeSequentialSmsModal() {
   closeModal('sequentialSmsModal');
+}
+
+if (typeof window !== 'undefined') {
+  window.fillBankPresetSms = fillBankPresetSms;
+  window.fillSampleSmsText = fillSampleSmsText;
 }
 
 
