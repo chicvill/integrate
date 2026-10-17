@@ -93,7 +93,7 @@ class RentService:
 
         for exp in expenses_list:
             db.add(RentExpense(
-                id=exp.get("id") or str(uuid.uuid4()),
+                id=str(uuid.uuid4()),
                 branch_id=branch_id,
                 date=exp.get("date", "") or datetime.now().strftime("%Y-%m-%d"),
                 item=exp.get("item", "") or "지출",
@@ -105,7 +105,7 @@ class RentService:
 
         for th in histories_list:
             db.add(RentTenantHistory(
-                id=th.get("id") or str(uuid.uuid4()),
+                id=str(uuid.uuid4()),
                 branch_id=branch_id,
                 room_number=int(th.get("room_number") or 0),
                 tenant_name=th.get("tenant_name", "") or "",
