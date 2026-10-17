@@ -10013,7 +10013,7 @@ function renderBuildingSummary() {
   const branchName = (state.currentBranch === 'main') ? '시크빌' : (curBranchObj ? curBranchObj.name : '시크빌');
 
   const bNameEl = document.getElementById('sumBuildingName');
-  if (bNameEl) bNameEl.textContent = branchName;
+  if (bNameEl) bNameEl.textContent = `${branchName} 공실 ${vacantCount}/${totalRooms}실`;
 
   const totRoomsEl = document.getElementById('sumTotalRooms');
   if (totRoomsEl) totRoomsEl.textContent = `${totalRooms}실`;
@@ -10023,6 +10023,23 @@ function renderBuildingSummary() {
 
   const totDepEl = document.getElementById('sumTotalDeposit');
   if (totDepEl) totDepEl.textContent = `${totalDeposit.toLocaleString()}원`;
+
+  const mProgEl = document.getElementById('sumMonthlyProgressText');
+  if (mProgEl) {
+    mProgEl.innerHTML = `
+      <span class="inline-flex items-center gap-1 flex-wrap">
+        <span class="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold text-[10px] sm:text-[11px]">[보증금 누계]</span>
+        <span class="text-amber-300 font-mono font-bold">${totalDeposit.toLocaleString()}원</span>,
+        <span class="px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold text-[10px] sm:text-[11px]">[${currentYear}.${String(currentMonth).padStart(2, '0')} 누계]</span>
+        <span class="text-cyan-200 font-mono font-bold">${monthlyPaid.toLocaleString()}/${monthlyGoal.toLocaleString()}원(${payRateFormatted}%)</span>
+      </span>
+    `;
+  }
+
+  const roomDrawerTitle = document.getElementById('roomDrawerTitle');
+  if (roomDrawerTitle) {
+    roomDrawerTitle.textContent = `${branchName}(${totalRooms}개실)`;
+  }
 
   const mGoalEl = document.getElementById('sumMonthlyGoal');
   if (mGoalEl) mGoalEl.textContent = `${monthlyGoal.toLocaleString()}원`;
@@ -10061,6 +10078,9 @@ function renderHeaderSummary(room) {
   const headerRoomBadge = document.getElementById('headerRoomBadge');
   if (headerRoomBadge) headerRoomBadge.textContent = `${room.room_number}호 ▾`;
 
+  const midRoomBadge = document.getElementById('midRoomBadge');
+  if (midRoomBadge) midRoomBadge.textContent = `${room.room_number}호 ▾`;
+
   // 서버 온라인/오프라인 연결 상태 배너 표시 제어
   const statusBanner = document.getElementById('serverStatusBanner');
   if (statusBanner) {
@@ -10083,7 +10103,7 @@ function renderMainRoomCard(room) {
   if (cardRoomNumber) cardRoomNumber.textContent = `${rNum}호`;
 
   const cardTenantName = document.getElementById('cardTenantName');
-  if (cardTenantName) cardTenantName.textContent = isVacant ? '공실 (미계약)' : `${room.name} 님`;
+  if (cardTenantName) cardTenantName.textContent = isVacant ? '공실 (미계약)' : `${room.name}님`;
 
   const cardIdNumber = document.getElementById('cardIdNumber');
   if (cardIdNumber) {
@@ -10092,7 +10112,7 @@ function renderMainRoomCard(room) {
     } else if (!room.id_number) {
       cardIdNumber.innerHTML = `<span class="text-amber-400 font-normal">주민번호 미등록</span>`;
     } else {
-      cardIdNumber.innerHTML = `<span class="text-slate-400 font-normal text-[11px]">주민:</span> <span class="text-cyan-300 font-mono font-medium">${room.id_number}</span>`;
+      cardIdNumber.innerHTML = `<span class="text-cyan-300 font-mono font-medium">${room.id_number}</span>`;
     }
   }
 
@@ -10102,7 +10122,7 @@ function renderMainRoomCard(room) {
       cardPhone.innerHTML = `<span class="text-slate-500">연락처 없음</span>`;
     } else {
       cardPhone.innerHTML = `
-        <span class="inline-flex items-center gap-1.5 bg-surface-850 px-2 py-0.5 rounded-lg border border-slate-700/80">
+        <span class="inline-flex items-center gap-1.5 bg-surface-850 px-1.5 py-0.5 rounded-lg border border-slate-700/80">
           <a href="javascript:void(0)" onclick="handlePhoneMessageClick('${room.phone}', '${room.name || ''}', ${room.room_number})" class="text-cyan-300 hover:text-cyan-200 underline font-mono flex items-center gap-1 font-semibold text-xs" title="문자 메시지 창 열기 (영수증 자동 복사)">
             <span>💬 ${room.phone}</span>
           </a>
@@ -10150,13 +10170,13 @@ function renderMainRoomCard(room) {
 
   // 전입일 / 만기일 요약
   const cPeriod = document.getElementById('cPeriod');
-  if (cPeriod) {
-    let pText = (room.move_in && room.expiry) ? `${room.move_in} ~ ${room.expiry}` : '-';
-    if (room.auto_renewed) {
-      pText += ' (자동1년연장)';
-    }
-    cPeriod.textContent = pText;
+  const cPeriodSub = document.getElementById('cPeriodSub');
+  let pText = (room.move_in && room.expiry) ? `${room.move_in} ~ ${room.expiry}` : '-';
+  if (room.auto_renewed) {
+    pText += ' (자동연장)';
   }
+  if (cPeriod) cPeriod.textContent = pText;
+  if (cPeriodSub) cPeriodSub.textContent = pText;
 
   const periodTypeTag = document.getElementById('cardPeriodTypeTag');
   if (periodTypeTag) {
@@ -10200,50 +10220,84 @@ function renderCurrentMonthSection(room) {
   const curTotal = (Number(curRent) || 0) + (Number(curMaint) || 0);
 
   const curMonthTitle = document.getElementById('curMonthTitle');
-  if (curMonthTitle) curMonthTitle.textContent = `${currentMonth}월분`;
+  if (curMonthTitle) curMonthTitle.textContent = `${currentYear}.${String(currentMonth).padStart(2, '0')}월분`;
 
   const curTotalAmount = document.getElementById('curTotalAmount');
   if (curTotalAmount) curTotalAmount.textContent = `${Number(curTotal).toLocaleString()}원`;
 
   const curRentDetail = document.getElementById('curRentDetail');
-  if (curRentDetail) curRentDetail.textContent = `월세 ${Number(curRent).toLocaleString()} + 관리비 ${Number(curMaint).toLocaleString()}`;
+  if (curRentDetail) curRentDetail.textContent = `(${Number(curRent).toLocaleString()} + ${Number(curMaint).toLocaleString()}원)`;
 
   const statusBadge = document.getElementById('curMonthStatusBadge');
   const actionArea = document.getElementById('curMonthActionArea');
 
+  // 미납 개월 수 계산 (현재 세입자 기준 당해연도 1월부터 currentMonth까지)
+  let unpaidMonthsCount = 0;
+  if (!isVacant) {
+    let inYear = currentYear;
+    let inMonth = 1;
+    if (room.move_in) {
+      const dtComp = parseDateComponents(room.move_in);
+      if (dtComp) {
+        inYear = dtComp.year;
+        inMonth = dtComp.month;
+      }
+    }
+
+    for (let m = 1; m <= currentMonth; m++) {
+      if (inYear > currentYear || (inYear === currentYear && m < inMonth)) {
+        continue;
+      }
+      const pKey = `${currentYear}-${String(m).padStart(2, '0')}`;
+      const p = (room.payments && (room.payments[pKey] || room.payments[m]));
+      if (!p || !p.paid) {
+        unpaidMonthsCount++;
+      }
+    }
+  }
+
   if (isVacant) {
     if (statusBadge) {
-      statusBadge.className = 'px-3 py-1 rounded-full font-black text-sm bg-slate-800 text-slate-400 border border-slate-700';
+      statusBadge.className = 'px-2 py-0.5 rounded-full font-bold text-xs bg-slate-800 text-slate-400 border border-slate-700 shrink-0';
       statusBadge.textContent = '공실 (미부과)';
     }
     if (actionArea) actionArea.innerHTML = `<span class="text-xs text-slate-500 py-2 block text-center">계약 등록 후 납부 가능</span>`;
   } else if (curPay.paid) {
     if (statusBadge) {
-      statusBadge.className = 'px-2 py-0.5 sm:px-3 sm:py-1 rounded-full font-bold text-[11px] sm:text-xs bg-emerald-500/25 text-emerald-300 border border-emerald-500/50 flex items-center gap-1 shrink-0';
-      statusBadge.innerHTML = `<span>✓</span> 완납 (${curPay.paid_date || formattedToday})`;
+      statusBadge.className = 'px-2 py-0.5 rounded-full font-bold text-xs bg-emerald-500/25 text-emerald-300 border border-emerald-500/50 shrink-0';
+      statusBadge.textContent = '완납';
     }
     if (actionArea) {
       actionArea.innerHTML = `
-        <div class="flex items-center gap-1.5 w-full">
-          <button type="button" disabled class="flex-1 py-1.5 sm:py-2 px-3 rounded-xl text-xs sm:text-sm font-bold bg-surface-800 text-slate-400 border border-slate-700/80 cursor-not-allowed flex items-center justify-center gap-1.5 opacity-80">
-            <span class="text-emerald-400 font-black">✓</span> 이번 달 납부 완료됨
-          </button>
-          <button type="button" id="btnCancelPay" class="py-1.5 sm:py-2 px-2.5 rounded-xl text-[11px] sm:text-xs font-semibold bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-rose-300 border border-slate-700 transition cursor-pointer shrink-0">
-            취소
-          </button>
-        </div>
+        <button type="button" onclick="handleSendSmsReceipt()" class="w-full py-1 px-3 rounded-lg sm:rounded-xl bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-black text-xs sm:text-sm flex items-center justify-between shadow-sm border border-cyan-400/40 transition cursor-pointer active:scale-[0.98]" title="클릭하여 영수증 문자 전송">
+          <span class="flex items-center gap-1.5">
+            <span class="text-sm sm:text-base text-emerald-300 font-black">✓</span>
+            <span class="tracking-tight text-white font-black">${rNum}호 ${currentYear}.${String(currentMonth).padStart(2, '0')}월분 ${Number(curTotal).toLocaleString()}원</span>
+          </span>
+          <span class="text-[10px] sm:text-[11px] text-cyan-200 flex items-center gap-1 font-semibold">
+            <span>영수문자 전송</span>
+            <span class="text-xs font-bold">➔</span>
+          </span>
+        </button>
       `;
-      document.getElementById('btnCancelPay').onclick = () => handleCancelPayment(rNum, currentMonth);
     }
   } else {
     if (statusBadge) {
-      statusBadge.className = 'px-2 py-0.5 rounded-full font-bold text-[10px] sm:text-xs bg-rose-500/25 text-rose-300 border border-rose-500/50 animate-pulse';
-      statusBadge.textContent = '● 미납 (입금대기)';
+      statusBadge.className = 'px-2 py-0.5 rounded-full font-bold text-xs bg-rose-500/25 text-rose-300 border border-rose-500/50 shrink-0';
+      statusBadge.textContent = unpaidMonthsCount > 1 ? `미납 ${unpaidMonthsCount}` : '미납';
     }
     if (actionArea) {
       actionArea.innerHTML = `
-        <button type="button" id="btnProcessPay" class="w-full py-2 sm:py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 transition shadow-md shadow-cyan-950/60 flex items-center justify-center gap-1.5 cursor-pointer active:scale-98">
-          💳 ${currentMonth}월분 즉시 완납 처리 (${Number(curTotal).toLocaleString()}원)
+        <button type="button" id="btnProcessPay" class="w-full py-1 px-3 rounded-lg sm:rounded-xl bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-black text-xs sm:text-sm flex items-center justify-between shadow-sm border border-cyan-400/40 transition cursor-pointer active:scale-[0.98]">
+          <span class="flex items-center gap-1.5">
+            <span class="text-sm sm:text-base">💳</span>
+            <span class="tracking-tight text-white font-black">${rNum}호 ${currentYear}.${String(currentMonth).padStart(2, '0')}월분 즉시 완납</span>
+            <span class="text-[9px] sm:text-[10px] font-bold text-cyan-100 bg-cyan-950/70 border border-cyan-400/40 px-1.5 py-0.1 rounded-full">${Number(curTotal).toLocaleString()}원</span>
+          </span>
+          <span class="text-[10px] sm:text-[11px] text-cyan-200 flex items-center gap-1 font-semibold">
+            <span>수납 후 영수증</span>
+            <span class="text-xs font-bold">➔</span>
+          </span>
         </button>
       `;
       document.getElementById('btnProcessPay').onclick = () => handleProcessPayment(rNum, currentMonth);
@@ -11245,6 +11299,20 @@ async function handleProcessPayment(roomNum, month, year = currentYear) {
         saveLocalFallback();
         renderAll();
       }
+    }
+
+    // 3. 수납 후 영수 문자 발송 연동
+    const curRent = (room && room.lease_type === "전세") ? 0 : (room ? room.rent : 0);
+    const curMaint = (room ? room.maintenance : 0);
+    const curTot = (Number(curRent) || 0) + (Number(curMaint) || 0);
+    const curBranchObj = state.branches.find(b => b.branch_id === state.currentBranch);
+    const branchName = state.currentBranch === 'main' ? '시크빌' : (curBranchObj ? curBranchObj.name : '시크빌');
+    const receiptText = `[${branchName} 임차료 수납 영수증]\n${roomNum}호 ${tenantName} 님\n- 귀속: ${year}년 ${month}월분\n- 수납액: ${Number(curTot).toLocaleString()}원\n- 수납일자: ${defaultPayDate}\n정상 수납(완납) 처리되었습니다. 감사합니다.`;
+    state.pendingReceiptText = receiptText;
+    state.pendingReceiptRoom = roomNum;
+
+    if (room && room.phone && typeof window.handleSendSmsReceipt === 'function') {
+      window.handleSendSmsReceipt(room.phone);
     }
   } catch (err) {
     console.error("수납 처리 실패:", err);
@@ -17861,9 +17929,19 @@ async function confirmVoicePayment() {
     updateVoiceStatus('success', successMsg);
     speakText(`${roomNumber}호 ${month}월분 수납 처리가 완료되었습니다.`);
 
+    // 수납 후 영수 문자 발송 연동
+    const curBranchObj = state.branches.find(b => b.branch_id === state.currentBranch);
+    const branchName = state.currentBranch === 'main' ? '시크빌' : (curBranchObj ? curBranchObj.name : '시크빌');
+    const receiptText = `[${branchName} 임차료 수납 영수증]\n${roomNumber}호 ${tenantName} 님\n- 귀속: ${year}년 ${month}월분\n- 수납액: ${rentFormatted}원\n- 수납일자: ${payDate}\n정상 수납(완납) 처리되었습니다. 감사합니다.`;
+    state.pendingReceiptText = receiptText;
+    state.pendingReceiptRoom = roomNumber;
+
     setTimeout(() => {
       closeVoiceModal();
-    }, 2500);
+      if (room && room.phone && typeof window.handleSendSmsReceipt === 'function') {
+        window.handleSendSmsReceipt(room.phone);
+      }
+    }, 1500);
 
   } catch (err) {
     updateVoiceStatus('error', `수납 처리 실패: ${err.message}`);

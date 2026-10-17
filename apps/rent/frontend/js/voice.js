@@ -1343,9 +1343,19 @@ export async function confirmVoicePayment() {
     updateVoiceStatus('success', successMsg);
     speakText(`${roomNumber}호 ${month}월분 수납 처리가 완료되었습니다.`);
 
+    // 수납 후 영수 문자 발송 연동
+    const curBranchObj = state.branches.find(b => b.branch_id === state.currentBranch);
+    const branchName = state.currentBranch === 'main' ? '시크빌' : (curBranchObj ? curBranchObj.name : '시크빌');
+    const receiptText = `[${branchName} 임차료 수납 영수증]\n${roomNumber}호 ${tenantName} 님\n- 귀속: ${year}년 ${month}월분\n- 수납액: ${rentFormatted}원\n- 수납일자: ${payDate}\n정상 수납(완납) 처리되었습니다. 감사합니다.`;
+    state.pendingReceiptText = receiptText;
+    state.pendingReceiptRoom = roomNumber;
+
     setTimeout(() => {
       closeVoiceModal();
-    }, 2500);
+      if (room && room.phone && typeof window.handleSendSmsReceipt === 'function') {
+        window.handleSendSmsReceipt(room.phone);
+      }
+    }, 1500);
 
   } catch (err) {
     updateVoiceStatus('error', `수납 처리 실패: ${err.message}`);
