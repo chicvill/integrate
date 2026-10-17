@@ -104,27 +104,48 @@ class RentService:
             ))
 
         for th in histories_list:
+            move_out_str = th.get("move_out", "") or th.get("move_out_date", "") or datetime.now().strftime("%Y-%m-%d")
+            retention_str = th.get("retention_until", "") or th.get("archive_expires_at", "")
+            if not retention_str and move_out_str:
+                try:
+                    parts = move_out_str.split('-')
+                    retention_str = f"{int(parts[0]) + 1}-{parts[1]}-{parts[2]}"
+                except Exception:
+                    retention_str = move_out_str
+
             db.add(RentTenantHistory(
                 id=str(uuid.uuid4()),
                 branch_id=branch_id,
                 room_number=int(th.get("room_number") or 0),
-                tenant_name=th.get("tenant_name", "") or "",
+                name=th.get("name", "") or th.get("tenant_name", "") or "전출자",
                 id_number=th.get("id_number", "") or "",
                 phone=th.get("phone", "") or "",
+                lease_type=th.get("lease_type", "월세") or "월세",
+                pay_timing=th.get("pay_timing", "후불") or "후불",
+                deposit=int(th.get("deposit") or 0),
+                rent=int(th.get("rent") or 0),
+                maintenance=int(th.get("maintenance") or 0),
+                clean_fee=int(th.get("clean_fee") or 80000),
                 move_in=th.get("move_in", "") or "",
-                move_out=th.get("move_out", "") or "",
-                move_out_date=th.get("move_out_date", "") or "",
-                unpaid_amount=int(th.get("unpaid_amount") or 0),
-                return_deposit=int(th.get("return_deposit") or 0),
-                archive_expires_at=th.get("archive_expires_at", "") or "",
+                expiry=th.get("expiry", "") or "",
+                move_out=move_out_str,
+                retention_until=retention_str or move_out_str,
                 metadata_json=th.get("metadata_json", {})
             ))
 
     def _seed_branch_rooms(self, db: Session, branch_id: str, is_main: bool = True) -> None:
         """지점별 29개실 및 12개월 납부 장부 / 전출자 1년 보존 이력 생성"""
         rooms_count = db.query(RentRoom).filter(RentRoom.branch_id == branch_id).count()
-        if rooms_count > 0:
+        payments_count = db.query(RentPayment).filter(RentPayment.branch_id == branch_id).count()
+        if rooms_count > 0 and payments_count > 0:
             return
+
+        # 깨끗한 시드를 위해 해당 지점의 불완전한 잔여 레코드 일괄 정리
+        db.query(RentPayment).filter(RentPayment.branch_id == branch_id).delete(synchronize_session=False)
+        db.query(RentRoom).filter(RentRoom.branch_id == branch_id).delete(synchronize_session=False)
+        db.query(RentExpense).filter(RentExpense.branch_id == branch_id).delete(synchronize_session=False)
+        db.query(RentTenantHistory).filter(RentTenantHistory.branch_id == branch_id).delete(synchronize_session=False)
+        db.flush()
 
         # 1. 시크빌 공식 백업 JSON 파일 우선 탐색 및 원본 29개실 실데이터 적재
         possible_json_paths = [
@@ -149,6 +170,7 @@ class RentService:
                         print(f"✅ [{branch_id}] 시크빌 공식 백업({j_path})으로부터 29개실 실데이터 시딩 완료")
                         return
                 except Exception as e:
+                    db.rollback()
                     print(f"⚠️ 백업 JSON 로드 시도 오류 ({j_path}): {e}")
 
         sample_names = ["배종봉", "김정권", "이종진", "정민준", "김백찬", "김정현", "성민병원", "김지영", "김진수", "이광훈"]
