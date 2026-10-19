@@ -8821,6 +8821,16 @@ function clearAuthUser() {
   localStorage.removeItem(AUTH_STORAGE_KEY);
 }
 
+function isSameBranchId(id1, id2) {
+  if (!id1 || !id2) return id1 === id2;
+  const s1 = String(id1).toLowerCase();
+  const s2 = String(id2).toLowerCase();
+  if (s1 === s2) return true;
+  const isMain1 = (s1 === 'main' || s1 === 'chicvill' || s1 === 'chicvill01' || s1 === 'chicvill1');
+  const isMain2 = (s2 === 'main' || s2 === 'chicvill' || s2 === 'chicvill01' || s2 === 'chicvill1');
+  return isMain1 && isMain2;
+}
+
 // URL 쿼리 파라미터 또는 localStorage에서 branch 가져오기
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('branch')) {
@@ -8830,10 +8840,28 @@ if (urlParams.get('branch')) {
   if (savedBranch) state.currentBranch = savedBranch;
 }
 
+// 점주 계정(branch_admin)의 타 건물 접근 엄격 차단: 로그인된 배정 건물이 있다면 강제 고정
+if (state.currentUser && state.currentUser.role === 'branch_admin' && state.currentUser.branch_id) {
+  if (!isSameBranchId(state.currentBranch, state.currentUser.branch_id)) {
+    state.currentBranch = state.currentUser.branch_id;
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('branch', state.currentUser.branch_id);
+      window.history.replaceState({}, '', url.toString());
+    } catch (_) {}
+  }
+}
+
 /**
  * 백엔드 DB에서 전체 데이터 로드 (실패 시 localStorage 폴백)
  */
 async function loadInitialData() {
+  // 점주 계정 강제 매칭 재확인
+  if (state.currentUser && state.currentUser.role === 'branch_admin' && state.currentUser.branch_id) {
+    if (!isSameBranchId(state.currentBranch, state.currentUser.branch_id)) {
+      state.currentBranch = state.currentUser.branch_id;
+    }
+  }
   try {
     // 1. 백엔드 API 호출 시도
     const [roomsRes, expRes, branchRes, histRes] = await Promise.all([
@@ -9200,6 +9228,13 @@ function navigateNextRoom() {
 }
 
 async function switchBranch(branchId) {
+  const user = state.currentUser;
+  if (user && user.role === 'branch_admin' && user.branch_id) {
+    if (!isSameBranchId(branchId, user.branch_id)) {
+      alert(`🔒 접근 제한: 점주(${user.name || user.username})는 배정된 담당 건물만 관제할 수 있습니다.`);
+      return;
+    }
+  }
   if (state.currentBranch === branchId) return;
   state.currentBranch = branchId;
   saveLocalFallback();

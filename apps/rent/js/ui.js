@@ -36,6 +36,13 @@ export function navigateNextRoom() {
 }
 
 export async function switchBranch(branchId) {
+  const user = state.currentUser;
+  if (user && user.role === 'branch_admin' && user.branch_id) {
+    if (!isSameBranchId(branchId, user.branch_id)) {
+      alert(`🔒 접근 제한: 점주(${user.name || user.username})는 배정된 담당 건물만 관제할 수 있습니다.`);
+      return;
+    }
+  }
   if (state.currentBranch === branchId) return;
   state.currentBranch = branchId;
   saveLocalFallback();

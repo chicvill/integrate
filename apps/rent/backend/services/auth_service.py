@@ -38,6 +38,36 @@ class AuthService:
                 "reason": "시스템 기본 최고관리자"
             },
             {
+                "username": "chic",
+                "password": "1212",
+                "name": "시크빌 점주",
+                "phone": "010-1234-5678",
+                "role": "branch_admin",
+                "assigned_branch_id": "main",
+                "status": "APPROVED",
+                "reason": "시크빌 전용 점주 계정"
+            },
+            {
+                "username": "sunho",
+                "password": "1212",
+                "name": "선호빌 점주",
+                "phone": "010-7250-7800",
+                "role": "branch_admin",
+                "assigned_branch_id": "branch_5611",
+                "status": "APPROVED",
+                "reason": "선호빌 전용 점주 계정"
+            },
+            {
+                "username": "sinbi",
+                "password": "1212",
+                "name": "신비주택 점주",
+                "phone": "010-4281-6453",
+                "role": "branch_admin",
+                "assigned_branch_id": "branch_9348",
+                "status": "APPROVED",
+                "reason": "신비주택 전용 점주 계정"
+            },
+            {
                 "username": "chicvill",
                 "password": "1212",
                 "name": "시크빌 1호점 점주실장",
@@ -125,8 +155,11 @@ class AuthService:
                 )
                 db.add(user_obj)
             else:
-                if str(getattr(existing, "password", "")) == "password":
-                    setattr(existing, "password", str(u["password"]))
+                existing.password = str(u["password"])
+                existing.role = str(u["role"])
+                existing.assigned_branch_id = u["assigned_branch_id"]
+                existing.status = str(u["status"])
+                existing.name = str(u["name"])
         db.commit()
         self._admins_seeded = True
 
