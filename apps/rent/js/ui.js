@@ -92,6 +92,9 @@ export function openRoomDrawer() {
   const drawer = document.getElementById('rightRoomDrawer');
   const backdrop = document.getElementById('roomDrawerBackdrop');
   if (drawer && backdrop) {
+    if (typeof renderRightRoomDrawer === 'function') {
+      renderRightRoomDrawer();
+    }
     backdrop.classList.remove('hidden');
     requestAnimationFrame(() => {
       drawer.classList.remove('translate-x-full');
