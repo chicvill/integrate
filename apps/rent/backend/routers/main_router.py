@@ -184,10 +184,10 @@ async def update_room_contract(
 async def batch_import_rooms(
     payload: List[Dict[str, Any]] = Body(...),
     branch_id: str = Query("main", description="등록 대상 건물 ID"),
-    clear_existing: bool = Query(False, description="기존 잔여 호실 완전 초기화 후 등록 여부"),
+    clear_existing: bool = Query(True, description="기존 잔여 호실 완전 초기화 후 등록 여부 (기본 True)"),
     db: Session = Depends(get_db)
 ):
-    """엑셀 파일 등에서 추출한 호실 계약 정보 일괄 등록/갱신"""
+    """텍스트/엑셀/CSV 등에서 추출한 호실 계약 정보 일괄 등록 (기본값으로 기존 데이터 자동 초기화)"""
     return service.batch_import_rooms(db, branch_id=branch_id, rooms_data=payload, clear_existing=clear_existing)
 
 

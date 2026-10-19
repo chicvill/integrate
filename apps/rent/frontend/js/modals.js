@@ -1815,6 +1815,9 @@ export function openExcelImportModal() {
   const statusText = document.getElementById('excelFileStatusText');
   if (statusText) statusText.innerHTML = '💡 <strong>화면 캡처(Win+Shift+S) 후 이 창에서 바로 [Ctrl + V]</strong>를 누르면 AI가 즉시 표를 분석합니다!';
 
+  const chkClear = document.getElementById('chkClearExistingRooms');
+  if (chkClear) chkClear.checked = true;
+
   const execBtn = document.getElementById('btnExecuteBatchImport');
   if (execBtn) execBtn.disabled = true;
 

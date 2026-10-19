@@ -324,40 +324,34 @@ class RentService:
         db.commit()
 
     def ensure_default_seed(self, db: Session, branch_id: str = "main") -> None:
-        """기본 지점들(본관, 별관) 및 29개실 초기 데이터 1회 시드 (메모리 플래그 캐싱)"""
+        """기본 지점(시크빌 본점) 최초 1회 초기화 (기존 건물이 존재하거나 신규 지점 등록 시 시드 오염 방지)"""
         norm_bid = self.branch_service.normalize_branch_id(branch_id)
         if self._seeded:
-            # 요청된 branch_id의 호실이 아직 없으면 자동 시드
-            if db.query(RentRoom).filter(RentRoom.branch_id == norm_bid).count() == 0:
-                self._seed_branch_rooms(db, norm_bid, is_main=(norm_bid == "main"))
             return
 
-        # 1. 제1부동산: 시크빌 1호점 (본점)
-        b1 = db.query(RentBranch).filter(RentBranch.branch_id == "main").first()
-        if not b1:
-            b1 = RentBranch(
-                branch_id="main",
-                name="시크빌 1호점 (본점, 29개실)",
-                contact_phone="010-2345-6789",
-                address="서울특별시 강남구 테헤란로 123",
-                fee_plan="원룸 프리미엄 29실형",
-                monthly_fee=150000,
-                billing_status="PAID",
-                is_active=True
-            )
-            db.add(b1)
-        elif getattr(b1, "name", "") == "시크빌 (29개실)":
-            setattr(b1, "name", "시크빌 1호점 (본점, 29개실)")
+        # 1. 지점이 이미 존재하는지 확인 (이미 운영 중인 지점이 있으면 절대 임의 시드하지 않음)
+        existing_branches_count = db.query(RentBranch).count()
+        if existing_branches_count > 0:
+            self._seeded = True
+            return
 
+        # 2. 최초 설치 시에만 시크빌 1호점 기본 생성
+        b1 = RentBranch(
+            branch_id="main",
+            name="시크빌 1호점 (본점, 29개실)",
+            contact_phone="010-2345-6789",
+            address="서울특별시 강남구 테헤란로 123",
+            fee_plan="원룸 프리미엄 29실형",
+            monthly_fee=150000,
+            billing_status="PAID",
+            is_active=True
+        )
+        db.add(b1)
         db.commit()
 
-        # 호실 시드 (기본 본사 시크빌)
+        # 최초 설치 시에만 기본 시크빌 호실 시드 주입
         self._seed_branch_rooms(db, "main", is_main=True)
-
-        if norm_bid != "main":
-            self._seed_branch_rooms(db, norm_bid, is_main=False)
-
-        PaymentService.clean_duplicate_payments(db, norm_bid)
+        PaymentService.clean_duplicate_payments(db, "main")
         self._seeded = True
 
     def get_rooms(self, db: Session, branch_id: str = "main") -> Dict[int, Any]:
@@ -599,15 +593,17 @@ class RentService:
         db.commit()
         return {"success": True, "branch_id": norm_bid, "message": "모든 호실 데이터가 초기화되었습니다."}
 
-    def batch_import_rooms(self, db: Session, branch_id: str, rooms_data: List[Dict[str, Any]], clear_existing: bool = False) -> Dict[str, Any]:
-        """엑셀 파일 등에서 추출한 호실 계약 정보를 일괄 등록/갱신 (clear_existing=True 시 기존 잔여 호실 완전 비우기)"""
+    def batch_import_rooms(self, db: Session, branch_id: str, rooms_data: List[Dict[str, Any]], clear_existing: bool = True) -> Dict[str, Any]:
+        """텍스트/엑셀/CSV 등에서 추출한 호실 계약 정보를 일괄 등록/갱신
+        (새로운 건물 데이터 등록 시 clear_existing=True로 기존 잔여 호실 및 수납 내역을 완전 초기화)
+        """
         norm_bid = self.branch_service.normalize_branch_id(branch_id)
         if clear_existing:
+            # 기존 호실 및 수납 데이터 완전 초기화 (새로운 건물 파일 등록 시 잔여 데이터 혼입 방지)
             db.query(RentPayment).filter(RentPayment.branch_id == norm_bid).delete()
             db.query(RentRoom).filter(RentRoom.branch_id == norm_bid).delete()
             db.commit()
-        else:
-            self.ensure_default_seed(db, norm_bid)
+
         imported_count = 0
         updated_count = 0
 
@@ -627,7 +623,8 @@ class RentService:
 
             if not room:
                 room = RentRoom(
-                    branch_id=branch_id,
+                    id=str(uuid.uuid4()),
+                    branch_id=norm_bid,
                     room_number=r_num,
                     name=r_data.get("name") or "",
                     id_number=r_data.get("id_number") or "",
@@ -640,10 +637,30 @@ class RentService:
                     clean_fee=int(r_data.get("clean_fee") or 0),
                     move_in=r_data.get("move_in") or "",
                     expiry=r_data.get("expiry") or "",
-                    move_out=r_data.get("move_out") or ""
+                    move_out=r_data.get("move_out") or "",
+                    metadata_json={"note": r_data.get("note") or ""}
                 )
                 db.add(room)
                 imported_count += 1
+
+                # 신규 호실의 당해 연도(2026년) 1~12월 수납 장부 기본 자동 생성
+                for m in range(1, 13):
+                    pay_obj = RentPayment(
+                        id=str(uuid.uuid4()),
+                        branch_id=norm_bid,
+                        room_number=r_num,
+                        year=2026,
+                        month=m,
+                        paid=False,
+                        paid_date="",
+                        rent_amount=0 if room.lease_type == "전세" else room.rent,
+                        maintenance_amount=room.maintenance,
+                        note="",
+                        tenant_name=room.name,
+                        tenant_id_number=room.id_number,
+                        is_previous_tenant=False
+                    )
+                    db.add(pay_obj)
             else:
                 for field in ["name", "phone", "lease_type", "pay_timing", "move_in", "expiry", "move_out"]:
                     if field in r_data and r_data[field] is not None:
@@ -666,24 +683,25 @@ class RentService:
 
             # 계약 금액 변경 시 아직 미납된 납부 장부 금액도 최신 계약에 맞춰 자동 동기화
             unpaid_payments = db.query(RentPayment).filter(
-                RentPayment.branch_id == branch_id,
+                RentPayment.branch_id == norm_bid,
                 RentPayment.room_number == r_num,
                 RentPayment.paid == False
             ).all()
             for p in unpaid_payments:
                 p.rent_amount = 0 if room.lease_type == "전세" else room.rent
                 p.maintenance_amount = room.maintenance
+                p.tenant_name = room.name
 
         db.commit()
 
         # 엑셀 일괄 등록 후 전입일 기준 과거 납부 내역도 새 세입자명과 금액으로 일괄 동기화
-        self.fill_tenant_payments(db, branch_id=branch_id)
+        self.fill_tenant_payments(db, branch_id=norm_bid)
         db.commit()
 
-        updated_rooms = self.get_rooms(db, branch_id)
+        updated_rooms = self.get_rooms(db, norm_bid)
         return {
             "success": True,
-            "branch_id": branch_id,
+            "branch_id": norm_bid,
             "imported_count": imported_count,
             "updated_count": updated_count,
             "total_count": imported_count + updated_count,
@@ -843,9 +861,12 @@ class RentService:
         return branch_service.get_branch(db, branch_id)
 
     def create_branch(self, db: Session, data: BranchCreate) -> RentBranch:
-        self.ensure_default_seed(db)
         b = branch_service.create_branch(db, data)
-        self._seed_branch_rooms(db, data.branch_id, is_main=False)
+        # 새로운 건물이 등록될 때마다 이전 데이터/더미 호실이 혼입되지 않도록 완전 초기화(0개실) 보장
+        norm_bid = self.branch_service.normalize_branch_id(data.branch_id)
+        db.query(RentPayment).filter(RentPayment.branch_id == norm_bid).delete()
+        db.query(RentRoom).filter(RentRoom.branch_id == norm_bid).delete()
+        db.commit()
         return b
 
     def update_branch(self, db: Session, branch_id: str, data: BranchUpdate) -> Optional[RentBranch]:
