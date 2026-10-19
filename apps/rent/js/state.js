@@ -305,11 +305,12 @@ export function getRollingPeriods(curYear = currentYear, curMonth = currentMonth
 export function parseDateComponents(val) {
   if (!val) return null;
   const s = String(val).trim();
-  const m = s.match(/(\d{4})\s*[-./년\s]\s*(\d{1,2})\s*[-./월\s]\s*(\d{1,2})/);
+  const m = s.match(/(?:(\d{4})|(\d{2}))\s*[-./년\s]\s*(\d{1,2})\s*[-./월\s]\s*(\d{1,2})/);
   if (m) {
-    const y = parseInt(m[1], 10);
-    const mo = parseInt(m[2], 10);
-    const d = parseInt(m[3], 10);
+    let y = parseInt(m[1] || m[2], 10);
+    if (y < 100) y += 2000;
+    const mo = parseInt(m[3], 10);
+    const d = parseInt(m[4], 10);
     if (!isNaN(y) && !isNaN(mo) && !isNaN(d)) {
       return { year: y, month: mo, day: d, formatted: `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}` };
     }

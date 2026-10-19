@@ -8992,11 +8992,12 @@ function getRollingPeriods(curYear = currentYear, curMonth = currentMonth, count
 function parseDateComponents(val) {
   if (!val) return null;
   const s = String(val).trim();
-  const m = s.match(/(\d{4})\s*[-./년\s]\s*(\d{1,2})\s*[-./월\s]\s*(\d{1,2})/);
+  const m = s.match(/(?:(\d{4})|(\d{2}))\s*[-./년\s]\s*(\d{1,2})\s*[-./월\s]\s*(\d{1,2})/);
   if (m) {
-    const y = parseInt(m[1], 10);
-    const mo = parseInt(m[2], 10);
-    const d = parseInt(m[3], 10);
+    let y = parseInt(m[1] || m[2], 10);
+    if (y < 100) y += 2000;
+    const mo = parseInt(m[3], 10);
+    const d = parseInt(m[4], 10);
     if (!isNaN(y) && !isNaN(mo) && !isNaN(d)) {
       return { year: y, month: mo, day: d, formatted: `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}` };
     }
@@ -14029,12 +14030,19 @@ async function executeBatchImport() {
 
     const incomingId = (row[activeColumnMapping.id_number] !== undefined ? String(row[activeColumnMapping.id_number]).trim() : '');
     const existingRoom = state.rooms[rNum];
-    // 기존 호실에 등록된 주민번호가 있고 엑셀에 주민번호가 없거나 비어있는 경우 기존 주민번호 보존!
+    // 기존 호실에 등록된 주민번호가 있고 엑셀에 주민번호가 없거나 비어있는 경우 기존 주민번호 보존
     const finalId = incomingId || (existingRoom && existingRoom.id_number ? existingRoom.id_number : '');
+
+    let rawName = (row[activeColumnMapping.name] !== undefined ? String(row[activeColumnMapping.name]).trim() : '');
+    // 만약 세입자명 컬럼이 호실과 동일하게 매핑되어 204, 206호 등의 숫자가 들어온 경우 공실 처리
+    if (rawName === String(rNum) || rawName === `${rNum}호` || /^\d+(호)?$/.test(rawName)) {
+      rawName = '';
+    }
+    const finalName = rawName || (existingRoom && existingRoom.name ? existingRoom.name : '공실');
 
     targetRooms.push({
       room_number: rNum,
-      name: (row[activeColumnMapping.name] !== undefined ? String(row[activeColumnMapping.name]).trim() : '') || (existingRoom ? existingRoom.name : '공실'),
+      name: finalName,
       id_number: finalId,
       phone: (row[activeColumnMapping.phone] !== undefined ? String(row[activeColumnMapping.phone]).trim() : '') || (existingRoom ? existingRoom.phone : ''),
       lease_type: (row[activeColumnMapping.lease_type] && String(row[activeColumnMapping.lease_type]).includes('전세')) ? '전세' : (row[activeColumnMapping.lease_type] ? '월세' : (existingRoom ? existingRoom.lease_type : '월세')),
@@ -14056,10 +14064,12 @@ async function executeBatchImport() {
   const chkClear = document.getElementById('chkClearExistingRooms');
   const shouldClear = chkClear ? chkClear.checked : true;
 
-  const confirmMsg = shouldClear
-    ? `총 ${targetRooms.length}개 호실의 임대차 계약 정보를 현재 건물에 등록하시겠습니까?\n\n⚠️ [초기화 후 등록]\n기존 잔여 호실(시크빌 등)을 모두 비우고, 엑셀/CSV에 있는 ${targetRooms.length}개 호실만 정확하게 새로 등록됩니다.`
-    : `총 ${targetRooms.length}개 호실의 임대차 계약 정보를 현재 건물에 일괄 적용하시겠습니까?\n기존 호실 정보는 엑셀 데이터로 갱신됩니다.`;
-  if (!confirm(confirmMsg)) return;
+  const execBtn = document.getElementById('btnExecuteBatchImport');
+  const originalBtnHtml = execBtn ? execBtn.innerHTML : '';
+  if (execBtn) {
+    execBtn.disabled = true;
+    execBtn.innerHTML = '<span>⏳</span><span>등록 처리 중...</span>';
+  }
 
   let serverSynced = false;
   let serverWarning = '';
@@ -14071,7 +14081,7 @@ async function executeBatchImport() {
         serverSynced = true;
       } catch (errApi) {
         console.warn("서버 일괄 등록 전송 일시 지연/오류:", errApi);
-        serverWarning = errApi.message || '서버 응답 지연 (502)';
+        serverWarning = errApi.message || '서버 응답 지연';
       }
     }
 
@@ -14107,14 +14117,22 @@ async function executeBatchImport() {
     closeModal('excelImportModal');
     renderAll();
 
+    const curBranchObj = (state.branches || []).find(b => b.branch_id === state.currentBranch);
+    const bName = curBranchObj ? curBranchObj.name : state.currentBranch;
+
     if (serverSynced) {
-      alert(`🎉 총 ${targetRooms.length}개 호실의 임대차 계약 정보가 성공적으로 일괄 등록되었습니다!`);
+      alert(`🎉 [${bName}] 총 ${targetRooms.length}개 호실의 임대차 계약 정보가 성공적으로 일괄 등록되었습니다!`);
     } else {
-      alert(`⚡ 총 ${targetRooms.length}개 호실의 계약 정보가 화면 및 브라우저에 안전하게 저장되었습니다.\n(서버 일시 지연: ${serverWarning}\n자동 재동기화가 진행됩니다.)`);
+      alert(`⚡ [${bName}] 총 ${targetRooms.length}개 호실의 계약 정보가 화면 및 브라우저에 안전하게 저장되었습니다.\n(서버 일시 지연: ${serverWarning}\n자동 재동기화가 진행됩니다.)`);
     }
   } catch (err) {
     console.error("일괄 등록 오류:", err);
     alert("일괄 등록 처리 중 오류 발생: " + err.message);
+  } finally {
+    if (execBtn) {
+      execBtn.disabled = false;
+      execBtn.innerHTML = originalBtnHtml;
+    }
   }
 }
 
