@@ -52,10 +52,10 @@ def parse_csv_file(file_path):
     col_idx = {}
 
     for row in reader:
-        if not row or all(not str(c).strip() for c in row):
+        if not row or all(not c.strip() for c in row):
             continue
         if header is None:
-            header = [str(c).strip() for c in row]
+            header = [c.strip() for c in row]
             for idx, h in enumerate(header):
                 h_clean = re.sub(r'\s+', '', h)
                 if any(k in h_clean for k in ['호실', '호수', 'room', '방번호']):
@@ -122,7 +122,7 @@ def parse_csv_file(file_path):
     return rows
 
 
-def setup_building_data(building_name: str, csv_path: str, branch_id: str = "main", db_path: str = None):
+def setup_building_data(building_name: str, csv_path: str, branch_id: str = "main", db_path: str | None = None):
     """
     범용 건물 셋업 함수:
     1. 건물 정보(지점명, 메타데이터)를 생성하거나 보존
