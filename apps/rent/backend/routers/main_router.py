@@ -19,7 +19,8 @@ from ..schemas import (
     SystemStatusResponse,
     AdminLoginRequest, UpgradeRequestPayload, UpgradeApprovePayload,
     VatSettingsUpdate, VatSettingsResponse,
-    RegisterRequest, UserApprovePayload, UserUpdatePayload
+    RegisterRequest, UserApprovePayload, UserUpdatePayload,
+    BatchPaymentRequest, BatchPaymentResponse
 )
 from ..services.rent_service import service
 from ..config import settings
@@ -273,6 +274,30 @@ async def fill_tenant_payments(
         except Exception:
             room_number = None
     return service.fill_tenant_payments(db, branch_id=branch_id, room_number=room_number)
+
+
+@router.post("/payments/batch-collect", response_model=BatchPaymentResponse)
+@router.post("/branches/{branch_id}/payments/batch-collect", response_model=BatchPaymentResponse)
+async def batch_collect_payments(
+    payload: BatchPaymentRequest,
+    branch_id: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """선택한 건물의 특정 기간(월 범위) 전 호실 임대료/관리비 일괄 수납(완납) 처리 범용 API"""
+    target_branch = branch_id or payload.branch_id or "main"
+    res = service.batch_collect_payments(
+        db=db,
+        branch_id=target_branch,
+        year=payload.year,
+        start_month=payload.start_month,
+        end_month=payload.end_month,
+        payment_date_mode=payload.payment_date_mode,
+        specific_date=payload.specific_date,
+        note=payload.note,
+        include_unoccupied=payload.include_unoccupied
+    )
+    return BatchPaymentResponse(**res)
+
 
 
 @router.post("/payments/matrix-import")

@@ -8543,7 +8543,9 @@ const paymentsApi = {
   cancel: (roomNumber, month, branchId = 'main', year = 2026) =>
     http.post(`/rooms/${roomNumber}/cancel-payment`, { month, year }, { branch_id: branchId }),
   matrixImport: (matrixRooms, branchId = 'main') =>
-    http.post('/payments/matrix-import', { rooms: matrixRooms }, { branch_id: branchId })
+    http.post('/payments/matrix-import', { rooms: matrixRooms }, { branch_id: branchId }),
+  batchCollect: (payload) =>
+    http.post('/payments/batch-collect', payload)
 };
 
 const expensesApi = {
@@ -8648,6 +8650,7 @@ const apiGetExpiringRooms = roomsApi.getExpiring;
 const apiProcessPayment = paymentsApi.process;
 const apiCancelPayment = paymentsApi.cancel;
 const apiBatchImportPaymentMatrix = paymentsApi.matrixImport;
+const apiBatchCollectPayments = paymentsApi.batchCollect;
 
 const apiGetExpenses = expensesApi.list;
 const apiCreateExpense = expensesApi.create;
@@ -16167,10 +16170,290 @@ async function resetCurrentBuildingRooms() {
   }
 }
 
+// ── 건물별 월 수납 일괄 납입 처리 (Universal Batch Payment) ──
+let batchPeriodMode = 'ytd'; // 'current' | 'ytd' | 'annual' | 'custom'
+
+function openBatchPaymentModal(targetBranchId) {
+  const bSelect = document.getElementById('batchBuildingSelect');
+  const roleHint = document.getElementById('batchBuildingRoleHint');
+  const session = getAuthSessionInfo ? getAuthSessionInfo() : null;
+  const isBranchAdmin = session && session.role === 'branch_admin' && session.assigned_branch_id;
+
+  if (bSelect) {
+    bSelect.innerHTML = '';
+    const branches = (state.branches && state.branches.length > 0)
+      ? state.branches
+      : [{ branch_id: 'branch_9348', name: '신비주택' }, { branch_id: 'branch_01', name: '선호빌' }, { branch_id: 'main', name: '시크빌' }];
+
+    branches.forEach(b => {
+      if (isBranchAdmin && b.branch_id !== session.assigned_branch_id) {
+        return;
+      }
+      const opt = document.createElement('option');
+      opt.value = b.branch_id;
+      opt.textContent = `${b.name} (${b.branch_id})`;
+      bSelect.appendChild(opt);
+    });
+
+    const desiredBranch = (isBranchAdmin ? session.assigned_branch_id : (targetBranchId || state.currentBranch));
+    if (desiredBranch) {
+      bSelect.value = desiredBranch;
+    }
+
+    if (isBranchAdmin) {
+      bSelect.disabled = true;
+      if (roleHint) roleHint.textContent = '🔒 담당 매장으로 고정됨';
+    } else {
+      bSelect.disabled = false;
+      if (roleHint) roleHint.textContent = '모든 등록 건물 선택 가능';
+    }
+  }
+
+  const ySelect = document.getElementById('batchYearSelect');
+  if (ySelect) ySelect.value = String(currentYear || 2026);
+
+  setBatchPeriodMode('ytd');
+
+  const datePicker = document.getElementById('batchSpecificDateInput');
+  if (datePicker && !datePicker.value) {
+    datePicker.value = formattedToday ? formattedToday() : new Date().toISOString().split('T')[0];
+  }
+
+  const contractRadio = document.querySelector('input[name="batchDateMode"][value="contract"]');
+  if (contractRadio) contractRadio.checked = true;
+  handleBatchDateModeChange('contract');
+
+  const alertEl = document.getElementById('batchModalAlert');
+  if (alertEl) {
+    alertEl.className = 'hidden';
+    alertEl.textContent = '';
+  }
+
+  updateBatchPaymentPreview();
+  openModal('batchPaymentModal');
+}
+
+function closeBatchPaymentModal() {
+  closeModal('batchPaymentModal');
+}
+
+function setBatchPeriodMode(mode) {
+  batchPeriodMode = mode;
+  const btnCurrent = document.getElementById('btnBatchModeCurrent');
+  const btnYtd = document.getElementById('btnBatchModeYtd');
+  const btnAnnual = document.getElementById('btnBatchModeAnnual');
+  const btnCustom = document.getElementById('btnBatchModeCustom');
+  const customContainer = document.getElementById('batchCustomRangeContainer');
+
+  const btnMap = {
+    current: btnCurrent,
+    ytd: btnYtd,
+    annual: btnAnnual,
+    custom: btnCustom
+  };
+
+  Object.entries(btnMap).forEach(([k, btn]) => {
+    if (!btn) return;
+    if (k === mode) {
+      btn.className = 'py-1.5 px-2 rounded-lg text-center font-bold text-[11px] transition cursor-pointer border bg-emerald-600/30 text-emerald-200 border-emerald-500 shadow-xs';
+    } else {
+      btn.className = 'py-1.5 px-2 rounded-lg text-center font-bold text-[11px] transition cursor-pointer border bg-surface-800 text-slate-300 border-slate-700 hover:border-cyan-500';
+    }
+  });
+
+  if (customContainer) {
+    if (mode === 'custom') {
+      customContainer.classList.remove('hidden');
+      customContainer.classList.add('flex');
+    } else {
+      customContainer.classList.remove('flex');
+      customContainer.classList.add('hidden');
+    }
+  }
+
+  updateBatchPaymentPreview();
+}
+
+function handleBatchDateModeChange(mode) {
+  const container = document.getElementById('batchSpecificDateContainer');
+  if (container) {
+    if (mode === 'specific') {
+      container.classList.remove('hidden');
+    } else {
+      container.classList.add('hidden');
+    }
+  }
+}
+
+function getBatchSelectedMonths() {
+  const cMonth = currentMonth || 10;
+  if (batchPeriodMode === 'current') {
+    return { start_m: cMonth, end_m: cMonth };
+  } else if (batchPeriodMode === 'ytd') {
+    return { start_m: 1, end_m: cMonth };
+  } else if (batchPeriodMode === 'annual') {
+    return { start_m: 1, end_m: 12 };
+  } else {
+    const sEl = document.getElementById('batchStartMonth');
+    const eEl = document.getElementById('batchEndMonth');
+    let sm = sEl ? parseInt(sEl.value, 10) : 1;
+    let em = eEl ? parseInt(eEl.value, 10) : cMonth;
+    if (sm > em) [sm, em] = [em, sm];
+    return { start_m: sm, end_m: em };
+  }
+}
+
+function updateBatchPaymentPreview() {
+  const bSelect = document.getElementById('batchBuildingSelect');
+  const ySelect = document.getElementById('batchYearSelect');
+  const yearVal = ySelect ? ySelect.value : '2026';
+  const targetBranch = bSelect ? bSelect.value : state.currentBranch;
+
+  const { start_m, end_m } = getBatchSelectedMonths();
+  const monthsCount = (end_m - start_m + 1);
+
+  const periodTextEl = document.getElementById('batchPreviewPeriodText');
+  if (periodTextEl) {
+    periodTextEl.textContent = `${yearVal}년 ${start_m}월 ~ ${end_m}월 (${monthsCount}개월)`;
+  }
+
+  let roomCount = 0;
+  let monthlyCharge = 0;
+
+  if (targetBranch === state.currentBranch && state.rooms) {
+    const roomKeys = Object.keys(state.rooms);
+    roomCount = roomKeys.length;
+    roomKeys.forEach(rn => {
+      const rm = state.rooms[rn];
+      if (rm) {
+        const rAmt = rm.lease_type === '전세' ? 0 : (Number(rm.rent) || 0);
+        const mAmt = Number(rm.maintenance) || 0;
+        monthlyCharge += (rAmt + mAmt);
+      }
+    });
+  } else {
+    const bObj = state.branches ? state.branches.find(b => b.branch_id === targetBranch) : null;
+    const estRooms = bObj && bObj.branch_id.includes('9348') ? 20 : 29;
+    roomCount = estRooms;
+    monthlyCharge = estRooms * 590000;
+  }
+
+  const totalEst = monthlyCharge * monthsCount;
+
+  const rCountEl = document.getElementById('batchPreviewRoomsCount');
+  const mRentEl = document.getElementById('batchPreviewMonthlyRent');
+  const tRentEl = document.getElementById('batchPreviewTotalRent');
+
+  if (rCountEl) rCountEl.textContent = `${roomCount}개실`;
+  if (mRentEl) mRentEl.textContent = `${monthlyCharge.toLocaleString()}원`;
+  if (tRentEl) tRentEl.textContent = `${totalEst.toLocaleString()}원`;
+}
+
+async function handleBatchPaymentSubmit(e) {
+  if (e) e.preventDefault();
+
+  const btn = document.getElementById('btnSubmitBatchPayment');
+  const alertEl = document.getElementById('batchModalAlert');
+  const bSelect = document.getElementById('batchBuildingSelect');
+  const ySelect = document.getElementById('batchYearSelect');
+  const noteInput = document.getElementById('batchNoteInput');
+  const unoccCheck = document.getElementById('batchIncludeUnoccupied');
+  const dateRadio = document.querySelector('input[name="batchDateMode"]:checked');
+  const specificDateInput = document.getElementById('batchSpecificDateInput');
+
+  const targetBranch = bSelect ? bSelect.value : state.currentBranch;
+  const targetYear = ySelect ? parseInt(ySelect.value, 10) : 2026;
+  const { start_m, end_m } = getBatchSelectedMonths();
+  const dateMode = dateRadio ? dateRadio.value : 'contract';
+  const specificDate = (dateMode === 'specific' && specificDateInput) ? specificDateInput.value : null;
+  const note = noteInput ? (noteInput.value.trim() || '정상 입금 (일괄 납입)') : '정상 입금 (일괄 납입)';
+  const includeUnoccupied = unoccCheck ? !!unoccCheck.checked : false;
+
+  const targetBranchName = (bSelect && bSelect.options[bSelect.selectedIndex])
+    ? bSelect.options[bSelect.selectedIndex].text.split(' (')[0]
+    : targetBranch;
+
+  const monthsCount = (end_m - start_m + 1);
+  const confirmMsg = `[${targetBranchName}] ${targetYear}년 ${start_m}월 ~ ${end_m}월 (${monthsCount}개월) 수납 내역을 일괄 완납 처리하시겠습니까?`;
+  if (!confirm(confirmMsg)) {
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span>⏳</span><span>일괄 수납 처리 중...</span>`;
+  }
+  if (alertEl) {
+    alertEl.className = 'p-2 rounded-xl text-xs font-semibold bg-cyan-950/60 text-cyan-200 border border-cyan-500/40 block';
+    alertEl.textContent = `⚡ [${targetBranchName}] ${targetYear}년 ${start_m}월~${end_m}월 일괄 납입을 서버에 반영하고 있습니다...`;
+  }
+
+  try {
+    const payload = {
+      branch_id: targetBranch,
+      year: targetYear,
+      start_month: start_m,
+      end_month: end_m,
+      payment_date_mode: dateMode,
+      specific_date: specificDate,
+      note: note,
+      include_unoccupied: includeUnoccupied
+    };
+
+    const res = await apiBatchCollectPayments(payload);
+
+    if (alertEl) {
+      alertEl.className = 'p-2 rounded-xl text-xs font-semibold bg-emerald-950/80 text-emerald-200 border border-emerald-500/60 block';
+      alertEl.textContent = `✅ ${res.message || '일괄 납입 처리가 성공적으로 완료되었습니다!'}`;
+    }
+
+    showTopToast(`🎉 [${targetBranchName}] ${res.updated_count || 0}건 일괄 완납 완료!`, 'success');
+
+    if (targetBranch === state.currentBranch) {
+      if (typeof loadInitialData === 'function') {
+        await loadInitialData();
+      }
+      if (typeof renderAll === 'function') {
+        renderAll();
+      }
+    } else {
+      if (typeof switchBranch === 'function') {
+        await switchBranch(targetBranch);
+      }
+    }
+
+    setTimeout(() => {
+      closeBatchPaymentModal();
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<span>⚡</span><span>일괄 납입 적용하기</span>`;
+      }
+    }, 1200);
+
+  } catch (err) {
+    console.error("Batch payment error:", err);
+    if (alertEl) {
+      alertEl.className = 'p-2 rounded-xl text-xs font-semibold bg-rose-950/80 text-rose-200 border border-rose-500/60 block';
+      alertEl.textContent = `❌ 일괄 처리 실패: ${err.message}`;
+    }
+    showTopToast(`일괄 납입 실패: ${err.message}`, 'error');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<span>⚡</span><span>일괄 납입 다시 시도</span>`;
+    }
+  }
+}
+
 if (typeof window !== 'undefined') {
   window.fillBankPresetSms = fillBankPresetSms;
   window.fillSampleSmsText = fillSampleSmsText;
   window.resetCurrentBuildingRooms = resetCurrentBuildingRooms;
+  window.openBatchPaymentModal = openBatchPaymentModal;
+  window.closeBatchPaymentModal = closeBatchPaymentModal;
+  window.setBatchPeriodMode = setBatchPeriodMode;
+  window.handleBatchDateModeChange = handleBatchDateModeChange;
+  window.updateBatchPaymentPreview = updateBatchPaymentPreview;
+  window.handleBatchPaymentSubmit = handleBatchPaymentSubmit;
 }
 
 

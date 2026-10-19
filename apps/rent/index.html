@@ -151,6 +151,18 @@
       <div class="space-y-1.5">
         <span class="text-[11px] font-bold text-cyan-400 uppercase tracking-wider block px-1">임대 관리 업무</span>
 
+        <!-- 0. 건물/월별 일괄 납입 -->
+        <button type="button" onclick="openBatchPaymentModal(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-emerald-950/80 to-teal-950/80 hover:from-emerald-900/90 hover:to-teal-900/90 text-emerald-300 border border-emerald-500/60 font-semibold flex items-center gap-2.5 cursor-pointer transition shadow-sm">
+          <span class="text-xl">⚡</span>
+          <div>
+            <div class="text-xs font-bold text-white flex items-center gap-1.5">
+              <span>건물별 월 수납 일괄 납입 처리</span>
+              <span class="text-[9px] bg-emerald-500/30 text-emerald-200 border border-emerald-500/50 px-1 py-0.2 rounded font-normal">전체 건물 범용</span>
+            </div>
+            <div class="text-[10px] text-emerald-300/80">대상 건물 및 월(당월/누적/연간) 선택 후 일괄 완납</div>
+          </div>
+        </button>
+
         <!-- 1. 전입/전출/계약 -->
         <button type="button" onclick="openMoveInOutQuick(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-teal-950/70 to-cyan-950/70 hover:from-teal-900/80 hover:to-cyan-900/80 text-teal-300 border border-teal-500/50 font-semibold flex items-center gap-2.5 cursor-pointer transition shadow-sm">
           <span class="text-xl">🚪</span>
@@ -338,6 +350,10 @@
           <span class="text-sm">🏢</span>
           <span id="sumBuildingName" class="font-bold text-white tracking-tight truncate">시크빌 공실 0/29실</span>
         </div>
+        <button type="button" onclick="openBatchPaymentModal()" class="px-2.5 py-1 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs border border-emerald-400/40 shadow-xs flex items-center gap-1 cursor-pointer active:scale-95 shrink-0 transition" title="건물 및 대상 월을 선택하여 일괄 수납/납입 처리">
+          <span>⚡</span>
+          <span>일괄 납입</span>
+        </button>
       </div>
 
       <!-- 2행: [보증금 누계] 172,000,000원, [2026.10 누계] 3,820,000/11,800,000원(32.4%) -->
@@ -1506,6 +1522,193 @@
         이미 승인된 계정이 있으신가요? <button type="button" onclick="closeModal('registerModal'); openAdminModal();" class="text-cyan-400 underline font-semibold cursor-pointer">로그인 창으로</button>
       </div>
 
+    </div>
+  </div>
+
+  <!-- ── Universal Batch Payment Modal (건물별 월 수납 일괄 납입 처리) ── -->
+  <div id="batchPaymentModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden items-center justify-center p-3 sm:p-4">
+    <div class="bg-surface-900 border border-emerald-500/50 w-full max-w-lg rounded-2xl shadow-2xl p-4 sm:p-5 relative max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center justify-center text-lg">
+            ⚡
+          </div>
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-1.5">
+              <span>건물별 월 수납 일괄 납입 처리</span>
+              <span class="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.5 rounded font-mono">Universal Batch</span>
+            </h3>
+            <p class="text-[11px] text-slate-400">어떤 건물이든 원하는 기간(월)을 선택하여 호실 전체를 일괄 수납 처리합니다.</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeBatchPaymentModal()" class="w-7 h-7 rounded-lg bg-surface-800 text-slate-400 hover:text-white flex items-center justify-center font-bold text-sm cursor-pointer transition">✕</button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <form id="batchPaymentForm" onsubmit="handleBatchPaymentSubmit(event)" class="flex-1 overflow-y-auto py-3 space-y-3.5 text-xs text-slate-200 pr-1">
+        
+        <!-- 1. 대상 건물 선택 -->
+        <div>
+          <label for="batchBuildingSelect" class="block text-[11px] font-bold text-emerald-300 mb-1 flex items-center justify-between">
+            <span>🏢 1. 일괄 처리 대상 건물 (부동산)</span>
+            <span id="batchBuildingRoleHint" class="text-[10px] text-slate-400 font-normal"></span>
+          </label>
+          <select id="batchBuildingSelect" onchange="updateBatchPaymentPreview()" class="w-full bg-surface-850 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 transition cursor-pointer">
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+
+        <!-- 2. 대상 연도 및 월 기간 선택 -->
+        <div class="p-3 rounded-xl bg-surface-850/80 border border-slate-800 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-cyan-300">📅 2. 대상 기간 (연도 및 월) 선택</span>
+            <div class="flex items-center gap-1">
+              <span class="text-[10px] text-slate-400">연도:</span>
+              <select id="batchYearSelect" onchange="updateBatchPaymentPreview()" class="bg-surface-900 border border-slate-700 rounded-lg px-2 py-0.5 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono">
+                <option value="2025">2025년</option>
+                <option value="2026" selected>2026년</option>
+                <option value="2027">2027년</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 기간 빠른 선택 버튼 그룹 -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+            <button type="button" id="btnBatchModeCurrent" onclick="setBatchPeriodMode('current')" class="py-1.5 px-2 rounded-lg text-center font-bold text-[11px] transition cursor-pointer border bg-surface-800 text-slate-300 border-slate-700 hover:border-cyan-500">
+              당월만 (10월)
+            </button>
+            <button type="button" id="btnBatchModeYtd" onclick="setBatchPeriodMode('ytd')" class="py-1.5 px-2 rounded-lg text-center font-bold text-[11px] transition cursor-pointer border bg-emerald-600/30 text-emerald-200 border-emerald-500 shadow-xs">
+              1월~당월 누적
+            </button>
+            <button type="button" id="btnBatchModeAnnual" onclick="setBatchPeriodMode('annual')" class="py-1.5 px-2 rounded-lg text-center font-bold text-[11px] transition cursor-pointer border bg-surface-800 text-slate-300 border-slate-700 hover:border-cyan-500">
+              1~12월 연간
+            </button>
+            <button type="button" id="btnBatchModeCustom" onclick="setBatchPeriodMode('custom')" class="py-1.5 px-2 rounded-lg text-center font-bold text-[11px] transition cursor-pointer border bg-surface-800 text-slate-300 border-slate-700 hover:border-cyan-500">
+              직접 범위 지정
+            </button>
+          </div>
+
+          <!-- 직접 지정 시 월 범위 선택 -->
+          <div id="batchCustomRangeContainer" class="hidden items-center justify-center gap-2 pt-1 border-t border-slate-800/80">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[11px] text-slate-400">시작월:</span>
+              <select id="batchStartMonth" onchange="updateBatchPaymentPreview()" class="bg-surface-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white">
+                <option value="1" selected>1월</option>
+                <option value="2">2월</option>
+                <option value="3">3월</option>
+                <option value="4">4월</option>
+                <option value="5">5월</option>
+                <option value="6">6월</option>
+                <option value="7">7월</option>
+                <option value="8">8월</option>
+                <option value="9">9월</option>
+                <option value="10">10월</option>
+                <option value="11">11월</option>
+                <option value="12">12월</option>
+              </select>
+            </div>
+            <span class="text-slate-500 font-bold">~</span>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[11px] text-slate-400">종료월:</span>
+              <select id="batchEndMonth" onchange="updateBatchPaymentPreview()" class="bg-surface-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white">
+                <option value="1">1월</option>
+                <option value="2">2월</option>
+                <option value="3">3월</option>
+                <option value="4">4월</option>
+                <option value="5">5월</option>
+                <option value="6">6월</option>
+                <option value="7">7월</option>
+                <option value="8">8월</option>
+                <option value="9">9월</option>
+                <option value="10" selected>10월</option>
+                <option value="11">11월</option>
+                <option value="12">12월</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. 실입금일자 지정 방식 -->
+        <div class="p-3 rounded-xl bg-surface-850/80 border border-slate-800 space-y-2">
+          <span class="text-[11px] font-bold text-amber-300 block">💳 3. 실입금일자 기록 방식</span>
+          <div class="space-y-1.5">
+            <label class="flex items-center gap-2 p-2 rounded-lg bg-surface-900 border border-slate-700 hover:border-amber-500/60 cursor-pointer transition">
+              <input type="radio" name="batchDateMode" value="contract" checked onchange="handleBatchDateModeChange(this.value)" class="text-amber-500">
+              <div class="min-w-0">
+                <div class="font-bold text-white text-[11px]">호실별 계약 약정일로 자동 산출 (권장)</div>
+                <div class="text-[10px] text-slate-400">예: 계약상 매월 25일 납부 호실은 해당 월 25일로 자동 기록됩니다.</div>
+              </div>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg bg-surface-900 border border-slate-700 hover:border-amber-500/60 cursor-pointer transition">
+              <input type="radio" name="batchDateMode" value="specific" onchange="handleBatchDateModeChange(this.value)" class="text-amber-500">
+              <div class="min-w-0 flex-1">
+                <div class="font-bold text-white text-[11px]">특정 지정일로 통일 입력</div>
+                <div class="text-[10px] text-slate-400">모든 호실의 수납일을 아래 지정한 특정 일자로 일괄 기록합니다.</div>
+              </div>
+            </label>
+            <div id="batchSpecificDateContainer" class="hidden pl-6 pt-1">
+              <input type="date" id="batchSpecificDateInput" class="bg-surface-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white">
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. 비고 & 옵션 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div>
+            <label for="batchNoteInput" class="block text-[10px] font-bold text-slate-400 mb-0.5">수납 비고 메모</label>
+            <input type="text" id="batchNoteInput" value="정상 입금 (일괄 납입)" class="w-full bg-surface-850 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500">
+          </div>
+          <div class="flex items-center pt-3.5">
+            <label class="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-300">
+              <input type="checkbox" id="batchIncludeUnoccupied" onchange="updateBatchPaymentPreview()" class="rounded text-emerald-500">
+              <span>계약 전입일 이전 기간도 포함 강제 완납</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 5. 실시간 예상 수납액 미리보기 카드 -->
+        <div id="batchPreviewCard" class="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 space-y-1.5">
+          <div class="flex items-center justify-between text-xs font-bold text-emerald-300">
+            <span class="flex items-center gap-1"><span>📊</span><span>실시간 예상 수납 요약</span></span>
+            <span id="batchPreviewPeriodText" class="font-mono text-[11px]">2026년 1월 ~ 10월 (10개월)</span>
+          </div>
+          <div class="grid grid-cols-3 gap-1.5 text-center pt-1">
+            <div class="bg-surface-900/80 rounded-lg p-1.5 border border-emerald-500/20">
+              <span class="text-[10px] text-slate-400 block">대상 호실수</span>
+              <span id="batchPreviewRoomsCount" class="font-black text-white text-xs font-mono">-</span>
+            </div>
+            <div class="bg-surface-900/80 rounded-lg p-1.5 border border-emerald-500/20">
+              <span class="text-[10px] text-slate-400 block">월 청구 기준액</span>
+              <span id="batchPreviewMonthlyRent" class="font-black text-cyan-300 text-xs font-mono">-</span>
+            </div>
+            <div class="bg-surface-900/80 rounded-lg p-1.5 border border-emerald-500/20">
+              <span class="text-[10px] text-slate-400 block">총 예상 수납액</span>
+              <span id="batchPreviewTotalRent" class="font-black text-emerald-400 text-xs font-mono">-</span>
+            </div>
+          </div>
+          <div class="text-[10px] text-emerald-300/80 leading-tight pt-1 flex items-start gap-1">
+            <span>💡</span>
+            <span>이미 완납된 내역은 중복 과금되지 않으며, 계약 전입일 이전 기간은 안전하게 보호됩니다.</span>
+          </div>
+        </div>
+
+        <!-- Alert Container -->
+        <div id="batchModalAlert" class="hidden p-2 rounded-xl text-xs font-semibold"></div>
+
+        <!-- Footer Buttons -->
+        <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-800 shrink-0">
+          <button type="button" onclick="closeBatchPaymentModal()" class="px-3 py-2 rounded-xl bg-surface-800 hover:bg-surface-700 text-slate-300 text-xs font-semibold cursor-pointer transition">
+            취소
+          </button>
+          <button type="submit" id="btnSubmitBatchPayment" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-md shadow-emerald-950/50 cursor-pointer transition flex items-center gap-1.5 active:scale-95">
+            <span>⚡</span>
+            <span>일괄 납입 적용하기</span>
+          </button>
+        </div>
+
+      </form>
     </div>
   </div>
 

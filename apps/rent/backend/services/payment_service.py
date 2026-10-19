@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import List, Dict, Any, Optional, Tuple, cast
 from sqlalchemy.orm import Session
 
-from ..db.models import RentRoom, RentPayment, RentTenantHistory
+from ..db.models import RentRoom, RentPayment, RentTenantHistory, RentBranch
 from .branch_service import normalize_branch_id
 
 
@@ -464,3 +464,121 @@ class PaymentService:
             "total_rooms": len(matrix_rooms),
             "updated_records": updated_records
         }
+
+    @staticmethod
+    def batch_collect_payments(
+        db: Session,
+        branch_id: str,
+        year: int = 2026,
+        start_month: int = 1,
+        end_month: int = 10,
+        payment_date_mode: str = "contract",
+        specific_date: Optional[str] = None,
+        note: str = "정상 입금 (일괄 수납)",
+        include_unoccupied: bool = False
+    ) -> Dict[str, Any]:
+        """선택한 건물의 특정 기간(월 범위)을 모든 호실에 대해 일괄 수납(완납) 처리하는 범용 서비스"""
+        norm_bid = normalize_branch_id(branch_id)
+        branch = db.query(RentBranch).filter(RentBranch.branch_id == norm_bid).first()
+        branch_name = branch.name if branch else norm_bid
+
+        rooms = db.query(RentRoom).filter(RentRoom.branch_id == norm_bid).all()
+        if not rooms:
+            return {
+                "success": False,
+                "branch_id": norm_bid,
+                "branch_name": branch_name,
+                "year": year,
+                "start_month": start_month,
+                "end_month": end_month,
+                "total_rooms": 0,
+                "updated_count": 0,
+                "total_amount": 0,
+                "message": f"'{branch_name}' 건물에 등록된 호실이 없습니다."
+            }
+
+        start_m = max(1, min(12, start_month))
+        end_m = max(1, min(12, end_month))
+        if start_m > end_m:
+            start_m, end_m = end_m, start_m
+
+        updated_count = 0
+        total_amount = 0
+
+        for r in rooms:
+            rent_amt = 0 if r.lease_type == "전세" else (r.rent or 0)
+            maint_amt = r.maintenance or 0
+            charge = rent_amt + maint_amt
+
+            pay_day = 25
+            meta_str = str(r.metadata_json or "")
+            m_day = re.search(r'납부일:\s*(\d+)일', meta_str)
+            if m_day:
+                pay_day = min(int(m_day.group(1)), 28)
+            else:
+                m_day2 = re.search(r'(\d+)일', meta_str)
+                if m_day2:
+                    pay_day = min(int(m_day2.group(1)), 28)
+
+            dt_in = parse_date_to_dt(r.move_in)
+
+            for m in range(start_m, end_m + 1):
+                if not include_unoccupied and dt_in:
+                    if year < dt_in.year or (year == dt_in.year and m < dt_in.month):
+                        continue
+
+                if payment_date_mode == "specific" and specific_date:
+                    p_date = specific_date
+                else:
+                    p_date = f"{year}-{str(m).zfill(2)}-{str(pay_day).zfill(2)}"
+
+                pay = db.query(RentPayment).filter(
+                    RentPayment.branch_id == norm_bid,
+                    RentPayment.room_number == r.room_number,
+                    RentPayment.year == year,
+                    RentPayment.month == m
+                ).first()
+
+                if pay:
+                    pay.paid = 1
+                    pay.paid_date = p_date
+                    pay.rent_amount = rent_amt
+                    pay.maintenance_amount = maint_amt
+                    pay.note = note
+                    if r.name:
+                        pay.tenant_name = r.name
+                else:
+                    pay = RentPayment(
+                        branch_id=norm_bid,
+                        room_number=r.room_number,
+                        year=year,
+                        month=m,
+                        paid=1,
+                        paid_date=p_date,
+                        rent_amount=rent_amt,
+                        maintenance_amount=maint_amt,
+                        note=note,
+                        tenant_name=r.name or "",
+                        tenant_id_number=r.id_number or "",
+                        is_previous_tenant=False
+                    )
+                    db.add(pay)
+
+                updated_count += 1
+                total_amount += charge
+
+        db.commit()
+
+        return {
+            "success": True,
+            "branch_id": norm_bid,
+            "branch_name": branch_name,
+            "year": year,
+            "start_month": start_m,
+            "end_month": end_m,
+            "total_rooms": len(rooms),
+            "updated_count": updated_count,
+            "total_amount": total_amount,
+            "message": f"[{branch_name}] {len(rooms)}개실의 {year}년 {start_m}월~{end_m}월 총 {updated_count}건({total_amount:,}원) 일괄 납입 처리가 완료되었습니다."
+        }
+

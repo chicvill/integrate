@@ -585,6 +585,33 @@ class RentService:
         self.ensure_default_seed(db, branch_id)
         return PaymentService.fill_tenant_payments(db, branch_id=branch_id, room_number=room_number)
 
+    def batch_collect_payments(
+        self,
+        db: Session,
+        branch_id: str = "main",
+        year: int = 2026,
+        start_month: int = 1,
+        end_month: int = 10,
+        payment_date_mode: str = "contract",
+        specific_date: Optional[str] = None,
+        note: str = "정상 입금 (일괄 수납)",
+        include_unoccupied: bool = False
+    ) -> Dict[str, Any]:
+        """선택한 건물의 특정 기간 전체 호실 일괄 수납(완납) 처리 (PaymentService 위임)"""
+        branch_id = self.branch_service.normalize_branch_id(branch_id)
+        self.ensure_default_seed(db, branch_id)
+        return PaymentService.batch_collect_payments(
+            db=db,
+            branch_id=branch_id,
+            year=year,
+            start_month=start_month,
+            end_month=end_month,
+            payment_date_mode=payment_date_mode,
+            specific_date=specific_date,
+            note=note,
+            include_unoccupied=include_unoccupied
+        )
+
     def reset_branch_rooms(self, db: Session, branch_id: str) -> Dict[str, Any]:
         """지점/건물의 기존 모든 호실 및 납부 내역 전체 초기화 (신규 건물 전용 초기화)"""
         norm_bid = self.branch_service.normalize_branch_id(branch_id)

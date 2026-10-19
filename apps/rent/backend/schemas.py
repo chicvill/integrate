@@ -276,3 +276,28 @@ class UserResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
+class BatchPaymentRequest(BaseModel):
+    branch_id: str
+    year: int = 2026
+    start_month: int = 1
+    end_month: int = 10
+    payment_date_mode: str = "contract"  # "contract" | "specific"
+    specific_date: Optional[str] = None
+    note: str = "정상 입금 (일괄 수납)"
+    include_unoccupied: bool = False
+
+
+class BatchPaymentResponse(BaseModel):
+    success: bool
+    branch_id: str
+    branch_name: str
+    year: int
+    start_month: int
+    end_month: int
+    total_rooms: int
+    updated_count: int
+    total_amount: int
+    message: str
+
+
