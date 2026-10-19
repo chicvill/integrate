@@ -1,7 +1,8 @@
 import json
 import sys
 
-sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stdout, "reconfigure"):
+    getattr(sys.stdout, "reconfigure")(encoding="utf-8")
 with open('data/chicvill_backup.json', encoding='utf-8') as f:
     d = json.load(f)['data']
 
