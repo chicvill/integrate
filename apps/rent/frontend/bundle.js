@@ -10137,14 +10137,14 @@ function isSameBranchId(id1, id2) {
   const a = String(id1).trim().toLowerCase();
   const b = String(id2).trim().toLowerCase();
   if (a === b) return true;
-  if ((a === 'main' || a === 'chicvill' || a === 'chicvill1' || a === 'chicvill01') &&
-      (b === 'main' || b === 'chicvill' || b === 'chicvill1' || b === 'chicvill01')) {
-    return true;
-  }
-  if ((a === 'branch_9027' || a === 'chicvill2' || a === 'chicvill02') &&
-      (b === 'branch_9027' || b === 'chicvill2' || b === 'chicvill02')) {
-    return true;
-  }
+  const isMainA = (a === 'main' || a === 'chicvill' || a === 'chicvill1' || a === 'chicvill01' || a === '시크빌' || a === '시크빌1호점' || a === '시크빌 1호점');
+  const isMainB = (b === 'main' || b === 'chicvill' || b === 'chicvill1' || b === 'chicvill01' || b === '시크빌' || b === '시크빌1호점' || b === '시크빌 1호점');
+  if (isMainA && isMainB) return true;
+
+  const isB2A = (a === 'branch_9027' || a === 'chicvill2' || a === 'chicvill02' || a === '시크빌2호점');
+  const isB2B = (b === 'branch_9027' || b === 'chicvill2' || b === 'chicvill02' || b === '시크빌2호점');
+  if (isB2A && isB2B) return true;
+
   return false;
 }
 
@@ -10234,11 +10234,10 @@ function renderLeftMenuDrawer() {
                 (rawId === 'chicvill02' || rawId === 'chicvill2' || rawId === 'branch_9027') ? 'branch_9027' : b.branch_id;
     
     if (!canonicalMap.has(cId)) {
-      canonicalMap.set(cId, { ...b, branch_id: cId });
+      canonicalMap.set(cId, { ...b, branch_id: cId, name: b.name || `건물 (${cId})` });
     } else {
       const existing = canonicalMap.get(cId);
-      // 기존 것이 '지점 (chicvill01)' 같은 임시명이면 정식 명칭으로 교체
-      if (existing.name.startsWith('지점 (') && !b.name.startsWith('지점 (')) {
+      if (existing.name && existing.name.startsWith('지점 (') && b.name && !b.name.startsWith('지점 (')) {
         canonicalMap.set(cId, { ...b, branch_id: cId });
       }
     }

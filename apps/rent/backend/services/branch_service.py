@@ -10,13 +10,13 @@ from ..schemas import BranchCreate, BranchUpdate, BranchBillingUpdate
 
 
 def normalize_branch_id(branch_id: Optional[str]) -> str:
-    """지점 코드 에일리어스 정규화 (chicvill01 -> main, chicvill02 -> branch_9027)"""
+    """지점 코드 에일리어스 정규화 (시크빌/chicvill01 -> main, chicvill02 -> branch_9027)"""
     if not branch_id:
         return "main"
     bid = branch_id.strip().lower()
-    if bid in ("chicvill01", "chicvill1", "chicvill", "main"):
+    if bid in ("chicvill01", "chicvill1", "chicvill", "main", "시크빌", "시크빌1호점", "시크빌 1호점"):
         return "main"
-    if bid in ("chicvill02", "chicvill2", "branch_9027"):
+    if bid in ("chicvill02", "chicvill2", "branch_9027", "시크빌2호점", "시크빌 2호점"):
         return "branch_9027"
     return branch_id
 
@@ -46,9 +46,9 @@ class BranchService:
             db.query(RentBranch).filter(RentBranch.branch_id.in_(alias_2)).delete(synchronize_session=False)
             db.commit()
 
-            # 2. 메인 지점 명칭 표준화
+            # 2. 메인 지점 명칭 기본값 설정 (기존 명칭이 없을 때만 보존)
             main_b = db.query(RentBranch).filter(RentBranch.branch_id == "main").first()
-            if main_b:
+            if main_b and not main_b.name:
                 main_b.name = "시크빌 1호점 (본점, 29개실)"
                 db.commit()
 
