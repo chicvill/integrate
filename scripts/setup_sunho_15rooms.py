@@ -8,6 +8,9 @@ import json
 import os
 import sys
 
+if hasattr(sys.stdout, "reconfigure"):
+    getattr(sys.stdout, "reconfigure")(encoding="utf-8")
+
 TARGET_NAME = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else "선호빌"
 BID = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] else "branch_5611"
 if BID == "main":
@@ -15,7 +18,7 @@ if BID == "main":
 
 DB_PATH: str | None = sys.argv[3] if len(sys.argv) > 3 else None
 if not DB_PATH:
-    for cand in ['/media/integrat.db', '/app/data/rent.db', 'apps/rent/backend/rent.db', 'rent.db']:
+    for cand in ['integrat.db', '/media/integrat.db', '/app/data/rent.db', 'apps/rent/backend/rent.db', 'rent.db']:
         if os.path.exists(cand):
             DB_PATH = cand
             break

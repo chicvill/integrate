@@ -9,6 +9,9 @@ import json
 import os
 import sys
 
+if hasattr(sys.stdout, "reconfigure"):
+    getattr(sys.stdout, "reconfigure")(encoding="utf-8")
+
 # 사용법: python setup_shinbi_20rooms.py [건물명=신비주택] [branch_id=branch_9348] [db경로]
 TARGET_NAME = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else "신비주택"
 BID = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] else "branch_9348"
@@ -17,7 +20,7 @@ if BID == "main":
 
 DB_PATH = sys.argv[3] if len(sys.argv) > 3 else None
 if not DB_PATH:
-    for cand in ['/media/integrat.db', '/app/data/rent.db', 'apps/rent/backend/rent.db', 'rent.db']:
+    for cand in ['integrat.db', '/media/integrat.db', '/app/data/rent.db', 'apps/rent/backend/rent.db', 'rent.db']:
         if os.path.exists(cand):
             DB_PATH = cand
             break
