@@ -718,7 +718,7 @@ export async function executeVoiceCommandById(cmdId, targetRoom = null, extraFie
   const ADMIN_ONLY_COMMANDS = {
     3: "수납 취소 (미납 환원)",
     13: "건물 전체 일괄등록",
-    14: "1초 롤백 & 백업 복원",
+    14: "원격 서버 핫싱크 & DB 배포",
     15: "건물 / 지점 관리 및 변경",
     16: "부가가치세(VAT) 신고 자료"
   };
@@ -990,29 +990,20 @@ export async function executeVoiceCommandById(cmdId, targetRoom = null, extraFie
       speakText("건물 전체 데이터 엑셀 및 사진 일괄 등록 창을 열었습니다.");
       break;
 
-    case 14: // 14. 1초 롤백 & 스냅샷 백업 (실수 직전 1초 롤백, 스냅샷 저장 및 JSON 풀 백업/복구)
+    case 14: // 14. 원격 리모트 서버 핫싱크 & DB 배포
       const promptHtml = `
         <div class="p-2 text-center space-y-2">
-          <div class="text-xs font-bold text-emerald-300">↩️ 1초 롤백 & 백업 관리 센터</div>
-          <p class="text-[11px] text-slate-300">원하시는 백업 또는 롤백 작업을 선택하세요.</p>
-          <div class="grid grid-cols-2 gap-1.5 pt-1">
-            <button type="button" onclick="saveTestSnapshot(); closeVoiceModal();" class="py-2 px-1 rounded-xl bg-teal-800 hover:bg-teal-700 text-white font-bold text-xs shadow cursor-pointer active:scale-95 transition">
-              📸 스냅샷 즉시 저장
-            </button>
-            <button type="button" onclick="restoreTestSnapshot(); closeVoiceModal();" class="py-2 px-1 rounded-xl bg-amber-800 hover:bg-amber-700 text-white font-bold text-xs shadow cursor-pointer active:scale-95 transition">
-              ↩️ 1초 전 즉시 롤백
-            </button>
-            <button type="button" onclick="exportFullSystemBackupJSON(); closeVoiceModal();" class="py-2 px-1 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-white font-bold text-xs shadow cursor-pointer active:scale-95 transition">
-              💾 JSON 전체 백업
-            </button>
-            <button type="button" onclick="triggerFullSystemRestoreFile(); closeVoiceModal();" class="py-2 px-1 rounded-xl bg-indigo-800 hover:bg-indigo-700 text-white font-bold text-xs shadow cursor-pointer active:scale-95 transition">
-              📂 파일에서 복원
+          <div class="text-xs font-bold text-cyan-300">🚀 원격 리모트 서버 핫싱크 & DB 배포</div>
+          <p class="text-[11px] text-slate-300">최신 프론트 번들과 49개실 실시간 장부를 원격 서버에 즉시 배포합니다.</p>
+          <div class="pt-1">
+            <button type="button" onclick="triggerRemoteServerHotSync(); closeVoiceModal();" class="w-full py-2 px-2 rounded-xl bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md cursor-pointer active:scale-95 transition">
+              ⚡ 지금 리모트 서버 원클릭 즉시 동기화
             </button>
           </div>
         </div>
       `;
       updateVoiceStatus('confirm', promptHtml);
-      speakText("1초 롤백 또는 시스템 백업 복구 작업을 선택해주세요.");
+      speakText("원격 리모트 서버 즉시 동기화 메뉴를 열었습니다.");
       break;
 
     case 15: // 15. 건물 / 지점 변경 -> 원룸 매장 선택 드로어

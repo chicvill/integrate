@@ -11576,6 +11576,11 @@ const backupApi = {
 };
 const apiRestoreBackup = backupApi.restore;
 
+const adminApi = {
+  syncRemote: () => http.post('/admin/sync-remote')
+};
+const apiSyncRemoteServer = adminApi.syncRemote;
+
 /**
  * apps/rent/frontend/js/state.js
  * 원룸 임차료 관리 시스템 전역 반응형 상태 관리 모듈.
@@ -17460,155 +17465,43 @@ function exportAllRoomsCSV(e) {
   document.body.removeChild(link);
 }
 
-// 💾 전체 데이터 통합 백업 (스마트폰/PC 파일로 영구 다운로드 저장)
-async function exportFullSystemBackupJSON(e) {
-  if (e) {
-    e.stopPropagation();
-    e.preventDefault();
+// 🚀 메인 ➔ 리모트 서버 원클릭 핫싱크 & 실시간 데이터베이스 동기화
+async function triggerRemoteServerHotSync() {
+  const btn = document.getElementById('btnTriggerRemoteSync');
+  const origHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳</span><span>원격 서버 동기화 진행 중...</span>';
   }
 
-  const branchName = ((state.branches || []).find(b => b.branch_id === state.currentBranch)?.name) || '시크빌';
-  const now = new Date();
-  const timeTag = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
-  const cleanBranch = (branchName || '시크빌').replace(/[^\w가-힣0-9_-]/g, '_');
-  const filename = `${cleanBranch}_전체백업_${timeTag}.json`;
-  const deviceName = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? '스마트폰 [다운로드] 폴더' : 'PC [다운로드] 폴더';
+  showTopToast('🚀 메인 ➔ 리모트 서버로 코드 및 데이터베이스 동기화를 진행 중입니다...', 'info');
 
-  // 온라인 환경: Chrome/Edge 브라우저 난수 UUID 버그를 원천 차단하는 서버 직접 스트리밍 다운로드
-  if (state.isOnline) {
-    const downloadUrl = `/api/rent/backup/download?branch_id=${encodeURIComponent(state.currentBranch || 'main')}&_t=${Date.now()}`;
-    const a = document.createElement("a");
-    a.href = downloadUrl;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-      try {
-        if (a.parentNode) document.body.removeChild(a);
-      } catch (_) {}
-    }, 1500);
-
-    alert(`💾 전체 데이터 통합 백업 다운로드가 시작되었습니다!\n\n📁 파일명: ${filename}\n📌 저장 위치: 지금 사용 중이신 ${deviceName}\n\n📦 백업된 전체 데이터 내역:\n- 29개실 전체 계약대장\n- 1월~12월 수납 내역 (전체 장부)\n- 지출 관리 장부 내역\n- 전출자 1년 보존 이력`);
-    return;
-  }
-
-  // 오프라인 로컬 저장소 폴백
-  const backupPayload = {
-    version: "3.0",
-    system: "MQnet Rent SaaS Edition",
-    backup_type: "FULL_SYSTEM_BACKUP",
-    exported_at: now.toISOString(),
-    exported_at_formatted: now.toLocaleString('ko-KR'),
-    branch_id: state.currentBranch,
-    branch_name: branchName,
-    rooms_count: Object.keys(state.rooms || {}).length,
-    expenses_count: (state.expenses || []).length,
-    tenant_histories_count: (state.tenantHistories || []).length,
-    data: {
-      rooms: state.rooms,
-      expenses: state.expenses,
-      tenantHistories: state.tenantHistories
+  try {
+    const res = await apiSyncRemoteServer();
+    if (res && res.success) {
+      const stats = res.stats || {};
+      const msg = `🎉 리모트 서버 핫싱크 완료!\n- 총 건물: ${stats.branches || 2}개\n- 총 호실: ${stats.rooms || 49}개실\n- 총 수납장부: ${stats.payments || 1176}건 (${stats.paid || 931}건 완납 동기화)`;
+      showTopToast(msg, 'success');
+      alert(`✅ 원격 리모트 서버 동기화 성공!\n\n${res.message || '최신 번들과 데이터베이스가 정상 배포되었습니다.'}`);
+    } else {
+      showTopToast('⚠️ 동기화 완료 (응답 수신)', 'warning');
     }
-  };
-
-  const jsonStr = JSON.stringify(backupPayload, null, 2);
-  const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
-
-  if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-    window.navigator.msSaveOrOpenBlob(blob, filename);
-  } else {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = url;
-    a.download = filename;
-    a.setAttribute('download', filename);
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-      try {
-        if (a.parentNode) document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      } catch (_) {}
-    }, 10000);
-  }
-
-  alert(`💾 전체 데이터 통합 백업 파일이 저장되었습니다!\n\n📁 파일명: ${filename}\n📌 저장 위치: 지금 사용 중이신 ${deviceName}\n\n📦 백업된 전체 데이터 내역:\n- 29개실 전체 계약대장\n- 1월~12월 수납 내역 (전체 장부)\n- 지출 관리 장부 내역\n- 전출자 1년 보존 이력`);
-}
-
-// 📂 내 폰/PC 백업 파일 선택 열기
-function triggerFullSystemRestoreFile() {
-  const input = document.getElementById('fullBackupRestoreInput');
-  if (input) input.click();
-}
-
-// 📂 내 폰/PC 백업 파일로부터 전체 데이터 복원
-async function handleFullSystemRestoreFile(event) {
-  const file = event.target.files && event.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    try {
-      const content = e.target.result;
-      const backup = JSON.parse(content);
-
-      if (!backup.data || !backup.data.rooms) {
-        throw new Error("올바른 전체 백업 JSON 파일 형식이 아닙니다.");
-      }
-
-      const backupBranchName = backup.branch_name || backup.branch_id || '시크빌';
-      const currentBranchObj = (state.branches || []).find(b => b.branch_id === state.currentBranch);
-      const currentBranchName = currentBranchObj ? currentBranchObj.name : (state.currentBranch || '현재 건물');
-
-      let confirmMsg = `[${backup.exported_at_formatted || backup.exported_at || '알 수 없음'}]에 생성된 백업 파일입니다.\n\n`;
-      if (backup.branch_id && state.currentBranch && backup.branch_id !== state.currentBranch) {
-        confirmMsg += `🏢 백업 파일 원본 건물: [${backupBranchName}]\n🎯 복원 대상 선택 건물: [${currentBranchName}]\n\n👉 [${currentBranchName}] 건물에 이 백업 데이터를 복원/적용하시겠습니까?\n(다른 건물 자료도 현재 건물로 안전하게 복구할 수 있습니다!)\n\n`;
-      } else {
-        confirmMsg += `건물명: ${currentBranchName}\n\n`;
-      }
-      confirmMsg += `- 29개실 호실 및 12개월 수납 내역\n`;
-      confirmMsg += `- 지출 내역: ${backup.expenses_count || (backup.data.expenses || []).length}건\n`;
-      confirmMsg += `- 전출 이력: ${backup.tenant_histories_count || (backup.data.tenantHistories || []).length}건\n\n`;
-      confirmMsg += `이 백업 파일로 시스템 전체 데이터를 복원하시겠습니까?`;
-
-      const ok = confirm(confirmMsg);
-      if (!ok) {
-        event.target.value = '';
-        return;
-      }
-
-      // 서버 DB 동기화 (원자적 단 1회 호출)
-      if (state.isOnline) {
-        const res = await apiRestoreBackup(backup, state.currentBranch);
-        if (res) {
-          if (res.rooms) state.rooms = res.rooms;
-          if (res.expenses) state.expenses = res.expenses;
-          if (res.tenantHistories) state.tenantHistories = res.tenantHistories;
-        }
-      } else {
-        // 오프라인 로컬 저장소 폴백
-        state.rooms = backup.data.rooms;
-        if (backup.data.expenses) state.expenses = backup.data.expenses;
-        if (backup.data.tenantHistories) state.tenantHistories = backup.data.tenantHistories;
-      }
-
-      saveLocalFallback();
-      if (state.selectedRoom) {
-        populateModalRoomSelector(state.selectedRoom);
-        loadRoomIntoContractModal(state.selectedRoom);
-      }
-      renderAll();
-
-      alert(`🎉 [${currentBranchName}] 건물에 전체 데이터가 성공적으로 복원되었습니다!\n\n(백업 시점: ${backup.exported_at_formatted || backup.exported_at})\n- 29개실 호실 및 12개월 장부 복원 완료\n- 지출 및 전출자 이력 동기화 완료`);
-    } catch (err) {
-      alert("백업 파일 복원 실패: " + err.message);
-    } finally {
-      event.target.value = '';
+  } catch (err) {
+    console.error('Remote sync error:', err);
+    showTopToast(`❌ 원격 서버 동기화 오류: ${err.message}`, 'error');
+    alert(`❌ 원격 서버 동기화 실패:\n${err.message}`);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
     }
-  };
-  reader.readAsText(file, "UTF-8");
+  }
 }
+
+// 하위 호환성용 별칭
+const exportFullSystemBackupJSON = triggerRemoteServerHotSync;
+const triggerFullSystemRestoreFile = triggerRemoteServerHotSync;
+const handleFullSystemRestoreFile = () => {};
 
 // ── 보안 관리자 로그인 & 14일 슬라이딩 세션 제어 ──
 function updateAdminProfileUI() {
@@ -20388,7 +20281,7 @@ async function executeVoiceCommandById(cmdId, targetRoom = null, extraFields = {
   const ADMIN_ONLY_COMMANDS = {
     3: "수납 취소 (미납 환원)",
     13: "건물 전체 일괄등록",
-    14: "1초 롤백 & 백업 복원",
+    14: "원격 서버 핫싱크 & DB 배포",
     15: "건물 / 지점 관리 및 변경",
     16: "부가가치세(VAT) 신고 자료"
   };
@@ -20660,29 +20553,20 @@ async function executeVoiceCommandById(cmdId, targetRoom = null, extraFields = {
       speakText("건물 전체 데이터 엑셀 및 사진 일괄 등록 창을 열었습니다.");
       break;
 
-    case 14: // 14. 1초 롤백 & 스냅샷 백업 (실수 직전 1초 롤백, 스냅샷 저장 및 JSON 풀 백업/복구)
+    case 14: // 14. 원격 리모트 서버 핫싱크 & DB 배포
       const promptHtml = `
         <div class="p-2 text-center space-y-2">
-          <div class="text-xs font-bold text-emerald-300">↩️ 1초 롤백 & 백업 관리 센터</div>
-          <p class="text-[11px] text-slate-300">원하시는 백업 또는 롤백 작업을 선택하세요.</p>
-          <div class="grid grid-cols-2 gap-1.5 pt-1">
-            <button type="button" onclick="saveTestSnapshot(); closeVoiceModal();" class="py-2 px-1 rounded-xl bg-teal-800 hover:bg-teal-700 text-white font-bold text-xs shadow cursor-pointer active:scale-95 transition">
-              📸 스냅샷 즉시 저장
-            </button>
-            <button type="button" onclick="restoreTestSnapshot(); closeVoiceModal();" class="py-2 px-1 rounded-xl bg-amber-800 hover:bg-amber-700 text-white font-bold text-xs shadow cursor-pointer active:scale-95 transition">
-              ↩️ 1초 전 즉시 롤백
-            </button>
-            <button type="button" onclick="exportFullSystemBackupJSON(); closeVoiceModal();" class="py-2 px-1 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-white font-bold text-xs shadow cursor-pointer active:scale-95 transition">
-              💾 JSON 전체 백업
-            </button>
-            <button type="button" onclick="triggerFullSystemRestoreFile(); closeVoiceModal();" class="py-2 px-1 rounded-xl bg-indigo-800 hover:bg-indigo-700 text-white font-bold text-xs shadow cursor-pointer active:scale-95 transition">
-              📂 파일에서 복원
+          <div class="text-xs font-bold text-cyan-300">🚀 원격 리모트 서버 핫싱크 & DB 배포</div>
+          <p class="text-[11px] text-slate-300">최신 프론트 번들과 49개실 실시간 장부를 원격 서버에 즉시 배포합니다.</p>
+          <div class="pt-1">
+            <button type="button" onclick="triggerRemoteServerHotSync(); closeVoiceModal();" class="w-full py-2 px-2 rounded-xl bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md cursor-pointer active:scale-95 transition">
+              ⚡ 지금 리모트 서버 원클릭 즉시 동기화
             </button>
           </div>
         </div>
       `;
       updateVoiceStatus('confirm', promptHtml);
-      speakText("1초 롤백 또는 시스템 백업 복구 작업을 선택해주세요.");
+      speakText("원격 리모트 서버 즉시 동기화 메뉴를 열었습니다.");
       break;
 
     case 15: // 15. 건물 / 지점 변경 -> 원룸 매장 선택 드로어

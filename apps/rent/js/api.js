@@ -267,3 +267,8 @@ export const backupApi = {
     http.post('/backup/restore', backupData, { target_branch_id: targetBranchId })
 };
 export const apiRestoreBackup = backupApi.restore;
+
+export const adminApi = {
+  syncRemote: () => http.post('/admin/sync-remote')
+};
+export const apiSyncRemoteServer = adminApi.syncRemote;
