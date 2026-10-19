@@ -779,15 +779,12 @@ class RentService:
                 print(f"[OCR Warning] Gemini Vision API 호출 실패, fallback 처리: {e}")
 
         # Gemini API 키가 없거나 호출 실패 시:
-        # 안전한 파싱 구조를 안내하고, 시각적 확인이 가능한 기본 응답 반환
         return {
-            "success": True,
-            "rows": [
-                {"호실": "101", "세입자": "캡처세입자1", "보증금": "5000000", "월세": "480000", "연락처": "010-1234-5678", "유형": "월세"},
-                {"호실": "201", "세입자": "캡처세입자2", "보증금": "5000000", "월세": "480000", "연락처": "010-9876-5432", "유형": "월세"}
-            ],
-            "message": "AI Vision 분석 완료 (클립보드 캡처 데이터)",
-            "source": "fallback"
+            "success": False,
+            "has_api_key": False,
+            "rows": [],
+            "message": "서버에 GEMINI_API_KEY가 설정되어 있지 않아 이미지/사진 AI 스캔이 제한됩니다. CSV 파일 업로드 또는 [텍스트 직접 붙여넣기]를 이용해 주세요.",
+            "source": "no_api_key"
         }
 
     def process_payment(self, db: Session, room_number: int, month: int, branch_id: str = "main", paid_date: Optional[str] = None, note: str = "정상 입금", tenant_name: Optional[str] = None, year: Optional[int] = None, rent_amount: Optional[int] = None, maintenance_amount: Optional[int] = None) -> Optional[Dict[str, Any]]:

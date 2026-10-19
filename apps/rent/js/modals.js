@@ -2266,27 +2266,31 @@ export async function processImageOcr(imageBase64, sourceName = "화면 캡처 �
       result = await apiOcrImportImage(imageBase64, state.currentBranch);
     }
 
+    if (result && result.has_api_key === false) {
+      if (ocrLoading) ocrLoading.classList.add('hidden');
+      if (statusText) {
+        statusText.innerHTML = `⚠️ <strong class="text-amber-400">이미지 AI 스캔 안내:</strong> 서버에 Gemini API 키가 설정되지 않아 이미지 분석이 제한됩니다.<br>👉 <strong>[.csv 파일 업로드]</strong> 또는 <strong>[📝 텍스트 직접 붙여넣기]</strong>를 이용하시면 모든 호실이 즉시 100% 완벽하게 인식됩니다!`;
+      }
+      alert("⚠️ 이미지 AI 인식을 위해서는 서버에 GEMINI_API_KEY 설정이 필요합니다.\n\n💡 바로 등록하시려면:\n1) 상단의 [.csv 파일 찾기]를 선택하시거나\n2) [📝 텍스트 직접 붙여넣기]를 이용해 주세요!");
+      return;
+    }
+
     // 결과 행 추출
     let rows = (result && result.rows) || [];
     if (!rows || rows.length === 0) {
-      // 오프라인 / Fallback 샘플 추출
-      rows = [
-        { "호실": "101", "세입자": "캡처세입자1", "보증금": "5000000", "월세": "480000", "연락처": "010-1234-5678", "유형": "월세" },
-        { "호실": "201", "세입자": "캡처세입자2", "보증금": "5000000", "월세": "480000", "연락처": "010-9876-5432", "유형": "월세" }
-      ];
+      if (ocrLoading) ocrLoading.classList.add('hidden');
+      if (statusText) statusText.innerHTML = `❌ 이미지에서 표나 호실 텍스트를 감지하지 못했습니다. 선명한 사진을 사용하시거나 <strong>[📝 텍스트 직접 붙여넣기]</strong>를 이용해 주세요.`;
+      return;
     }
 
     if (ocrLoading) ocrLoading.classList.add('hidden');
     processParsedExcelRows(rows, sourceName);
   } catch (err) {
     if (ocrLoading) ocrLoading.classList.add('hidden');
-    console.warn("OCR API 실패, 대체 데이터로 연결:", err);
-    // 폴백 파싱
-    const fallbackRows = [
-      { "호실": "101", "세입자": "캡처세입자1", "보증금": "5000000", "월세": "480000", "연락처": "010-1234-5678", "유형": "월세" },
-      { "호실": "201", "세입자": "캡처세입자2", "보증금": "5000000", "월세": "480000", "연락처": "010-9876-5432", "유형": "월세" }
-    ];
-    processParsedExcelRows(fallbackRows, sourceName);
+    console.warn("OCR API 실패:", err);
+    if (statusText) {
+      statusText.innerHTML = `⚠️ 서버 연결 실패: <strong>[.csv 파일 업로드]</strong> 또는 <strong>[📝 텍스트 직접 붙여넣기]</strong>를 이용해 주세요.`;
+    }
   }
 }
 
