@@ -54,15 +54,17 @@ def get_database_url() -> str:
         except Exception:
             pass
 
-    # 3. 로컬 data 디렉토리 내 앱 전용 DB 우선 탐색 (rent.db 등)
+    # 3. Docker 영구 볼륨(/media)이 존재하고 기존 DB가 있으면 integrat.db 우선 사용 (컨테이너 재생성 시 데이터 영구 보존)
+    media_path = os.getenv("MEDIA_STORAGE_PATH", os.getenv("MEDIA_PATH", "/media"))
+    if os.path.exists(media_path) and os.path.isdir(media_path):
+        media_db = os.path.join(media_path, "integrat.db")
+        if os.path.exists(media_db) and os.path.getsize(media_db) > 0:
+            return f"sqlite:///{media_db}"
+
+    # 4. 로컬 data 디렉토리 내 앱 전용 DB 우선 탐색 (rent.db 등)
     for cand in ["data/rent.db", "data/integrat.db", "rent.db", "integrat.db"]:
         if os.path.exists(cand) and os.path.getsize(cand) > 0:
             return f"sqlite:///{os.path.abspath(cand)}"
-
-    # 4. Docker 영구 볼륨(/media)이 존재하고 기존 DB가 있으면 integrat.db
-    media_path = os.getenv("MEDIA_STORAGE_PATH", os.getenv("MEDIA_PATH", "/media"))
-    if os.path.exists(media_path) and os.path.exists(os.path.join(media_path, "integrat.db")):
-        return f"sqlite:///{os.path.join(media_path, 'integrat.db')}"
 
     return "sqlite:///./integrat.db"
 
