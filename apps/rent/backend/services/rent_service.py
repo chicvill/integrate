@@ -354,12 +354,12 @@ class RentService:
         PaymentService.clean_duplicate_payments(db, "main")
         self._seeded = True
 
-    def get_rooms(self, db: Session, branch_id: str = "main") -> Dict[int, Any]:
-        """지점 내 29개실 전체 정보 및 12개월 납부 장부 집계 (이전 세입자 정보 포함)"""
+    def get_rooms(self, db: Session, branch_id: str = "main", year: Optional[int] = None) -> Dict[int, Any]:
+        """지점 내 전체 정보 및 12개월 납부 장부 집계 (이전 세입자 정보 포함, 특정 year 지정 가능)"""
         norm_bid = self.branch_service.normalize_branch_id(branch_id)
         self.ensure_default_seed(db, norm_bid)
         rooms_db = db.query(RentRoom).filter(RentRoom.branch_id == norm_bid).order_by(RentRoom.room_number).all()
-        payments_db = db.query(RentPayment).filter(RentPayment.branch_id == norm_bid).all()
+        payments_db = db.query(RentPayment).filter(RentPayment.branch_id == norm_bid).order_by(RentPayment.year.asc(), RentPayment.month.asc()).all()
 
         pay_map: Dict[int, Dict[Any, Any]] = {}
         for p in payments_db:
@@ -380,8 +380,12 @@ class RentService:
                 "is_previous_tenant": bool(p.is_previous_tenant)
             }
             # 하위 호환용 월 키 및 연도-월 복합키 동시 제공
-            pay_map[r_num][p_month] = pay_obj
             pay_map[r_num][f"{p_year}-{p_month}"] = pay_obj
+            if year is not None:
+                if p_year == year:
+                    pay_map[r_num][p_month] = pay_obj
+            else:
+                pay_map[r_num][p_month] = pay_obj
 
         histories_db = db.query(RentTenantHistory).filter(RentTenantHistory.branch_id == branch_id).order_by(RentTenantHistory.move_out.desc()).all()
         hist_map: Dict[int, List[Dict[str, Any]]] = {}
@@ -980,7 +984,7 @@ class RentService:
             end_month=end_month,
             year=year,
             room_numbers=room_numbers,
-            rooms_data=self.get_rooms(db, branch_id),
+            rooms_data=self.get_rooms(db, branch_id, year=year),
             histories=self.list_tenant_histories(db, branch_id)
         )
 

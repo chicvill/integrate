@@ -129,8 +129,9 @@ class VatService:
             tenant_name = str(r.get("name")) if is_curr else (str(matched_hist.name) if matched_hist else None)
             return 0, tenant_name
 
-        # 순수 월세액 산출
-        p = r.get("payments", {}).get(month, {})
+        # 순수 월세액 산출 (연도-월 복합키 우선 탐색)
+        p_dict = r.get("payments", {})
+        p = p_dict.get(f"{year}-{month}") or (p_dict.get(month, {}) if p_dict.get(month, {}).get("year") == year else (p_dict.get(month, {}) if not p_dict.get(f"{year}-{month}") else {}))
         matched_rent = cast(int, matched_hist.rent) if (matched_hist and matched_hist.rent) else 0
 
         amt = 0
@@ -227,7 +228,10 @@ class VatService:
             total_supply += supply_val
             total_vat += vat_val
 
-            is_all_paid = all(r.get("payments", {}).get(m, {}).get("paid") for m in months)
+            is_all_paid = all(
+                (r.get("payments", {}).get(f"{year}-{m}") or (r.get("payments", {}).get(m, {}) if r.get("payments", {}).get(m, {}).get("year") == year else {})).get("paid")
+                for m in months
+            )
             status_text = "완납" if is_all_paid else ("미납" if room_period_total == 0 else "부분완납")
 
             report_rows.append({

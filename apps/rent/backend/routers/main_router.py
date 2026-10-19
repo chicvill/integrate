@@ -140,10 +140,11 @@ async def system_factory_reset(
 @router.get("/rooms", response_model=RoomListResponse)
 async def get_all_rooms(
     branch_id: str = Query("main", description="조회할 건물 ID"),
+    year: Optional[int] = Query(None, description="조회할 연도"),
     db: Session = Depends(get_db)
 ):
     """29개실 전체 정보 및 12개월 납부 장부 조회"""
-    rooms = service.get_rooms(db, branch_id=branch_id)
+    rooms = service.get_rooms(db, branch_id=branch_id, year=year)
     first_room = min(rooms.keys()) if rooms else 101
     return RoomListResponse(
         success=True,

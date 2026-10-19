@@ -12071,8 +12071,8 @@ let vatAutoSaveTimer = null;
 async function openVatModal() {
   openModal('vatModal');
   await initVatRoomsSelection();
-  // 기본 1기 (1~6월, 2026년) 자동 조회
-  await setVatPeriod(1, 6, '1기 (1~6월)');
+  // 기본 7월 부가세 신고 (금년 1~6월 1기) 자동 조회
+  await setVatTaxPreset('jul_vat');
 }
 
 /**
@@ -12213,6 +12213,72 @@ function applyVatRoomFilter() {
   renderVatReportUI(currentVatData);
 }
 
+async function setVatTaxPreset(presetType) {
+  const currentY = Number(currentYear || 2026);
+  let targetYear = currentY;
+  let startMonth = 1;
+  let endMonth = 6;
+  let label = '1기 (1~6월)';
+
+  if (presetType === 'jan_vat') {
+    // 매년 1월 부가세 확정신고: 전년도 7~12월 (2기)
+    targetYear = currentY - 1;
+    startMonth = 7;
+    endMonth = 12;
+    label = '2기 (전년 7~12월 - 1월 부가세)';
+  } else if (presetType === 'jul_vat') {
+    // 매년 7월 부가세 확정신고: 금년도 1~6월 (1기)
+    targetYear = currentY;
+    startMonth = 1;
+    endMonth = 6;
+    label = '1기 (금년 1~6월 - 7월 부가세)';
+  } else if (presetType === 'may_income') {
+    // 매년 5월 종합소득세 신고: 전년도 1~12월 (연간 전체)
+    targetYear = currentY - 1;
+    startMonth = 1;
+    endMonth = 12;
+    label = '종합소득세 (전년 1~12월 연간)';
+  }
+
+  // 연도 셀렉트 동기화
+  const ySelect = document.getElementById('vatYearSelect');
+  if (ySelect) ySelect.value = String(targetYear);
+
+  // 월 셀렉트 동기화
+  const sSelect = document.getElementById('vatStartMonthSelect');
+  const eSelect = document.getElementById('vatEndMonthSelect');
+  if (sSelect) sSelect.value = startMonth;
+  if (eSelect) eSelect.value = endMonth;
+
+  // 세무 원터치 버튼 스타일 토글
+  document.querySelectorAll('.vat-tax-btn').forEach(btn => {
+    btn.className = 'vat-tax-btn px-2.5 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 text-xs font-semibold cursor-pointer transition active:scale-95 flex items-center gap-1';
+  });
+  const activeBtnId = presetType === 'jan_vat' ? 'vatBtnTaxJan' : (presetType === 'jul_vat' ? 'vatBtnTaxJul' : 'vatBtnTaxIncome');
+  const activeBtn = document.getElementById(activeBtnId);
+  if (activeBtn) {
+    activeBtn.className = 'vat-tax-btn px-2.5 py-1 rounded-lg bg-cyan-950/90 text-cyan-200 border border-cyan-500/80 text-xs font-bold cursor-pointer transition active:scale-95 flex items-center gap-1 shadow-sm';
+  }
+
+  // 기수 버튼 초기화
+  document.querySelectorAll('.vat-preset-btn').forEach(btn => {
+    btn.className = 'vat-preset-btn px-2.5 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 font-medium transition cursor-pointer';
+  });
+
+  currentVatParams.year = targetYear;
+  currentVatParams.startMonth = startMonth;
+  currentVatParams.endMonth = endMonth;
+  currentVatParams.label = label;
+
+  await fetchAndRenderVat(startMonth, endMonth, targetYear, label);
+}
+
+async function handleVatYearChange(newYear) {
+  const y = Number(newYear || 2026);
+  currentVatParams.year = y;
+  await fetchAndRenderVat(currentVatParams.startMonth, currentVatParams.endMonth, y, currentVatParams.label);
+}
+
 async function setVatPeriod(startMonth, endMonth, label) {
   currentVatParams.startMonth = Number(startMonth);
   currentVatParams.endMonth = Number(endMonth);
@@ -12225,12 +12291,17 @@ async function setVatPeriod(startMonth, endMonth, label) {
   if (sSelect) sSelect.value = startMonth;
   if (eSelect) eSelect.value = endMonth;
 
+  // 세무 원터치 버튼 active 해제
+  document.querySelectorAll('.vat-tax-btn').forEach(btn => {
+    btn.className = 'vat-tax-btn px-2.5 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 text-xs font-semibold cursor-pointer transition active:scale-95 flex items-center gap-1';
+  });
+
   // 프리셋 버튼 active 상태 스타일 토글
   document.querySelectorAll('.vat-preset-btn').forEach(btn => {
     if (btn.textContent.trim() === label || (label.startsWith(btn.textContent.trim()))) {
-      btn.className = 'vat-preset-btn px-2.5 py-1 rounded-lg bg-cyan-950/80 hover:bg-cyan-900 text-cyan-300 border border-cyan-700/80 font-bold transition';
+      btn.className = 'vat-preset-btn px-2.5 py-1 rounded-lg bg-cyan-950/80 hover:bg-cyan-900 text-cyan-300 border border-cyan-700/80 font-bold transition cursor-pointer';
     } else {
-      btn.className = 'vat-preset-btn px-2.5 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 font-medium transition';
+      btn.className = 'vat-preset-btn px-2.5 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 font-medium transition cursor-pointer';
     }
   });
 
@@ -12313,6 +12384,7 @@ function calculateLocalVatReport(startMonth, endMonth, year) {
 
     for (const m of months) {
       const isJeonse = (r.lease_type === '전세');
+      const p = (r.payments && (r.payments[`${year}-${m}`] || (r.payments[m] && (r.payments[m].year === year || !r.payments[m].year) ? r.payments[m] : null))) || (r.payments && r.payments[m]) || {};
       let amt = 0;
       if (isJeonse) {
         amt = 0;
@@ -16450,6 +16522,8 @@ if (typeof window !== 'undefined') {
   window.handleBatchDateModeChange = handleBatchDateModeChange;
   window.updateBatchPaymentPreview = updateBatchPaymentPreview;
   window.handleBatchPaymentSubmit = handleBatchPaymentSubmit;
+  window.setVatTaxPreset = setVatTaxPreset;
+  window.handleVatYearChange = handleVatYearChange;
 }
 
 
