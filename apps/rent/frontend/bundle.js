@@ -16373,11 +16373,7 @@ async function handleBatchPaymentSubmit(e) {
     ? bSelect.options[bSelect.selectedIndex].text.split(' (')[0]
     : targetBranch;
 
-  const monthsCount = (end_m - start_m + 1);
-  const confirmMsg = `[${targetBranchName}] ${targetYear}년 ${start_m}월 ~ ${end_m}월 (${monthsCount}개월) 수납 내역을 일괄 완납 처리하시겠습니까?`;
-  if (!confirm(confirmMsg)) {
-    return;
-  }
+
 
   if (btn) {
     btn.disabled = true;
