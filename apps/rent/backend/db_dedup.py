@@ -16,11 +16,14 @@ def run():
     c = conn.cursor()
 
     # 컬럼 확인 및 추가
-    cols = [r[1] for r in c.execute('PRAGMA table_info(rent_expenses)').fetchall()]
-    if 'receipt_type' not in cols:
-        c.execute('ALTER TABLE rent_expenses ADD COLUMN receipt_type VARCHAR(50) DEFAULT ""')
-    if 'receipt_info' not in cols:
-        c.execute('ALTER TABLE rent_expenses ADD COLUMN receipt_info TEXT DEFAULT ""')
+    try:
+        cols = [r[1] for r in c.execute('PRAGMA table_info(rent_expenses)').fetchall()]
+        if cols and 'receipt_type' not in cols:
+            c.execute('ALTER TABLE rent_expenses ADD COLUMN receipt_type VARCHAR(50) DEFAULT ""')
+        if cols and 'receipt_info' not in cols:
+            c.execute('ALTER TABLE rent_expenses ADD COLUMN receipt_info TEXT DEFAULT ""')
+    except Exception as e:
+        pass
 
     try:
         c.execute("UPDATE rent_branches SET name = '시크빌 (29개실)' WHERE branch_id = 'main'")

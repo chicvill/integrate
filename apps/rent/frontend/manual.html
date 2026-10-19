@@ -186,10 +186,10 @@
     <!-- Header -->
     <header class="manual-header">
       <div>
-        <div class="manual-badge">MQnet Real Estate Engine v1.0</div>
-        <h1 class="manual-title">🏢 29개실 원룸 임차료 관리 시스템 운영 매뉴얼</h1>
+        <div class="manual-badge">MQnet Real Estate Engine v2.0 SaaS Edition</div>
+        <h1 class="manual-title">🏢 원룸·오피스텔 임대차 및 수납 관리 시스템 운영 매뉴얼</h1>
         <p style="margin: 0; color: #94a3b8; font-size: 0.88rem;">
-          101호 · 201~605호 · 701~703호 전용 원룸 임대차 계약, 월세 수납, 관리비 정산 및 지출 장부 가이드
+          신비주택(20개실) · 시크빌(29개실) · 선호빌(29개실) 전 건물 범용 임대차 계약, 일괄 수납, 부가세·종소세 세무 신고 및 장부 가이드
         </p>
       </div>
       <div style="display: flex; gap: 0.6rem;" class="no-print">
@@ -198,95 +198,167 @@
       </div>
     </header>
 
-    <!-- 1. 개요 및 호실 구성 -->
+    <!-- 1. 개요 및 건물·호실 구성 -->
     <section class="section-card">
-      <h2 class="section-title">📌 1. 시스템 개요 및 호실 구성</h2>
+      <h2 class="section-title">📌 1. 시스템 개요 및 건물·호실 구성</h2>
       <p style="color: #cbd5e1; font-size: 0.92rem;">
-        본 시스템은 총 29개 호실(1층 1개실, 2~6층 각 5개실, 7층 3개실)로 구성된 원룸 임대 건물의 <strong>월세 수납 현황, 계약 갱신, 관리비 정산, 지출 장부</strong>를 실시간으로 기록하고 관리하는 전용 관리기입니다.
+        본 시스템은 다중 원룸·오피스텔 임대 건물(<strong>신비주택 20개실, 시크빌 29개실, 선호빌 29개실 등</strong>)의 <strong>월세 수납 현황, 계약 갱신, 관리비 정산, 부가가치세 및 종합소득세 신고 집계, 지출 장부</strong>를 실시간으로 기록하고 관리하는 전용 임대차 ERP 엔진입니다.
       </p>
       <table>
         <thead>
           <tr>
-            <th>구분</th>
-            <th>해당 호실</th>
-            <th>호실 수</th>
-            <th>특징</th>
+            <th>관리 건물명</th>
+            <th>호실 규모</th>
+            <th>층별 호실 구성</th>
+            <th>특징 및 독립 권한</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><strong>1층</strong></td>
-            <td>101호</td>
-            <td>1개실</td>
-            <td>근린생활/관리실 또는 1층 단독 주거실</td>
+            <td><strong>신비주택</strong></td>
+            <td><strong>총 20개실</strong></td>
+            <td>2층~5층 각 5개실 (201~205호, 301~305호, 401~405호, 501~505호)</td>
+            <td>실속형 원룸 단지 (전용 계정: <code>sinbi</code> / <code>1212</code>)</td>
           </tr>
           <tr>
-            <td><strong>2층 ~ 6층</strong></td>
-            <td>201~205호, 301~305호, 401~405호, 501~505호, 601~605호</td>
-            <td>25개실</td>
-            <td>기준 주거실 (풀옵션 원룸)</td>
+            <td><strong>시크빌</strong></td>
+            <td><strong>총 29개실</strong></td>
+            <td>1층 1개실(101호), 2~6층 각 5개실(201~605호), 7층 3개실(701~703호)</td>
+            <td>풀옵션 주거실 및 상층 테라스 (전용 계정: <code>chic</code> / <code>1212</code>)</td>
           </tr>
           <tr>
-            <td><strong>7층</strong></td>
-            <td>701호, 702호, 703호</td>
-            <td>3개실</td>
-            <td>상층부 특화 주거실 (발코니/테라스)</td>
+            <td><strong>선호빌</strong></td>
+            <td><strong>총 29개실</strong></td>
+            <td>1층 1개실(101호), 2~6층 각 5개실(201~605호), 7층 3개실(701~703호)</td>
+            <td>고급형 주거실 (전용 계정: <code>sunho</code> / <code>1212</code>)</td>
           </tr>
           <tr>
-            <td><strong>총계</strong></td>
-            <td colspan="2"><strong>29개실</strong></td>
-            <td>전 호실 독자 계약 정보 및 수납 이력 유지</td>
+            <td><strong>본사 총괄</strong></td>
+            <td><strong>전체 통합</strong></td>
+            <td>전 지점 호실 실시간 통합 관제 및 자유 전환</td>
+            <td>최고관리자 권한 (전용 계정: <code>admin</code> / <code>1212</code>)</td>
           </tr>
         </tbody>
       </table>
     </section>
 
-    <!-- 2. 주요 운영 흐름 및 스마트폰 슬라이드 UI -->
+    <!-- 2. 모바일 최적화 & 슬라이드 인터페이스 -->
     <section class="section-card">
       <h2 class="section-title">⚡ 2. 스마트폰 모바일 최적화 & 슬라이드 인터페이스</h2>
       <div class="grid-2">
         <div class="info-box">
-          <h4>📱 여백 최소화 & 스크롤 없는 한 화면</h4>
+          <h4>📱 여백 최소화 & 한눈에 들어오는 직관성</h4>
           <p>모바일 화면(스마트폰 뷰포트)에서 여백을 최소화하고 호실 번호, 월세/관리비, 완납/미납 상태 폰트를 대형화하여, 스크롤 없이도 핵심 수납 현황을 즉시 파악할 수 있습니다.</p>
         </div>
         <div class="info-box">
           <h4>👉 우측 슬라이드 바 (호실 선택)</h4>
-          <p>화면 우측 상단 <code>[🚪 101호 ▾]</code> 버튼을 터치하면 우측에서 슬라이드 바가 열려 7층~1층 29개실의 입주/공실/납부 상태(초록: 완납, 빨강: 미납, 회색: 공실)를 원터치로 전환합니다.</p>
+          <p>화면 우측 상단 <code>[🚪 호실선택 ▾]</code> 버튼을 터치하면 우측에서 슬라이드 바가 열려 전체 호실의 입주/공실/납부 상태(초록: 완납, 빨강: 미납, 회색: 공실)를 원터치로 전환합니다.</p>
         </div>
         <div class="info-box">
-          <h4>👈 좌측 슬라이드 바 (메뉴 & 부동산)</h4>
-          <p>화면 좌측 상단 <code>[☰]</code> 햄버거 메뉴를 터치하면 좌측에서 슬라이드 바가 열려 <strong>부동산 선택/추가</strong>, <strong>부가가치세 집계</strong>, <strong>지출 장부</strong>, <strong>전출자 이력</strong> 등 전체 관리 업무를 처리합니다.</p>
+          <h4>👈 좌측 슬라이드 바 (햄버거 메뉴 ☰)</h4>
+          <p>화면 좌측 상단 <code>[☰]</code> 햄버거 메뉴를 터치하면 <strong>건물별 월 수납 일괄 납입 처리</strong>, <strong>부가가치세 & 종합소득세 집계</strong>, <strong>지출 장부</strong>, <strong>전출자 이력</strong>, <strong>엑셀/사진 계약 등록</strong> 등 핵심 업무를 즉시 호출합니다.</p>
         </div>
         <div class="info-box">
           <h4>💳 원터치 즉시 완납 처리</h4>
-          <p>복잡한 입력 없이 당월 카드 하단의 큰 <code>[💳 즉시 완납]</code> 버튼 한 번 터치로 당월분 임차료가 완납 처리되며, 필요 시 즉시 취소도 가능합니다.</p>
+          <p>개별 호실 카드의 하단에 있는 큰 <code>[💳 즉시 완납]</code> 버튼 한 번 터치로 당월분 임차료가 완납 처리되며, 필요 시 즉시 취소도 가능합니다.</p>
         </div>
       </div>
     </section>
 
-    <!-- 3. 다중 부동산 선택 및 관리 -->
+    <!-- 3. 건물별 월 수납 일괄 납입 처리 (범용 배치 엔진) -->
     <section class="section-card">
-      <h2 class="section-title">🏢 3. 다중 부동산(건물) 선택 및 관리</h2>
+      <h2 class="section-title">⚡ 3. 건물별 월 수납 일괄 납입 처리 (범용 배치 엔진)</h2>
+      <div class="callout">
+        <strong>💡 도입 취지 및 효과</strong><br>
+        새로운 건물을 등록하거나 연도가 바뀌었을 때, 수납 내역이 비어있는 상태에서 20~29개실을 하나하나 수동으로 클릭하여 수납하는 비효율을 완전히 해소했습니다. 신비주택뿐만 아니라 시크빌, 선호빌 및 향후 추가될 모든 건물에 대해 단 몇 번의 터치로 수십~수백 건의 수납을 일괄 처리할 수 있습니다.
+      </div>
       <ul>
-        <li><strong>부동산 전환:</strong> 상단 헤더 중앙의 <code>[🏢 건물명 ▾]</code> 또는 좌측 슬라이드 바에서 <strong>본관(29실)</strong>, <strong>별관(29실)</strong> 등 관리 중인 여러 건물을 원터치로 전환할 수 있습니다.</li>
-        <li><strong>신규 부동산 등록:</strong> 좌측 메뉴 슬라이드 바 상단의 <code>[+ 신규 추가]</code> 버튼을 통해 새 건물 ID, 명칭, 주소를 등록하면 해당 부동산 전용 29개실 및 수납 장부가 자동 생성됩니다.</li>
+        <li><strong>메뉴 위치:</strong> 메인 화면 좌측 상단 햄버거 메뉴(<code>[☰]</code>) 터치 ➔ <strong><code>[⚡ 건물별 월 수납 일괄 납입 처리]</code></strong> 선택.</li>
+        <li><strong>4단계 맞춤 설정 옵션:</strong>
+          <div style="margin-top: 0.6rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.75rem;">
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 0.8rem; border-radius: 8px;">
+              <strong style="color: #38bdf8;">① 대상 건물 선택</strong><br>
+              <span style="font-size: 0.85rem; color: #cbd5e1;">전체 건물 일괄 처리 또는 현재 관리 중인 특정 건물(신비주택, 시크빌, 선호빌 등)을 자유롭게 지정.</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 0.8rem; border-radius: 8px;">
+              <strong style="color: #34d399;">② 대상 연도 선택</strong><br>
+              <span style="font-size: 0.85rem; color: #cbd5e1;">과거 장부 복원용 <code>2025년</code>, 현재 운영용 <code>2026년</code>, 미래 회계연도 <code>2027년</code> 등 원하는 연도를 선택.</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 0.8rem; border-radius: 8px;">
+              <strong style="color: #fbbf24;">③ 수납 대상 기간 선택</strong><br>
+              <span style="font-size: 0.85rem; color: #cbd5e1;">• <strong>당월만:</strong> 선택된 특정 1개월분만 일괄 완납.<br>• <strong>1월~당월 누적:</strong> 연초부터 현재까지의 미납분 일괄 완납.<br>• <strong>1~12월 연간 전체:</strong> 1년 12개월분 전체를 일괄 전산 생성(2025년 전체 세무자료 즉시 구축에 최적).<br>• <strong>직접 기간 지정:</strong> 시작월과 종료월을 직접 설정.</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 0.8rem; border-radius: 8px;">
+              <strong style="color: #c084fc;">④ 납입일자 산정 방식</strong><br>
+              <span style="font-size: 0.85rem; color: #cbd5e1;">• <strong>각 호실별 계약 약정일 자동 산출 (권장):</strong> 호실마다 서로 다른 계약 납부일(예: 5일, 10일, 25일)을 계약서에서 읽어와 정확한 실제 일자(예: 2025-05-25)로 기록.<br>• <strong>특정 납부일로 일괄 지정:</strong> 회계 기준일(예: 말일 31일 등)로 전 호실을 동일하게 기록.</span>
+            </div>
+          </div>
+        </li>
+        <li style="margin-top: 0.8rem;"><strong>🛡️ 전입일 이전 데이터 보호 (가짜 체납 방지):</strong> 계약 전입일(<code>move_in_date</code>) 이전 기간은 허위 수납이나 가짜 체납이 생성되지 않도록 시스템이 자동으로 제외하여 데이터 무결성을 보장합니다.</li>
+        <li><strong>✍️ 일괄 처리 후 개별 호실 금액 수정:</strong> 일괄 수납 처리 후 특정 호실에 월세 할인이나 특이 사항이 있는 경우, 해당 호실 상세 모달에서 언제든 개별 금액 및 납부 상태를 자유롭게 수정할 수 있습니다.</li>
+        <li><strong>📊 실시간 프로그레스 바 & 리포트:</strong> 수납 처리 진행률이 실시간 게이지 바로 표시되며, 총 처리 건수, 이미 완납/전입전 제외 건수, 실패 건수를 상세히 보고합니다.</li>
       </ul>
     </section>
 
-    <!-- 4. 전출자 1년 보존 및 부가가치세(VAT) 기간별 산출 -->
+    <!-- 4. 다중 부동산 선택 및 관리 -->
     <section class="section-card">
-      <h2 class="section-title">📊 4. 전출자 1년 보존 & 부가가치세(VAT) 신고 연동</h2>
+      <h2 class="section-title">🏢 4. 다중 부동산(건물) 선택 및 관리</h2>
       <ul>
-        <li><strong>전출자 1년 법정보존:</strong> 세입자가 퇴실(전출)하더라도 전출일로부터 <strong>1년간 DB(integrat.db)에 의무 보존</strong>되며, 좌측 메뉴의 <code>[🗂️ 전출자 1년 보존 이력]</code>에서 보존기한과 계약 내역을 언제든 열람할 수 있습니다.</li>
-        <li><strong>고밀도 엑셀표 & 호실 앞 체크박스:</strong> 부가가치세 산출 화면은 여백을 최소화한 <strong>엑셀 스프레드시트 서식</strong>으로 구성되어 있으며, 각 호실 번호 바로 앞에 <code>[✓] 체크박스</code>(헤더에는 마스터 전체선택 체크박스)가 배치되어 산출 대상 포함 여부를 즉시 확인하고 조정할 수 있습니다.</li>
-        <li><strong>호·원 단위 생략으로 칸 너비 절약:</strong> 불필요한 '호', '원' 단위를 생략하고 상단에 <code>(단위: 원)</code>을 표기하여 가로 스크롤 부담 없이 한눈에 데이터가 들어오도록 최적화되었습니다.</li>
-        <li><strong>부가가치세 완벽 산출:</strong> 부가세 기간(1기 1~6월, 2기 7~12월) 동안 세입자가 교체되었더라도 이전 세입자의 납부 내역이 유실되지 않고 공급가액(÷1.1)과 부가세(10%)에 100% 합산 집계됩니다.</li>
+        <li><strong>부동산 전환:</strong> 상단 헤더 중앙의 <code>[🏢 건물명 ▾]</code> 또는 좌측 슬라이드 바에서 <strong>신비주택</strong>, <strong>시크빌</strong>, <strong>선호빌</strong> 등 관리 중인 여러 건물을 원터치로 전환할 수 있습니다.</li>
+        <li><strong>신규 부동산 등록:</strong> 좌측 메뉴 슬라이드 바 상단의 <code>[+ 신규 추가]</code> 버튼을 통해 새 건물 ID, 명칭, 주소를 등록하면 해당 부동산 전용 호실 및 수납 장부가 자동 생성됩니다.</li>
       </ul>
     </section>
 
-    <!-- 5. 엑셀 일괄 입력 & AI 스마트 컬럼 매핑 -->
+    <!-- 5. 부가가치세(VAT) & 종합소득세 신고 집계 -->
     <section class="section-card">
-      <h2 class="section-title">📑 5. 엑셀 데이터 일괄 입력 & AI 스마트 컬럼 매핑</h2>
+      <h2 class="section-title">📊 5. 부가가치세(VAT) & 종합소득세 신고 집계 (국세청 세무 신고 연동)</h2>
+      <p style="color: #cbd5e1; font-size: 0.92rem;">
+        부동산 임대업의 필수 세무 일정인 <strong>1월 부가세 확정신고</strong>, <strong>7월 부가세 확정신고</strong>, <strong>5월 종합소득세 확정신고</strong>를 단 한 번의 클릭으로 국세청 홈택스 제출 양식에 맞추어 자동 산출합니다.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>세무 신고 항목</th>
+            <th>신고 및 납부 기간</th>
+            <th>과세 대상 기간</th>
+            <th>시스템 원터치 지원 버튼</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>1월 부가가치세 확정신고</strong></td>
+            <td>매년 1월 1일 ~ 1월 25일</td>
+            <td><strong>직전년도 7월 1일 ~ 12월 31일 (제2기)</strong></td>
+            <td><code>[1월 부가세 (전년 7~12월 2기)]</code></td>
+          </tr>
+          <tr>
+            <td><strong>7월 부가가치세 확정신고</strong></td>
+            <td>매년 7월 1일 ~ 7월 25일</td>
+            <td><strong>당해연도 1월 1일 ~ 6월 30일 (제1기)</strong></td>
+            <td><code>[7월 부가세 (금년 1~6월 1기)]</code></td>
+          </tr>
+          <tr>
+            <td><strong>5월 종합소득세 확정신고</strong></td>
+            <td>매년 5월 1일 ~ 5월 31일</td>
+            <td><strong>직전년도 1월 1일 ~ 12월 31일 (연간 전체)</strong></td>
+            <td><code>[📑 5월 종합소득세 (전년 1~12월)]</code></td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top: 1rem;">
+        <ul>
+          <li><strong>다년도 데이터베이스(integrat.db) 영구 보존:</strong> <code>2025년도 1~12월 전체 수납 데이터</code>와 <code>2026년도 당해연도 데이터</code>가 데이터베이스에 안전하게 영구 저장되어 있으며, 상단 연도 선택 드롭다운(<code>2025년</code>, <code>2026년</code>, <code>2027년</code>)을 통해 언제든 즉시 조회할 수 있습니다.</li>
+          <li><strong>전출자 1년 법정보존 데이터 자동 결합:</strong> 과세 기간 도중 세입자가 퇴실하고 신규 세입자가 입주했더라도, 전출자의 이전 납부 실적과 현 세입자의 납부 실적이 호실별/월별로 누락 없이 정확하게 합산 집계됩니다.</li>
+          <li><strong>고밀도 엑셀 스프레드시트 서식:</strong> 각 호실 번호 바로 앞에 <code>[✓] 체크박스</code>(헤더 마스터 체크박스 포함)가 제공되어 특정 호실을 신고 대상에서 즉시 제외하거나 포함할 수 있습니다.</li>
+          <li><strong>공급가액 및 부가세 자동 분리:</strong> 입력된 월세 총액에서 공급가액(금액 ÷ 1.1)과 부가가치세(10%)를 원 단위까지 정밀하게 자동 분리 산출합니다.</li>
+          <li><strong>엑셀(CSV) 다운로드 및 A4 인쇄 / PDF 저장:</strong> 우측 상단의 <code>[📥 엑셀(CSV) 다운로드]</code> 및 <code>[🖨️ 인쇄 / PDF 저장]</code> 버튼을 통해 세무사 사무소 제출용 및 국세청 홈택스 첨부용 파일을 즉시 생성합니다.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 6. 엑셀 일괄 입력 & AI 스마트 컬럼 매핑 -->
+    <section class="section-card">
+      <h2 class="section-title">📑 6. 엑셀 데이터 일괄 입력 & AI 스마트 컬럼 매핑</h2>
       <ul>
         <li><strong>다양한 엑셀 서식 100% 수용:</strong> 부동산마다 '방번호', '호수', '입주자', '월차임', '보증금(만원)' 등 서로 다른 열 제목을 사용하더라도, <strong>AI 스마트 매퍼가 시스템 10대 핵심 항목으로 자동 인식 및 매칭</strong>합니다.</li>
         <li><strong>🧬 데이터 패턴 기반 AI 휴리스틱 추론:</strong> 헤더 텍스트뿐만 아니라 실제 입력된 셀 데이터 패턴(예: 010 연락처 정규식, 101~703 호실 범위, 보증금/월세 금액대, 선후불 키워드, 날짜 포맷)을 복합 분석하여 <strong>AI 매핑 신뢰도(예: 99%)</strong>를 산출하고 최적의 컬럼을 자동 추천합니다.</li>
@@ -316,11 +388,11 @@
       </ul>
     </section>
 
-    <!-- 6. 보안 관리자 로그인 & 권한 매트릭스 -->
+    <!-- 7. 보안 관리자 로그인 & 건물별 권한 격리 매트릭스 -->
     <section class="section-card">
-      <h2 class="section-title">🛡️ 6. 보안 관리자 로그인 & 권한 매트릭스</h2>
+      <h2 class="section-title">🛡️ 7. 보안 관리자 로그인 & 건물별 권한 격리 매트릭스</h2>
       <p style="color: #cbd5e1; font-size: 0.92rem;">
-        본 시스템은 무단 접근 방지 및 지점별 데이터 격리를 위해 <strong>보안 인증 게이트</strong>를 기본 적용합니다. 미인증 상태에서는 메인 화면이 잠기며 아래 계정을 통해 접속할 수 있습니다.
+        본 시스템은 무단 접근 방지 및 지점별 데이터 상호 격리를 위해 <strong>건물별 전용 보안 인증 게이트</strong>를 적용합니다. 각 건물 관리자는 인가된 자기 건물의 데이터만 열람 및 관리할 수 있습니다.
       </p>
       <table>
         <thead>
@@ -328,7 +400,7 @@
             <th>계정 구분</th>
             <th>아이디 / 비밀번호</th>
             <th>권한 역할</th>
-            <th>기능 범위</th>
+            <th>관제 및 접근 가능 건물</th>
           </tr>
         </thead>
         <tbody>
@@ -336,25 +408,37 @@
             <td><strong>본사 총괄 최고관리자</strong></td>
             <td><code>admin</code> / <code>1212</code></td>
             <td><span style="color: #38bdf8; font-weight: bold;">superadmin</span></td>
-            <td>전 지점 관리, 통합 정산, 등업 승인, 지점 생성</td>
+            <td><strong>전체 지점 통합 관제</strong> (신비주택, 시크빌, 선호빌 자유 전환 및 일괄 정산)</td>
           </tr>
           <tr>
-            <td><strong>제1매장 원룸 관리실장</strong></td>
-            <td><code>admin01</code> / <code>1212</code></td>
+            <td><strong>신비주택 관리실장</strong></td>
+            <td><code>sinbi</code> / <code>1212</code></td>
             <td><span style="color: #34d399; font-weight: bold;">branch_admin</span></td>
-            <td>1호관 29개실 실시간 수납, 계약 수정, 지출 장부</td>
+            <td><strong>신비주택 20개실 전용 격리</strong> (타 건물 접근 제한)</td>
           </tr>
           <tr>
-            <td><strong>제2매장 원룸 관리실장</strong></td>
-            <td><code>admin02</code> / <code>1212</code></td>
+            <td><strong>시크빌 관리실장</strong></td>
+            <td><code>chic</code> / <code>1212</code></td>
             <td><span style="color: #34d399; font-weight: bold;">branch_admin</span></td>
-            <td>2호관 29개실 실시간 수납 및 운영 관제</td>
+            <td><strong>시크빌 29개실 전용 격리</strong> (타 건물 접근 제한)</td>
+          </tr>
+          <tr>
+            <td><strong>선호빌 관리실장</strong></td>
+            <td><code>sunho</code> / <code>1212</code></td>
+            <td><span style="color: #34d399; font-weight: bold;">branch_admin</span></td>
+            <td><strong>선호빌 29개실 전용 격리</strong> (타 건물 접근 제한)</td>
+          </tr>
+          <tr>
+            <td><strong>제1매장 / 제2매장 실장</strong></td>
+            <td><code>admin01</code>, <code>admin02</code> / <code>1212</code></td>
+            <td><span style="color: #34d399; font-weight: bold;">branch_admin</span></td>
+            <td>해당 배정 지점 29개실 수납 및 운영</td>
           </tr>
           <tr>
             <td><strong>입주자 / 일반 세입자</strong></td>
             <td><code>tenant</code> / <code>1212</code></td>
             <td><span style="color: #94a3b8;">tenant</span></td>
-            <td>자신의 호실 계약 및 납부 영수증 조회 전용</td>
+            <td>자신의 호실 계약 및 수납 영수증 조회 전용</td>
           </tr>
         </tbody>
       </table>
@@ -388,10 +472,10 @@
         <strong>3. [호실] 전입 (등록 등):</strong> 계약서 사진(OCR) 및 엑셀 붙여넣기 등록 창 열기<br>
         <strong>4. [호실] 수정, 삭제:</strong> 계약 정보 및 호실 상세 정보 수정 창 열기<br>
         <strong>5. [호실] 납입현황 (월별, 1년간):</strong> 해당 호실 12개월 납입 현황 엑셀(CSV) 다운로드 및 A4 인쇄/PDF 준비<br>
-        <strong>6. 일괄 등록:</strong> 29개실 전체 계약대장 사진 및 엑셀 일괄 등록 창 열기<br>
+        <strong>6. 일괄 등록:</strong> 전체 계약대장 사진 및 엑셀 일괄 등록 창 열기<br>
         <strong>7. 만기 확인:</strong> 만기 3일·1·3개월 전 도래 호실 리스트 조회 및 안내문자 순차 발송<br>
         <strong>8. 지출등록:</strong> 당일 수리비, 청소비, 비품비 및 영수증 간편 등록 창 열기<br>
-        <strong>9. 데이터 백업 및 복구:</strong> 29개실 장부+지출+전출자 이력 전체 JSON 백업 다운로드 및 복원<br>
+        <strong>9. 데이터 백업 및 복구:</strong> 장부+지출+전출자 이력 전체 JSON 백업 다운로드 및 복원<br>
         <strong>10. 월별 통계:</strong> 전체 호실의 월별 계약 및 납입 장부 통합 엑셀(CSV) 다운로드<br>
         <strong>11. 부가가치세 (부가세, 부가세 자료 산출):</strong> 홈택스 부가세 신고용 공급가액/세액 집계 및 엑셀 다운로드<br>
         <strong>12. 도움말 (사용법 등):</strong> 공식 시스템 운영 매뉴얼(A4 인쇄/PDF 저장 가능) 새 창 열기
