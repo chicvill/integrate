@@ -722,27 +722,37 @@ class RentService:
         import urllib.request
         import urllib.error
 
+        # 공용 암호화 키 또는 환경변수 로드 (.env.encrypted 암호화 볼트 연동)
         api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            try:
+                from shared.core.vault import load_encrypted_env
+                load_encrypted_env()
+                api_key = os.getenv("GEMINI_API_KEY")
+            except Exception:
+                pass
         
         # Base64 헤더 분리 (data:image/png;base64,... -> raw base64)
         clean_b64 = image_base64
         mime_type = "image/png"
         if "," in clean_b64:
             header, clean_b64 = clean_b64.split(",", 1)
-            if "image/jpeg" in header:
+            if "image/jpeg" in header or "image/jpg" in header:
                 mime_type = "image/jpeg"
             elif "image/webp" in header:
                 mime_type = "image/webp"
 
         if api_key:
             try:
-                # Gemini 1.5 Flash Vision API 직접 호출
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+                # Gemini Flash Latest Vision API 직접 호출
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={api_key}"
                 prompt = (
-                    "이 이미지는 엑셀 또는 표 화면을 캡처한 이미지입니다. "
-                    "표에 포함된 각 행 데이터를 JSON 배열로 추출해주세요. "
+                    "이 이미지는 부동산 임대차 현황표, 종이 장부 또는 엑셀 캡처 이미지입니다. "
+                    "표에 포함된 각 행의 호실번호, 세입자(성명), 보증금, 월세(차임), 관리비, 입주일(전입일), 전화번호(연락처), 비고 등을 "
+                    "JSON 배열로 빠짐없이 추출해주세요. "
                     "각 행 객체는 표의 열 제목을 key로 하고 해당 행의 값을 value로 가져야 합니다. "
-                    "반드시 오직 JSON 배열만 출력하세요. 마크다운이나 다른 설명은 생략하세요. 예: [{\"호실\": 201, \"세입자\": \"홍길동\"}]"
+                    "반드시 오직 유효한 JSON 배열만 출력하세요. 마크다운(```json)이나 다른 설명은 생략하세요. "
+                    "예: [{\"호실\": \"101\", \"세입자\": \"고종훈\", \"보증금\": \"2000000\", \"월세\": \"250000\", \"관리비\": \"80000\", \"연락처\": \"010-4281-6453\"}]"
                 )
                 payload_data = {
                     "contents": [{
@@ -765,10 +775,14 @@ class RentService:
                     data=json.dumps(payload_data).encode("utf-8"),
                     headers={"Content-Type": "application/json"}
                 )
-                with urllib.request.urlopen(req, timeout=15) as response:
+                with urllib.request.urlopen(req, timeout=45) as response:
                     res_body = json.loads(response.read().decode("utf-8"))
-                    text_resp = res_body["candidates"][0]["content"]["parts"][0]["text"]
-                    parsed_rows = json.loads(text_resp)
+                    text_resp = res_body["candidates"][0]["content"]["parts"][0]["text"].strip()
+                    # 마크다운 코드블록 제거
+                    if text_resp.startswith("```"):
+                        text_resp = re.sub(r"^```(?:json)?\s*", "", text_resp)
+                        text_resp = re.sub(r"\s*```$", "", text_resp)
+                    parsed_rows = json.loads(text_resp.strip())
                     if isinstance(parsed_rows, list):
                         return {
                             "success": True,
