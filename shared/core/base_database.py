@@ -35,7 +35,22 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
 
 
 def get_database_url() -> str:
-    # 1. 환경변수(DATABASE_URL 또는 DB_URL) 명시 시 1순위로 즉시 반환
+    # 0. Docker 영구 볼륨(/media)이 마운트되어 있으면 영구 볼륨(/media/integrat.db) 최우선 사용
+    # 컨테이너 내부의 ./integrat.db와 동기화/심볼릭링크하여 모든 접근 경로 단일화
+    media_path = os.getenv("MEDIA_STORAGE_PATH", os.getenv("MEDIA_PATH", "/media"))
+    if os.path.exists(media_path) and os.path.isdir(media_path):
+        media_db = os.path.join(media_path, "integrat.db")
+        if os.path.exists(media_db) and os.path.getsize(media_db) > 0:
+            try:
+                local_app_db = "/app/integrat.db"
+                if os.path.exists(local_app_db) and not os.path.islink(local_app_db):
+                    os.remove(local_app_db)
+                    os.symlink(media_db, local_app_db)
+            except Exception:
+                pass
+            return f"sqlite:///{media_db}"
+
+    # 1. 환경변수(DATABASE_URL 또는 DB_URL) 명시 시 1순위로 즉시 반환 (PostgreSQL 등)
     url = os.getenv("DATABASE_URL") or os.getenv("DB_URL")
     if url:
         return url
@@ -53,13 +68,6 @@ def get_database_url() -> str:
                         break
         except Exception:
             pass
-
-    # 3. Docker 영구 볼륨(/media)이 존재하고 기존 DB가 있으면 integrat.db 우선 사용 (컨테이너 재생성 시 데이터 영구 보존)
-    media_path = os.getenv("MEDIA_STORAGE_PATH", os.getenv("MEDIA_PATH", "/media"))
-    if os.path.exists(media_path) and os.path.isdir(media_path):
-        media_db = os.path.join(media_path, "integrat.db")
-        if os.path.exists(media_db) and os.path.getsize(media_db) > 0:
-            return f"sqlite:///{media_db}"
 
     # 4. 로컬 data 디렉토리 내 앱 전용 DB 우선 탐색 (rent.db 등)
     for cand in ["data/rent.db", "data/integrat.db", "rent.db", "integrat.db"]:
