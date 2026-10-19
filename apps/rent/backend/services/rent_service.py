@@ -851,7 +851,7 @@ class RentService:
         )
         return self.get_room(db, room_number, branch_id)
 
-    def cancel_payment(self, db: Session, room_number: int, month: int, branch_id: str = "main", year: Optional[int] = None) -> Optional[Dict[str, Any]]:
+    def cancel_payment(self, db: Session, room_number: int, month: int, branch_id: str = "main", year: Optional[int] = None, note: Optional[str] = "납부 취소") -> Optional[Dict[str, Any]]:
         branch_id = self.branch_service.normalize_branch_id(branch_id)
         self.ensure_default_seed(db, branch_id)
         PaymentService.cancel_payment(
@@ -859,7 +859,8 @@ class RentService:
             room_number=room_number,
             month=month,
             branch_id=branch_id,
-            year=year
+            year=year,
+            note=note
         )
         return self.get_room(db, room_number, branch_id)
 

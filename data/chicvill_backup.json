@@ -359,8 +359,8 @@
             "paid_date": "",
             "rent_amount": 0,
             "maintenance_amount": 0,
-            "note": "",
-            "tenant_name": "배종봉"
+            "note": "공실",
+            "tenant_name": "공실"
           },
           "2025-6": {
             "year": 2025,
@@ -10863,8 +10863,8 @@
             "paid_date": "",
             "rent_amount": 0,
             "maintenance_amount": 0,
-            "note": "",
-            "tenant_name": "주인세대"
+            "note": "공실",
+            "tenant_name": "공실"
           },
           "2025-11": {
             "year": 2025,
@@ -10873,8 +10873,8 @@
             "paid_date": "",
             "rent_amount": 0,
             "maintenance_amount": 0,
-            "note": "",
-            "tenant_name": "주인세대"
+            "note": "공실",
+            "tenant_name": "공실"
           },
           "2025-1": {
             "year": 2025,
@@ -10883,8 +10883,8 @@
             "paid_date": "",
             "rent_amount": 0,
             "maintenance_amount": 0,
-            "note": "",
-            "tenant_name": "주인세대"
+            "note": "공실",
+            "tenant_name": "공실"
           },
           "2025-2": {
             "year": 2025,
@@ -10893,8 +10893,8 @@
             "paid_date": "",
             "rent_amount": 0,
             "maintenance_amount": 0,
-            "note": "",
-            "tenant_name": "주인세대"
+            "note": "공실",
+            "tenant_name": "공실"
           },
           "2025-3": {
             "year": 2025,
@@ -10903,8 +10903,8 @@
             "paid_date": "",
             "rent_amount": 0,
             "maintenance_amount": 0,
-            "note": "",
-            "tenant_name": "주인세대"
+            "note": "공실",
+            "tenant_name": "공실"
           },
           "2025-4": {
             "year": 2025,
@@ -10913,8 +10913,8 @@
             "paid_date": "",
             "rent_amount": 0,
             "maintenance_amount": 0,
-            "note": "",
-            "tenant_name": "주인세대"
+            "note": "공실",
+            "tenant_name": "공실"
           },
           "2025-5": {
             "year": 2025,
@@ -10923,8 +10923,8 @@
             "paid_date": "",
             "rent_amount": 0,
             "maintenance_amount": 0,
-            "note": "",
-            "tenant_name": "주인세대"
+            "note": "공실",
+            "tenant_name": "공실"
           },
           "2025-6": {
             "year": 2025,
@@ -10933,8 +10933,8 @@
             "paid_date": "",
             "rent_amount": 0,
             "maintenance_amount": 0,
-            "note": "",
-            "tenant_name": "주인세대"
+            "note": "공실",
+            "tenant_name": "공실"
           },
           "2025-7": {
             "year": 2025,
@@ -10943,8 +10943,8 @@
             "paid_date": "",
             "rent_amount": 0,
             "maintenance_amount": 0,
-            "note": "",
-            "tenant_name": "주인세대"
+            "note": "공실",
+            "tenant_name": "공실"
           },
           "2025-8": {
             "year": 2025,
@@ -10953,8 +10953,8 @@
             "paid_date": "",
             "rent_amount": 0,
             "maintenance_amount": 0,
-            "note": "",
-            "tenant_name": "주인세대"
+            "note": "공실",
+            "tenant_name": "공실"
           },
           "2025-9": {
             "year": 2025,
@@ -10963,8 +10963,8 @@
             "paid_date": "",
             "rent_amount": 0,
             "maintenance_amount": 0,
-            "note": "",
-            "tenant_name": "주인세대"
+            "note": "공실",
+            "tenant_name": "공실"
           },
           "2025-10": {
             "year": 2025,
@@ -10973,8 +10973,8 @@
             "paid_date": "",
             "rent_amount": 0,
             "maintenance_amount": 0,
-            "note": "",
-            "tenant_name": "주인세대"
+            "note": "공실",
+            "tenant_name": "공실"
           }
         },
         "tenant_histories": []

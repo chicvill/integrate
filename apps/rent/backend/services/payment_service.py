@@ -77,10 +77,10 @@ def evaluate_payment_status(
     is_future = (y > cur_year) or (y == cur_year and m > cur_month)
 
     if is_before_move_in:
-        # 전입 이전: 이전 세입자 데이터 있으면 완납 보존, 없으면 미납
+        # 전입 이전: 이전 세입자 데이터 있으면 완납 보존, 없으면 공실 (퇴실 후 다음 입주월 사이 공실 원칙)
         if has_prev_hist:
             return True, "이전 세입자 정상 입금 (전출)"
-        return False, "전입 이전 (기록 없음/미납)"
+        return False, "공실"
 
     if is_move_in_month:
         # 입주월: 월세/후불인 경우 익월 청구 원칙 적용 (가짜 체납 Ghost Overdue 방지)
@@ -284,11 +284,15 @@ class PaymentService:
         room_number: int,
         month: int,
         branch_id: str = "main",
-        year: Optional[int] = None
+        year: Optional[int] = None,
+        note: Optional[str] = "납부 취소"
     ) -> bool:
-        """수납 취소 (미납으로 환원 및 중복 레코드 원천 제거)"""
+        """수납 취소 또는 공실/미납 전환 (중복 레코드 원천 제거)"""
         branch_id = normalize_branch_id(branch_id)
         pay_year = year or datetime.now().year
+        effective_note = note or "납부 취소"
+        is_vacancy = bool("공실" in effective_note)
+
         pays = db.query(RentPayment).filter(
             RentPayment.branch_id == branch_id,
             RentPayment.room_number == room_number,
@@ -302,26 +306,35 @@ class PaymentService:
                 RentPayment.month == month
             ).all()
 
+        room = db.query(RentRoom).filter(
+            RentRoom.branch_id == branch_id,
+            RentRoom.room_number == room_number
+        ).first()
+
         if pays:
             primary = pays[0]
             primary.year = pay_year
             primary.month = month
             primary.paid = False
             primary.paid_date = ""
-            primary.note = "납부 취소"
+            primary.note = effective_note
+            if is_vacancy:
+                primary.tenant_name = "공실"
+                primary.rent_amount = 0
+                primary.maintenance_amount = 0
+            elif room:
+                primary.tenant_name = room.name or ""
+                primary.rent_amount = 0 if room.lease_type == "전세" else room.rent
+                primary.maintenance_amount = room.maintenance
             # 중복 레코드는 모두 삭제하여 단일성 유지
             for extra in pays[1:]:
                 db.delete(extra)
             db.commit()
             return True
         else:
-            # DB에 레코드가 아직 없는 경우 명시적 미납 레코드 생성
-            room = db.query(RentRoom).filter(
-                RentRoom.branch_id == branch_id,
-                RentRoom.room_number == room_number
-            ).first()
             if room:
-                def_rent = 0 if room.lease_type == "전세" else room.rent
+                def_rent = 0 if (is_vacancy or room.lease_type == "전세") else room.rent
+                def_maint = 0 if is_vacancy else room.maintenance
                 new_pay = RentPayment(
                     branch_id=branch_id,
                     room_number=room_number,
@@ -330,10 +343,10 @@ class PaymentService:
                     paid=False,
                     paid_date="",
                     rent_amount=def_rent,
-                    maintenance_amount=room.maintenance,
-                    note="납부 취소",
-                    tenant_name=room.name or "",
-                    tenant_id_number=room.id_number or "",
+                    maintenance_amount=def_maint,
+                    note=effective_note,
+                    tenant_name="공실" if is_vacancy else (room.name or ""),
+                    tenant_id_number="",
                     is_previous_tenant=False
                 )
                 db.add(new_pay)

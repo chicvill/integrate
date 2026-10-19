@@ -11428,8 +11428,8 @@ const paymentsApi = {
       rent_amount: rentAmount,
       maintenance_amount: maintenanceAmount
     }, { branch_id: branchId }),
-  cancel: (roomNumber, month, branchId = 'main', year = 2026) =>
-    http.post(`/rooms/${roomNumber}/cancel-payment`, { month, year }, { branch_id: branchId }),
+  cancel: (roomNumber, month, branchId = 'main', year = 2026, note = '납부 취소') =>
+    http.post(`/rooms/${roomNumber}/cancel-payment`, { month, year, note }, { branch_id: branchId }),
   matrixImport: (matrixRooms, branchId = 'main') =>
     http.post('/payments/matrix-import', { rooms: matrixRooms }, { branch_id: branchId }),
   batchCollect: (payload) =>
@@ -12717,9 +12717,10 @@ function renderPastHistorySection(room) {
       }
     }
 
-    // 기존 결제 기록이 있고 세입자명이 현재 세입자와 일치하는 경우도 현재 세입자로 인정 (이전 연도 거주 포함)
-    const matchesCurrentName = Boolean(room.name && existingP && existingP.tenant_name === room.name);
-    const isCurrentTenant = (Boolean(room.name) && hasMoveIn && (y > inYear || (y === inYear && m >= inMonth))) || matchesCurrentName;
+    // 기존 결제 기록이 있고 세입자명이 현재 세입자와 일치하며 '완납'인 경우(이전 계약 연속 완납)에만 현재 세입자로 인정
+    const isDuringContract = Boolean(room.name && hasMoveIn && (y > inYear || (y === inYear && m >= inMonth)));
+    const isPriorPaidByCurrent = Boolean(room.name && existingP && existingP.paid && existingP.tenant_name === room.name);
+    const isCurrentTenant = isDuringContract || isPriorPaidByCurrent;
 
     // 2. 전출자 이력 매칭
     const histories = room.tenant_histories || [];
@@ -12753,7 +12754,7 @@ function renderPastHistorySection(room) {
           }
         }
       }
-      if (!matchedHist && existingP && existingP.tenant_name && existingP.tenant_name !== '공실' && existingP.tenant_name !== room.name) {
+      if (!matchedHist && existingP && existingP.tenant_name && existingP.tenant_name !== '공실' && existingP.tenant_name !== room.name && existingP.paid) {
         matchedHist = {
           name: existingP.tenant_name,
           rent: existingP.rent_amount !== undefined ? existingP.rent_amount : (room.rent || 0),
@@ -12764,11 +12765,15 @@ function renderPastHistorySection(room) {
     }
 
     // 3. 공실 여부 판정:
-    // 기존 결제 기록에 실입금(paid) 또는 실세입자가 있거나 거주 기간이면 공실 아님.
-    // 기존 결제 기록에 note === '공실'이거나, 거주 기간이 아니고 실입금/세입자도 없으면 공실.
-    const hasRecordedPayment = Boolean(existingP && (existingP.paid || (existingP.tenant_name && existingP.tenant_name !== '공실')));
-    const isExplicitVacancy = Boolean(existingP && (existingP.note === '공실' || existingP.tenant_name === '공실'));
-    const isVacancy = isExplicitVacancy || (!isCurrentTenant && !matchedHist && !hasRecordedPayment);
+    // - 명시적 공실: note 또는 tenant_name에 '공실'이 지정된 경우
+    // - 전입월 이전 미납: 현재 세입자 전입일 이전(y < inYear || (y === inYear && m < inMonth))이면서 완납이 아니고 전출자 거주 기간도 아니면 100% 공실!
+    //   (이전 임차인 퇴실 후 공실 발생 시 다음 입주월 사이는 모두 공실 원칙)
+    // - 현재 세입자도 아니고 전출자도 아니며 실입금 완납 기록도 없는 경우: 공실!
+    const isExplicitVacancy = Boolean(existingP && (existingP.note === '공실' || existingP.tenant_name === '공실' || (typeof existingP.note === 'string' && existingP.note.includes('공실'))));
+    const isBeforeMoveInUnpaid = Boolean(hasMoveIn && (y < inYear || (y === inYear && m < inMonth)) && (!existingP || !existingP.paid) && !matchedHist);
+    const hasRecordedPaid = Boolean(existingP && existingP.paid);
+
+    const isVacancy = isExplicitVacancy || isBeforeMoveInUnpaid || (!isCurrentTenant && !matchedHist && !hasRecordedPaid);
 
     // 납부 객체 p 준비
     let p = existingP ? { ...existingP } : {
@@ -12810,7 +12815,7 @@ function renderPastHistorySection(room) {
       const histJeonse = (matchedHist.lease_type === '전세');
       rAmt = histJeonse ? 0 : (p.rent_amount !== undefined ? p.rent_amount : (matchedHist.rent || 0));
       mAmt = p.maintenance_amount !== undefined ? p.maintenance_amount : (matchedHist.maintenance || 0);
-    } else if (existingP && existingP.tenant_name) {
+    } else if (existingP && existingP.tenant_name && existingP.paid) {
       displayName = existingP.tenant_name;
       isPrev = (existingP.tenant_name !== room.name);
       rAmt = p.rent_amount !== undefined ? p.rent_amount : (room.rent || 0);
@@ -12872,33 +12877,50 @@ function renderPastHistorySection(room) {
 
     const isMoveInPostpaid = Boolean(isCurrentTenant && (y === inYear && m === inMonth && (room.pay_timing === '후불' || !room.pay_timing)));
 
-    // 상태 배지 생성
+    // 상태 배지 생성 (공실/미납/입주월은 클릭 시 즉시 공실↔미납 전환 지원)
     let statusHtml = '';
     if (isVacancy) {
-      statusHtml = `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap bg-slate-800 text-slate-400 border border-slate-700">공실</span>`;
+      statusHtml = `<button type="button" class="btn-toggle-status-past inline-block px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap bg-slate-800 text-slate-400 border border-slate-700 hover:border-slate-500 transition cursor-pointer shadow-xs" title="클릭하여 미납으로 전환" data-year="${y}" data-month="${m}" data-status="공실">공실</button>`;
     } else if (p.paid) {
       statusHtml = `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">완납</span>`;
     } else if (isMoveInPostpaid) {
-      statusHtml = `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap bg-amber-500/25 text-amber-300 border border-amber-500/40" title="후불 입주월은 익월 납부 대상입니다">입주월</span>`;
+      statusHtml = `<button type="button" class="btn-toggle-status-past inline-block px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap bg-amber-500/25 text-amber-300 border border-amber-500/40 hover:border-amber-400 transition cursor-pointer shadow-xs" title="후불 입주월 (클릭하여 공실로 전환)" data-year="${y}" data-month="${m}" data-status="입주월">입주월</button>`;
     } else {
-      statusHtml = `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap bg-rose-500/20 text-rose-300 border border-rose-500/30">미납</span>`;
+      statusHtml = `<button type="button" class="btn-toggle-status-past inline-block px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:border-rose-400 transition cursor-pointer shadow-xs" title="클릭하여 공실로 전환" data-year="${y}" data-month="${m}" data-status="미납">미납</button>`;
     }
 
-    // 조작 버튼 생성 (공실은 버튼 없음, 미납은 수납 버튼, 완납은 취소 버튼)
+    // 조작 버튼 생성:
+    // - 공실: [미납] 청구 복원 및 [수납] 처리 지원
+    // - 완납: [취소] 버튼
+    // - 미납/입주월: [수납] 처리 및 [공실] 즉시 전환 지원
     let actionHtml = '';
     if (isVacancy) {
-      actionHtml = `<span class="text-slate-600 font-mono text-[11px]">-</span>`;
+      actionHtml = `
+        <div class="inline-flex items-center justify-center gap-1">
+          <button type="button" class="btn-set-unpay-past inline-block px-1.5 py-0.5 rounded text-[10px] font-normal bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 transition cursor-pointer shadow-xs whitespace-nowrap" title="공실 해제 및 미납으로 전환" data-year="${y}" data-month="${m}">
+            미납
+          </button>
+          <button type="button" class="btn-pay-past inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-900/60 hover:bg-cyan-800 text-cyan-300 border border-cyan-700/60 transition cursor-pointer shadow-xs whitespace-nowrap" title="해당 월 수납 처리" data-year="${y}" data-month="${m}">
+            수납
+          </button>
+        </div>
+      `;
     } else if (p.paid) {
       actionHtml = `
-        <button type="button" class="btn-cancel-past inline-block px-1.5 py-0.5 rounded text-[10px] font-normal bg-slate-800/80 hover:bg-rose-950/50 text-slate-400 hover:text-rose-300 border border-slate-700/60 hover:border-rose-500/40 transition whitespace-nowrap cursor-pointer shadow-xs" data-year="${y}" data-month="${m}">
+        <button type="button" class="btn-cancel-past inline-block px-2 py-0.5 rounded text-[10px] font-normal bg-slate-800/80 hover:bg-rose-950/50 text-slate-400 hover:text-rose-300 border border-slate-700/60 hover:border-rose-500/40 transition whitespace-nowrap cursor-pointer shadow-xs" data-year="${y}" data-month="${m}">
           취소
         </button>
       `;
     } else {
       actionHtml = `
-        <button type="button" class="btn-pay-past inline-block px-2 py-0.5 rounded text-[11px] bg-cyan-600 hover:bg-cyan-500 text-white font-bold transition shadow-xs whitespace-nowrap cursor-pointer" data-year="${y}" data-month="${m}">
-          수납
-        </button>
+        <div class="inline-flex items-center justify-center gap-1">
+          <button type="button" class="btn-pay-past inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-600 hover:bg-cyan-500 text-white transition shadow-xs whitespace-nowrap cursor-pointer" title="수납 처리" data-year="${y}" data-month="${m}">
+            수납
+          </button>
+          <button type="button" class="btn-set-vacancy-past inline-block px-1.5 py-0.5 rounded text-[10px] font-normal bg-slate-800/90 hover:bg-amber-950/60 text-slate-400 hover:text-amber-300 border border-slate-700/70 hover:border-amber-500/50 transition cursor-pointer shadow-xs whitespace-nowrap" title="공실로 전환" data-year="${y}" data-month="${m}">
+            공실
+          </button>
+        </div>
       `;
     }
 
@@ -12967,6 +12989,31 @@ function renderPastHistorySection(room) {
     btn.onclick = (e) => {
       e.stopPropagation();
       handleProcessPayment(rNum, parseInt(btn.dataset.month, 10), parseInt(btn.dataset.year || currentYear, 10));
+    };
+  });
+  tbody.querySelectorAll('.btn-set-vacancy-past').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      handleSetPastVacancy(rNum, parseInt(btn.dataset.month, 10), parseInt(btn.dataset.year || currentYear, 10));
+    };
+  });
+  tbody.querySelectorAll('.btn-set-unpay-past').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      handleSetPastUnpaid(rNum, parseInt(btn.dataset.month, 10), parseInt(btn.dataset.year || currentYear, 10));
+    };
+  });
+  tbody.querySelectorAll('.btn-toggle-status-past').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const status = btn.dataset.status;
+      const yr = parseInt(btn.dataset.year, 10);
+      const mo = parseInt(btn.dataset.month, 10);
+      if (status === '공실') {
+        handleSetPastUnpaid(rNum, mo, yr);
+      } else {
+        handleSetPastVacancy(rNum, mo, yr);
+      }
     };
   });
 }
@@ -13664,6 +13711,8 @@ if (typeof window !== 'undefined') {
   window.openEditSelectedBranchModal = openEditSelectedBranchModal;
   window.openEditBranchModal = openEditBranchModal;
   window.handleEditBranchSubmit = handleEditBranchSubmit;
+  window.handleSetPastVacancy = handleSetPastVacancy;
+  window.handleSetPastUnpaid = handleSetPastUnpaid;
 }
 
 // ── 수납 처리 비동기 액션 ──
@@ -13783,6 +13832,97 @@ async function handleCancelPayment(roomNum, month, year = currentYear) {
   } catch (err) {
     console.error("납부 취소 실패:", err);
     alert("납부 취소 실패: " + err.message);
+  }
+}
+
+// ── 공실 전환 액션 (수동으로 공실 지정) ──
+async function handleSetPastVacancy(roomNum, month, year = currentYear) {
+  try {
+    const pKey = `${year}-${month}`;
+    const r = state.rooms[roomNum];
+
+    // 1. 낙관적 UI 즉각 반영 (공실로 전환)
+    if (r && r.payments) {
+      const existing = r.payments[pKey] || (year === currentYear ? r.payments[month] : null) || {};
+      const vacancyPay = {
+        ...existing,
+        month,
+        year,
+        paid: false,
+        paid_date: "",
+        rent_amount: 0,
+        maintenance_amount: 0,
+        note: "공실",
+        tenant_name: "공실",
+        is_previous_tenant: false
+      };
+      r.payments[pKey] = vacancyPay;
+      if (year === currentYear) {
+        r.payments[month] = vacancyPay;
+      }
+    }
+    saveLocalFallback();
+    renderAll();
+
+    // 2. 서버 영구 동기화
+    if (state.isOnline) {
+      const res = await apiCancelPayment(roomNum, month, state.currentBranch, year, "공실");
+      if (res) {
+        state.rooms[roomNum] = res;
+        saveLocalFallback();
+        renderAll();
+      }
+    }
+  } catch (err) {
+    console.error("공실 전환 실패:", err);
+    alert("공실 전환 실패: " + err.message);
+  }
+}
+
+// ── 미납 전환 액션 (공실 해제 및 미납 청구 복원) ──
+async function handleSetPastUnpaid(roomNum, month, year = currentYear) {
+  try {
+    const pKey = `${year}-${month}`;
+    const r = state.rooms[roomNum];
+    const defRent = (r && r.lease_type === "전세") ? 0 : (r ? r.rent : 0);
+    const defMaint = (r ? r.maintenance : 0);
+    const tName = (r && r.name) ? r.name : "";
+
+    // 1. 낙관적 UI 즉각 반영 (미납 청구 복원)
+    if (r && r.payments) {
+      const existing = r.payments[pKey] || (year === currentYear ? r.payments[month] : null) || {};
+      const unpaidPay = {
+        ...existing,
+        month,
+        year,
+        paid: false,
+        paid_date: "",
+        rent_amount: defRent,
+        maintenance_amount: defMaint,
+        note: "미납",
+        tenant_name: tName,
+        is_previous_tenant: false
+      };
+      r.payments[pKey] = unpaidPay;
+      if (year === currentYear) {
+        r.payments[month] = unpaidPay;
+      }
+    }
+    saveLocalFallback();
+    renderAll();
+
+    // 2. 서버 영구 동기화
+    if (state.isOnline) {
+      const res = await apiCancelPayment(roomNum, month, state.currentBranch, year, "미납");
+      if (res) {
+        state.rooms[roomNum] = res;
+        saveLocalFallback();
+        renderAll();
+      }
+    }
+  } catch (err) {
+    console.error("미납 전환 실패:", err);
+    alert("미납 전환 실패: " + err.message);
   }
 }
 

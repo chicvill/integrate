@@ -248,13 +248,14 @@ async def cancel_payment(
     branch_id: str = Query("main"),
     db: Session = Depends(get_db)
 ):
-    """납부 취소 (미납으로 환원)"""
+    """납부 취소 (미납 또는 공실 환원)"""
     updated = service.cancel_payment(
         db,
         room_number=room_number,
         month=payload.month,
         branch_id=branch_id,
-        year=payload.year
+        year=payload.year,
+        note=payload.note
     )
     if not updated:
         raise HTTPException(status_code=404, detail=f"{room_number}호를 찾을 수 없습니다.")

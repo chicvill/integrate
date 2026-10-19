@@ -120,8 +120,8 @@ export const paymentsApi = {
       rent_amount: rentAmount,
       maintenance_amount: maintenanceAmount
     }, { branch_id: branchId }),
-  cancel: (roomNumber, month, branchId = 'main', year = 2026) =>
-    http.post(`/rooms/${roomNumber}/cancel-payment`, { month, year }, { branch_id: branchId }),
+  cancel: (roomNumber, month, branchId = 'main', year = 2026, note = '납부 취소') =>
+    http.post(`/rooms/${roomNumber}/cancel-payment`, { month, year, note }, { branch_id: branchId }),
   matrixImport: (matrixRooms, branchId = 'main') =>
     http.post('/payments/matrix-import', { rooms: matrixRooms }, { branch_id: branchId }),
   batchCollect: (payload) =>
