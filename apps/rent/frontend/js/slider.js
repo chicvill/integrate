@@ -44,18 +44,18 @@ export function switchRoomSlideView(view, animate = true) {
         const y = (p && p.year) ? p.year : (k.includes('-') ? parseInt(k.split('-')[0], 10) : null);
         return y !== null && y <= lastY && (p.paid || (p.rent_amount && p.rent_amount > 0) || p.tenant_name || p.note);
       }));
-      navCurrent.textContent = hasPast ? `과거 납부 내역 (${lastY}.01 ~ 현재)` : `과거 납부 내역 (${currentYear}.01 ~ 현재)`;
+      navCurrent.textContent = hasPast ? `수납내역 (${lastY}.01 ~ 현재)` : `수납내역 (${currentYear}.01 ~ 현재)`;
       navCurrent.className = 'font-bold text-purple-300 text-[11px] truncate';
     }
     if (navDotMain) navDotMain.className = 'w-1.5 h-1.5 rounded-full bg-slate-600';
     if (navDotPast) navDotPast.className = 'w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse';
-    if (navHintAction) navHintAction.textContent = '우로 드래그 (본래화면)';
+    if (navHintAction) navHintAction.textContent = '우로 드래그 (처음으로)';
     if (navHintArrow) {
       navHintArrow.textContent = '⬅';
       navHintArrow.className = 'text-purple-400 font-black text-xs';
     }
 
-    // 과거 내역 데이터 렌더링 동기화
+    // 수납내역 데이터 렌더링 동기화
     const room = state.rooms[state.selectedRoom];
     if (room && typeof renderPastHistorySection === 'function') {
       renderPastHistorySection(room);
@@ -66,12 +66,12 @@ export function switchRoomSlideView(view, animate = true) {
       navContent.className = 'py-1 px-2.5 rounded-xl bg-surface-900 border border-cyan-500/40 hover:border-cyan-400 text-xs shadow-md flex items-center justify-between gap-1.5 transition-colors';
     }
     if (navCurrent) {
-      navCurrent.textContent = '당월 계약·수납 현황';
+      navCurrent.textContent = '처음으로';
       navCurrent.className = 'font-bold text-cyan-300 text-[11px] truncate';
     }
     if (navDotMain) navDotMain.className = 'w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse';
     if (navDotPast) navDotPast.className = 'w-1.5 h-1.5 rounded-full bg-slate-600';
-    if (navHintAction) navHintAction.textContent = '좌로 드래그 (과거내역)';
+    if (navHintAction) navHintAction.textContent = '수납내역(화면 우로 밀기)';
     if (navHintArrow) {
       navHintArrow.textContent = '➔';
       navHintArrow.className = 'text-cyan-400 font-black text-xs';

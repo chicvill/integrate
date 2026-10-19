@@ -4066,7 +4066,7 @@ export function handleLiveSmsParse() {
     updateSmsAlert(
       'warning',
       '미납 내역 없음 (이미 전액 완납)',
-      `<strong>${parsed.roomNumber}호 (${parsed.tenantName || '세입자'})</strong>는 현재 체납/미납 회차가 없는 완납 상태입니다.<br>이중입금 또는 과오납 여부를 확인하시거나, 과거/특수 납부는 <strong>[과거납부내역]</strong>에서 수동으로 확인해주세요.`
+      `<strong>${parsed.roomNumber}호 (${parsed.tenantName || '세입자'})</strong>는 현재 체납/미납 회차가 없는 완납 상태입니다.<br>이중입금 또는 과오납 여부를 확인하시거나, 과거/특수 납부는 <strong>[수납내역]</strong>에서 수동으로 확인해주세요.`
     );
   } else {
     const fmt = (p) => `${p.year !== currentYear ? p.year + '년 ' : ''}${p.month}월`;
@@ -4109,7 +4109,7 @@ export function handleLiveSmsParse() {
       updateSmsAlert(
         'diff',
         `금액 불일치 안내 (${diffText})`,
-        `입금액(<strong>${Number(parsed.amount).toLocaleString()}원</strong>)이 대상 회차(${targetPeriods.length}개월) 청구액(<strong>${expectedTotal.toLocaleString()}원</strong>)과 차이가 있습니다.<br>처리 후 <strong>[과거납부내역]</strong>에서 세부 금액을 수정할 수 있습니다.`
+        `입금액(<strong>${Number(parsed.amount).toLocaleString()}원</strong>)이 대상 회차(${targetPeriods.length}개월) 청구액(<strong>${expectedTotal.toLocaleString()}원</strong>)과 차이가 있습니다.<br>처리 후 <strong>[수납내역]</strong>에서 세부 금액을 수정할 수 있습니다.`
       );
     } else {
       updateSmsAlert(null);
@@ -4202,7 +4202,7 @@ export function onSmsDetectedRoomChange() {
     updateSmsAlert(
       'warning',
       '미납 내역 없음 (이미 전액 완납)',
-      `<strong>${rNum}호 (${tenantName})</strong>는 현재 체납/미납 회차가 없는 완납 상태입니다.<br>이중입금 또는 과오납 여부를 확인하시거나, 과거/특수 납부는 <strong>[과거납부내역]</strong>에서 수동으로 확인해주세요.`
+      `<strong>${rNum}호 (${tenantName})</strong>는 현재 체납/미납 회차가 없는 완납 상태입니다.<br>이중입금 또는 과오납 여부를 확인하시거나, 과거/특수 납부는 <strong>[수납내역]</strong>에서 수동으로 확인해주세요.`
     );
   } else {
     const fmt = (p) => `${p.year !== currentYear ? p.year + '년 ' : ''}${p.month}월`;
@@ -4243,7 +4243,7 @@ export function onSmsDetectedRoomChange() {
       updateSmsAlert(
         'diff',
         `금액 불일치 안내 (${diffText})`,
-        `입금액(<strong>${Number(depAmount).toLocaleString()}원</strong>)이 대상 회차(${targetPeriods.length}개월) 청구액(<strong>${expectedTotal.toLocaleString()}원</strong>)과 차이가 있습니다.<br>처리 후 <strong>[과거납부내역]</strong>에서 세부 금액을 수정할 수 있습니다.`
+        `입금액(<strong>${Number(depAmount).toLocaleString()}원</strong>)이 대상 회차(${targetPeriods.length}개월) 청구액(<strong>${expectedTotal.toLocaleString()}원</strong>)과 차이가 있습니다.<br>처리 후 <strong>[수납내역]</strong>에서 세부 금액을 수정할 수 있습니다.`
       );
     } else if (parsed && parsed.senderName && room && room.name && parsed.senderName !== room.name) {
       updateSmsAlert(
@@ -4308,7 +4308,7 @@ export async function handleSmsDepositProcess() {
     updateSmsAlert(
       'warning',
       '처리 불가: 미납 내역 없음',
-      `<strong>${roomNum}호 (${tenantName})</strong>는 현재 체납/미납 회차가 없는 완납 상태입니다.<br>이중입금 또는 과오납 여부를 확인하시거나, 과거/특수 납부는 <strong>[과거납부내역]</strong>에서 수동으로 확인해주세요.`
+      `<strong>${roomNum}호 (${tenantName})</strong>는 현재 체납/미납 회차가 없는 완납 상태입니다.<br>이중입금 또는 과오납 여부를 확인하시거나, 과거/특수 납부는 <strong>[수납내역]</strong>에서 수동으로 확인해주세요.`
     );
     return;
   }
@@ -4324,7 +4324,7 @@ export async function handleSmsDepositProcess() {
     updateSmsAlert(
       'diff',
       `금액 불일치 확인 (${diffText})`,
-      `입금액(<strong>${Number(parsed.amount).toLocaleString()}원</strong>)과 청구액(<strong>${expectedTotal.toLocaleString()}원</strong>)이 다릅니다.<br>계속 진행하시면 완납 처리되며, 차액은 <strong>[과거납부내역]</strong>에서 수정할 수 있습니다.`
+      `입금액(<strong>${Number(parsed.amount).toLocaleString()}원</strong>)과 청구액(<strong>${expectedTotal.toLocaleString()}원</strong>)이 다릅니다.<br>계속 진행하시면 완납 처리되며, 차액은 <strong>[수납내역]</strong>에서 수정할 수 있습니다.`
     );
   }
 

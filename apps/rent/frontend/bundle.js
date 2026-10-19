@@ -12637,6 +12637,193 @@ function renderCurrentMonthSection(room) {
   }
 }
 
+/**
+ * 특정 연/월 회차의 수납내역 레코드(세입자, 공실, 금액, 상태 등)를 단일하게 산출하는 도메인 모듈 함수
+ */
+function resolveHistoryMonthRecord(room, y, m, existingP, histories, currYear = currentYear) {
+  const isJeonse = (room.lease_type === '전세');
+
+  // 1. 현재 세입자 전입일 기준 거주 기간 판별
+  let inYear = currYear;
+  let inMonth = 1;
+  let hasMoveIn = false;
+  if (room.name && room.move_in) {
+    const dtComp = parseDateComponents(room.move_in);
+    if (dtComp) {
+      inYear = dtComp.year;
+      inMonth = dtComp.month;
+      hasMoveIn = true;
+    }
+  }
+
+  // 2. 전출자(이전 세입자) 이력 매칭
+  const roomHistories = (histories && histories.length > 0)
+    ? histories
+    : ((room.tenant_histories && room.tenant_histories.length > 0)
+      ? room.tenant_histories
+      : (state.tenantHistories || []).filter(h => String(h.room_number) === String(room.room_number || room.number || state.selectedRoom)));
+
+  let prevTenant = null;
+  let outYear = 0;
+  let outMonth = 0;
+  let prevInYear = 0;
+  let prevInMonth = 0;
+
+  for (const h of roomHistories) {
+    if (h.move_out) {
+      const outComp = parseDateComponents(h.move_out);
+      if (outComp) {
+        prevTenant = h;
+        outYear = outComp.year;
+        outMonth = outComp.month;
+        if (h.move_in) {
+          const inC = parseDateComponents(h.move_in);
+          if (inC) {
+            prevInYear = inC.year;
+            prevInMonth = inC.month;
+          }
+        }
+        break;
+      }
+    }
+  }
+
+  // 전출자 정보가 없으나 기존 결제 데이터에 현재 세입자와 다른 이전 세입자명이 기록된 경우
+  if (!prevTenant && existingP && existingP.tenant_name && existingP.tenant_name !== '공실' && existingP.tenant_name !== room.name) {
+    prevTenant = {
+      name: existingP.tenant_name,
+      rent: existingP.rent_amount !== undefined ? existingP.rent_amount : (room.rent || 0),
+      maintenance: existingP.maintenance_amount !== undefined ? existingP.maintenance_amount : (room.maintenance || 0),
+      lease_type: existingP.lease_type || '월세'
+    };
+    if (hasMoveIn) {
+      outYear = inMonth === 1 ? inYear - 1 : inYear;
+      outMonth = inMonth === 1 ? 12 : inMonth - 1;
+    }
+  }
+
+  // 3. 기간 인덱스 계산 (currIdx, outIdx, inIdx)
+  const currIdx = y * 12 + m;
+  const outIdx = (outYear && outMonth) ? (outYear * 12 + outMonth) : 0;
+  const inIdx = hasMoveIn ? (inYear * 12 + inMonth) : 0;
+
+  let isVacancy = false;
+  let isPrev = false;
+  let isCurrentTenant = false;
+  let matchedHist = null;
+
+  if (prevTenant && outIdx > 0) {
+    if (currIdx <= outIdx) {
+      // 전출자 거주 기간 (작년 1.1 ~ 전출월)
+      if (prevInYear && prevInMonth && currIdx < (prevInYear * 12 + prevInMonth)) {
+        isVacancy = true;
+      } else {
+        matchedHist = prevTenant;
+        isPrev = true;
+      }
+    } else if (currIdx >= outIdx + 1 && (!inIdx || currIdx <= inIdx + 1)) {
+      // 전출자의 (전출월+1)부터 (전입월+1)까지 공실 처리
+      isVacancy = true;
+    } else {
+      // (전입월+1) 초과: 현재 세입자
+      isCurrentTenant = true;
+    }
+  } else {
+    // 전출자 이력이 없는 일반 호실:
+    if (hasMoveIn) {
+      if (currIdx < inIdx) {
+        isVacancy = true;
+      } else {
+        isCurrentTenant = true;
+      }
+    } else {
+      isCurrentTenant = Boolean(room.name);
+      isVacancy = !room.name;
+    }
+  }
+
+  // 명시적 '공실' 메모 또는 세입자명 처리
+  if (existingP && (existingP.note === '공실' || existingP.tenant_name === '공실')) {
+    isVacancy = true;
+    isCurrentTenant = false;
+    isPrev = false;
+  }
+
+  // 납부 객체 p 준비
+  let p = existingP ? { ...existingP } : {
+    month: m,
+    year: y,
+    paid: false,
+    paid_date: '',
+    rent_amount: isJeonse ? 0 : room.rent,
+    maintenance_amount: room.maintenance,
+    note: isVacancy ? '공실' : '',
+    tenant_name: isCurrentTenant ? room.name : (matchedHist ? matchedHist.name : (isVacancy ? '공실' : '')),
+    is_previous_tenant: Boolean(matchedHist)
+  };
+
+  if (isVacancy) {
+    p.paid = false;
+    p.paid_date = '';
+    p.note = '공실';
+    p.tenant_name = '공실';
+    p.rent_amount = 0;
+    p.maintenance_amount = 0;
+  } else if (isPrev && matchedHist) {
+    p.tenant_name = matchedHist.name;
+    p.is_previous_tenant = true;
+    if (p.rent_amount === undefined || p.rent_amount === 0) {
+      p.rent_amount = (matchedHist.lease_type === '전세') ? 0 : (matchedHist.rent !== undefined ? matchedHist.rent : (room.rent || 0));
+    }
+    if (p.maintenance_amount === undefined) {
+      p.maintenance_amount = (matchedHist.maintenance !== undefined ? matchedHist.maintenance : (room.maintenance || 0));
+    }
+  }
+
+  // 세입자 표시 정보 및 청구 금액 산정
+  let displayName = '';
+  let rAmt = 0;
+  let mAmt = 0;
+
+  if (isVacancy) {
+    displayName = '공실';
+    rAmt = 0;
+    mAmt = 0;
+  } else if (isCurrentTenant) {
+    displayName = (existingP && existingP.tenant_name && existingP.tenant_name !== '공실') ? existingP.tenant_name : room.name;
+    isPrev = false;
+    rAmt = isJeonse ? 0 : (p.rent_amount !== undefined ? p.rent_amount : room.rent);
+    mAmt = p.maintenance_amount !== undefined ? p.maintenance_amount : (room.maintenance || 0);
+  } else if (matchedHist) {
+    displayName = matchedHist.name;
+    isPrev = true;
+    const histJeonse = (matchedHist.lease_type === '전세');
+    rAmt = histJeonse ? 0 : (p.rent_amount !== undefined && p.rent_amount > 0 ? p.rent_amount : (matchedHist.rent || 0));
+    mAmt = p.maintenance_amount !== undefined ? p.maintenance_amount : (matchedHist.maintenance || 0);
+  } else if (existingP && existingP.tenant_name && existingP.paid) {
+    displayName = existingP.tenant_name;
+    isPrev = (existingP.tenant_name !== room.name);
+    rAmt = p.rent_amount !== undefined ? p.rent_amount : (room.rent || 0);
+    mAmt = p.maintenance_amount !== undefined ? p.maintenance_amount : (room.maintenance || 0);
+  }
+
+  const tot = rAmt + mAmt;
+  const isMoveInPostpaid = Boolean(isCurrentTenant && (y === inYear && m === inMonth && (room.pay_timing === '후불' || !room.pay_timing)));
+
+  return {
+    isVacancy,
+    isPrev,
+    isCurrentTenant,
+    matchedHist,
+    displayName,
+    rAmt,
+    mAmt,
+    tot,
+    isMoveInPostpaid,
+    p
+  };
+}
+
 function renderPastHistorySection(room) {
   const rNum = room.room_number;
   const tbody = document.getElementById('pastPaymentTableBody');
@@ -12674,6 +12861,14 @@ function renderPastHistorySection(room) {
       });
     });
   }
+  if (!hasLastYearData) {
+    const allHist = (state.tenantHistories || []).concat(room && room.tenant_histories ? room.tenant_histories : []);
+    hasLastYearData = allHist.some(h => {
+      const o = h.move_out ? parseDateComponents(h.move_out) : null;
+      const i = h.move_in ? parseDateComponents(h.move_in) : null;
+      return (o && o.year <= lastYear) || (i && i.year <= lastYear);
+    });
+  }
 
   // ── 상단 헤더 기간 배지 업데이트 (2025.01 ~ 현재 vs 2026.01 ~ 현재) ──
   const periodBadge = document.getElementById('pastRoomPeriodBadge');
@@ -12694,135 +12889,19 @@ function renderPastHistorySection(room) {
       targetMonths.push({ year: y, month: m });
     }
   }
+  const roomHistories = (room.tenant_histories && room.tenant_histories.length > 0)
+    ? room.tenant_histories
+    : (state.tenantHistories || []).filter(h => String(h.room_number) === String(room.room_number || room.number || state.selectedRoom));
 
   targetMonths.forEach(item => {
     const y = item.year;
     const m = item.month;
     const pKey = `${y}-${m}`;
     const pKeyPad = `${y}-${String(m).padStart(2, '0')}`;
-
-    // 결제 데이터 조회 (연도-월 키 우선, 2자리 패딩 키, 당해연도 월 키)
     const existingP = (room.payments && (room.payments[pKey] || room.payments[pKeyPad] || (y === currentYear ? room.payments[m] : null)));
 
-    // 1. 현재 세입자 전입일 기준 거주 기간 판별
-    let inYear = currentYear;
-    let inMonth = 1;
-    let hasMoveIn = false;
-    if (room.name && room.move_in) {
-      const dtComp = parseDateComponents(room.move_in);
-      if (dtComp) {
-        inYear = dtComp.year;
-        inMonth = dtComp.month;
-        hasMoveIn = true;
-      }
-    }
-
-    // 기존 결제 기록이 있고 세입자명이 현재 세입자와 일치하며 '완납'인 경우(이전 계약 연속 완납)에만 현재 세입자로 인정
-    const isDuringContract = Boolean(room.name && hasMoveIn && (y > inYear || (y === inYear && m >= inMonth)));
-    const isPriorPaidByCurrent = Boolean(room.name && existingP && existingP.paid && existingP.tenant_name === room.name);
-    const isCurrentTenant = isDuringContract || isPriorPaidByCurrent;
-
-    // 2. 전출자 이력 매칭
-    const histories = room.tenant_histories || [];
-    let matchedHist = null;
-    if (!isCurrentTenant) {
-      for (const h of histories) {
-        let outY = 0, outM = 0;
-        if (h.move_out) {
-          const outComp = parseDateComponents(h.move_out);
-          if (outComp) {
-            outY = outComp.year;
-            outM = outComp.month;
-          }
-        }
-        let hInY = 0, hInM = 0;
-        if (h.move_in) {
-          const inComp = parseDateComponents(h.move_in);
-          if (inComp) {
-            hInY = inComp.year;
-            hInM = inComp.month;
-          }
-        }
-        if (outY && outM) {
-          let inPeriod = (y < outY || (y === outY && m <= outM));
-          if (hInY && hInM) {
-            inPeriod = inPeriod && (y > hInY || (y === hInY && m >= hInM));
-          }
-          if (inPeriod) {
-            matchedHist = h;
-            break;
-          }
-        }
-      }
-      if (!matchedHist && existingP && existingP.tenant_name && existingP.tenant_name !== '공실' && existingP.tenant_name !== room.name && existingP.paid) {
-        matchedHist = {
-          name: existingP.tenant_name,
-          rent: existingP.rent_amount !== undefined ? existingP.rent_amount : (room.rent || 0),
-          maintenance: existingP.maintenance_amount !== undefined ? existingP.maintenance_amount : (room.maintenance || 0),
-          lease_type: existingP.lease_type || '월세'
-        };
-      }
-    }
-
-    // 3. 공실 여부 판정:
-    // - 명시적 공실: note 또는 tenant_name에 '공실'이 지정된 경우
-    // - 전입월 이전 미납: 현재 세입자 전입일 이전(y < inYear || (y === inYear && m < inMonth))이면서 완납이 아니고 전출자 거주 기간도 아니면 100% 공실!
-    //   (이전 임차인 퇴실 후 공실 발생 시 다음 입주월 사이는 모두 공실 원칙)
-    // - 현재 세입자도 아니고 전출자도 아니며 실입금 완납 기록도 없는 경우: 공실!
-    const isExplicitVacancy = Boolean(existingP && (existingP.note === '공실' || existingP.tenant_name === '공실' || (typeof existingP.note === 'string' && existingP.note.includes('공실'))));
-    const isBeforeMoveInUnpaid = Boolean(hasMoveIn && (y < inYear || (y === inYear && m < inMonth)) && (!existingP || !existingP.paid) && !matchedHist);
-    const hasRecordedPaid = Boolean(existingP && existingP.paid);
-
-    const isVacancy = isExplicitVacancy || isBeforeMoveInUnpaid || (!isCurrentTenant && !matchedHist && !hasRecordedPaid);
-
-    // 납부 객체 p 준비
-    let p = existingP ? { ...existingP } : {
-      month: m,
-      year: y,
-      paid: false,
-      paid_date: '',
-      rent_amount: isJeonse ? 0 : room.rent,
-      maintenance_amount: room.maintenance,
-      note: isVacancy ? '공실' : '',
-      tenant_name: isCurrentTenant ? room.name : (matchedHist ? matchedHist.name : ''),
-      is_previous_tenant: Boolean(matchedHist)
-    };
-
-    if (isVacancy) {
-      p.paid = false;
-      p.paid_date = '';
-      p.note = '공실';
-    }
-
-    // 세입자 표시 정보 및 청구 금액 산정
-    let displayName = '';
-    let isPrev = false;
-    let rAmt = 0;
-    let mAmt = 0;
-
-    if (isVacancy) {
-      displayName = '공실';
-      rAmt = 0;
-      mAmt = 0;
-    } else if (isCurrentTenant) {
-      displayName = (existingP && existingP.tenant_name) ? existingP.tenant_name : room.name;
-      isPrev = false;
-      rAmt = isJeonse ? 0 : (p.rent_amount !== undefined ? p.rent_amount : room.rent);
-      mAmt = p.maintenance_amount !== undefined ? p.maintenance_amount : (room.maintenance || 0);
-    } else if (matchedHist) {
-      displayName = matchedHist.name;
-      isPrev = true;
-      const histJeonse = (matchedHist.lease_type === '전세');
-      rAmt = histJeonse ? 0 : (p.rent_amount !== undefined ? p.rent_amount : (matchedHist.rent || 0));
-      mAmt = p.maintenance_amount !== undefined ? p.maintenance_amount : (matchedHist.maintenance || 0);
-    } else if (existingP && existingP.tenant_name && existingP.paid) {
-      displayName = existingP.tenant_name;
-      isPrev = (existingP.tenant_name !== room.name);
-      rAmt = p.rent_amount !== undefined ? p.rent_amount : (room.rent || 0);
-      mAmt = p.maintenance_amount !== undefined ? p.maintenance_amount : (room.maintenance || 0);
-    }
-
-    const tot = rAmt + mAmt;
+    const rec = resolveHistoryMonthRecord(room, y, m, existingP, roomHistories);
+    const { isVacancy, isPrev, displayName, rAmt, mAmt, tot, isMoveInPostpaid, p } = rec;
 
     const tr = document.createElement('tr');
     tr.className = `hover:bg-surface-850/60 transition ${isPrev ? 'bg-amber-950/25' : (isVacancy ? 'opacity-85' : '')}`;
@@ -12874,8 +12953,6 @@ function renderPastHistorySection(room) {
     } else {
       payDateHtml = `<span class="text-slate-600 font-mono text-[11px]">-</span>`;
     }
-
-    const isMoveInPostpaid = Boolean(isCurrentTenant && (y === inYear && m === inMonth && (room.pay_timing === '후불' || !room.pay_timing)));
 
     // 상태 배지 생성 (공실/미납/입주월은 클릭 시 즉시 공실↔미납 전환 지원)
     let statusHtml = '';
@@ -14239,18 +14316,18 @@ function switchRoomSlideView(view, animate = true) {
         const y = (p && p.year) ? p.year : (k.includes('-') ? parseInt(k.split('-')[0], 10) : null);
         return y !== null && y <= lastY && (p.paid || (p.rent_amount && p.rent_amount > 0) || p.tenant_name || p.note);
       }));
-      navCurrent.textContent = hasPast ? `과거 납부 내역 (${lastY}.01 ~ 현재)` : `과거 납부 내역 (${currentYear}.01 ~ 현재)`;
+      navCurrent.textContent = hasPast ? `수납내역 (${lastY}.01 ~ 현재)` : `수납내역 (${currentYear}.01 ~ 현재)`;
       navCurrent.className = 'font-bold text-purple-300 text-[11px] truncate';
     }
     if (navDotMain) navDotMain.className = 'w-1.5 h-1.5 rounded-full bg-slate-600';
     if (navDotPast) navDotPast.className = 'w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse';
-    if (navHintAction) navHintAction.textContent = '우로 드래그 (본래화면)';
+    if (navHintAction) navHintAction.textContent = '우로 드래그 (처음으로)';
     if (navHintArrow) {
       navHintArrow.textContent = '⬅';
       navHintArrow.className = 'text-purple-400 font-black text-xs';
     }
 
-    // 과거 내역 데이터 렌더링 동기화
+    // 수납내역 데이터 렌더링 동기화
     const room = state.rooms[state.selectedRoom];
     if (room && typeof renderPastHistorySection === 'function') {
       renderPastHistorySection(room);
@@ -14261,12 +14338,12 @@ function switchRoomSlideView(view, animate = true) {
       navContent.className = 'py-1 px-2.5 rounded-xl bg-surface-900 border border-cyan-500/40 hover:border-cyan-400 text-xs shadow-md flex items-center justify-between gap-1.5 transition-colors';
     }
     if (navCurrent) {
-      navCurrent.textContent = '당월 계약·수납 현황';
+      navCurrent.textContent = '처음으로';
       navCurrent.className = 'font-bold text-cyan-300 text-[11px] truncate';
     }
     if (navDotMain) navDotMain.className = 'w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse';
     if (navDotPast) navDotPast.className = 'w-1.5 h-1.5 rounded-full bg-slate-600';
-    if (navHintAction) navHintAction.textContent = '좌로 드래그 (과거내역)';
+    if (navHintAction) navHintAction.textContent = '수납내역(화면 우로 밀기)';
     if (navHintArrow) {
       navHintArrow.textContent = '➔';
       navHintArrow.className = 'text-cyan-400 font-black text-xs';
@@ -18433,7 +18510,7 @@ function handleLiveSmsParse() {
     updateSmsAlert(
       'warning',
       '미납 내역 없음 (이미 전액 완납)',
-      `<strong>${parsed.roomNumber}호 (${parsed.tenantName || '세입자'})</strong>는 현재 체납/미납 회차가 없는 완납 상태입니다.<br>이중입금 또는 과오납 여부를 확인하시거나, 과거/특수 납부는 <strong>[과거납부내역]</strong>에서 수동으로 확인해주세요.`
+      `<strong>${parsed.roomNumber}호 (${parsed.tenantName || '세입자'})</strong>는 현재 체납/미납 회차가 없는 완납 상태입니다.<br>이중입금 또는 과오납 여부를 확인하시거나, 과거/특수 납부는 <strong>[수납내역]</strong>에서 수동으로 확인해주세요.`
     );
   } else {
     const fmt = (p) => `${p.year !== currentYear ? p.year + '년 ' : ''}${p.month}월`;
@@ -18476,7 +18553,7 @@ function handleLiveSmsParse() {
       updateSmsAlert(
         'diff',
         `금액 불일치 안내 (${diffText})`,
-        `입금액(<strong>${Number(parsed.amount).toLocaleString()}원</strong>)이 대상 회차(${targetPeriods.length}개월) 청구액(<strong>${expectedTotal.toLocaleString()}원</strong>)과 차이가 있습니다.<br>처리 후 <strong>[과거납부내역]</strong>에서 세부 금액을 수정할 수 있습니다.`
+        `입금액(<strong>${Number(parsed.amount).toLocaleString()}원</strong>)이 대상 회차(${targetPeriods.length}개월) 청구액(<strong>${expectedTotal.toLocaleString()}원</strong>)과 차이가 있습니다.<br>처리 후 <strong>[수납내역]</strong>에서 세부 금액을 수정할 수 있습니다.`
       );
     } else {
       updateSmsAlert(null);
@@ -18569,7 +18646,7 @@ function onSmsDetectedRoomChange() {
     updateSmsAlert(
       'warning',
       '미납 내역 없음 (이미 전액 완납)',
-      `<strong>${rNum}호 (${tenantName})</strong>는 현재 체납/미납 회차가 없는 완납 상태입니다.<br>이중입금 또는 과오납 여부를 확인하시거나, 과거/특수 납부는 <strong>[과거납부내역]</strong>에서 수동으로 확인해주세요.`
+      `<strong>${rNum}호 (${tenantName})</strong>는 현재 체납/미납 회차가 없는 완납 상태입니다.<br>이중입금 또는 과오납 여부를 확인하시거나, 과거/특수 납부는 <strong>[수납내역]</strong>에서 수동으로 확인해주세요.`
     );
   } else {
     const fmt = (p) => `${p.year !== currentYear ? p.year + '년 ' : ''}${p.month}월`;
@@ -18610,7 +18687,7 @@ function onSmsDetectedRoomChange() {
       updateSmsAlert(
         'diff',
         `금액 불일치 안내 (${diffText})`,
-        `입금액(<strong>${Number(depAmount).toLocaleString()}원</strong>)이 대상 회차(${targetPeriods.length}개월) 청구액(<strong>${expectedTotal.toLocaleString()}원</strong>)과 차이가 있습니다.<br>처리 후 <strong>[과거납부내역]</strong>에서 세부 금액을 수정할 수 있습니다.`
+        `입금액(<strong>${Number(depAmount).toLocaleString()}원</strong>)이 대상 회차(${targetPeriods.length}개월) 청구액(<strong>${expectedTotal.toLocaleString()}원</strong>)과 차이가 있습니다.<br>처리 후 <strong>[수납내역]</strong>에서 세부 금액을 수정할 수 있습니다.`
       );
     } else if (parsed && parsed.senderName && room && room.name && parsed.senderName !== room.name) {
       updateSmsAlert(
@@ -18675,7 +18752,7 @@ async function handleSmsDepositProcess() {
     updateSmsAlert(
       'warning',
       '처리 불가: 미납 내역 없음',
-      `<strong>${roomNum}호 (${tenantName})</strong>는 현재 체납/미납 회차가 없는 완납 상태입니다.<br>이중입금 또는 과오납 여부를 확인하시거나, 과거/특수 납부는 <strong>[과거납부내역]</strong>에서 수동으로 확인해주세요.`
+      `<strong>${roomNum}호 (${tenantName})</strong>는 현재 체납/미납 회차가 없는 완납 상태입니다.<br>이중입금 또는 과오납 여부를 확인하시거나, 과거/특수 납부는 <strong>[수납내역]</strong>에서 수동으로 확인해주세요.`
     );
     return;
   }
@@ -18691,7 +18768,7 @@ async function handleSmsDepositProcess() {
     updateSmsAlert(
       'diff',
       `금액 불일치 확인 (${diffText})`,
-      `입금액(<strong>${Number(parsed.amount).toLocaleString()}원</strong>)과 청구액(<strong>${expectedTotal.toLocaleString()}원</strong>)이 다릅니다.<br>계속 진행하시면 완납 처리되며, 차액은 <strong>[과거납부내역]</strong>에서 수정할 수 있습니다.`
+      `입금액(<strong>${Number(parsed.amount).toLocaleString()}원</strong>)과 청구액(<strong>${expectedTotal.toLocaleString()}원</strong>)이 다릅니다.<br>계속 진행하시면 완납 처리되며, 차액은 <strong>[수납내역]</strong>에서 수정할 수 있습니다.`
     );
   }
 
@@ -20108,7 +20185,7 @@ async function startVoiceRecognition() {
  */
 function showMicrophonePermissionPrompt() {
   updateVoiceUIState('idle');
-  updateVoiceTranscript('말로 입력을 사용하려면 마이크 권한 승인이 필요합니다.');
+  updateVoiceTranscript('음성 Ai 입력을 사용하려면 마이크 권한 승인이 필요합니다.');
   
   const promptHtml = `
     <div class="p-2 text-center">

@@ -52,6 +52,156 @@ def get_rolling_periods(cur_year: int, cur_month: int, count: int = 12) -> List[
     return periods
 
 
+class ResolvedPeriodContract:
+    __slots__ = (
+        'tenant_name',
+        'tenant_id_number',
+        'is_previous_tenant',
+        'is_vacancy',
+        'paid',
+        'paid_date',
+        'rent_amount',
+        'maintenance_amount',
+        'note',
+    )
+
+    def __init__(
+        self,
+        tenant_name: str,
+        tenant_id_number: str,
+        is_previous_tenant: bool,
+        is_vacancy: bool,
+        paid: bool,
+        paid_date: str,
+        rent_amount: int,
+        maintenance_amount: int,
+        note: str,
+    ):
+        self.tenant_name = tenant_name
+        self.tenant_id_number = tenant_id_number
+        self.is_previous_tenant = is_previous_tenant
+        self.is_vacancy = is_vacancy
+        self.paid = paid
+        self.paid_date = paid_date
+        self.rent_amount = rent_amount
+        self.maintenance_amount = maintenance_amount
+        self.note = note
+
+
+def resolve_period_contract(
+    y: int,
+    m: int,
+    room: RentRoom,
+    prev_hist: Optional[Any] = None,
+    cur_year: Optional[int] = None,
+    cur_month: Optional[int] = None,
+    override_paid: Optional[bool] = None,
+    override_paid_date: Optional[str] = None,
+    override_note: Optional[str] = None
+) -> ResolvedPeriodContract:
+    """
+    호실의 특정 연/월 회차에 대해 현실 업무 규칙을 단일하게 판정하는 도메인 서비스 핵심 함수:
+    1. 전출자 정보가 있는 경우:
+       - 작년 1.1 ~ 전출월: 전출자의 세입자명, 임차조건 및 정상 입금(전출)
+       - (전출월 + 1) ~ (전입월 + 1): 공실 처리 (금액 0원, 미납/공실 상태)
+       - (전입월 + 1) 초과: 현재 세입자 계약 적용
+    2. 전출자 정보가 없는 경우:
+       - 전입월 이전: 공실 처리
+       - 입주월 (후불/월세): 익월 청구 정상 처리 (가짜 체납 방지)
+       - 입주월 익월 ~ 현재월: 정상 완납
+    """
+    now = datetime.now()
+    now_y = cur_year or now.year
+    now_m = cur_month or now.month
+    curr_idx = y * 12 + m
+    is_future = (y > now_y) or (y == now_y and m > now_m)
+
+    dt_in = parse_date_to_dt(room.move_in)
+    in_idx = (dt_in.year * 12 + dt_in.month) if dt_in else 999999
+
+    dt_out = parse_date_to_dt(prev_hist.move_out) if (prev_hist and getattr(prev_hist, 'move_out', None)) else None
+    out_idx = (dt_out.year * 12 + dt_out.month) if dt_out else 0
+
+    # 1. 전출자 거주 기간 (작년 1.1 ~ 전출월)
+    if prev_hist and out_idx > 0 and curr_idx <= out_idx:
+        p_name = prev_hist.name or "전출 세입자"
+        p_id_num = prev_hist.id_number or ""
+        p_is_prev = True
+        p_is_vac = False
+        p_rent = 0 if getattr(prev_hist, 'lease_type', None) == "전세" else int(getattr(prev_hist, 'rent', 0) or 0)
+        p_maint = int(getattr(prev_hist, 'maintenance', 0) or 0)
+        p_paid = True if override_paid is None else override_paid
+        p_pdate = override_paid_date or (f"{y}-{str(m).zfill(2)}-10" if p_paid else "")
+        p_note = override_note or "이전 세입자 정상 입금 (전출)"
+        return ResolvedPeriodContract(
+            tenant_name=p_name,
+            tenant_id_number=p_id_num,
+            is_previous_tenant=p_is_prev,
+            is_vacancy=p_is_vac,
+            paid=p_paid,
+            paid_date=p_pdate,
+            rent_amount=p_rent,
+            maintenance_amount=p_maint,
+            note=p_note
+        )
+
+    # 2. 공실 기간: 전출자의 (전출월+1)부터 (전입월+1)까지 또는 전입 이전
+    is_gap_vacancy = bool(prev_hist and out_idx > 0 and curr_idx >= out_idx + 1 and curr_idx <= in_idx + 1)
+    is_pre_movein_vacancy = bool((not prev_hist or out_idx == 0) and curr_idx < in_idx)
+    if is_gap_vacancy or is_pre_movein_vacancy:
+        return ResolvedPeriodContract(
+            tenant_name="공실",
+            tenant_id_number="",
+            is_previous_tenant=False,
+            is_vacancy=True,
+            paid=False,
+            paid_date="",
+            rent_amount=0,
+            maintenance_amount=0,
+            note="공실"
+        )
+
+    # 3. 현재 세입자 계약 기간
+    t_name = room.name or ""
+    t_id_num = room.id_number or ""
+    t_rent = 0 if room.lease_type == "전세" else int(room.rent or 0)
+    t_maint = int(room.maintenance or 0)
+    is_monthly = bool(room.lease_type == "월세" or not room.lease_type)
+    is_postpaid = bool(room.pay_timing == "후불" or not room.pay_timing)
+    is_move_in_month = bool(dt_in and y == dt_in.year and m == dt_in.month)
+
+    if override_paid is not None:
+        t_paid = override_paid
+        t_note = override_note or ("정상 입금" if t_paid else "")
+    elif is_move_in_month:
+        if is_monthly and is_postpaid:
+            t_paid = True
+            t_note = "입주월 (후불 익월 청구/정상)"
+        else:
+            t_paid = True
+            t_note = "입주월 선납 완납"
+    elif not is_future:
+        t_paid = True
+        t_note = "정상 입금"
+    else:
+        t_paid = False
+        t_note = ""
+
+    t_pdate = override_paid_date or (f"{y}-{str(m).zfill(2)}-10" if t_paid else "")
+
+    return ResolvedPeriodContract(
+        tenant_name=t_name,
+        tenant_id_number=t_id_num,
+        is_previous_tenant=False,
+        is_vacancy=False,
+        paid=t_paid,
+        paid_date=t_pdate,
+        rent_amount=t_rent,
+        maintenance_amount=t_maint,
+        note=t_note
+    )
+
+
 def evaluate_payment_status(
     y: int,
     m: int,
@@ -60,40 +210,17 @@ def evaluate_payment_status(
     is_postpaid: bool,
     cur_year: int,
     cur_month: int,
-    has_prev_hist: bool
+    prev_hist: Optional[Any] = None,
+    room: Optional[RentRoom] = None
 ) -> Tuple[bool, str]:
-    """
-    호실 전입일 및 계약 조건(월세/후불 등)에 따른 회차별 납부 상태 및 비고 판정
-    Returns: (paid: bool, note: str)
-    """
-    is_before_move_in = False
-    is_move_in_month = False
-    if dt_in:
-        if y < dt_in.year or (y == dt_in.year and m < dt_in.month):
-            is_before_move_in = True
-        elif y == dt_in.year and m == dt_in.month:
-            is_move_in_month = True
-
-    is_future = (y > cur_year) or (y == cur_year and m > cur_month)
-
-    if is_before_move_in:
-        # 전입 이전: 이전 세입자 데이터 있으면 완납 보존, 없으면 공실 (퇴실 후 다음 입주월 사이 공실 원칙)
-        if has_prev_hist:
-            return True, "이전 세입자 정상 입금 (전출)"
-        return False, "공실"
-
-    if is_move_in_month:
-        # 입주월: 월세/후불인 경우 익월 청구 원칙 적용 (가짜 체납 Ghost Overdue 방지)
-        if is_monthly and is_postpaid:
-            return True, "입주월 (후불 익월 청구/정상)"
-        return True, "입주월 선납 완납"
-
-    if not is_future:
-        # 입주월 익월 ~ 현재월까지: 정상 완납
-        return True, "정상 입금"
-
-    # 미래 월: 미납 대기
-    return False, ""
+    """호실 전입일 및 계약 조건(월세/후불 등)에 따른 회차별 납부 상태 및 비고 판정 (하위 호환 래퍼)"""
+    dummy_room = room or RentRoom(
+        move_in=dt_in.strftime("%Y-%m-%d") if dt_in else "",
+        lease_type="월세" if is_monthly else "전세",
+        pay_timing="후불" if is_postpaid else "선불"
+    )
+    res = resolve_period_contract(y, m, dummy_room, prev_hist, cur_year, cur_month)
+    return res.paid, res.note
 
 
 class PaymentService:
@@ -119,19 +246,11 @@ class PaymentService:
             if not r.name:
                 continue
 
-            # 전입일 파싱 (다양한 포맷 대응)
-            dt_in: Optional[datetime] = parse_date_to_dt(r.move_in)
-
             # 전출자 이력 조회 (전입 이전 기록 배정용)
             prev_hist = db.query(RentTenantHistory).filter(
                 RentTenantHistory.branch_id == branch_id,
                 RentTenantHistory.room_number == r.room_number
             ).order_by(RentTenantHistory.id.desc()).first()
-
-            rent_amt = 0 if r.lease_type == "전세" else (r.rent or 0)
-            maint_amt = r.maintenance or 0
-            is_postpaid = (r.pay_timing == "후불" or not r.pay_timing)
-            is_monthly = (r.lease_type == "월세" or not r.lease_type)
 
             periods_to_process = get_rolling_periods(cur_year, cur_month, 12)
 
@@ -143,47 +262,33 @@ class PaymentService:
                     RentPayment.month == m
                 ).first()
 
-                if not pay:
+                res = resolve_period_contract(y, m, r, prev_hist, cur_year, cur_month)
+
+                if pay:
+                    pay.tenant_name = res.tenant_name
+                    pay.tenant_id_number = res.tenant_id_number
+                    pay.is_previous_tenant = res.is_previous_tenant
+                    pay.paid = res.paid
+                    pay.paid_date = res.paid_date
+                    pay.rent_amount = res.rent_amount
+                    pay.maintenance_amount = res.maintenance_amount
+                    pay.note = res.note
+                else:
                     pay = RentPayment(
                         branch_id=branch_id,
                         room_number=r.room_number,
                         year=y,
-                        month=m
+                        month=m,
+                        tenant_name=res.tenant_name,
+                        tenant_id_number=res.tenant_id_number,
+                        is_previous_tenant=res.is_previous_tenant,
+                        paid=res.paid,
+                        paid_date=res.paid_date,
+                        rent_amount=res.rent_amount,
+                        maintenance_amount=res.maintenance_amount,
+                        note=res.note
                     )
                     db.add(pay)
-
-                is_paid, note = evaluate_payment_status(
-                    y=y,
-                    m=m,
-                    dt_in=dt_in,
-                    is_monthly=is_monthly,
-                    is_postpaid=is_postpaid,
-                    cur_year=cur_year,
-                    cur_month=cur_month,
-                    has_prev_hist=bool(prev_hist)
-                )
-
-                is_before = dt_in and (y < dt_in.year or (y == dt_in.year and m < dt_in.month))
-                if is_before and prev_hist:
-                    # 이전 세입자 기록 보존
-                    pay.tenant_name = prev_hist.name
-                    pay.tenant_id_number = prev_hist.id_number or ""
-                    pay.is_previous_tenant = True
-                    pay.paid = is_paid
-                    pay.paid_date = f"{y}-{str(m).zfill(2)}-10" if is_paid else ""
-                    pay.rent_amount = 0 if prev_hist.lease_type == "전세" else prev_hist.rent
-                    pay.maintenance_amount = prev_hist.maintenance
-                    pay.note = note
-                else:
-                    # 현재 세입자 기록
-                    pay.tenant_name = r.name
-                    pay.tenant_id_number = r.id_number or ""
-                    pay.is_previous_tenant = False
-                    pay.paid = is_paid
-                    pay.paid_date = f"{y}-{str(m).zfill(2)}-10" if is_paid else ""
-                    pay.rent_amount = rent_amt
-                    pay.maintenance_amount = maint_amt
-                    pay.note = note
 
             updated_rooms.append(cast(int, r.room_number))
 
@@ -291,7 +396,7 @@ class PaymentService:
         branch_id = normalize_branch_id(branch_id)
         pay_year = year or datetime.now().year
         effective_note = note or "납부 취소"
-        is_vacancy = bool("공실" in effective_note)
+        is_vacancy = "공실" in effective_note
 
         pays = db.query(RentPayment).filter(
             RentPayment.branch_id == branch_id,
@@ -389,7 +494,7 @@ class PaymentService:
         """월별 수납장부 매트릭스 일괄 등록/갱신"""
         branch_id = normalize_branch_id(branch_id)
         updated_records = 0
-        rooms_db = {r.room_number: r for r in db.query(RentRoom).filter(RentRoom.branch_id == branch_id).all()}
+        rooms_db: Dict[int, RentRoom] = {cast(int, r.room_number): r for r in db.query(RentRoom).filter(RentRoom.branch_id == branch_id).all()}
 
         for item in matrix_rooms:
             try:
@@ -519,10 +624,6 @@ class PaymentService:
         total_amount = 0
 
         for r in rooms:
-            rent_amt = 0 if r.lease_type == "전세" else (r.rent or 0)
-            maint_amt = r.maintenance or 0
-            charge = rent_amt + maint_amt
-
             pay_day = 25
             meta_str = str(r.metadata_json or "")
             m_day = re.search(r'납부일:\s*(\d+)일', meta_str)
@@ -533,17 +634,26 @@ class PaymentService:
                 if m_day2:
                     pay_day = min(int(m_day2.group(1)), 28)
 
-            dt_in = parse_date_to_dt(r.move_in)
+            prev_hist = db.query(RentTenantHistory).filter(
+                RentTenantHistory.branch_id == norm_bid,
+                RentTenantHistory.room_number == r.room_number
+            ).order_by(RentTenantHistory.id.desc()).first()
 
             for m in range(start_m, end_m + 1):
-                if not include_unoccupied and dt_in:
-                    if year < dt_in.year or (year == dt_in.year and m < dt_in.month):
-                        continue
+                p_date = specific_date if (payment_date_mode == "specific" and specific_date) else f"{year}-{str(m).zfill(2)}-{str(pay_day).zfill(2)}"
 
-                if payment_date_mode == "specific" and specific_date:
-                    p_date = specific_date
-                else:
-                    p_date = f"{year}-{str(m).zfill(2)}-{str(pay_day).zfill(2)}"
+                res = resolve_period_contract(
+                    y=year,
+                    m=m,
+                    room=r,
+                    prev_hist=prev_hist,
+                    override_paid=True,
+                    override_paid_date=p_date,
+                    override_note=note
+                )
+
+                if not include_unoccupied and res.is_vacancy:
+                    continue
 
                 pay = db.query(RentPayment).filter(
                     RentPayment.branch_id == norm_bid,
@@ -553,32 +663,33 @@ class PaymentService:
                 ).first()
 
                 if pay:
-                    pay.paid = 1
-                    pay.paid_date = p_date
-                    pay.rent_amount = rent_amt
-                    pay.maintenance_amount = maint_amt
-                    pay.note = note
-                    if r.name:
-                        pay.tenant_name = r.name
+                    pay.paid = res.paid
+                    pay.paid_date = res.paid_date
+                    pay.rent_amount = res.rent_amount
+                    pay.maintenance_amount = res.maintenance_amount
+                    pay.note = res.note
+                    pay.tenant_name = res.tenant_name
+                    pay.is_previous_tenant = res.is_previous_tenant
                 else:
                     pay = RentPayment(
                         branch_id=norm_bid,
                         room_number=r.room_number,
                         year=year,
                         month=m,
-                        paid=1,
-                        paid_date=p_date,
-                        rent_amount=rent_amt,
-                        maintenance_amount=maint_amt,
-                        note=note,
-                        tenant_name=r.name or "",
-                        tenant_id_number=r.id_number or "",
-                        is_previous_tenant=False
+                        paid=res.paid,
+                        paid_date=res.paid_date,
+                        rent_amount=res.rent_amount,
+                        maintenance_amount=res.maintenance_amount,
+                        note=res.note,
+                        tenant_name=res.tenant_name,
+                        tenant_id_number=res.tenant_id_number,
+                        is_previous_tenant=res.is_previous_tenant
                     )
                     db.add(pay)
 
-                updated_count += 1
-                total_amount += charge
+                if res.paid:
+                    updated_count += 1
+                    total_amount += (res.rent_amount + res.maintenance_amount)
 
         db.commit()
 

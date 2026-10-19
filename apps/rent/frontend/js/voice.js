@@ -515,7 +515,7 @@ export async function startVoiceRecognition() {
  */
 function showMicrophonePermissionPrompt() {
   updateVoiceUIState('idle');
-  updateVoiceTranscript('말로 입력을 사용하려면 마이크 권한 승인이 필요합니다.');
+  updateVoiceTranscript('음성 Ai 입력을 사용하려면 마이크 권한 승인이 필요합니다.');
   
   const promptHtml = `
     <div class="p-2 text-center">

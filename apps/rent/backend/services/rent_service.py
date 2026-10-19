@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from ..db.database import init_db
 from ..db.models import RentBranch, RentRoom, RentPayment, RentExpense, RentUpgradeRequest, RentTenantHistory, RentUser
 from ..schemas import RoomUpdate, ExpenseCreate, BranchCreate, BranchUpdate, BranchBillingUpdate, RegisterRequest, UserApprovePayload, UserUpdatePayload
-from .payment_service import PaymentService
+from .payment_service import PaymentService, resolve_period_contract, get_rolling_periods
 from .vat_service import VatService
 from .auth_service import auth_service
 from .branch_service import branch_service
@@ -244,63 +244,26 @@ class RentService:
             )
             db.add(room)
 
-            # 롤링 12개월(직전 12개월: 2025.11 ~ 2026.10) 및 당해 미래월(2026.11, 2026.12) 납부 기록 생성
-            seed_periods = []
-            for i in range(12):
-                m_calc = cur_month - i
-                y_calc = cur_year
-                if m_calc <= 0:
-                    m_calc += 12
-                    y_calc -= 1
-                seed_periods.append((y_calc, m_calc))
-            for m_future in range(cur_month + 1, 13):
-                if (cur_year, m_future) not in seed_periods:
-                    seed_periods.append((cur_year, m_future))
+            # 롤링 12개월(직전 12개월) 및 당해 미래월 회차 단일 모듈화 적용
+            seed_periods = get_rolling_periods(cur_year, cur_month, 12)
 
             for y, m in seed_periods:
-                # 전입일 및 후불 규칙 판정
-                is_past_paid = False
-                pay_note = ""
-                if not is_vacant and move_in_val:
-                    in_y = int(move_in_val[:4])
-                    in_m = int(move_in_val[5:7])
-                    is_before = (y < in_y) or (y == in_y and m < in_m)
-                    is_move_in = (y == in_y and m == in_m)
-                    is_future = (y > cur_year) or (y == cur_year and m > cur_month)
-
-                    if is_before:
-                        # 전입 이전: 이전 데이터 없으므로 미납
-                        is_past_paid = False
-                        pay_note = "전입 이전 (기록 없음/미납)"
-                    elif is_move_in:
-                        # 입주월: 월세/후불이면 익월 납부이므로 입주월은 미납
-                        if pay_timing == "후불" and lease_type == "월세":
-                            is_past_paid = False
-                            pay_note = "입주월 (후불 익월 납부)"
-                        else:
-                            is_past_paid = True
-                            pay_note = "정상 입금 (선불)"
-                    elif not is_future:
-                        # 입주월 익월부터 현재월까지: 완납
-                        is_past_paid = True
-                        pay_note = "정상 입금"
-                    else:
-                        is_past_paid = False
-                        pay_note = ""
+                # 단일 도메인 서비스(resolve_period_contract)로 현실 업무 규칙에 맞춘 상태 및 금액 판정
+                res = resolve_period_contract(y, m, room, prev_hist=None, cur_year=cur_year, cur_month=cur_month)
 
                 pay = RentPayment(
                     branch_id=branch_id,
                     room_number=rNum,
                     year=y,
                     month=m,
-                    paid=is_past_paid,
-                    paid_date=f"{y}-{str(m).zfill(2)}-10" if is_past_paid else "",
-                    rent_amount=rent_amt,
-                    maintenance_amount=maint_amt,
-                    note=pay_note,
-                    tenant_name=name,
-                    tenant_id_number="" if is_vacant else f"9{(idx % 9) + 1}0512-1******",
-                    is_previous_tenant=False
+                    paid=res.paid,
+                    paid_date=res.paid_date,
+                    rent_amount=res.rent_amount,
+                    maintenance_amount=res.maintenance_amount,
+                    note=res.note,
+                    tenant_name=res.tenant_name,
+                    tenant_id_number=res.tenant_id_number if res.tenant_id_number else ("" if is_vacant else f"9{(idx % 9) + 1}0512-1******"),
+                    is_previous_tenant=res.is_previous_tenant
                 )
                 db.add(pay)
 
