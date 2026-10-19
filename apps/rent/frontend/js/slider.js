@@ -38,7 +38,13 @@ export function switchRoomSlideView(view, animate = true) {
       navContent.className = 'py-1 px-2.5 rounded-xl bg-surface-900 border border-purple-500/50 hover:border-purple-400 text-xs shadow-md flex items-center justify-between gap-1.5 transition-colors';
     }
     if (navCurrent) {
-      navCurrent.textContent = '과거 납부 내역 (최근 1년)';
+      const lastY = currentYear - 1;
+      const hasPast = Object.values(state.rooms || {}).some(r => r && r.payments && Object.keys(r.payments).some(k => {
+        const p = r.payments[k];
+        const y = (p && p.year) ? p.year : (k.includes('-') ? parseInt(k.split('-')[0], 10) : null);
+        return y !== null && y <= lastY && (p.paid || (p.rent_amount && p.rent_amount > 0) || p.tenant_name || p.note);
+      }));
+      navCurrent.textContent = hasPast ? `과거 납부 내역 (${lastY}.01 ~ 현재)` : `과거 납부 내역 (${currentYear}.01 ~ 현재)`;
       navCurrent.className = 'font-bold text-purple-300 text-[11px] truncate';
     }
     if (navDotMain) navDotMain.className = 'w-1.5 h-1.5 rounded-full bg-slate-600';

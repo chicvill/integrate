@@ -12654,25 +12654,55 @@ function renderPastHistorySection(room) {
   tbody.innerHTML = '';
   const isJeonse = (room.lease_type === '전세');
 
-  // ── 방안 A: 롤링 12개월 (현재 2026.10 기준 직전 12개월: 2026.10 ~ 2025.11) ──
-  const rollingMonths = [];
-  for (let i = 0; i < 12; i++) {
-    let m = currentMonth - i;
-    let y = currentYear;
-    if (m <= 0) {
-      m += 12;
-      y -= 1;
-    }
-    rollingMonths.push({ year: y, month: m });
+  const lastYear = currentYear - 1;
+
+  // ── 해당 건물 또는 호실에 작년도(lastYear 이하) 결제/수납 데이터가 존재하는지 확인 ──
+  let hasLastYearData = false;
+  if (room && room.payments) {
+    hasLastYearData = Object.keys(room.payments).some(k => {
+      const p = room.payments[k];
+      const y = (p && p.year) ? p.year : (k.includes('-') ? parseInt(k.split('-')[0], 10) : null);
+      return y !== null && y <= lastYear && (p.paid || (p.rent_amount && p.rent_amount > 0) || p.tenant_name || p.note);
+    });
+  }
+  if (!hasLastYearData && state.rooms) {
+    hasLastYearData = Object.values(state.rooms).some(r => {
+      return r && r.payments && Object.keys(r.payments).some(k => {
+        const p = r.payments[k];
+        const y = (p && p.year) ? p.year : (k.includes('-') ? parseInt(k.split('-')[0], 10) : null);
+        return y !== null && y <= lastYear && (p.paid || (p.rent_amount && p.rent_amount > 0) || p.tenant_name || p.note);
+      });
+    });
   }
 
-  rollingMonths.forEach(item => {
+  // ── 상단 헤더 기간 배지 업데이트 (2025.01 ~ 현재 vs 2026.01 ~ 현재) ──
+  const periodBadge = document.getElementById('pastRoomPeriodBadge');
+  if (periodBadge) {
+    periodBadge.textContent = hasLastYearData ? `(${lastYear}.01 ~ 현재)` : `(${currentYear}.01 ~ 현재)`;
+  }
+
+  // ── 표시 월 목록 구성 ──
+  // 작년도 데이터가 있는 건물(시크빌 등): 작년 1월부터 당해연도 당월까지 (2025.01 ~ 2026.10 내림차순)
+  // 작년도 데이터가 없는 다른 건물: 작년 데이터가 없으므로 당해연도(2026.01 ~ 2026.10) 있는 데이터만 표시
+  const startYear = hasLastYearData ? lastYear : currentYear;
+  const targetMonths = [];
+
+  for (let y = currentYear; y >= startYear; y--) {
+    const maxM = (y === currentYear) ? currentMonth : 12;
+    const minM = 1;
+    for (let m = maxM; m >= minM; m--) {
+      targetMonths.push({ year: y, month: m });
+    }
+  }
+
+  targetMonths.forEach(item => {
     const y = item.year;
     const m = item.month;
     const pKey = `${y}-${m}`;
+    const pKeyPad = `${y}-${String(m).padStart(2, '0')}`;
 
-    // 결제 데이터 조회 (연도-월 키 우선, 당해연도 월 키, 없으면 기본 객체)
-    const existingP = (room.payments && (room.payments[pKey] || (y === currentYear ? room.payments[m] : null)));
+    // 결제 데이터 조회 (연도-월 키 우선, 2자리 패딩 키, 당해연도 월 키)
+    const existingP = (room.payments && (room.payments[pKey] || room.payments[pKeyPad] || (y === currentYear ? room.payments[m] : null)));
 
     // 1. 현재 세입자 전입일 기준 거주 기간 판별
     let inYear = currentYear;
@@ -12687,7 +12717,9 @@ function renderPastHistorySection(room) {
       }
     }
 
-    const isCurrentTenant = Boolean(room.name) && hasMoveIn && (y > inYear || (y === inYear && m >= inMonth));
+    // 기존 결제 기록이 있고 세입자명이 현재 세입자와 일치하는 경우도 현재 세입자로 인정 (이전 연도 거주 포함)
+    const matchesCurrentName = Boolean(room.name && existingP && existingP.tenant_name === room.name);
+    const isCurrentTenant = (Boolean(room.name) && hasMoveIn && (y > inYear || (y === inYear && m >= inMonth))) || matchesCurrentName;
 
     // 2. 전출자 이력 매칭
     const histories = room.tenant_histories || [];
@@ -12721,18 +12753,22 @@ function renderPastHistorySection(room) {
           }
         }
       }
-      if (!matchedHist && existingP && existingP.is_previous_tenant && existingP.tenant_name) {
+      if (!matchedHist && existingP && existingP.tenant_name && existingP.tenant_name !== '공실' && existingP.tenant_name !== room.name) {
         matchedHist = {
           name: existingP.tenant_name,
-          rent: existingP.rent_amount,
-          maintenance: existingP.maintenance_amount,
-          lease_type: '월세'
+          rent: existingP.rent_amount !== undefined ? existingP.rent_amount : (room.rent || 0),
+          maintenance: existingP.maintenance_amount !== undefined ? existingP.maintenance_amount : (room.maintenance || 0),
+          lease_type: existingP.lease_type || '월세'
         };
       }
     }
 
-    // 3. 공실 여부 판정: 현재 세입자 계약도 아니고 전출자 거주 기간도 아님
-    const isVacancy = (!isCurrentTenant && !matchedHist);
+    // 3. 공실 여부 판정:
+    // 기존 결제 기록에 실입금(paid) 또는 실세입자가 있거나 거주 기간이면 공실 아님.
+    // 기존 결제 기록에 note === '공실'이거나, 거주 기간이 아니고 실입금/세입자도 없으면 공실.
+    const hasRecordedPayment = Boolean(existingP && (existingP.paid || (existingP.tenant_name && existingP.tenant_name !== '공실')));
+    const isExplicitVacancy = Boolean(existingP && (existingP.note === '공실' || existingP.tenant_name === '공실'));
+    const isVacancy = isExplicitVacancy || (!isCurrentTenant && !matchedHist && !hasRecordedPayment);
 
     // 납부 객체 p 준비
     let p = existingP ? { ...existingP } : {
@@ -12764,16 +12800,21 @@ function renderPastHistorySection(room) {
       rAmt = 0;
       mAmt = 0;
     } else if (isCurrentTenant) {
-      displayName = room.name;
+      displayName = (existingP && existingP.tenant_name) ? existingP.tenant_name : room.name;
       isPrev = false;
       rAmt = isJeonse ? 0 : (p.rent_amount !== undefined ? p.rent_amount : room.rent);
-      mAmt = p.maintenance_amount !== undefined ? p.maintenance_amount : room.maintenance;
+      mAmt = p.maintenance_amount !== undefined ? p.maintenance_amount : (room.maintenance || 0);
     } else if (matchedHist) {
       displayName = matchedHist.name;
       isPrev = true;
       const histJeonse = (matchedHist.lease_type === '전세');
       rAmt = histJeonse ? 0 : (p.rent_amount !== undefined ? p.rent_amount : (matchedHist.rent || 0));
       mAmt = p.maintenance_amount !== undefined ? p.maintenance_amount : (matchedHist.maintenance || 0);
+    } else if (existingP && existingP.tenant_name) {
+      displayName = existingP.tenant_name;
+      isPrev = (existingP.tenant_name !== room.name);
+      rAmt = p.rent_amount !== undefined ? p.rent_amount : (room.rent || 0);
+      mAmt = p.maintenance_amount !== undefined ? p.maintenance_amount : (room.maintenance || 0);
     }
 
     const tot = rAmt + mAmt;
@@ -12789,7 +12830,7 @@ function renderPastHistorySection(room) {
       tenantLabel = `
         <div class="font-bold text-amber-300 flex items-center gap-1 whitespace-nowrap">
           <span>${displayName || '전출 세입자'}</span>
-          <span class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1 py-0.2 rounded font-normal whitespace-nowrap">전출(1년)</span>
+          <span class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1 py-0.2 rounded font-normal whitespace-nowrap">전출</span>
         </div>
       `;
     } else {
@@ -14052,7 +14093,13 @@ function switchRoomSlideView(view, animate = true) {
       navContent.className = 'py-1 px-2.5 rounded-xl bg-surface-900 border border-purple-500/50 hover:border-purple-400 text-xs shadow-md flex items-center justify-between gap-1.5 transition-colors';
     }
     if (navCurrent) {
-      navCurrent.textContent = '과거 납부 내역 (최근 1년)';
+      const lastY = currentYear - 1;
+      const hasPast = Object.values(state.rooms || {}).some(r => r && r.payments && Object.keys(r.payments).some(k => {
+        const p = r.payments[k];
+        const y = (p && p.year) ? p.year : (k.includes('-') ? parseInt(k.split('-')[0], 10) : null);
+        return y !== null && y <= lastY && (p.paid || (p.rent_amount && p.rent_amount > 0) || p.tenant_name || p.note);
+      }));
+      navCurrent.textContent = hasPast ? `과거 납부 내역 (${lastY}.01 ~ 현재)` : `과거 납부 내역 (${currentYear}.01 ~ 현재)`;
       navCurrent.className = 'font-bold text-purple-300 text-[11px] truncate';
     }
     if (navDotMain) navDotMain.className = 'w-1.5 h-1.5 rounded-full bg-slate-600';
