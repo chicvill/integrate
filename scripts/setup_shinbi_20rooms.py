@@ -9,38 +9,37 @@ import json
 import os
 import sys
 
-DB_PATH = '/app/data/rent.db'
-if not os.path.exists(DB_PATH):
-    DB_PATH = 'apps/rent/backend/rent.db' if os.path.exists('apps/rent/backend/rent.db') else 'rent.db'
+# 사용법: python setup_shinbi_20rooms.py [건물명=신비주택] [branch_id=branch_9348] [db경로]
+TARGET_NAME = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else "신비주택"
+BID = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] else "branch_9348"
+if BID == "main":
+    sys.exit("❌ 'main'(시크빌 본점) 데이터는 이 스크립트로 덮어쓸 수 없습니다.")
+
+DB_PATH = sys.argv[3] if len(sys.argv) > 3 else None
+if not DB_PATH:
+    for cand in ['/media/integrat.db', '/app/data/rent.db', 'apps/rent/backend/rent.db', 'rent.db']:
+        if os.path.exists(cand):
+            DB_PATH = cand
+            break
+
+if not DB_PATH:
+    sys.exit("❌ DB 파일을 찾을 수 없습니다. 3번째 인자로 DB 경로를 지정하세요.")
 
 conn = sqlite3.connect(DB_PATH)
 c = conn.cursor()
 
-# 1. 대상 지점 확인 및 건물명 보존/설정
-# branch_id='main' 지점 조회
-c.execute("SELECT branch_id, name, address, contact_phone FROM rent_branches WHERE branch_id='main'")
+# 1. 대상 지점 확인 (건물 정보는 보존, 없으면 신규 생성)
+c.execute("SELECT branch_id, name FROM rent_branches WHERE branch_id=?", (BID,))
 branch_row = c.fetchone()
-
-# 전달된 인자나 기존 이름 확인 (선호빌 / 신비주택)
-target_building_name = "선호빌"
-if len(sys.argv) > 1 and sys.argv[1]:
-    target_building_name = sys.argv[1]
-elif branch_row and branch_row[1] and "시크빌" not in branch_row[1]:
-    target_building_name = branch_row[1]
-
 if not branch_row:
-    # 지점이 없으면 신규 생성
     c.execute("""
-        INSERT INTO rent_branches (id, branch_id, name, contact_phone, address, fee_plan, monthly_fee, billing_status, billing_due_day, is_active)
-        VALUES (?, 'main', ?, '010-0000-0000', '', '원룸 20실형', 150000, 'PAID', 25, 1)
-    """, (str(uuid.uuid4()), target_building_name))
-else:
-    # 건물 정보는 온전히 유지하되, 건물명을 정확히 반영
-    c.execute("UPDATE rent_branches SET name=? WHERE branch_id='main'", (target_building_name,))
+        INSERT INTO rent_branches (id, branch_id, name, contact_phone, address, fee_plan, monthly_fee, billing_status, billing_due_day, is_active, metadata_json)
+        VALUES (?, ?, ?, '010-0000-0000', '', '원룸 20실형', 150000, 'PAID', 25, 1, '{}')
+    """, (str(uuid.uuid4()), BID, TARGET_NAME))
 
 # 2. 건물 정보는 남기고, '임차 정보(호실 계약 및 수납 내역)'만 깨끗이 초기화
-c.execute("DELETE FROM rent_rooms WHERE branch_id='main'")
-c.execute("DELETE FROM rent_payments WHERE branch_id='main'")
+c.execute("DELETE FROM rent_rooms WHERE branch_id=?", (BID,))
+c.execute("DELETE FROM rent_payments WHERE branch_id=?", (BID,))
 
 # 3. 신규 20개실 실물 임차 정보 주입
 rooms = [
@@ -72,18 +71,18 @@ for item in rooms:
     meta = json.dumps({"note": note, "phone": phone})
     c.execute("""
         INSERT INTO rent_rooms (id, branch_id, room_number, name, id_number, phone, lease_type, pay_timing, deposit, rent, maintenance, clean_fee, move_in, expiry, move_out, metadata_json)
-        VALUES (?, 'main', ?, ?, '', ?, '월세', ?, ?, ?, ?, 80000, ?, '', '', ?)
-    """, (r_id, int(room_num), name, phone, pay_timing, deposit, rent, maint, move_in, meta))
+        VALUES (?, ?, ?, ?, '', ?, '월세', ?, ?, ?, ?, 80000, ?, '', '', ?)
+    """, (r_id, BID, int(room_num), name, phone, pay_timing, deposit, rent, maint, move_in, meta))
 
     for m in range(1, 13):
         p_id = str(uuid.uuid4())
         c.execute("""
             INSERT INTO rent_payments (id, branch_id, room_number, year, month, paid, paid_date, rent_amount, maintenance_amount, note, tenant_name, tenant_id_number, is_previous_tenant)
-            VALUES (?, 'main', ?, 2026, ?, 0, '', ?, ?, '', ?, '', 0)
-        """, (p_id, int(room_num), m, rent, maint, name))
+            VALUES (?, ?, ?, 2026, ?, 0, '', ?, ?, '', ?, '', 0)
+        """, (p_id, BID, int(room_num), m, rent, maint, name))
 
 conn.commit()
-final_branch = c.execute("SELECT name FROM rent_branches WHERE branch_id='main'").fetchone()[0]
-total_rooms = c.execute("SELECT COUNT(*) FROM rent_rooms WHERE branch_id='main'").fetchone()[0]
+final_branch = c.execute("SELECT name FROM rent_branches WHERE branch_id=?", (BID,)).fetchone()[0]
+total_rooms = c.execute("SELECT COUNT(*) FROM rent_rooms WHERE branch_id=?", (BID,)).fetchone()[0]
 print(f"🎉 건물 정보 보존 완료! 건물명: [{final_branch}] / 임차 정보 갱신: 총 {total_rooms}개실 등록 완료")
 conn.close()

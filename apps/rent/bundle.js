@@ -9303,8 +9303,29 @@ function togglePastAccordion(event) {
 // ── 종합 렌더링 ──
 function renderAll() {
   const roomNum = state.selectedRoom;
-  const room = state.rooms[roomNum];
-  if (!room) return;
+  let room = state.rooms[roomNum];
+  if (!room) {
+    // 선택 호실이 없으면 해당 건물의 첫 호실로 대체
+    const keys = Object.keys(state.rooms || {}).map(Number).sort((a, b) => a - b);
+    if (keys.length > 0) {
+      state.selectedRoom = keys[0];
+      room = state.rooms[keys[0]];
+    }
+  }
+
+  if (!room) {
+    // 호실이 아직 없는 신규 건물: 이전 건물 화면을 지우고 안내 + 건물 전환 드로어는 항상 렌더링
+    renderEmptyBranch();
+    renderLeftMenuDrawer();
+    return;
+  }
+
+  const emptyBanner = document.getElementById('emptyBranchBanner');
+  if (emptyBanner) {
+    const hidden = emptyBanner.nextElementSibling;
+    if (hidden) hidden.style.display = '';
+    emptyBanner.remove();
+  }
 
   renderHeaderSummary(room);
   renderBuildingSummary();
@@ -9314,6 +9335,30 @@ function renderAll() {
   renderExpenseLedgerSection();
   renderRightRoomDrawer();
   renderLeftMenuDrawer();
+}
+
+function renderEmptyBranch() {
+  const curBranchObj = (state.branches || []).find(b => b.branch_id === state.currentBranch);
+  const branchName = curBranchObj ? curBranchObj.name : state.currentBranch;
+
+  const branchTitleEl = document.getElementById('headerBranchName');
+  if (branchTitleEl) branchTitleEl.textContent = branchName;
+  const bNameEl = document.getElementById('sumBuildingName');
+  if (bNameEl) bNameEl.textContent = `${branchName} 호실 0실`;
+
+  const card = document.getElementById('cardRoomNumber');
+  const anchor = card ? (card.closest('section, article, div.rounded-2xl, div') || card.parentElement) : null;
+  if (anchor && anchor.parentElement) {
+    let banner = document.getElementById('emptyBranchBanner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'emptyBranchBanner';
+      anchor.parentElement.insertBefore(banner, anchor);
+    }
+    banner.className = 'w-full p-4 mb-3 rounded-xl bg-amber-950/60 border border-amber-500/60 text-amber-200 text-xs font-bold';
+    banner.innerHTML = `⚠️ <b>${branchName}</b>에는 아직 등록된 호실이 없습니다.<br><span class="font-normal text-amber-300/90">좌측 메뉴(☰) → 호실/임차 정보 신규등록(캡처·사진·텍스트·CSV)으로 입력하세요. 다른 건물은 좌측 메뉴에서 선택할 수 있습니다.</span>`;
+    anchor.style.display = 'none';
+  }
 }
 
 function renderBuildingSummary() {
