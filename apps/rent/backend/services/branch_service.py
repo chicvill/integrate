@@ -54,7 +54,9 @@ class BranchService:
 
             # 3. 호실이 존재하는 실제 지점 자동 감지
             room_branches = [r[0] for r in db.query(RentRoom.branch_id).distinct().all() if r[0]]
-            existing_branches: Dict[str, RentBranch] = {str(b.branch_id): b for b in db.query(RentBranch).all()}
+            existing_branches: Dict[str, RentBranch] = {}
+            for b in db.query(RentBranch).all():
+                existing_branches[str(b.branch_id)] = b
 
             has_new = False
             for b_id in room_branches:
@@ -179,16 +181,16 @@ class BranchService:
         rooms = db.query(RentRoom).filter(RentRoom.branch_id == canon_id).all()
         for r in rooms:
             r.name = ""
+            r.id_number = ""
             r.phone = ""
             r.deposit = 0
             r.rent = 0
             r.maintenance = 0
-            r.pay_day = 25
-            r.start_date = None
-            r.end_date = None
+            r.clean_fee = 0
+            r.move_in = ""
+            r.expiry = ""
             r.move_out = ""
-            r.move_out_date = None
-            r.note = ""
+            r.metadata_json = {}
 
         # 3. 건물명 변경 요청이 있으면 반영
         if new_branch_name and new_branch_name.strip():
@@ -232,16 +234,16 @@ class BranchService:
         rooms = db.query(RentRoom).filter(RentRoom.branch_id == "main").all()
         for r in rooms:
             r.name = ""
+            r.id_number = ""
             r.phone = ""
             r.deposit = 0
             r.rent = 0
             r.maintenance = 0
-            r.pay_day = 25
-            r.start_date = None
-            r.end_date = None
+            r.clean_fee = 0
+            r.move_in = ""
+            r.expiry = ""
             r.move_out = ""
-            r.move_out_date = None
-            r.note = ""
+            r.metadata_json = {}
 
         db.commit()
         return {
