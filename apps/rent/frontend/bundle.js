@@ -16216,7 +16216,7 @@ function openBatchPaymentModal(targetBranchId) {
 
   const datePicker = document.getElementById('batchSpecificDateInput');
   if (datePicker && !datePicker.value) {
-    datePicker.value = formattedToday ? formattedToday() : new Date().toISOString().split('T')[0];
+    datePicker.value = formattedToday || new Date().toISOString().split('T')[0];
   }
 
   const contractRadio = document.querySelector('input[name="batchDateMode"][value="contract"]');
