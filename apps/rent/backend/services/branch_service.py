@@ -54,7 +54,7 @@ class BranchService:
 
             # 3. 호실이 존재하는 실제 지점 자동 감지
             room_branches = [r[0] for r in db.query(RentRoom.branch_id).distinct().all() if r[0]]
-            existing_branches = {b.branch_id: b for b in db.query(RentBranch).all()}
+            existing_branches: Dict[str, RentBranch] = {str(b.branch_id): b for b in db.query(RentBranch).all()}
 
             has_new = False
             for b_id in room_branches:
@@ -186,7 +186,7 @@ class BranchService:
             r.pay_day = 25
             r.start_date = None
             r.end_date = None
-            r.move_out = False
+            r.move_out = ""
             r.move_out_date = None
             r.note = ""
 
@@ -239,7 +239,7 @@ class BranchService:
             r.pay_day = 25
             r.start_date = None
             r.end_date = None
-            r.move_out = False
+            r.move_out = ""
             r.move_out_date = None
             r.note = ""
 
