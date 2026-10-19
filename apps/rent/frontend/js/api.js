@@ -102,7 +102,8 @@ export const http = {
 export const roomsApi = {
   list: (branchId = 'main') => http.get('/rooms', { branch_id: branchId }),
   updateContract: (roomNumber, data, branchId = 'main') => http.put(`/rooms/${roomNumber}`, data, { branch_id: branchId }),
-  batchImport: (roomsData, branchId = 'main') => http.post('/rooms/batch-import', roomsData, { branch_id: branchId }),
+  batchImport: (roomsData, branchId = 'main', clearExisting = false) => http.post('/rooms/batch-import', roomsData, { branch_id: branchId, clear_existing: clearExisting }),
+  reset: (branchId = 'main') => http.post('/rooms/reset', {}, { branch_id: branchId }),
   ocrImport: (imageBase64, branchId = 'main') => http.post('/rooms/ocr-import', { image_base64: imageBase64 }, { branch_id: branchId }),
   fillPayments: (roomNumber = null, branchId = 'main') => http.post('/rooms/fill-payments', { room_number: roomNumber }, { branch_id: branchId }),
   getExpiring: (branchId = 'main', daysWindow = 65) => http.get('/expiring-rooms', { branch_id: branchId, days_window: daysWindow })

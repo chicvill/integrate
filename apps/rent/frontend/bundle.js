@@ -8522,7 +8522,8 @@ const http = {
 const roomsApi = {
   list: (branchId = 'main') => http.get('/rooms', { branch_id: branchId }),
   updateContract: (roomNumber, data, branchId = 'main') => http.put(`/rooms/${roomNumber}`, data, { branch_id: branchId }),
-  batchImport: (roomsData, branchId = 'main') => http.post('/rooms/batch-import', roomsData, { branch_id: branchId }),
+  batchImport: (roomsData, branchId = 'main', clearExisting = false) => http.post('/rooms/batch-import', roomsData, { branch_id: branchId, clear_existing: clearExisting }),
+  reset: (branchId = 'main') => http.post('/rooms/reset', {}, { branch_id: branchId }),
   ocrImport: (imageBase64, branchId = 'main') => http.post('/rooms/ocr-import', { image_base64: imageBase64 }, { branch_id: branchId }),
   fillPayments: (roomNumber = null, branchId = 'main') => http.post('/rooms/fill-payments', { room_number: roomNumber }, { branch_id: branchId }),
   getExpiring: (branchId = 'main', daysWindow = 65) => http.get('/expiring-rooms', { branch_id: branchId, days_window: daysWindow })
@@ -10039,13 +10040,47 @@ function renderExpenseLedgerSection() {
   }
 }
 
-// ── 우측 슬라이드 바: 29개실 호실 선택 그리드 ──
+function getDynamicFloorStructure(roomsObj) {
+  const rooms = roomsObj || {};
+  const roomKeys = Object.keys(rooms);
+  if (!roomKeys.length) return FLOOR_STRUCTURE;
+
+  const floorMap = {};
+  roomKeys.forEach(key => {
+    const rNum = parseInt(key, 10);
+    if (isNaN(rNum)) return;
+    const floor = Math.floor(rNum / 100);
+    if (!floorMap[floor]) {
+      floorMap[floor] = [];
+    }
+    floorMap[floor].push(rNum);
+  });
+
+  const sortedFloors = Object.keys(floorMap).map(Number).sort((a, b) => b - a);
+  if (!sortedFloors.length) return FLOOR_STRUCTURE;
+
+  return sortedFloors.map(f => ({
+    label: `${f}층`,
+    rooms: floorMap[f].sort((a, b) => a - b)
+  }));
+}
+
+// ── 우측 슬라이드 바: 호실 선택 그리드 (동적 층수/호실 완벽 지원) ──
 function renderRightRoomDrawer() {
   const container = document.getElementById('drawerFloorMap');
   if (!container) return;
   container.innerHTML = '';
 
-  FLOOR_STRUCTURE.forEach(floor => {
+  const curBranchObj = state.branches.find(b => b.branch_id === state.currentBranch);
+  const branchName = curBranchObj ? curBranchObj.name : '건물';
+  const totalCount = Object.keys(state.rooms || {}).length;
+  const drawerTitleEl = document.getElementById('roomDrawerTitle');
+  if (drawerTitleEl) {
+    drawerTitleEl.textContent = `${branchName}(${totalCount}개실)`;
+  }
+
+  const dynamicFloors = getDynamicFloorStructure(state.rooms);
+  dynamicFloors.forEach(floor => {
     const floorBox = document.createElement('div');
     floorBox.className = 'mb-2.5';
 
@@ -13967,7 +14002,12 @@ async function executeBatchImport() {
     return;
   }
 
-  const confirmMsg = `총 ${targetRooms.length}개 호실의 임대차 계약 정보를 현재 건물에 일괄 적용하시겠습니까?\n기존 호실 정보는 엑셀 데이터로 갱신됩니다.`;
+  const chkClear = document.getElementById('chkClearExistingRooms');
+  const shouldClear = chkClear ? chkClear.checked : true;
+
+  const confirmMsg = shouldClear
+    ? `총 ${targetRooms.length}개 호실의 임대차 계약 정보를 현재 건물에 등록하시겠습니까?\n\n⚠️ [초기화 후 등록]\n기존 잔여 호실(시크빌 등)을 모두 비우고, 엑셀/CSV에 있는 ${targetRooms.length}개 호실만 정확하게 새로 등록됩니다.`
+    : `총 ${targetRooms.length}개 호실의 임대차 계약 정보를 현재 건물에 일괄 적용하시겠습니까?\n기존 호실 정보는 엑셀 데이터로 갱신됩니다.`;
   if (!confirm(confirmMsg)) return;
 
   let serverSynced = false;
@@ -13976,12 +14016,18 @@ async function executeBatchImport() {
   try {
     if (state.isOnline) {
       try {
-        await apiBatchImportRooms(targetRooms, state.currentBranch);
+        await apiBatchImportRooms(targetRooms, state.currentBranch, shouldClear);
         serverSynced = true;
       } catch (errApi) {
         console.warn("서버 일괄 등록 전송 일시 지연/오류:", errApi);
         serverWarning = errApi.message || '서버 응답 지연 (502)';
       }
+    }
+
+    // 초기화 옵션 활성화 시 로컬 state.rooms를 완전히 비우고 등록 대상 호실로만 교체
+    if (shouldClear) {
+      state.rooms = {};
+      state.selectedRoom = targetRooms[0] ? targetRooms[0].room_number : 101;
     }
 
     // 로컬 상태 동기화 업데이트 및 과거 납부 내역 자동 동기화 (항상 안전하게 보존)
@@ -15997,9 +16043,30 @@ function closeSequentialSmsModal() {
   closeModal('sequentialSmsModal');
 }
 
+async function resetCurrentBuildingRooms() {
+  const curBranchObj = state.branches.find(b => b.branch_id === state.currentBranch);
+  const bName = curBranchObj ? curBranchObj.name : '현재 건물';
+  if (!confirm(`[${bName}]의 기존 모든 호실 및 세입자 데이터를 깨끗이 초기화하시겠습니까?\n\n⚠️ 초기화 후 엑셀/CSV 일괄 등록으로 원하는 호실 수(예: 신비주택 20개실)만큼 깔끔하게 등록하실 수 있습니다.`)) {
+    return;
+  }
+  try {
+    if (state.isOnline) {
+      await roomsApi.reset(state.currentBranch);
+    }
+    state.rooms = {};
+    state.selectedRoom = null;
+    saveLocalFallback();
+    renderAll();
+    alert(`🎉 [${bName}]의 모든 호실 데이터가 깨끗하게 초기화되었습니다!\n이제 [엑셀 일괄 등록]으로 신비주택 20개실을 등록해 보세요.`);
+  } catch (err) {
+    alert("초기화 처리 오류: " + err.message);
+  }
+}
+
 if (typeof window !== 'undefined') {
   window.fillBankPresetSms = fillBankPresetSms;
   window.fillSampleSmsText = fillSampleSmsText;
+  window.resetCurrentBuildingRooms = resetCurrentBuildingRooms;
 }
 
 

@@ -591,10 +591,23 @@ class RentService:
         self.ensure_default_seed(db, branch_id)
         return PaymentService.fill_tenant_payments(db, branch_id=branch_id, room_number=room_number)
 
-    def batch_import_rooms(self, db: Session, branch_id: str, rooms_data: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """엑셀 파일 등에서 추출한 호실 계약 정보를 일괄 등록/갱신"""
-        branch_id = self.branch_service.normalize_branch_id(branch_id)
-        self.ensure_default_seed(db, branch_id)
+    def reset_branch_rooms(self, db: Session, branch_id: str) -> Dict[str, Any]:
+        """지점/건물의 기존 모든 호실 및 납부 내역 전체 초기화 (신규 건물 전용 초기화)"""
+        norm_bid = self.branch_service.normalize_branch_id(branch_id)
+        db.query(RentPayment).filter(RentPayment.branch_id == norm_bid).delete()
+        db.query(RentRoom).filter(RentRoom.branch_id == norm_bid).delete()
+        db.commit()
+        return {"success": True, "branch_id": norm_bid, "message": "모든 호실 데이터가 초기화되었습니다."}
+
+    def batch_import_rooms(self, db: Session, branch_id: str, rooms_data: List[Dict[str, Any]], clear_existing: bool = False) -> Dict[str, Any]:
+        """엑셀 파일 등에서 추출한 호실 계약 정보를 일괄 등록/갱신 (clear_existing=True 시 기존 잔여 호실 완전 비우기)"""
+        norm_bid = self.branch_service.normalize_branch_id(branch_id)
+        if clear_existing:
+            db.query(RentPayment).filter(RentPayment.branch_id == norm_bid).delete()
+            db.query(RentRoom).filter(RentRoom.branch_id == norm_bid).delete()
+            db.commit()
+        else:
+            self.ensure_default_seed(db, norm_bid)
         imported_count = 0
         updated_count = 0
 
@@ -608,7 +621,7 @@ class RentService:
                 continue
 
             room = db.query(RentRoom).filter(
-                RentRoom.branch_id == branch_id,
+                RentRoom.branch_id == norm_bid,
                 RentRoom.room_number == r_num
             ).first()
 

@@ -184,10 +184,20 @@ async def update_room_contract(
 async def batch_import_rooms(
     payload: List[Dict[str, Any]] = Body(...),
     branch_id: str = Query("main", description="등록 대상 건물 ID"),
+    clear_existing: bool = Query(False, description="기존 잔여 호실 완전 초기화 후 등록 여부"),
     db: Session = Depends(get_db)
 ):
     """엑셀 파일 등에서 추출한 호실 계약 정보 일괄 등록/갱신"""
-    return service.batch_import_rooms(db, branch_id=branch_id, rooms_data=payload)
+    return service.batch_import_rooms(db, branch_id=branch_id, rooms_data=payload, clear_existing=clear_existing)
+
+
+@router.post("/rooms/reset")
+async def reset_branch_rooms(
+    branch_id: str = Query("main", description="초기화 대상 건물 ID"),
+    db: Session = Depends(get_db)
+):
+    """지점/건물의 기존 호실 및 세입자 데이터 전체 초기화 (신규 건물 전용)"""
+    return service.reset_branch_rooms(db, branch_id=branch_id)
 
 
 @router.post("/rooms/ocr-import")

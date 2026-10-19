@@ -878,13 +878,47 @@ export function renderExpenseLedgerSection() {
   }
 }
 
-// ── 우측 슬라이드 바: 29개실 호실 선택 그리드 ──
+export function getDynamicFloorStructure(roomsObj) {
+  const rooms = roomsObj || {};
+  const roomKeys = Object.keys(rooms);
+  if (!roomKeys.length) return FLOOR_STRUCTURE;
+
+  const floorMap = {};
+  roomKeys.forEach(key => {
+    const rNum = parseInt(key, 10);
+    if (isNaN(rNum)) return;
+    const floor = Math.floor(rNum / 100);
+    if (!floorMap[floor]) {
+      floorMap[floor] = [];
+    }
+    floorMap[floor].push(rNum);
+  });
+
+  const sortedFloors = Object.keys(floorMap).map(Number).sort((a, b) => b - a);
+  if (!sortedFloors.length) return FLOOR_STRUCTURE;
+
+  return sortedFloors.map(f => ({
+    label: `${f}층`,
+    rooms: floorMap[f].sort((a, b) => a - b)
+  }));
+}
+
+// ── 우측 슬라이드 바: 호실 선택 그리드 (동적 층수/호실 완벽 지원) ──
 export function renderRightRoomDrawer() {
   const container = document.getElementById('drawerFloorMap');
   if (!container) return;
   container.innerHTML = '';
 
-  FLOOR_STRUCTURE.forEach(floor => {
+  const curBranchObj = state.branches.find(b => b.branch_id === state.currentBranch);
+  const branchName = curBranchObj ? curBranchObj.name : '건물';
+  const totalCount = Object.keys(state.rooms || {}).length;
+  const drawerTitleEl = document.getElementById('roomDrawerTitle');
+  if (drawerTitleEl) {
+    drawerTitleEl.textContent = `${branchName}(${totalCount}개실)`;
+  }
+
+  const dynamicFloors = getDynamicFloorStructure(state.rooms);
+  dynamicFloors.forEach(floor => {
     const floorBox = document.createElement('div');
     floorBox.className = 'mb-2.5';
 
