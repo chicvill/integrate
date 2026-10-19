@@ -1169,33 +1169,33 @@ function renderVatReportUI(data) {
 
   const isAllSelected = selectedVatRooms.size === totalRoomsCount && totalRoomsCount > 0;
 
-  // 2. Table Header
+  // 2. Table Header (상단 고정 및 호실 열 좌측 틀 고정)
   const thead = document.getElementById('vatTableHead');
   if (thead) {
     let thHtml = `
       <tr>
-        <th class="py-2 px-1.5 border border-slate-700 bg-surface-850 text-center w-8 min-w-[32px] whitespace-nowrap">
+        <th class="py-2 px-1.5 border border-slate-700 bg-surface-850 text-center w-8 min-w-[32px] max-w-[32px] sticky left-0 top-0 z-30 whitespace-nowrap shadow-sm">
           <input type="checkbox" id="vatMasterCheck" ${isAllSelected ? 'checked' : ''} onchange="toggleAllVatRooms(this.checked)" class="accent-cyan-500 rounded cursor-pointer w-3.5 h-3.5" title="전체 선택/해제">
         </th>
-        <th class="py-2 px-2 border border-slate-700 bg-surface-850 text-cyan-300 font-bold text-center w-12 min-w-[48px] whitespace-nowrap">호실</th>
-        <th class="py-2 px-3 border border-slate-700 bg-surface-850 text-slate-200 text-left min-w-[125px] whitespace-nowrap">임차인</th>
-        <th class="py-2 px-2 border border-slate-700 bg-surface-850 text-slate-300 text-center min-w-[56px] whitespace-nowrap">유형</th>
-        <th class="py-2 px-2.5 border border-slate-700 bg-surface-850 text-slate-300 text-right min-w-[85px] whitespace-nowrap">보증금</th>
+        <th class="py-2 px-2 border border-slate-700 bg-surface-850 text-cyan-300 font-bold text-center w-12 min-w-[48px] sticky left-[32px] top-0 z-30 whitespace-nowrap shadow-sm border-r-2 border-r-slate-600">호실</th>
+        <th class="py-2 px-3 border border-slate-700 bg-surface-850 text-slate-200 text-left min-w-[125px] sticky top-0 z-20 whitespace-nowrap">임차인</th>
+        <th class="py-2 px-2 border border-slate-700 bg-surface-850 text-slate-300 text-center min-w-[56px] sticky top-0 z-20 whitespace-nowrap">유형</th>
+        <th class="py-2 px-2.5 border border-slate-700 bg-surface-850 text-slate-300 text-right min-w-[85px] sticky top-0 z-20 whitespace-nowrap">보증금</th>
     `;
     data.months.forEach(m => {
-      thHtml += `<th class="py-2 px-2 border border-slate-700 bg-surface-850 text-cyan-200 text-right min-w-[70px] whitespace-nowrap">${m}월</th>`;
+      thHtml += `<th class="py-2 px-2 border border-slate-700 bg-surface-850 text-cyan-200 text-right min-w-[70px] sticky top-0 z-20 whitespace-nowrap">${m}월</th>`;
     });
     thHtml += `
-        <th class="py-2 px-2.5 border border-slate-700 bg-surface-850 text-amber-300 font-bold text-right min-w-[95px] whitespace-nowrap">합계(VAT)</th>
-        <th class="py-2 px-2.5 border border-slate-700 bg-surface-850 text-cyan-300 font-bold text-right min-w-[90px] whitespace-nowrap">공급가액</th>
-        <th class="py-2 px-2.5 border border-slate-700 bg-surface-850 text-emerald-300 font-bold text-right min-w-[85px] whitespace-nowrap">부가가치세</th>
-        <th class="py-2 px-2 border border-slate-700 bg-surface-850 text-slate-300 text-center min-w-[52px] whitespace-nowrap">상태</th>
+        <th class="py-2 px-2.5 border border-slate-700 bg-surface-850 text-amber-300 font-bold text-right min-w-[95px] sticky top-0 z-20 whitespace-nowrap">합계(VAT)</th>
+        <th class="py-2 px-2.5 border border-slate-700 bg-surface-850 text-cyan-300 font-bold text-right min-w-[90px] sticky top-0 z-20 whitespace-nowrap">공급가액</th>
+        <th class="py-2 px-2.5 border border-slate-700 bg-surface-850 text-emerald-300 font-bold text-right min-w-[85px] sticky top-0 z-20 whitespace-nowrap">부가가치세</th>
+        <th class="py-2 px-2 border border-slate-700 bg-surface-850 text-slate-300 text-center min-w-[52px] sticky top-0 z-20 whitespace-nowrap">상태</th>
       </tr>
     `;
     thead.innerHTML = thHtml;
   }
 
-  // 3. Table Body
+  // 3. Table Body (호실 좌측 틀 고정 및 가로/세로 매끄러운 스크롤)
   const tbody = document.getElementById('vatTableBody');
   const monthSums = {};
   data.months.forEach(m => { monthSums[m] = 0; });
@@ -1222,15 +1222,16 @@ function renderVatReportUI(data) {
         const rowClass = isSelected 
           ? 'hover:bg-surface-800/60 transition' 
           : 'opacity-40 bg-slate-950/60 line-through text-slate-500 transition';
+        const stickyBg = isSelected ? 'bg-surface-900' : 'bg-slate-950';
 
         trHtml += `
           <tr class="${rowClass}">
-            <td class="py-1.5 px-1.5 border border-slate-800 text-center bg-surface-900/60 whitespace-nowrap">
+            <td class="py-1.5 px-1.5 border border-slate-800 text-center ${stickyBg} sticky left-0 z-10 whitespace-nowrap">
               <input type="checkbox" ${isSelected ? 'checked' : ''} 
                 onchange="onToggleVatRoomRow(${row.room_number}, this.checked)" 
                 class="accent-cyan-500 rounded cursor-pointer w-3.5 h-3.5">
             </td>
-            <td class="py-1.5 px-2 border border-slate-800 text-cyan-300 font-bold text-center bg-surface-900/40 font-mono whitespace-nowrap">${row.room_number}</td>
+            <td class="py-1.5 px-2 border border-slate-800 text-cyan-300 font-bold text-center ${stickyBg} font-mono sticky left-[32px] z-10 whitespace-nowrap border-r-2 border-r-slate-700">${row.room_number}</td>
             <td class="py-1.5 px-3 border border-slate-800 font-sans text-slate-200 font-medium whitespace-nowrap">
               <div>${row.tenant_name}</div>
               ${(row.id_number || (state.rooms[row.room_number] && state.rooms[row.room_number].id_number)) ? `<div class="text-[10px] text-slate-400 font-mono">주민: ${row.id_number || state.rooms[row.room_number].id_number}</div>` : ''}
@@ -1261,23 +1262,24 @@ function renderVatReportUI(data) {
     }
   }
 
-  // 4. Table Footer (Total Sum Row)
+  // 4. Table Footer (Total Sum Row - 하단 고정 및 호실 열 좌측 틀 고정)
   const tfoot = document.getElementById('vatTableFoot');
   if (tfoot) {
     let tfHtml = `
       <tr class="bg-surface-850 font-bold border-t-2 border-cyan-500/80">
-        <td class="py-2 px-1.5 border border-slate-700 text-center text-slate-500 font-sans whitespace-nowrap">-</td>
-        <td class="py-2 px-2 border border-slate-700 text-center text-cyan-300 font-sans whitespace-nowrap" colspan="3">합계 (${selectedVatRooms.size}실)</td>
-        <td class="py-2 px-2.5 border border-slate-700 text-right text-slate-300 font-mono whitespace-nowrap">${totalDeposit.toLocaleString()}</td>
+        <td class="py-2 px-1.5 border border-slate-700 text-center text-slate-500 font-sans sticky left-0 bottom-0 z-30 bg-surface-850 whitespace-nowrap">-</td>
+        <td class="py-2 px-2 border border-slate-700 text-center text-cyan-300 font-sans sticky left-[32px] bottom-0 z-30 bg-surface-850 whitespace-nowrap border-r-2 border-r-slate-700">합계</td>
+        <td class="py-2 px-3 border border-slate-700 text-left text-slate-300 font-sans sticky bottom-0 z-20 bg-surface-850 whitespace-nowrap" colspan="2">${selectedVatRooms.size}개 호실</td>
+        <td class="py-2 px-2.5 border border-slate-700 text-right text-slate-300 font-mono sticky bottom-0 z-20 bg-surface-850 whitespace-nowrap">${totalDeposit.toLocaleString()}</td>
     `;
     data.months.forEach(m => {
-      tfHtml += `<td class="py-2 px-2 border border-slate-700 text-right text-cyan-200 font-mono whitespace-nowrap">${monthSums[m].toLocaleString()}</td>`;
+      tfHtml += `<td class="py-2 px-2 border border-slate-700 text-right text-cyan-200 font-mono sticky bottom-0 z-20 bg-surface-850 whitespace-nowrap">${monthSums[m].toLocaleString()}</td>`;
     });
     tfHtml += `
-        <td class="py-2 px-2.5 border border-slate-700 text-right text-amber-300 text-sm font-black font-mono whitespace-nowrap">${Number(data.total_collected || 0).toLocaleString()}</td>
-        <td class="py-2 px-2.5 border border-slate-700 text-right text-cyan-300 text-sm font-black font-mono whitespace-nowrap">${Number(data.total_supply || 0).toLocaleString()}</td>
-        <td class="py-2 px-2.5 border border-slate-700 text-right text-emerald-300 text-sm font-black font-mono whitespace-nowrap">${Number(data.total_vat || 0).toLocaleString()}</td>
-        <td class="py-2 px-2 border border-slate-700 text-center text-slate-400 font-sans whitespace-nowrap">-</td>
+        <td class="py-2 px-2.5 border border-slate-700 text-right text-amber-300 text-sm font-black font-mono sticky bottom-0 z-20 bg-surface-850 whitespace-nowrap">${Number(data.total_collected || 0).toLocaleString()}</td>
+        <td class="py-2 px-2.5 border border-slate-700 text-right text-cyan-300 text-sm font-black font-mono sticky bottom-0 z-20 bg-surface-850 whitespace-nowrap">${Number(data.total_supply || 0).toLocaleString()}</td>
+        <td class="py-2 px-2.5 border border-slate-700 text-right text-emerald-300 text-sm font-black font-mono sticky bottom-0 z-20 bg-surface-850 whitespace-nowrap">${Number(data.total_vat || 0).toLocaleString()}</td>
+        <td class="py-2 px-2 border border-slate-700 text-center text-slate-400 font-sans sticky bottom-0 z-20 bg-surface-850 whitespace-nowrap">-</td>
       </tr>
     `;
     tfoot.innerHTML = tfHtml;

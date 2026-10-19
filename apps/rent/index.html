@@ -920,113 +920,92 @@
 
   <!-- 6. 부가가치세(VAT) 기간별 수납 집계 모달 -->
   <div id="vatModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden items-center justify-center p-2 sm:p-4">
-    <div class="bg-surface-900 border border-slate-800 rounded-2xl max-w-5xl w-full p-4 sm:p-5 shadow-2xl flex flex-col max-h-[92vh]">
+    <div class="bg-surface-900 border border-slate-800 rounded-2xl max-w-6xl w-full p-3 sm:p-4 shadow-2xl flex flex-col h-[90vh] max-h-[92vh] overflow-hidden">
       
-      <!-- Modal Header -->
-      <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
+      <!-- Modal Header (중복 설명 제거) -->
+      <div class="flex items-center justify-between gap-3 pb-2.5 border-b border-slate-800 shrink-0">
         <div class="flex items-center gap-2">
           <span class="text-xl">📊</span>
-          <div>
-            <h3 class="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-2">
-              <span>부가가치세 & 종합소득세 신고 집계</span>
-              <span id="vatCurrentPeriodLabel" class="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded font-mono font-normal">2026년 1기 (1~6월)</span>
-            </h3>
-            <p class="text-[11px] text-slate-400 mt-0.5">1월 부가세(전년 7~12월), 7월 부가세(금년 1~6월), 5월 종합소득세(전년 연간) 세무 신고 자료를 자동 산출합니다.</p>
-          </div>
+          <h3 class="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-2">
+            <span>부가가치세 & 종합소득세 신고 집계</span>
+            <span id="vatCurrentPeriodLabel" class="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded font-mono font-normal">2026년 1기 (1~6월)</span>
+          </h3>
         </div>
-        <button type="button" onclick="closeModal('vatModal')" class="text-slate-400 hover:text-white font-bold text-base cursor-pointer">✕</button>
+        <button type="button" onclick="closeModal('vatModal')" class="text-slate-400 hover:text-white font-bold text-base cursor-pointer p-1">✕</button>
       </div>
 
-      <!-- Filter & Compact Excel Summary Bar -->
-      <div class="py-2 border-b border-slate-800 text-xs space-y-2">
-        <!-- 1행: 실무 세무 신고 맞춤 프리셋 (1월 부가세 2기 / 7월 부가세 1기 / 5월 종합소득세 연간) -->
-        <div class="flex items-center justify-between gap-2 flex-wrap bg-surface-850/80 p-2 rounded-xl border border-slate-800">
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <span class="text-[11px] font-bold text-amber-400 flex items-center gap-1">
-              <span>⚡</span><span>세무 신고 원터치:</span>
-            </span>
-            <button type="button" id="vatBtnTaxJan" onclick="setVatTaxPreset('jan_vat')" class="vat-tax-btn px-2.5 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 text-xs font-semibold cursor-pointer transition active:scale-95 flex items-center gap-1" title="매년 1월 부가세 확정신고: 전년도 7~12월(2기) 수납 장부 집계">
-              <span>1월 부가세 (전년 7~12월 2기)</span>
-            </button>
-            <button type="button" id="vatBtnTaxJul" onclick="setVatTaxPreset('jul_vat')" class="vat-tax-btn px-2.5 py-1 rounded-lg bg-cyan-950/90 text-cyan-200 border border-cyan-500/80 text-xs font-bold cursor-pointer transition active:scale-95 flex items-center gap-1 shadow-sm" title="매년 7월 부가세 확정신고: 금년도 1~6월(1기) 수납 장부 집계">
-              <span>7월 부가세 (금년 1~6월 1기)</span>
-            </button>
-            <button type="button" id="vatBtnTaxIncome" onclick="setVatTaxPreset('may_income')" class="vat-tax-btn px-2.5 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 text-xs font-semibold cursor-pointer transition active:scale-95 flex items-center gap-1" title="매년 5월 종합소득세 확정신고: 전년도 1~12월(연간 전체) 수납 장부 집계">
-              <span>📑 5월 종합소득세 (전년 1~12월)</span>
-            </button>
-          </div>
-
-          <!-- 연도 선택 -->
-          <div class="flex items-center gap-1.5 ml-auto">
-            <span class="text-[11px] text-slate-400 font-bold">정산 연도:</span>
-            <select id="vatYearSelect" onchange="handleVatYearChange(this.value)" class="bg-surface-900 border border-slate-700 text-white font-bold rounded-lg px-2.5 py-1 text-xs focus:border-cyan-500 font-mono cursor-pointer">
-              <option value="2025">2025년 (전년도)</option>
-              <option value="2026" selected>2026년 (금년도)</option>
-              <option value="2027">2027년 (내년도)</option>
-            </select>
-          </div>
+      <!-- Filter & Control Bar (중복된 기수 버튼 및 중복 라벨 삭제, 깔끔한 단일 툴바 구성) -->
+      <div class="py-2 border-b border-slate-800 text-xs shrink-0 flex items-center justify-between gap-2 flex-wrap">
+        <!-- 세무 신고 원터치 프리셋 버튼 3종 -->
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <button type="button" id="vatBtnTaxJan" onclick="setVatTaxPreset('jan_vat')" class="vat-tax-btn px-2.5 py-1.5 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 text-xs font-semibold cursor-pointer transition active:scale-95 flex items-center gap-1" title="매년 1월 부가세 확정신고: 전년도 7~12월(2기) 수납 장부 집계">
+            <span>1월 부가세 (전년 7~12월 2기)</span>
+          </button>
+          <button type="button" id="vatBtnTaxJul" onclick="setVatTaxPreset('jul_vat')" class="vat-tax-btn px-2.5 py-1.5 rounded-lg bg-cyan-950/90 text-cyan-200 border border-cyan-500/80 text-xs font-bold cursor-pointer transition active:scale-95 flex items-center gap-1 shadow-sm" title="매년 7월 부가세 확정신고: 금년도 1~6월(1기) 수납 장부 집계">
+            <span>7월 부가세 (금년 1~6월 1기)</span>
+          </button>
+          <button type="button" id="vatBtnTaxIncome" onclick="setVatTaxPreset('may_income')" class="vat-tax-btn px-2.5 py-1.5 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 text-xs font-semibold cursor-pointer transition active:scale-95 flex items-center gap-1" title="매년 5월 종합소득세 확정신고: 전년도 1~12월(연간 전체) 수납 장부 집계">
+            <span>📑 5월 종합소득세 (전년 1~12월)</span>
+          </button>
         </div>
 
-        <!-- 2행: 세부 기수 선택 & 수동 월 범위 & 호실설정 저장 -->
-        <div class="flex flex-wrap items-center justify-between gap-2 text-xs pt-0.5">
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <span class="text-[10px] text-slate-400 font-bold">기수:</span>
-            <button type="button" id="vatBtn1H" onclick="setVatPeriod(1, 6, '1기 (1~6월)')" class="vat-preset-btn px-2.5 py-1 rounded-lg bg-cyan-950/80 text-cyan-300 border border-cyan-700/80 font-bold transition cursor-pointer">1기 (1~6월)</button>
-            <button type="button" id="vatBtn2H" onclick="setVatPeriod(7, 12, '2기 (7~12월)')" class="vat-preset-btn px-2.5 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 font-medium transition cursor-pointer">2기 (7~12월)</button>
-            <button type="button" id="vatBtnAll" onclick="setVatPeriod(1, 12, '연간 전체')" class="vat-preset-btn px-2.5 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 font-medium transition cursor-pointer">연간 전체</button>
-          </div>
-
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <select id="vatStartMonthSelect" class="bg-surface-800 border border-slate-700 text-slate-200 rounded px-2 py-0.5 text-xs">
-              <option value="1" selected>1월</option>
-              <option value="2">2월</option>
-              <option value="3">3월</option>
-              <option value="4">4월</option>
-              <option value="5">5월</option>
-              <option value="6">6월</option>
-              <option value="7">7월</option>
-              <option value="8">8월</option>
-              <option value="9">9월</option>
-              <option value="10">10월</option>
-              <option value="11">11월</option>
-              <option value="12">12월</option>
-            </select>
-            <span class="text-slate-400">~</span>
-            <select id="vatEndMonthSelect" class="bg-surface-800 border border-slate-700 text-slate-200 rounded px-2 py-0.5 text-xs">
-              <option value="1">1월</option>
-              <option value="2">2월</option>
-              <option value="3">3월</option>
-              <option value="4">4월</option>
-              <option value="5">5월</option>
-              <option value="6" selected>6월</option>
-              <option value="7">7월</option>
-              <option value="8">8월</option>
-              <option value="9">9월</option>
-              <option value="10">10월</option>
-              <option value="11">11월</option>
-              <option value="12">12월</option>
-            </select>
-            <button type="button" onclick="handleVatCustomQuery()" class="px-2.5 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs cursor-pointer transition">조회</button>
-            <button type="button" id="btnSaveVatRoomsSetting" onclick="saveVatTargetRoomsSetting()" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs cursor-pointer flex items-center gap-1 transition shadow-sm" title="현재 선택된 부가세 대상 호실 설정을 DB에 저장하여 계속 유지합니다">
-              <span>💾</span>
-              <span id="btnSaveVatRoomsText">호실설정 저장</span>
-            </button>
-            <span id="vatSaveStatusBadge" class="hidden px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[11px] font-semibold">저장됨</span>
-          </div>
+        <!-- 연도 및 수동 기간 선택 & 저장 (가로 1줄 정렬) -->
+        <div class="flex items-center gap-1.5 ml-auto flex-nowrap shrink-0">
+          <select id="vatYearSelect" onchange="handleVatYearChange(this.value)" class="w-auto shrink-0 bg-surface-900 border border-slate-700 text-white font-bold rounded-lg px-2 py-1 text-xs focus:border-cyan-500 font-mono cursor-pointer">
+            <option value="2025">2025년</option>
+            <option value="2026" selected>2026년</option>
+            <option value="2027">2027년</option>
+          </select>
+          <select id="vatStartMonthSelect" class="w-auto shrink-0 bg-surface-800 border border-slate-700 text-slate-200 rounded px-1.5 py-1 text-xs cursor-pointer">
+            <option value="1" selected>1월</option>
+            <option value="2">2월</option>
+            <option value="3">3월</option>
+            <option value="4">4월</option>
+            <option value="5">5월</option>
+            <option value="6">6월</option>
+            <option value="7">7월</option>
+            <option value="8">8월</option>
+            <option value="9">9월</option>
+            <option value="10">10월</option>
+            <option value="11">11월</option>
+            <option value="12">12월</option>
+          </select>
+          <span class="text-slate-400 shrink-0">~</span>
+          <select id="vatEndMonthSelect" class="w-auto shrink-0 bg-surface-800 border border-slate-700 text-slate-200 rounded px-1.5 py-1 text-xs cursor-pointer">
+            <option value="1">1월</option>
+            <option value="2">2월</option>
+            <option value="3">3월</option>
+            <option value="4">4월</option>
+            <option value="5">5월</option>
+            <option value="6" selected>6월</option>
+            <option value="7">7월</option>
+            <option value="8">8월</option>
+            <option value="9">9월</option>
+            <option value="10">10월</option>
+            <option value="11">11월</option>
+            <option value="12">12월</option>
+          </select>
+          <button type="button" onclick="handleVatCustomQuery()" class="shrink-0 px-2.5 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs cursor-pointer transition">조회</button>
+          <button type="button" id="btnSaveVatRoomsSetting" onclick="saveVatTargetRoomsSetting()" class="shrink-0 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs cursor-pointer flex items-center gap-1 transition shadow-sm" title="현재 선택된 부가세 대상 호실 설정을 DB에 저장하여 계속 유지합니다">
+            <span>💾</span>
+            <span id="btnSaveVatRoomsText">호실저장</span>
+          </button>
+          <span id="vatSaveStatusBadge" class="hidden px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[11px] font-semibold shrink-0">저장됨</span>
         </div>
+      </div>
 
-      <!-- Spreadsheet Grid -->
-      <div class="flex-1 overflow-auto border border-slate-800 rounded-xl bg-surface-950 p-1 min-h-[220px] mt-2">
-        <table id="vatSpreadsheetTable" class="w-full min-w-[850px] text-xs text-left border-collapse whitespace-nowrap">
-          <thead class="bg-surface-850 text-slate-300 font-semibold sticky top-0 z-10 border-b border-slate-700" id="vatTableHead"></thead>
+      <!-- Spreadsheet Grid (상하 및 좌우 스크롤 필수 지원 및 틀 고정) -->
+      <div id="vatTableContainer" class="flex-1 min-h-0 overflow-auto border border-slate-800 rounded-xl bg-surface-950 mt-2 relative select-text vat-scroll-container">
+        <table id="vatSpreadsheetTable" class="w-full text-xs text-left border-collapse whitespace-nowrap min-w-max">
+          <thead class="bg-surface-850 text-slate-300 font-semibold sticky top-0 z-20 border-b border-slate-700 shadow-sm" id="vatTableHead"></thead>
           <tbody id="vatTableBody" class="divide-y divide-slate-800/80 text-slate-200 font-mono"></tbody>
-          <tfoot id="vatTableFoot" class="bg-surface-850 text-white font-bold border-t-2 border-cyan-500/60 sticky bottom-0 z-10 font-mono"></tfoot>
+          <tfoot id="vatTableFoot" class="bg-surface-850 text-white font-bold border-t-2 border-cyan-500/60 sticky bottom-0 z-20 font-mono shadow-sm"></tfoot>
         </table>
       </div>
 
       <!-- Footer -->
-      <div class="flex items-center justify-between pt-2.5 border-t border-slate-800 mt-2 text-xs">
-        <span class="text-slate-400 text-[11px]">※ 공급대가 ÷ 1.1 = 공급가액, 차액을 부가가치세(10%)로 산정합니다.</span>
+      <div class="flex items-center justify-between pt-2.5 border-t border-slate-800 mt-2 text-xs shrink-0">
+        <span class="text-slate-400 text-[11px]">※ 공급대가 ÷ 1.1 = 공급가액, 차액을 부가가치세(10%)로 산정합니다. (상하·좌우 스크롤 지원)</span>
         <div class="flex items-center gap-2">
           <button type="button" onclick="exportVatExcel()" class="px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center gap-1 cursor-pointer shadow-sm active:scale-95" title="엑셀에서 바로 열리는 서식 포함 통합문서 (.xls)">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>

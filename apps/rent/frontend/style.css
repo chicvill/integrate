@@ -8,8 +8,8 @@
 }
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
   background: #0f172a;
@@ -20,6 +20,29 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #475569;
+}
+
+.vat-scroll-container {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+  scrollbar-width: thin;
+  scrollbar-color: #0284c7 #0f172a;
+}
+.vat-scroll-container::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.vat-scroll-container::-webkit-scrollbar-track {
+  background: #090d16;
+  border-radius: 6px;
+}
+.vat-scroll-container::-webkit-scrollbar-thumb {
+  background: #0284c7;
+  border-radius: 6px;
+  border: 2px solid #090d16;
+}
+.vat-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #38bdf8;
 }
 
 .collapse-content {

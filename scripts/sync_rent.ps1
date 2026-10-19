@@ -52,6 +52,7 @@ rm -rf /tmp/rent_patch rent_patch.tar.gz
 
 # DB 마이그레이션 및 중복 정리 실행
 sudo docker exec "$CID" python /app/apps/rent/backend/db_dedup.py
+sudo docker exec "$CID" python /app/apps/rent/backend/populate_2025_chicvill.py
 
 sudo docker exec "$CID" touch /app/gateway/main.py
 echo "Successfully hot-synced rent app to container $CID!"
