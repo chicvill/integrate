@@ -743,62 +743,64 @@ class RentService:
                 mime_type = "image/webp"
 
         if api_key:
-            try:
-                # Gemini Flash Latest Vision API 직접 호출
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={api_key}"
-                prompt = (
-                    "이 이미지는 부동산 임대차 현황표, 종이 장부 또는 엑셀 캡처 이미지입니다. "
-                    "표에 포함된 각 행의 호실번호, 세입자(성명), 보증금, 월세(차임), 관리비, 입주일(전입일), 전화번호(연락처), 비고 등을 "
-                    "JSON 배열로 빠짐없이 추출해주세요. "
-                    "각 행 객체는 표의 열 제목을 key로 하고 해당 행의 값을 value로 가져야 합니다. "
-                    "반드시 오직 유효한 JSON 배열만 출력하세요. 마크다운(```json)이나 다른 설명은 생략하세요. "
-                    "예: [{\"호실\": \"101\", \"세입자\": \"고종훈\", \"보증금\": \"2000000\", \"월세\": \"250000\", \"관리비\": \"80000\", \"연락처\": \"010-4281-6453\"}]"
-                )
-                payload_data = {
-                    "contents": [{
-                        "parts": [
-                            {"text": prompt},
-                            {
-                                "inline_data": {
-                                    "mime_type": mime_type,
-                                    "data": clean_b64
-                                }
+            prompt = (
+                "이 이미지는 부동산 임대차 현황표, 종이 장부 또는 엑셀 캡처 이미지입니다. "
+                "표에 포함된 각 행의 호실번호, 세입자(성명), 보증금, 월세(차임), 관리비, 입주일(전입일), 전화번호(연락처), 비고 등을 "
+                "JSON 배열로 빠짐없이 추출해주세요. "
+                "각 행 객체는 표의 열 제목을 key로 하고 해당 행의 값을 value로 가져야 합니다. "
+                "반드시 오직 유효한 JSON 배열만 출력하세요. 마크다운(```json)이나 다른 설명은 생략하세요. "
+                "예: [{\"호실\": \"101\", \"세입자\": \"고종훈\", \"보증금\": \"2000000\", \"월세\": \"250000\", \"관리비\": \"80000\", \"연락처\": \"010-4281-6453\"}]"
+            )
+            payload_data = {
+                "contents": [{
+                    "parts": [
+                        {"text": prompt},
+                        {
+                            "inline_data": {
+                                "mime_type": mime_type,
+                                "data": clean_b64
                             }
-                        ]
-                    }],
-                    "generationConfig": {
-                        "response_mime_type": "application/json"
-                    }
-                }
-                req = urllib.request.Request(
-                    url,
-                    data=json.dumps(payload_data).encode("utf-8"),
-                    headers={"Content-Type": "application/json"}
-                )
-                with urllib.request.urlopen(req, timeout=45) as response:
-                    res_body = json.loads(response.read().decode("utf-8"))
-                    text_resp = res_body["candidates"][0]["content"]["parts"][0]["text"].strip()
-                    # 마크다운 코드블록 제거
-                    if text_resp.startswith("```"):
-                        text_resp = re.sub(r"^```(?:json)?\s*", "", text_resp)
-                        text_resp = re.sub(r"\s*```$", "", text_resp)
-                    parsed_rows = json.loads(text_resp.strip())
-                    if isinstance(parsed_rows, list):
-                        return {
-                            "success": True,
-                            "rows": parsed_rows,
-                            "source": "gemini_vision"
                         }
-            except Exception as e:
-                print(f"[OCR Warning] Gemini Vision API 호출 실패, fallback 처리: {e}")
+                    ]
+                }],
+                "generationConfig": {
+                    "response_mime_type": "application/json"
+                }
+            }
+
+            candidate_models = ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"]
+            for model_name in candidate_models:
+                try:
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+                    req = urllib.request.Request(
+                        url,
+                        data=json.dumps(payload_data).encode("utf-8"),
+                        headers={"Content-Type": "application/json"}
+                    )
+                    with urllib.request.urlopen(req, timeout=45) as response:
+                        res_body = json.loads(response.read().decode("utf-8"))
+                        text_resp = res_body["candidates"][0]["content"]["parts"][0]["text"].strip()
+                        if text_resp.startswith("```"):
+                            text_resp = re.sub(r"^```(?:json)?\s*", "", text_resp)
+                            text_resp = re.sub(r"\s*```$", "", text_resp)
+                        parsed_rows = json.loads(text_resp.strip())
+                        if isinstance(parsed_rows, list) and len(parsed_rows) > 0:
+                            return {
+                                "success": True,
+                                "rows": parsed_rows,
+                                "source": f"gemini_vision_{model_name}"
+                            }
+                except Exception as e_model:
+                    print(f"[OCR Warning] model {model_name} failed: {e_model}")
+                    continue
 
         # Gemini API 키가 없거나 호출 실패 시:
         return {
             "success": False,
-            "has_api_key": False,
+            "has_api_key": bool(api_key),
             "rows": [],
-            "message": "서버에 GEMINI_API_KEY가 설정되어 있지 않아 이미지/사진 AI 스캔이 제한됩니다. CSV 파일 업로드 또는 [텍스트 직접 붙여넣기]를 이용해 주세요.",
-            "source": "no_api_key"
+            "message": "이미지 AI 분석을 완료하지 못했습니다. CSV 파일 업로드 또는 [텍스트 직접 붙여넣기]를 이용해 주세요." if api_key else "서버에 GEMINI_API_KEY가 설정되어 있지 않아 이미지/사진 AI 스캔이 제한됩니다. CSV 파일 업로드 또는 [텍스트 직접 붙여넣기]를 이용해 주세요.",
+            "source": "ocr_failed" if api_key else "no_api_key"
         }
 
     def process_payment(self, db: Session, room_number: int, month: int, branch_id: str = "main", paid_date: Optional[str] = None, note: str = "정상 입금", tenant_name: Optional[str] = None, year: Optional[int] = None, rent_amount: Optional[int] = None, maintenance_amount: Optional[int] = None) -> Optional[Dict[str, Any]]:
