@@ -275,6 +275,94 @@ export function handleQuickMoveIn() {
   alert(`🚪 [${rNum}호] 신규 전입 모드로 세팅되었습니다.\n\n• 전입일: ${todayStr} (오늘)\n• 만기일: ${defaultExpiryStr} (1년 자동 계산)\n\n입주자 성명, 연락처, 보증금/월세를 확인하신 후 하단의 [저장 완료]를 눌러주세요.`);
 }
 
+// 📷 계약서 사진 촬영 / OCR 자동완성 핸들러
+export function handleContractPhotoSelect(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const banner = document.getElementById('contractOcrStatusBanner');
+  if (banner) {
+    banner.classList.remove('hidden');
+    banner.textContent = `🤖 [${file.name}] 계약서 사진을 AI Vision이 분석하고 있습니다...`;
+  }
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const base64 = e.target.result;
+      let result = null;
+      if (state.isOnline) {
+        result = await apiOcrImportImage(base64, state.currentBranch);
+      }
+      if (banner) banner.classList.add('hidden');
+
+      if (result && result.has_api_key === false) {
+        alert("⚠️ 서버에 GEMINI_API_KEY가 설정되지 않아 사진 자동 인식이 제한됩니다.\n직접 입력하시거나 환경변수를 확인해 주세요.");
+        return;
+      }
+
+      const rows = (result && result.rows) || [];
+      if (!rows || rows.length === 0) {
+        alert("❌ 계약서 사진에서 표나 글자를 인식하지 못했습니다. 더 선명하고 밝은 계약서 사진을 사용해 주세요.");
+        return;
+      }
+
+      const rNum = state.selectedRoom;
+      let matched = rows.find(r => cleanRoomNumber(r["호실"] || r["호수"] || r["방번호"]) === rNum) || rows[0];
+
+      if (matched) {
+        const nameVal = matched["세입자"] || matched["성명"] || matched["입주자"] || matched["이름"] || matched["임차인"] || '';
+        const phoneVal = matched["연락처"] || matched["전화번호"] || matched["핸드폰"] || matched["휴대폰"] || '';
+        const idVal = matched["주민번호"] || matched["식별키"] || matched["주민등록번호"] || '';
+        const depVal = matched["보증금"] || matched["전세보증금"] || '';
+        const rentVal = matched["월세"] || matched["차임"] || matched["월차임"] || '';
+        const maintVal = matched["관리비"] || '';
+        const moveInVal = matched["입주일"] || matched["전입일"] || matched["계약시작일"] || matched["시작일"] || '';
+        const expiryVal = matched["만기일"] || matched["계약종료일"] || matched["종료일"] || '';
+        const leaseTypeVal = matched["임대구분"] || matched["임차형태"] || matched["구분"] || '';
+
+        if (nameVal && document.getElementById('formName')) document.getElementById('formName').value = String(nameVal).trim();
+        if (phoneVal && document.getElementById('formPhone')) document.getElementById('formPhone').value = String(phoneVal).trim();
+        if (idVal && document.getElementById('formIdNumber')) document.getElementById('formIdNumber').value = String(idVal).trim();
+        if (depVal && document.getElementById('formDeposit')) {
+          const num = parseInt(String(depVal).replace(/[^0-9]/g, ''), 10);
+          if (!isNaN(num)) document.getElementById('formDeposit').value = num;
+        }
+        if (rentVal && document.getElementById('formRent')) {
+          const num = parseInt(String(rentVal).replace(/[^0-9]/g, ''), 10);
+          if (!isNaN(num)) document.getElementById('formRent').value = num;
+        }
+        if (maintVal && document.getElementById('formMaintenance')) {
+          const num = parseInt(String(maintVal).replace(/[^0-9]/g, ''), 10);
+          if (!isNaN(num)) document.getElementById('formMaintenance').value = num;
+        }
+        if (moveInVal && document.getElementById('formMoveIn')) {
+          const cleanDate = normalizeDateString(moveInVal);
+          if (cleanDate) document.getElementById('formMoveIn').value = cleanDate;
+        }
+        if (expiryVal && document.getElementById('formExpiry')) {
+          const cleanDate = normalizeDateString(expiryVal);
+          if (cleanDate) document.getElementById('formExpiry').value = cleanDate;
+        }
+        if (leaseTypeVal && document.getElementById('formLeaseType')) {
+          if (String(leaseTypeVal).includes('전세')) {
+            document.getElementById('formLeaseType').value = '전세';
+          } else {
+            document.getElementById('formLeaseType').value = '월세';
+          }
+        }
+
+        showTopToast(`✅ [${rNum}호] 계약서 사진에서 계약 정보 자동 추출 완료!`, 'success');
+      }
+    } catch (err) {
+      if (banner) banner.classList.add('hidden');
+      console.error("Contract Photo OCR error:", err);
+      alert("계약서 사진 분석 중 오류가 발생했습니다: " + err.message);
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
 export async function handleContractFormSubmit(e) {
   e.preventDefault();
   const rNum = state.selectedRoom;
@@ -5743,6 +5831,7 @@ if (typeof window !== 'undefined') {
   window.setEditPayDatePreset = setEditPayDatePreset;
   window.setEditPayNoteTag = setEditPayNoteTag;
   window.handleSaveEditPayment = handleSaveEditPayment;
+  window.handleContractPhotoSelect = handleContractPhotoSelect;
 }
 
 

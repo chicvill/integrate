@@ -644,6 +644,24 @@
             <span>신규 전입(입주)</span>
           </button>
         </div>
+
+        <!-- 📷 계약서 사진 촬영 / OCR 자동완성 -->
+        <input type="file" id="contractCameraInput" accept="image/*" capture="environment" class="hidden" onchange="handleContractPhotoSelect(event)">
+        <input type="file" id="contractPhotoFileInput" accept="image/*" class="hidden" onchange="handleContractPhotoSelect(event)">
+        <div class="flex items-center gap-1.5 pt-0.5">
+          <button type="button" onclick="document.getElementById('contractCameraInput').click()" class="flex-1 py-1.5 px-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition cursor-pointer active:scale-95" title="스마트폰 카메라로 계약서 촬영 후 계약정보 자동 입력">
+            <span>📷</span>
+            <span>계약서 사진 촬영 (자동완성)</span>
+          </button>
+          <button type="button" onclick="document.getElementById('contractPhotoFileInput').click()" class="py-1.5 px-2.5 rounded-lg bg-surface-800 hover:bg-surface-750 text-slate-300 border border-slate-700 text-xs font-semibold flex items-center justify-center gap-1 transition cursor-pointer active:scale-95" title="앨범/컴퓨터에서 계약서 사진 찾기">
+            <span>🖼️</span>
+            <span>앨범</span>
+          </button>
+        </div>
+        <div id="contractOcrStatusBanner" class="hidden p-2 rounded-lg bg-indigo-950/80 border border-indigo-700/60 text-[11px] text-indigo-200 text-center animate-pulse">
+          🤖 계약서 글자를 읽고 있습니다... 잠시만 기다려주세요.
+        </div>
+
         <div class="flex items-center justify-between text-[10px] text-slate-400 px-0.5">
           <span class="flex items-center gap-1">
             <span class="text-amber-400">💡</span>
