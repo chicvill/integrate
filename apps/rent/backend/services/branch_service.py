@@ -18,6 +18,10 @@ def normalize_branch_id(branch_id: Optional[str]) -> str:
         return "main"
     if bid in ("chicvill02", "chicvill2", "branch_9027", "시크빌2호점", "시크빌 2호점"):
         return "branch_9027"
+    if bid in ("sunhovill", "sunho", "선호빌", "선호원룸", "branch_5611"):
+        return "branch_5611"
+    if bid in ("shinbi", "신비주택", "branch_9348"):
+        return "branch_9348"
     return branch_id
 
 
