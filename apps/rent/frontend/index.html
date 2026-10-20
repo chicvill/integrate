@@ -882,6 +882,115 @@
     </div>
   </div>
 
+  <!-- 4-1. 수납 금액 및 납부일자 정밀 수정 모달 (Edit Payment Modal) -->
+  <div id="editPaymentModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-xs z-50 hidden items-center justify-center p-3 select-none">
+    <div class="bg-surface-900 border border-slate-700/80 rounded-2xl max-w-md w-full p-4 sm:p-5 shadow-2xl flex flex-col space-y-3.5 max-h-[92vh] overflow-y-auto">
+      
+      <!-- 헤더 -->
+      <div class="flex items-center justify-between pb-2.5 border-b border-slate-800">
+        <div>
+          <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-1.5">
+            💳 수납 금액 및 납부일자 수정
+          </h3>
+          <p id="editPaySubtitle" class="text-xs text-cyan-300 font-medium mt-0.5">
+            [호실/세입자] 연도 월분
+          </p>
+        </div>
+        <button type="button" onclick="closeModal('editPaymentModal')" class="text-slate-400 hover:text-white font-bold p-1 text-lg leading-none cursor-pointer">✕</button>
+      </div>
+
+      <!-- Hidden Data Keepers -->
+      <input type="hidden" id="editPayRoomNum">
+      <input type="hidden" id="editPayYear">
+      <input type="hidden" id="editPayMonth">
+
+      <!-- 수납 상태 선택 (완납 vs 미납) -->
+      <div class="space-y-1.5">
+        <label class="block text-xs font-semibold text-slate-300">수납 상태 구분</label>
+        <div class="grid grid-cols-2 gap-2">
+          <label id="editPayStatusPaidLabel" class="flex items-center justify-center gap-2 p-2 rounded-xl border border-emerald-500/50 bg-emerald-950/40 text-emerald-300 font-bold text-xs cursor-pointer hover:bg-emerald-950/60 transition">
+            <input type="radio" name="editPayStatusRadio" id="editPayStatusPaid" value="paid" checked class="accent-emerald-500" onchange="handleEditPayStatusChange()">
+            <span>🟢 완납 (수납 확인)</span>
+          </label>
+          <label id="editPayStatusUnpaidLabel" class="flex items-center justify-center gap-2 p-2 rounded-xl border border-slate-700 bg-surface-850 text-slate-400 font-bold text-xs cursor-pointer hover:bg-rose-950/40 hover:text-rose-300 transition">
+            <input type="radio" name="editPayStatusRadio" id="editPayStatusUnpaid" value="unpaid" class="accent-rose-500" onchange="handleEditPayStatusChange()">
+            <span>🔴 미납 (미납 환원)</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 실입금일자 (수납일) -->
+      <div id="editPayDateSection" class="space-y-1.5">
+        <div class="flex items-center justify-between">
+          <label class="text-xs font-semibold text-slate-300">실제 은행 입금일자 (수납일)</label>
+          <span class="text-[10px] text-cyan-400 font-mono">YYYY-MM-DD</span>
+        </div>
+        <input type="date" id="editPayDate" class="w-full bg-surface-800 border border-slate-700 focus:border-cyan-500 rounded-xl px-3 py-2 text-white font-mono text-xs focus:outline-none">
+        
+        <!-- 퀵 날짜 버튼 -->
+        <div class="flex items-center gap-1.5 pt-0.5">
+          <button type="button" onclick="setEditPayDatePreset('today')" class="px-2.5 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 text-[11px] font-medium border border-slate-700 cursor-pointer">오늘</button>
+          <button type="button" onclick="setEditPayDatePreset('10')" class="px-2.5 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 text-[11px] font-medium border border-slate-700 cursor-pointer">10일</button>
+          <button type="button" onclick="setEditPayDatePreset('25')" class="px-2.5 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 text-[11px] font-medium border border-slate-700 cursor-pointer">25일</button>
+          <button type="button" onclick="setEditPayDatePreset('end')" class="px-2.5 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 text-[11px] font-medium border border-slate-700 cursor-pointer">말일</button>
+        </div>
+      </div>
+
+      <!-- 금액 설정 (합계 / 월세 / 관리비) -->
+      <div class="space-y-2 pt-1 border-t border-slate-800/80">
+        <div class="flex items-center justify-between">
+          <label class="text-xs font-semibold text-slate-300">수납 금액 (총 합계)</label>
+          <span id="editPayTotalPreview" class="text-xs font-bold text-emerald-400 font-mono">0원</span>
+        </div>
+        <div class="relative">
+          <input type="number" id="editPayTotalAmount" min="0" step="1000" class="w-full bg-surface-800 border border-slate-700 focus:border-cyan-500 rounded-xl px-3 py-2 text-right text-white font-mono text-sm font-bold focus:outline-none" placeholder="0" oninput="handleEditPayTotalInput(this.value)">
+          <span class="absolute left-3 top-2 text-xs text-slate-400">총액(원)</span>
+        </div>
+
+        <!-- 월세 / 관리비 세부 내역 -->
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <div>
+            <label class="block text-[11px] text-slate-400 mb-1">월세 (원)</label>
+            <input type="number" id="editPayRentAmount" min="0" step="1000" class="w-full bg-surface-850 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-right text-slate-200 font-mono text-xs focus:outline-none focus:border-cyan-500" placeholder="0" oninput="handleEditPayDetailInput()">
+          </div>
+          <div>
+            <label class="block text-[11px] text-slate-400 mb-1">관리비 (원)</label>
+            <input type="number" id="editPayMaintAmount" min="0" step="1000" class="w-full bg-surface-850 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-right text-slate-200 font-mono text-xs focus:outline-none focus:border-cyan-500" placeholder="0" oninput="handleEditPayDetailInput()">
+          </div>
+        </div>
+
+        <!-- 퀵 금액 버튼 -->
+        <div class="flex items-center justify-between pt-1 text-[11px]">
+          <button type="button" onclick="restoreEditPayContractDefault()" class="text-cyan-400 hover:text-cyan-300 underline font-medium cursor-pointer">↺ 계약 기본값 복원</button>
+          <button type="button" onclick="setEditPayTotalZero()" class="text-slate-400 hover:text-rose-300 font-medium cursor-pointer">0원(미납) 설정</button>
+        </div>
+      </div>
+
+      <!-- 입금 메모 -->
+      <div class="space-y-1.5 pt-1 border-t border-slate-800/80">
+        <label class="block text-xs font-semibold text-slate-300">수납 메모 / 비고</label>
+        <input type="text" id="editPayNote" class="w-full bg-surface-800 border border-slate-700 focus:border-cyan-500 rounded-xl px-3 py-1.5 text-slate-200 text-xs focus:outline-none" placeholder="예: 국민은행 정상 입금 확인">
+        <div class="flex items-center gap-1.5 pt-0.5 overflow-x-auto">
+          <button type="button" onclick="setEditPayNoteTag('은행 확인 입금')" class="px-2 py-0.5 rounded bg-surface-850 hover:bg-surface-800 text-slate-400 text-[10px] border border-slate-700 shrink-0 cursor-pointer">#은행확인</button>
+          <button type="button" onclick="setEditPayNoteTag('카카오페이')" class="px-2 py-0.5 rounded bg-surface-850 hover:bg-surface-800 text-slate-400 text-[10px] border border-slate-700 shrink-0 cursor-pointer">#카카오페이</button>
+          <button type="button" onclick="setEditPayNoteTag('계좌이체')" class="px-2 py-0.5 rounded bg-surface-850 hover:bg-surface-800 text-slate-400 text-[10px] border border-slate-700 shrink-0 cursor-pointer">#계좌이체</button>
+          <button type="button" onclick="setEditPayNoteTag('부분 납부')" class="px-2 py-0.5 rounded bg-surface-850 hover:bg-surface-800 text-slate-400 text-[10px] border border-slate-700 shrink-0 cursor-pointer">#부분납부</button>
+        </div>
+      </div>
+
+      <!-- 하단 액션 버튼 -->
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+        <button type="button" onclick="closeModal('editPaymentModal')" class="px-4 py-2 rounded-xl bg-surface-800 hover:bg-surface-700 text-slate-300 text-xs font-medium cursor-pointer transition">
+          취소
+        </button>
+        <button type="button" id="btnSaveEditPayment" onclick="handleSaveEditPayment()" class="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md transition cursor-pointer active:scale-95 flex items-center gap-1.5">
+          <span>💾 저장 및 적용</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- 5. 신규 부동산 추가 모달 (New Branch Modal) -->
   <div id="newBranchModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-50 hidden items-center justify-center p-3">
     <div class="bg-surface-900 border border-slate-800 rounded-2xl max-w-sm w-full p-4 shadow-2xl">
