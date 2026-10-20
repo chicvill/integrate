@@ -32,33 +32,44 @@ export function showTopToast(msg, type = 'info') {
   }, 3000);
 }
 
-export function selectRoom(roomNum) {
+export function selectRoom(roomNum, preserveView = false) {
   state.selectedRoom = parseInt(roomNum, 10);
   saveLocalFallback();
   closeRoomDrawer();
-  if (typeof switchRoomSlideView === 'function') {
+  if (!preserveView && typeof switchRoomSlideView === 'function') {
     switchRoomSlideView('main', false);
   }
   renderAll();
+  // 현재 수납내역 뷰에 머물러 있는 경우 수납내역 즉시 재렌더링
+  if (preserveView && state.currentSlideView === 'past') {
+    const curR = state.rooms[state.selectedRoom];
+    if (curR && typeof renderPastHistorySection === 'function') {
+      renderPastHistorySection(curR);
+    }
+  }
 }
 
-export function navigatePrevRoom() {
+export function navigatePrevRoom(preserveView = false) {
   const roomKeys = Object.keys(state.rooms || {});
   const roomList = roomKeys.length > 0 ? roomKeys.map(Number).sort((a,b)=>a-b) : ROOM_NUMBERS;
   if (!roomList.length) return;
   const curIdx = roomList.indexOf(Number(state.selectedRoom));
   const newIdx = (curIdx <= 0) ? (roomList.length - 1) : (curIdx - 1);
-  selectRoom(roomList[newIdx]);
+  selectRoom(roomList[newIdx], preserveView);
 }
 
-export function navigateNextRoom() {
+export function navigateNextRoom(preserveView = false) {
   const roomKeys = Object.keys(state.rooms || {});
   const roomList = roomKeys.length > 0 ? roomKeys.map(Number).sort((a,b)=>a-b) : ROOM_NUMBERS;
   if (!roomList.length) return;
   const curIdx = roomList.indexOf(Number(state.selectedRoom));
   const newIdx = (curIdx < 0 || curIdx >= roomList.length - 1) ? 0 : (curIdx + 1);
-  selectRoom(roomList[newIdx]);
+  selectRoom(roomList[newIdx], preserveView);
 }
+
+window.selectRoom = selectRoom;
+window.navigatePrevRoom = navigatePrevRoom;
+window.navigateNextRoom = navigateNextRoom;
 
 export async function switchBranch(branchId) {
   const user = state.currentUser;

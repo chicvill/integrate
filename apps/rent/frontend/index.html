@@ -487,12 +487,22 @@
             <div class="p-1.5 sm:p-2 bg-gradient-to-r from-surface-850 to-purple-950/40 border-b border-purple-500/30 flex flex-wrap items-center justify-between gap-1.5">
               <div class="flex items-center gap-1.5 min-w-0">
                 <span class="text-xs">📅</span>
-                <div class="min-w-0">
-                  <h3 class="text-xs sm:text-sm font-bold text-white tracking-tight flex items-center gap-1">
-                    <span id="pastRoomTitleBadge" class="text-purple-300 font-mono font-black">101호</span>
-                    <span>수납내역</span>
-                    <span id="pastRoomPeriodBadge" class="text-[9px] text-purple-300/80 font-normal">(2025.01 ~ 현재)</span>
-                  </h3>
+                <div class="flex items-center gap-1 min-w-0">
+                  <!-- 이전 호실(감소) 버튼 -->
+                  <button type="button" onclick="navigatePrevRoom(true)" class="p-1 px-1.5 rounded-lg bg-surface-950/90 hover:bg-purple-900/60 text-purple-300 hover:text-white border border-purple-500/40 hover:border-purple-400 transition cursor-pointer active:scale-90 shadow-xs flex items-center justify-center text-xs font-black" title="이전 호실로 이동">
+                    ◀
+                  </button>
+                  <!-- 호실 선택 버튼 (클릭 시 호실 선택 드로어 열기) -->
+                  <button type="button" onclick="openRoomDrawer()" class="px-2 py-0.5 rounded-lg bg-surface-950/90 hover:bg-purple-900/70 border border-purple-500/50 hover:border-purple-400 text-white transition cursor-pointer active:scale-95 shadow-xs flex items-center gap-1 group" title="클릭하여 호실 목록 보기">
+                    <span id="pastRoomTitleBadge" class="text-purple-300 font-mono font-black text-xs sm:text-sm group-hover:text-purple-200">101호</span>
+                    <span class="text-[10px] text-purple-400/80">▼</span>
+                  </button>
+                  <!-- 다음 호실(증가) 버튼 -->
+                  <button type="button" onclick="navigateNextRoom(true)" class="p-1 px-1.5 rounded-lg bg-surface-950/90 hover:bg-purple-900/60 text-purple-300 hover:text-white border border-purple-500/40 hover:border-purple-400 transition cursor-pointer active:scale-90 shadow-xs flex items-center justify-center text-xs font-black" title="다음 호실로 이동">
+                    ▶
+                  </button>
+                  <span class="text-xs sm:text-sm font-bold text-white tracking-tight ml-0.5">수납내역</span>
+                  <span id="pastRoomPeriodBadge" class="text-[9px] text-purple-300/80 font-normal hidden sm:inline-block">(2025.01 ~ 현재)</span>
                 </div>
               </div>
 
