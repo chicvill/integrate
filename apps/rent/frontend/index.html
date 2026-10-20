@@ -1178,11 +1178,11 @@
       <!-- Modal Body (스크롤 가능) -->
       <div class="flex-1 overflow-y-auto space-y-3.5 py-3 text-xs">
         
-        <!-- Step 0: 대상 연도 선택 및 업계 표준 템플릿 서식 6종 -->
+        <!-- Step 0: 대상 연도 선택 및 월별 수납장부 매트릭스 (2026년 / 2025년) -->
         <div class="space-y-2 p-2.5 rounded-xl bg-surface-950/70 border border-slate-800">
           <div class="flex flex-wrap items-center justify-between text-xs px-0.5 gap-2">
             <span class="font-bold text-slate-200 flex items-center gap-1.5">
-              <span>📋</span> <span>표준 템플릿 서식 & 대상 연도 선택</span>
+              <span>📅</span> <span>월별 수납장부 매트릭스 서식 & 수납 연도 선택</span>
             </span>
             <div class="flex items-center gap-1.5 bg-surface-900 border border-slate-700 rounded-lg p-1">
               <span class="text-[11px] text-slate-400 font-semibold pl-1">수납 연도:</span>
@@ -1191,10 +1191,10 @@
             </div>
           </div>
           <div class="text-[11px] text-slate-400 px-0.5">
-            양식을 다운받거나 <strong class="text-emerald-400">[✨ 예시 로드]</strong>를 누르면 2025년/2026년 수납 데이터를 즉시 시연합니다.
+            💡 일반 계약대장 엑셀은 <strong>AI가 모든 열(호실, 세입자, 금액, 일자 등)을 자동 매핑</strong>하므로 서식 구분 없이 바로 업로드하시면 됩니다. 아래는 월별 수납장부 전용 양식입니다.
           </div>
-          <div id="templatePresetsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-            <!-- Dynamic Template Preset Cards rendered by JS -->
+          <div id="templatePresetsContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <!-- Dynamic Template Preset Cards rendered by JS (2025년 / 2026년 월별 수납장부 매트릭스) -->
           </div>
         </div>
 
@@ -2132,6 +2132,6 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- Universal Bundle Script -->
-  <script src="./bundle.js?v=9.6"></script>
+  <script src="./bundle.js?v=9.7"></script>
 </body>
 </html>
