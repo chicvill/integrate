@@ -7,6 +7,31 @@ import { state, FLOOR_STRUCTURE, ROOM_NUMBERS, currentMonth, currentYear, format
 import { apiProcessPayment, apiCancelPayment, apiFillTenantPayments, apiGetRooms, apiDeleteBranch, apiUpdateBranch } from './api.js?v=2.0';
 import { switchRoomSlideView, toggleRoomSlideView, initRoomSwipe } from './slider.js?v=2.0';
 
+export function showTopToast(msg, type = 'info') {
+  if (typeof window.showTopToast === 'function' && window.showTopToast !== showTopToast) {
+    window.showTopToast(msg, type);
+    return;
+  }
+  const existing = document.getElementById('globalAppTopToast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'globalAppTopToast';
+  toast.className = `fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-4 py-2.5 rounded-xl shadow-xl text-xs sm:text-sm font-bold flex items-center gap-2 border transition-all duration-300 pointer-events-auto ${
+    type === 'success'
+      ? 'bg-emerald-950/95 text-emerald-200 border-emerald-500/80 shadow-emerald-900/40'
+      : type === 'error'
+      ? 'bg-rose-950/95 text-rose-200 border-rose-500/80 shadow-rose-900/40'
+      : 'bg-cyan-950/95 text-cyan-200 border-cyan-500/80 shadow-cyan-900/40'
+  }`;
+  toast.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span><span>${msg}</span>`;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
 export function selectRoom(roomNum) {
   state.selectedRoom = parseInt(roomNum, 10);
   saveLocalFallback();
@@ -892,27 +917,27 @@ export function renderPastHistorySection(room) {
     if (isVacancy) {
       actionHtml = `
         <div class="inline-flex items-center justify-center gap-1">
-          <button type="button" class="btn-set-unpay-past inline-block px-1.5 py-0.5 rounded text-[10px] font-normal bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 transition cursor-pointer shadow-xs whitespace-nowrap" title="공실 해제 및 미납으로 전환" data-year="${y}" data-month="${m}">
+          <button type="button" onclick="handleSetPastUnpaid(${rNum}, ${m}, ${y})" class="btn-set-unpay-past inline-block px-1.5 py-0.5 rounded text-[10px] font-normal bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 transition cursor-pointer shadow-xs whitespace-nowrap" title="공실 해제 및 미납으로 전환" data-year="${y}" data-month="${m}">
             미납
           </button>
-          <button type="button" class="btn-pay-past inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-900/60 hover:bg-cyan-800 text-cyan-300 border border-cyan-700/60 transition cursor-pointer shadow-xs whitespace-nowrap" title="해당 월 수납 처리" data-year="${y}" data-month="${m}">
+          <button type="button" onclick="handleProcessPayment(${rNum}, ${m}, ${y})" class="btn-pay-past inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-900/60 hover:bg-cyan-800 text-cyan-300 border border-cyan-700/60 transition cursor-pointer shadow-xs whitespace-nowrap" title="해당 월 수납 처리" data-year="${y}" data-month="${m}">
             수납
           </button>
         </div>
       `;
     } else if (p.paid) {
       actionHtml = `
-        <button type="button" class="btn-cancel-past inline-block px-2 py-0.5 rounded text-[10px] font-normal bg-slate-800/80 hover:bg-rose-950/50 text-slate-400 hover:text-rose-300 border border-slate-700/60 hover:border-rose-500/40 transition whitespace-nowrap cursor-pointer shadow-xs" data-year="${y}" data-month="${m}">
+        <button type="button" onclick="handleCancelPayment(${rNum}, ${m}, ${y})" class="btn-cancel-past inline-block px-2 py-0.5 rounded text-[10px] font-normal bg-slate-800/80 hover:bg-rose-950/50 text-slate-400 hover:text-rose-300 border border-slate-700/60 hover:border-rose-500/40 transition whitespace-nowrap cursor-pointer shadow-xs" data-year="${y}" data-month="${m}">
           취소
         </button>
       `;
     } else {
       actionHtml = `
         <div class="inline-flex items-center justify-center gap-1">
-          <button type="button" class="btn-pay-past inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-600 hover:bg-cyan-500 text-white transition shadow-xs whitespace-nowrap cursor-pointer" title="수납 처리" data-year="${y}" data-month="${m}">
+          <button type="button" onclick="handleProcessPayment(${rNum}, ${m}, ${y})" class="btn-pay-past inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-600 hover:bg-cyan-500 text-white transition shadow-xs whitespace-nowrap cursor-pointer active:scale-95" title="수납 처리" data-year="${y}" data-month="${m}">
             수납
           </button>
-          <button type="button" class="btn-set-vacancy-past inline-block px-1.5 py-0.5 rounded text-[10px] font-normal bg-slate-800/90 hover:bg-amber-950/60 text-slate-400 hover:text-amber-300 border border-slate-700/70 hover:border-amber-500/50 transition cursor-pointer shadow-xs whitespace-nowrap" title="공실로 전환" data-year="${y}" data-month="${m}">
+          <button type="button" onclick="handleSetPastVacancy(${rNum}, ${m}, ${y})" class="btn-set-vacancy-past inline-block px-1.5 py-0.5 rounded text-[10px] font-normal bg-slate-800/90 hover:bg-amber-950/60 text-slate-400 hover:text-amber-300 border border-slate-700/70 hover:border-amber-500/50 transition cursor-pointer shadow-xs whitespace-nowrap" title="공실로 전환" data-year="${y}" data-month="${m}">
             공실
           </button>
         </div>
@@ -1710,25 +1735,20 @@ if (typeof window !== 'undefined') {
   window.handleSetPastUnpaid = handleSetPastUnpaid;
 }
 
-// ── 수납 처리 비동기 액션 ──
+// ── 수납 처리 비동기 액션 (블로킹 팝업 제거 및 100% 즉시 반응형) ──
 export async function handleProcessPayment(roomNum, month, year = currentYear) {
   try {
-    const room = state.rooms[roomNum];
+    const key = String(roomNum);
+    const room = state.rooms[key] || state.rooms[Number(roomNum)] || state.rooms[roomNum];
     const tenantName = (room && room.name) ? room.name : "공실";
     const curRent = (room && room.lease_type === "전세") ? 0 : (room ? room.rent : 0);
     const curMaint = (room ? room.maintenance : 0);
     const curTot = (Number(curRent) || 0) + (Number(curMaint) || 0);
 
-    // 0. 수납 실행 전 사용자 명시적 확인 (취소 시 조기 종료: 결제 및 영수 메시지 발행 일체 중단)
-    const proceed = confirm(`[${roomNum}호 ${tenantName}님]\n${year}년 ${month}월분 (${Number(curTot).toLocaleString()}원)을 수납 처리하시겠습니까?`);
-    if (!proceed) {
-      return;
-    }
-
     const pKey = `${year}-${month}`;
     const defaultPayDate = `${year}-${String(month).padStart(2, '0')}-10`;
 
-    // 1. 낙관적 UI 즉각 반영
+    // 1. 낙관적 UI 즉각 반영 (클릭 즉시 완납으로 전환)
     if (room && room.payments) {
       const existing = room.payments[pKey] || (year === currentYear ? room.payments[month] : null) || {};
       const payObj = {
@@ -1751,41 +1771,38 @@ export async function handleProcessPayment(roomNum, month, year = currentYear) {
     saveLocalFallback();
     renderAll();
 
-    // 2. 서버 동기화
+    // 상단 세련된 즉각 토스트 안내
+    showTopToast(`💳 [${roomNum}호 ${tenantName}님] ${year}년 ${month}월분 (${Number(curTot).toLocaleString()}원) 완납 처리되었습니다!`, 'success');
+
+    // 2. 서버 영구 반영
     if (state.isOnline) {
       const res = await apiProcessPayment(roomNum, month, state.currentBranch, defaultPayDate, "정상 입금", tenantName, year);
       if (res) {
-        state.rooms[roomNum] = res;
+        state.rooms[key] = res;
         saveLocalFallback();
         renderAll();
       }
     }
 
-    // 3. 수납 후 영수 문자 발송 연동 (사용자 확인 후 발송)
-    const curBranchObj = state.branches.find(b => b.branch_id === state.currentBranch);
+    // 3. 영수증 문자 발송 연동 텍스트 준비
+    const curBranchObj = (state.branches || []).find(b => b.branch_id === state.currentBranch);
     const branchName = state.currentBranch === 'main' ? '시크빌' : (curBranchObj ? curBranchObj.name : '시크빌');
     const receiptText = `[${branchName} 임차료 수납 영수증]\n${roomNum}호 ${tenantName} 님\n- 귀속: ${year}년 ${month}월분\n- 수납액: ${Number(curTot).toLocaleString()}원\n- 수납일자: ${defaultPayDate}\n정상 수납(완납) 처리되었습니다. 감사합니다.`;
     state.pendingReceiptText = receiptText;
     state.pendingReceiptRoom = roomNum;
-
-    if (room && room.phone) {
-      const sendReceipt = confirm(`✅ [${roomNum}호 ${tenantName}님] ${year}년 ${month}월분 수납이 정상 완료되었습니다.\n\n세입자에게 영수증 문자를 발송하시겠습니까?`);
-      if (sendReceipt && typeof window.handleSendSmsReceipt === 'function') {
-        window.handleSendSmsReceipt(room.phone);
-      }
-    }
   } catch (err) {
     console.error("수납 처리 실패:", err);
-    alert("수납 처리 실패: " + err.message);
+    showTopToast(`❌ 수납 처리 실패: ${err.message}`, 'error');
   }
 }
 
 export async function handleCancelPayment(roomNum, month, year = currentYear) {
   try {
+    const key = String(roomNum);
     const pKey = `${year}-${month}`;
 
     // 1. 낙관적 UI 즉각 반영 (화면에서 즉시 미납으로 전환)
-    const r = state.rooms[roomNum];
+    const r = state.rooms[key] || state.rooms[Number(roomNum)] || state.rooms[roomNum];
     if (r && r.payments) {
       const existing = r.payments[pKey] || (year === currentYear ? r.payments[month] : null) || {};
       const updatedPay = {
@@ -1803,12 +1820,12 @@ export async function handleCancelPayment(roomNum, month, year = currentYear) {
     }
     saveLocalFallback();
     renderAll();
+    showTopToast(`↩️ [${roomNum}호] ${year}년 ${month}월분 수납이 취소(미납 환원)되었습니다.`, 'info');
 
     // 2. 서버 영구 반영
     if (state.isOnline) {
       const res = await apiCancelPayment(roomNum, month, state.currentBranch, year);
       if (res) {
-        // 서버 응답 데이터에서도 해당 월 paid=false 보장
         if (res.payments) {
           if (res.payments[pKey]) {
             res.payments[pKey].paid = false;
@@ -1819,16 +1836,24 @@ export async function handleCancelPayment(roomNum, month, year = currentYear) {
             res.payments[month].paid_date = "";
           }
         }
-        state.rooms[roomNum] = res;
+        state.rooms[key] = res;
         saveLocalFallback();
         renderAll();
       }
     }
   } catch (err) {
     console.error("납부 취소 실패:", err);
-    alert("납부 취소 실패: " + err.message);
+    showTopToast(`❌ 납부 취소 실패: ${err.message}`, 'error');
   }
 }
+
+// 전역 window 바인딩 (인라인 이벤트 및 콘솔/타 모듈 호출 100% 보장)
+window.handleProcessPayment = handleProcessPayment;
+window.handleCancelPayment = handleCancelPayment;
+window.handleSetPastVacancy = handleSetPastVacancy;
+window.handleSetPastUnpaid = handleSetPastUnpaid;
+window.openRoomDrawer = openRoomDrawer;
+window.closeRoomDrawer = closeRoomDrawer;
 
 // ── 공실 전환 액션 (수동으로 공실 지정) ──
 export async function handleSetPastVacancy(roomNum, month, year = currentYear) {

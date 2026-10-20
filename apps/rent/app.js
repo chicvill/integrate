@@ -30,7 +30,11 @@ import {
   executeBranchDeleteConfirmed,
   openEditSelectedBranchModal,
   openEditBranchModal,
-  handleEditBranchSubmit
+  handleEditBranchSubmit,
+  handleProcessPayment,
+  handleCancelPayment,
+  handleSetPastVacancy,
+  handleSetPastUnpaid
 } from './js/ui.js?v=2.0';
 import {
   openModal,
@@ -186,6 +190,10 @@ window.toggleRoomSlideView = toggleRoomSlideView;
 window.handleFillTenantPayments = handleFillTenantPayments;
 window.handleChangePaymentDate = handleChangePaymentDate;
 window.handleChangePaymentAmount = handleChangePaymentAmount;
+window.handleProcessPayment = handleProcessPayment;
+window.handleCancelPayment = handleCancelPayment;
+window.handleSetPastVacancy = handleSetPastVacancy;
+window.handleSetPastUnpaid = handleSetPastUnpaid;
 
 window.openVatModal = openVatModal;
 window.setVatPeriod = setVatPeriod;
