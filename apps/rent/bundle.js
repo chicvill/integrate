@@ -19661,6 +19661,12 @@ function resizeImageFileToDataUrl(file, maxWidth = 1600, maxHeight = 1600, quali
   });
 }
 
+function normalizeDateString(val) {
+  if (!val) return '';
+  const comp = parseDateComponents(val);
+  return comp ? comp.formatted : String(val).trim();
+}
+
 // 📷 계약서 사진 촬영 / OCR 자동완성 핸들러
 async function handleContractPhotoSelect(event) {
   const file = event.target.files && event.target.files[0];
