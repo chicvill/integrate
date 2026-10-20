@@ -4327,16 +4327,15 @@ export async function handleSmsDepositProcess() {
   const paidDate = parsed.fullDateStr || formattedToday;
 
   // 1. 가장 오래된 체납월부터 분할 수납 대상 월 목록 산출 (전입일 이전 제외)
-  const targetPeriods = state.pendingTargetPeriods || calculateDepositTargetPeriods(roomNum, parsed.amount, parsed.month);
-
-  // 체납된 것이 없는데 입금 되는 등 처리할 수 없는 경우 수동 처리 안내
+  let targetPeriods = state.pendingTargetPeriods;
   if (!targetPeriods || targetPeriods.length === 0) {
-    updateSmsAlert(
-      'warning',
-      '처리 불가: 미납 내역 없음',
-      `<strong>${roomNum}호 (${tenantName})</strong>는 현재 체납/미납 회차가 없는 완납 상태입니다.<br>이중입금 또는 과오납 여부를 확인하시거나, 과거/특수 납부는 <strong>[수납내역]</strong>에서 수동으로 확인해주세요.`
-    );
-    return;
+    targetPeriods = calculateDepositTargetPeriods(roomNum, parsed.amount, parsed.month);
+  }
+
+  // 체납/미납 회차가 없더라도 문자에 명시된 해당 월(예: 10월분)을 기본 대상으로 하여 재반영/갱신 허용
+  if (!targetPeriods || targetPeriods.length === 0) {
+    const fallbackMonth = parsed.month || currentMonth;
+    targetPeriods = [{ year: currentYear, month: fallbackMonth, isOverdue: false, isAdvance: false, isUpdate: true }];
   }
 
   // 2. 은행 메시지의 금액이 임차료와 일치하지 않을 때 확인 메시지 보여주고 확인 후 진행
@@ -4365,6 +4364,11 @@ export async function handleSmsDepositProcess() {
     }
     if (execBtnText) {
       execBtnText.textContent = '전산 완납 처리 중... ⏳';
+    }
+
+    // 즉시 피드백 토스트 표시
+    if (typeof showTopToast === 'function') {
+      showTopToast(`⚡ ${roomNum}호 입금 처리 진행 중...`, 'info');
     }
 
     // 3. 분할된 각 월에 대해 전산 완납 처리 실행
@@ -4415,6 +4419,10 @@ export async function handleSmsDepositProcess() {
       }
     } catch (e) {
       console.warn("Clipboard write not permitted:", e);
+    }
+
+    if (typeof showTopToast === 'function') {
+      showTopToast(`✅ ${roomNum}호 완납 처리 완료 및 영수증 복사됨`, 'success');
     }
 
     // 성공 메시지 띄우고 모달 닫기
