@@ -1124,10 +1124,14 @@
         const res = await fetch(`${API_BASE}/ai/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: q, building: curBranch })
+          body: JSON.stringify({ message: q, building: curBranch, mode: "auto" })
         });
         const data = await res.json();
         out.textContent = data.reply || JSON.stringify(data, null, 2);
+        // 쓰기 도구(수정, 납부, 퇴실 등)가 실행되었으면 호실 카드 즉시 자동 동기화
+        if (data.reply && (data.reply.includes("완료") || data.reply.includes("수정") || data.reply.includes("납부") || data.reply.includes("등록"))) {
+          reloadRooms();
+        }
       } catch (err) {
         out.textContent = "질의 응답 실패 (서버 연결 확인)";
       }

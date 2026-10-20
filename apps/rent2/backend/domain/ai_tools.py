@@ -124,6 +124,40 @@ def add_expense(building: str, item: str, amount: int, date: str = "", note: str
 
 
 @tool(write=True)
+def update_contract(building: str, unit: int, expiry: str = "", move_in: str = "", rent: int = 0,
+                    deposit: int = 0, maintenance: int = 0, phone: str = "", note: str = "") -> Dict[str, Any]:
+    """계약 수정: 기존 거주 중인 임차인의 만기일, 임대료, 보증금, 연락처 등을 변경한다."""
+    u = Building.require(building).unit(unit)
+    c = u.active()
+    if not c:
+        raise LookupError(f"{unit}호는 현재 거주 중인 활성 계약이 없습니다.")
+    form: Dict[str, Any] = {}
+    if expiry:
+        d = pdate(expiry)
+        form["expiry"] = d.isoformat() if d else expiry
+    if move_in:
+        d = pdate(move_in)
+        form["move_in"] = d.isoformat() if d else move_in
+    if rent > 0:
+        form["rent"] = rent
+    if deposit > 0:
+        form["deposit"] = deposit
+    if maintenance > 0:
+        form["maintenance"] = maintenance
+    if phone:
+        form["phone"] = phone
+    if note:
+        form["note"] = note
+    updated = u.update(form)
+    changes = []
+    if expiry: changes.append(f"만기일: {updated.expiry}")
+    if move_in: changes.append(f"입주일: {updated.move_in}")
+    if rent > 0: changes.append(f"월세: {updated.rent:,}원")
+    if deposit > 0: changes.append(f"보증금: {updated.deposit:,}원")
+    return {"contract": updated.id, "message": f"✏️ {unit}호 {updated.tenant_name}님 계약 정보 수정 완료 ({', '.join(changes) or '반영완료'})"}
+
+
+@tool(write=True)
 def new_contract(building: str, unit: int, tenant_name: str, deposit: int, rent: int, maintenance: int = 0,
                  move_in: str = "", expiry: str = "", phone: str = "", lease_type: str = "월세", pay_timing: str = "후불") -> Dict[str, Any]:
     """신규 계약: 호실에 새 임차인 계약서를 만든다 (기존 거주 계약이 있으면 거절)."""
@@ -138,7 +172,7 @@ def new_contract(building: str, unit: int, tenant_name: str, deposit: int, rent:
 # ───────────── 오프라인 규칙 (API 키 없이도 동작 · 결정적 테스트용) ─────────────
 def _args(msg: str, ctx: dict, **extra: Any) -> dict:
     t, a = today(), {}
-    if (m := re.search(r"(\d{3})\s*호", msg)):
+    if (m := re.search(r"(\d{3,4})\s*호?", msg)):
         a["unit"] = int(m.group(1))
     if (m := re.search(r"(\d{4})\s*년", msg)):
         a["year"] = int(m.group(1))
@@ -161,6 +195,30 @@ def _plan(tool_name: str, **extra: Any):
     return fn
 
 
+def _modify_contract_rule(m: re.Match, ctx: dict) -> List[Tuple[str, dict]]:
+    msg = m.string
+    u_match = re.search(r"(\d{3,4})\s*호?", msg)
+    if not u_match:
+        return [("search", {"query": msg})]
+    u_num = int(u_match.group(1))
+    args: Dict[str, Any] = {"unit": u_num}
+    d = pdate(msg)
+    if d and ("만기" in msg or "종료" in msg or "연장" in msg):
+        args["expiry"] = d.isoformat()
+    elif d and ("입주" in msg or "전입" in msg):
+        args["move_in"] = d.isoformat()
+    amt = re.search(r"(\d[\d,]*)\s*(만)?\s*원", msg)
+    if amt:
+        val = num(amt.group(1)) * (10000 if amt.group(2) else 1)
+        if "보증금" in msg:
+            args["deposit"] = val
+        elif "월세" in msg or "임대료" in msg:
+            args["rent"] = val
+        elif "관리비" in msg:
+            args["maintenance"] = val
+    return [("update_contract", _args(msg, ctx, **args))]
+
+
 def _expense(m: re.Match, ctx: dict) -> List[Tuple[str, dict]]:
     amt = re.search(r"(\d[\d,]*)\s*(만)?\s*원", m.string)
     if not amt:
@@ -180,6 +238,7 @@ def _vat(m: re.Match, ctx: dict) -> List[Tuple[str, dict]]:
 
 
 agent.OFFLINE_RULES[:] = [(re.compile(p, re.I), fn) for p, fn in [
+    (r"수정|변경|바꿔|연장", _modify_contract_rule),
     (r"납부\s*취소|수납\s*취소|입금\s*취소", _plan("cancel_payment")),
     (r"(납부|수납|입금|납입)\s*(처리|완료|했|확인)", _plan("record_payment")),
     (r"퇴실|전출|이사\s*나", _plan("end_contract")),

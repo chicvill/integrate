@@ -468,7 +468,7 @@ def ai_chat(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
     msg = (p.get("message") or "").strip()
     if not msg:
         raise HTTPException(400, "메시지를 입력해 주세요.")
-    return ask(msg, user, p.get("building") or "", p.get("mode") or "confirm")
+    return ask(msg, user, p.get("building") or "", p.get("mode") or "auto")
 
 
 @router.post("/ai/execute")
