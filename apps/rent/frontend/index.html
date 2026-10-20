@@ -72,8 +72,11 @@
   <header class="border-b border-slate-800/90 bg-surface-900/95 backdrop-blur sticky top-0 z-30 px-2 py-1.5 sm:px-3">
     <div class="w-full max-w-xl mx-auto flex items-center justify-between gap-1.5">
       
-      <!-- Left: Active Property / Building Switcher + Admin Role Badge -->
+      <!-- Left: Hamburger Button [☰] + Active Property Switcher + Admin Role Badge -->
       <div class="flex items-center gap-1.5 min-w-0">
+        <button type="button" onclick="openMenuDrawer()" class="w-8 h-8 rounded-xl bg-surface-850 hover:bg-surface-800 border border-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold cursor-pointer transition shadow-xs active:scale-95 shrink-0" title="전체 메뉴 열기">
+          ☰
+        </button>
         <button type="button" onclick="openMenuDrawer()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-surface-850 hover:bg-surface-800 border border-cyan-500/40 text-cyan-300 transition cursor-pointer shadow-inner active:scale-95 min-w-0 max-w-[140px] sm:max-w-[220px]" title="부동산(건물) 선택 및 관리">
           <span class="text-xs sm:text-sm shrink-0">🏢</span>
           <span id="headerBranchName" class="text-xs sm:text-sm font-bold tracking-tight truncate">시크빌</span>
