@@ -65,6 +65,14 @@ from apps.videoBooth.backend.routers import videobooth_router
 from apps.grammer.backend.routers.grammer_router import router as grammer_router
 from apps.files.backend.routers import files_router
 from apps.rent.backend.routers.main_router import router as rent_router
+from apps.rent2.backend.api import router as rent2_router
+from apps.rent2.backend.main import ROOT as RENT2_ROOT
+from apps.rent2.backend.kernel.base import use_store as rent2_use_store
+from apps.rent2.backend.domain import bootstrap as rent2_bootstrap
+
+rent2_db_path = os.getenv("RENT2_DB") or os.path.join(RENT2_ROOT, "data", "rent2.db")
+rent2_use_store(rent2_db_path)
+rent2_bootstrap()
 from apps.deployer.backend.routers.distro_router import router as deployer_router, get_one_click_install_script, download_package
 from shared.core.base_database import Base, get_database_service
 from apps.YTDownloader.backend.db import models as yt_models
@@ -228,6 +236,7 @@ app.include_router(files_router, prefix="/api/filebrowser", include_in_schema=Fa
 
 # 12. 원룸 임차료 관리 시스템 (Rent Management 29-Rooms)
 app.include_router(rent_router, prefix="/api/rent", tags=["원룸 임차료 관리 (29개실)"])
+app.include_router(rent2_router, prefix="/api/rent2", tags=["원룸 임차관리 rent2 (스마트 모바일)"])
 
 # 13. 솔루션 분리 배포 & 패키징 센터 (Deployer & Distro Studio)
 app.include_router(deployer_router, prefix="/api/deployer", tags=["솔루션 배포 & 패키징 센터"])
@@ -389,6 +398,11 @@ if not os.path.exists(rent_frontend):
     rent_frontend = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "rent"))
 if os.path.exists(rent_frontend):
     app.mount("/rent", NoCacheStaticFiles(directory=rent_frontend, html=True), name="rent_app")
+
+# ── rent2 (스마트 모바일 신규 흑백 임차관리) ──
+rent2_frontend = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "rent2", "frontend"))
+if os.path.exists(rent2_frontend):
+    app.mount("/rent2", NoCacheStaticFiles(directory=rent2_frontend, html=True), name="rent2_app")
 
 # ── 솔루션 분리 배포 & 패키징 센터 (Deployer & Distro Studio) ──
 deployer_frontend = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "deployer", "frontend"))

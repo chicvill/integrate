@@ -618,7 +618,7 @@
     let curFilter = "all";
     let scanBase64 = "";
 
-    const API_BASE = "/api";
+    const API_BASE = (location.pathname.startsWith("/rent2") || location.pathname.includes("/rent2")) ? "/api/rent2" : "/api";
 
     // ── 안내 배너 (Banner Alert UX) ──
     function setAlert(msg, type = "info") {
@@ -685,8 +685,8 @@
       try {
         setAlert("호실 데이터 동기화 중...", "info");
         const res = await fetch(`${API_BASE}/rooms?branch_id=${curBranch}`);
-        const data = await res.json();
-        allRooms = data.rooms || [];
+        const rawRooms = data.rooms || {};
+        allRooms = Array.isArray(rawRooms) ? rawRooms : Object.values(rawRooms);
         
         // 브리핑 집계
         let unpaidCount = 0, unpaidAmount = 0, vacantCount = 0, expiringCount = 0;
