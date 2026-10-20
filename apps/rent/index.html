@@ -77,11 +77,25 @@
         <button type="button" onclick="openMenuDrawer()" class="w-8 h-8 rounded-xl bg-surface-850 hover:bg-surface-800 border border-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold cursor-pointer transition shadow-xs active:scale-95 shrink-0" title="전체 메뉴 열기">
           ☰
         </button>
-        <button type="button" onclick="openMenuDrawer()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-surface-850 hover:bg-surface-800 border border-cyan-500/40 text-cyan-300 transition cursor-pointer shadow-inner active:scale-95 min-w-0 max-w-[140px] sm:max-w-[220px]" title="부동산(건물) 선택 및 관리">
-          <span class="text-xs sm:text-sm shrink-0">🏢</span>
-          <span id="headerBranchName" class="text-xs sm:text-sm font-bold tracking-tight truncate">시크빌</span>
-          <span class="text-[10px] text-cyan-400/80 font-mono shrink-0">▾</span>
-        </button>
+        <!-- 건물 선택 풀다운 드롭다운 (관리자 전용 건물 전환) -->
+        <div class="relative shrink-0" id="headerBranchDropdownWrapper">
+          <button type="button" id="headerBranchSelectBtn" onclick="toggleHeaderBranchDropdown(event)" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-surface-850 hover:bg-surface-800 border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 transition cursor-pointer shadow-inner active:scale-95 min-w-0 max-w-[140px] sm:max-w-[220px]" title="등록된 건물 목록 선택">
+            <span class="text-xs sm:text-sm shrink-0">🏢</span>
+            <span id="headerBranchName" class="text-xs sm:text-sm font-bold tracking-tight truncate">시크빌</span>
+            <span id="headerBranchArrow" class="text-[10px] text-cyan-400 font-bold shrink-0 transition-transform duration-200">▾</span>
+          </button>
+
+          <!-- 건물 목록 풀다운 메뉴 레이어 -->
+          <div id="headerBranchDropdownMenu" class="hidden absolute left-0 top-full mt-1.5 w-56 sm:w-64 bg-surface-900 border border-cyan-500/50 rounded-xl shadow-2xl py-1 z-50 animate-fade-in backdrop-blur-md">
+            <div class="px-2.5 py-1.5 border-b border-slate-800 text-[10px] font-bold text-cyan-400 uppercase tracking-wider flex items-center justify-between">
+              <span>🏢 등록된 건물 선택</span>
+              <span class="text-[9px] text-slate-400 font-normal">관리자 전용</span>
+            </div>
+            <div id="headerBranchListItems" class="max-h-60 overflow-y-auto divide-y divide-slate-800/60 p-1 space-y-1">
+              <!-- Dynamically populated by JS -->
+            </div>
+          </div>
+        </div>
         <div id="headerRoleBadge" onclick="openAdminModal()" class="cursor-pointer shrink-0" title="관리자 계정 및 권한"></div>
       </div>
 

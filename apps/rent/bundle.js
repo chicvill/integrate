@@ -17315,9 +17315,139 @@ function renderHeaderSummary(room) {
     }
   }
 
+  // 상단 건물 선택 풀다운 드롭다운 메뉴 렌더링
+  renderHeaderBranchDropdown();
+
   // 상단 우측 오늘의 일시, 요일 실시간 갱신
   updateHeaderClock();
 }
+
+/**
+ * 상단 헤더의 등록된 건물 목록 풀다운 드롭다운 열기/닫기
+ */
+function toggleHeaderBranchDropdown(e) {
+  if (e) {
+    e.stopPropagation();
+    e.preventDefault();
+  }
+  const menu = document.getElementById('headerBranchDropdownMenu');
+  const arrow = document.getElementById('headerBranchArrow');
+  if (!menu) return;
+
+  const isHidden = menu.classList.contains('hidden');
+  if (isHidden) {
+    renderHeaderBranchDropdown();
+    menu.classList.remove('hidden');
+    if (arrow) arrow.style.transform = 'rotate(180deg)';
+  } else {
+    menu.classList.add('hidden');
+    if (arrow) arrow.style.transform = 'rotate(0deg)';
+  }
+}
+
+function closeHeaderBranchDropdown() {
+  const menu = document.getElementById('headerBranchDropdownMenu');
+  const arrow = document.getElementById('headerBranchArrow');
+  if (menu && !menu.classList.contains('hidden')) {
+    menu.classList.add('hidden');
+    if (arrow) arrow.style.transform = 'rotate(0deg)';
+  }
+}
+
+// 바깥 영역 클릭 시 풀다운 닫기
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', (e) => {
+    const wrapper = document.getElementById('headerBranchDropdownWrapper');
+    if (wrapper && !wrapper.contains(e.target)) {
+      closeHeaderBranchDropdown();
+    }
+  });
+}
+
+/**
+ * 등록된 건물 목록을 헤더 풀다운 드롭다운에 렌더링
+ */
+function renderHeaderBranchDropdown() {
+  const listContainer = document.getElementById('headerBranchListItems');
+  if (!listContainer) return;
+
+  const user = state.currentUser;
+  const isSuperadmin = (user && (user.role === 'superadmin' || user.username === 'admin'));
+  const myBranch = user ? (user.branch_id || 'main') : 'main';
+
+  // Canonical ID 기준 중복 제거 및 리스트 정돈
+  const canonicalMap = new Map();
+  (state.branches || []).forEach(b => {
+    const rawId = (b.branch_id || '').toLowerCase();
+    const cId = (rawId === 'chicvill01' || rawId === 'chicvill' || rawId === 'chicvill1' || rawId === 'main') ? 'main' :
+                (rawId === 'chicvill02' || rawId === 'chicvill2' || rawId === 'branch_9027') ? 'branch_9027' : b.branch_id;
+    if (!canonicalMap.has(cId)) {
+      canonicalMap.set(cId, { ...b, branch_id: cId, name: b.name || `건물 (${cId})` });
+    } else {
+      const existing = canonicalMap.get(cId);
+      if (existing.name && existing.name.startsWith('지점 (') && b.name && !b.name.startsWith('지점 (')) {
+        canonicalMap.set(cId, { ...b, branch_id: cId });
+      }
+    }
+  });
+
+  const displayBranches = Array.from(canonicalMap.values());
+  if (displayBranches.length === 0) {
+    displayBranches.push({ branch_id: 'main', name: '시크빌 (본점)' });
+  }
+
+  listContainer.innerHTML = '';
+
+  displayBranches.forEach(b => {
+    const isSelected = isSameBranchId(b.branch_id, state.currentBranch);
+    const isMyBranch = isSameBranchId(b.branch_id, myBranch);
+    const canAccess = isSuperadmin || isMyBranch || !user;
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `w-full text-left px-2.5 py-2 rounded-lg text-xs flex items-center justify-between transition cursor-pointer ${
+      isSelected 
+        ? 'bg-cyan-950/80 border border-cyan-500/70 text-cyan-300 font-bold shadow-xs' 
+        : (canAccess 
+            ? 'hover:bg-surface-800 text-slate-200 hover:text-white' 
+            : 'opacity-50 hover:bg-surface-850 text-slate-400')
+    }`;
+
+    btn.innerHTML = `
+      <div class="flex items-center gap-1.5 min-w-0 pr-1">
+        <span class="text-sm">🏢</span>
+        <div class="truncate">
+          <div class="truncate text-xs ${isSelected ? 'text-cyan-300 font-bold' : 'text-slate-200'}">
+            ${b.name}
+          </div>
+          <div class="text-[10px] ${isSelected ? 'text-cyan-400/80' : 'text-slate-500'} font-mono truncate">
+            ${b.branch_id === 'main' ? '29개 호실 · 본점' : (b.address || b.branch_id)}
+          </div>
+        </div>
+      </div>
+      <div class="shrink-0 flex items-center gap-1">
+        ${isSelected ? '<span class="text-xs text-cyan-400 font-bold">✓</span>' : ''}
+        ${!canAccess ? '<span class="text-[10px] text-slate-500">🔒</span>' : ''}
+      </div>
+    `;
+
+    btn.onclick = async (e) => {
+      e.stopPropagation();
+      closeHeaderBranchDropdown();
+      if (!canAccess) {
+        alert(`🔒 접근 제한: 점주(${user.name || user.username})는 배정된 담당 건물만 관제할 수 있습니다.`);
+        return;
+      }
+      await switchBranch(b.branch_id);
+    };
+
+    listContainer.appendChild(btn);
+  });
+}
+
+window.toggleHeaderBranchDropdown = toggleHeaderBranchDropdown;
+window.closeHeaderBranchDropdown = closeHeaderBranchDropdown;
+window.renderHeaderBranchDropdown = renderHeaderBranchDropdown;
 
 /**
  * 상단 우측 헤더의 현재 일시 및 요일 실시간 시계 업데이트
