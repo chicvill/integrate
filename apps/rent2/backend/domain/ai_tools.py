@@ -153,7 +153,12 @@ def _args(msg: str, ctx: dict, **extra: Any) -> dict:
 
 
 def _plan(tool_name: str, **extra: Any):
-    return lambda m, ctx: [(tool_name, _args(m.string, ctx, **extra))]
+    def fn(m: re.Match, ctx: dict) -> List[Tuple[str, dict]]:
+        room_match = re.search(r"(\d{3,4})\s*호?", m.string)
+        if room_match and tool_name in ("expiring_contracts", "unpaid"):
+            return [("unit_card", _args(m.string, ctx, **extra))]
+        return [(tool_name, _args(m.string, ctx, **extra))]
+    return fn
 
 
 def _expense(m: re.Match, ctx: dict) -> List[Tuple[str, dict]]:

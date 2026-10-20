@@ -22,7 +22,7 @@ from .identity import User
 TOOLS: Dict[str, "Tool"] = {}
 current_user: ContextVar[Optional[User]] = ContextVar("current_user", default=None)
 _TYPES = {int: "INTEGER", float: "NUMBER", bool: "BOOLEAN", str: "STRING"}
-MODELS = ["gemini-3.5-flash", "gemini-2.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-latest"]
+MODELS = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
 
 
 @dataclass
@@ -145,7 +145,7 @@ def gemini(contents: list, system: str = "", tools: Optional[list] = None, json_
             req = urllib.request.Request(
                 f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key()}",
                 data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(req, timeout=10) as r:
+            with urllib.request.urlopen(req, timeout=5) as r:
                 return json.loads(r.read())
         except Exception as e:   # 모델/쿼터 오류 → 다음 모델
             last = e
@@ -201,19 +201,27 @@ def chat(message: str, user: User, context: dict, system: str, mode: str = "conf
         return out
 
     try:
-        if api_key():
-            try:
-                return _llm_loop(message, system, call, steps, pending)
-            except Exception as e:   # LLM 불가 → 오프라인 규칙으로 안전 폴백
-                steps.append({"tool": "_llm", "args": {}, "result": {"error": str(e)}})
+        # ── 1. 초고속 로컬 규칙(Fast-Path): 호실/만기/미납/공실 등 명확한 도메인 패턴은 0.01초 즉답 ──
+        matched = False
         for pattern, plan in OFFLINE_RULES:
             m = pattern.search(message)
             if m:
                 for name, args in plan(m, context):
                     call(name, args)
+                matched = True
                 break
-        else:
-            call("search", {"query": message})
+        if matched and steps:
+            return {"reply": "\n".join(say(s["result"]) for s in steps), "steps": steps, "pending": pending, "engine": "fast-path"}
+
+        # ── 2. 복합 자연어 / 대화형 질의는 초고속 Gemini 2.0 Flash로 추론 ──
+        if api_key():
+            try:
+                return _llm_loop(message, system, call, steps, pending)
+            except Exception as e:
+                steps.append({"tool": "_llm", "args": {}, "result": {"error": str(e)}})
+
+        # ── 3. 기본 검색 연상 폴백 ──
+        call("search", {"query": message})
         return {"reply": "\n".join(say(s["result"]) for s in steps if s["tool"] != "_llm"), "steps": steps, "pending": pending, "engine": "offline"}
     finally:
         current_user.reset(token)
