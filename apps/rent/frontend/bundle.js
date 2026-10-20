@@ -17718,6 +17718,31 @@ function resolveHistoryMonthRecord(room, y, m, existingP, histories, currYear = 
   };
 }
 
+let activePastYearFilter = 'all';
+
+function setPastYearFilter(filterVal) {
+  activePastYearFilter = filterVal;
+  
+  // UI 탭 버튼 스타일 갱신
+  const btnAll = document.getElementById('btnPastFilterAll');
+  const btn2026 = document.getElementById('btnPastFilter2026');
+  const btn2025 = document.getElementById('btnPastFilter2025');
+
+  const activeCls = 'px-1.5 py-0.5 rounded text-purple-200 hover:text-white transition cursor-pointer bg-purple-900/70 shadow-xs font-bold';
+  const inactiveCls = 'px-1.5 py-0.5 rounded text-slate-400 hover:text-white transition cursor-pointer font-bold';
+
+  if (btnAll) btnAll.className = (filterVal === 'all') ? activeCls : inactiveCls;
+  if (btn2026) btn2026.className = (filterVal === 2026 || filterVal === '2026') ? activeCls : inactiveCls;
+  if (btn2025) btn2025.className = (filterVal === 2025 || filterVal === '2025') ? activeCls : inactiveCls;
+
+  const currentRoomNum = state.selectedRoom || (state.rooms && Object.keys(state.rooms)[0]);
+  const room = (state.rooms && currentRoomNum) ? state.rooms[currentRoomNum] : null;
+  if (room) {
+    renderPastHistorySection(room);
+  }
+}
+window.setPastYearFilter = setPastYearFilter;
+
 function renderPastHistorySection(room) {
   const rNum = room.room_number;
   const tbody = document.getElementById('pastPaymentTableBody');
@@ -17764,23 +17789,38 @@ function renderPastHistorySection(room) {
     });
   }
 
-  // ── 상단 헤더 기간 배지 업데이트 (2025.01 ~ 현재 vs 2026.01 ~ 현재) ──
+  // ── 상단 헤더 기간 배지 업데이트 ──
   const periodBadge = document.getElementById('pastRoomPeriodBadge');
   if (periodBadge) {
-    periodBadge.textContent = hasLastYearData ? `(${lastYear}.01 ~ 현재)` : `(${currentYear}.01 ~ 현재)`;
+    if (activePastYearFilter === 2026 || activePastYearFilter === '2026') {
+      periodBadge.textContent = `(2026년도 전체)`;
+    } else if (activePastYearFilter === 2025 || activePastYearFilter === '2025') {
+      periodBadge.textContent = `(2025년도 전체)`;
+    } else {
+      periodBadge.textContent = hasLastYearData ? `(${lastYear}.01 ~ 현재)` : `(${currentYear}.01 ~ 현재)`;
+    }
   }
 
-  // ── 표시 월 목록 구성 ──
-  // 작년도 데이터가 있는 건물(시크빌 등): 작년 1월부터 당해연도 당월까지 (2025.01 ~ 2026.10 내림차순)
-  // 작년도 데이터가 없는 다른 건물: 작년 데이터가 없으므로 당해연도(2026.01 ~ 2026.10) 있는 데이터만 표시
-  const startYear = hasLastYearData ? lastYear : currentYear;
+  // ── 표시 월 목록 구성 (필터 반영) ──
   const targetMonths = [];
 
-  for (let y = currentYear; y >= startYear; y--) {
-    const maxM = (y === currentYear) ? currentMonth : 12;
-    const minM = 1;
-    for (let m = maxM; m >= minM; m--) {
-      targetMonths.push({ year: y, month: m });
+  if (activePastYearFilter === 2026 || activePastYearFilter === '2026') {
+    for (let m = currentMonth; m >= 1; m--) {
+      targetMonths.push({ year: 2026, month: m });
+    }
+  } else if (activePastYearFilter === 2025 || activePastYearFilter === '2025') {
+    for (let m = 12; m >= 1; m--) {
+      targetMonths.push({ year: 2025, month: m });
+    }
+  } else {
+    // 'all' 전체
+    const startYear = hasLastYearData ? lastYear : currentYear;
+    for (let y = currentYear; y >= startYear; y--) {
+      const maxM = (y === currentYear) ? currentMonth : 12;
+      const minM = 1;
+      for (let m = maxM; m >= minM; m--) {
+        targetMonths.push({ year: y, month: m });
+      }
     }
   }
   const roomHistories = (room.tenant_histories && room.tenant_histories.length > 0)
@@ -21160,6 +21200,14 @@ const TEMPLATE_PRESETS = [
     ]
   },
   {
+    id: 'monthly_matrix_2025',
+    title: '2025년도 월별 수납장부 매트릭스 (작년)',
+    badge: '2025 실수납 대장',
+    desc: '29개실 호실, 성명, 선/후, 2024.12~2025.12월(13개월) 월일/금액 매트릭스 수납 대장',
+    filename: '2025년도_월별_수납내역_매트릭스대장.tsv',
+    rawText: "호실\t성명\t선/후\t2024.12\t\t1월\t\t2월\t\t3월\t\t4월\t\t5월\t\t6월\t\t7월\t\t8월\t\t9월\t\t10월\t\t11월\t\t12월\t\n\n101\t배종봉\t후불\t25-1-3\t250,000\t2. 3\t250,000\t공실\t\t\t공실\t\t공실\t\t\t전입6/3\t\t7. 3\t250,000\t8. 3\t250,000\t9. 3\t250,000\t10. 3\t250,000\t11-3\t250,000\t25-12-3\t250,000\n201\t정민준\t후불\t12. 20\t440,000\t1. 15\t440,000\t2. 19\t440,000\t3. 27\t440,000\t4. 23\t440,000\t5. 26\t440,000\t6. 25\t440,000\t7. 27\t440,000\t8. 29\t440,000\t9. 15\t440,000\t10-23\t440,000\t11. 21\t440,000\t12. 21\t44,000\n202\t안동기\t선불\t2025.5-10\t440,000\t5. 10\t440,000\t5. 10\t440,000\t7. 10\t440,000\t7. 10\t440,000\t7. 10\t440,000\t8. 10\t440,000\t8. 10\t440,000\t8. 10\t440000\t미납\t\t미납\t\t미납\t\t미납\t\n203\t이광훈\t후불\t12. 28\t440,000\t1. 26\t440,000\t2. 26\t440,000\t3-26\t440,000\t4. 26\t440,000\t5. 25\t440,000\t6. 28\t440,000\t7. 28\t440,000\t8. 28\t440,000\t9. 28\t440,000\t10. 26\t440,000\t11. 25\t440,000\t11:35\t440,000\n204\t주예란\t후불\t12. 2\t440,000\t1. 2\t440,000\t2. 3\t440,000\t3. 4\t440,000\t4. 3\t440,000\t5. 4\t440,000\t6. 3\t440,000\t7. 3\t440,000\t8. 3\t440,000\t9. 3\t440,000\t10. 2\t440,000\t11. 4\t440,000\t12. 3\t440,000\n205\t서재민\t후불\t12. 24\t400,000\t1. 25\t400,000\t2. 23\t400,000\t3. 22\t400,000\t4. 22\t400,000\t5. 23\t400,000\t6. 22\t400,000\t7. 21\t400,000\t8. 23\t400,000\t9. 22\t400,000\t10-20\t400,000\t11. 25\t400,000\t12. 22\t400,000\n301\t성민병원\t후불\t12. 27\t440,000\t1. 31\t440,000\t2. 27\t440,000\t3. 27\t440,000\t4. 25\t440,000\t5. 27\t440,000\t6. 27\t440,000\t7. 25\t440,000\t8. 28\t440,000\t9. 26\t440,000\t10-28\t440,000\t11. 28\t440,000\t12. 28\t440,000\n302\t김지영\t후불\t12. 21\t150,000\t1. 19\t150,000\t2. 16\t150,000\t3. 17\t150,000\t4. 16\t150,000\t5. 27\t150,000\t6. 17\t150,000\t7. 20\t150,000\t8. 21\t150,000\t9. 18\t150,000\t10. 21\t150,000\t11. 21\t150,000\t12. 21\t150,000\n303\t김진수\t후불\t12. 24\t500,000\t1. 26\t500,000\t3. 6\t500,000\t3. 25\t500,000\t4. 25\t500,000\t5. 25\t500,000\t공실\t\t공실\t\t공실\t\t전입9/13\t\t10-13\t440,000\t11. 12\t440,000\t12. 13\t440,000\n304\t노송병원\t후불\t12. 4\t390,000\t1. 2\t390,000\t2. 3\t390,000\t3. 4\t390,000\t4-1\t390,000\t5. 2\t390,000\t6. 2\t390,000\t7. 1\t390,000\t8. 1\t390,000\t9. 1\t390,000\t10. 1\t390,000\t11. 3\t390,000\t\t\n305\t김인석\t후불\t12. 16\t440,000\t1. 15\t440,000\t2. 17\t440,000\t3. 17\t440,000\t4. 17\t440,000\t5. 15\t440,000\t6. 16\t440,000\t7. 15\t440,000\t8. 18\t440,000\t9. 15\t440,000\t1015\t440,000\t11. 17\t440,000\t12. 15\t440,000\n401\t이정도\t후불\t12. 13\t440,000\t1. 15\t440,000\t2. 14\t440,000\t3. 14\t440,000\t4. 15\t440,000\t5. 15\t440,000\t6. 13\t440,000\t7. 15\t440,000\t8. 14\t440,000\t9. 15\t440,000\t10. 15\t440,000\t11. 14\t440,000\t12. 15\t440,000\n402\t한윤철\t선불\t12. 28\t440,000\t1. 28\t440,000\t2. 28\t440,000\t3. 28\t440,000\t4. 29\t440,000\t5-28\t440,000\t6. 28\t440,000\t7. 28\t440,000\t8. 28\t440,000\t9. 28\t440,000\t10. 28\t440,000\t11. 28\t440,000\t12. 28\t440,000\n403\t김정두\t후불\t12. 10\t440,000\t1. 10\t440,000\t2. 10\t440,000\t3. 10\t440,000\t4-10\t440,000\t5-9\t440,000\t6-10\t440,000\t7-11\t440,000\t8-15\t440,000\t9-9\t440,000\t공실\t\t공실\t\t전입 12/19\t\n404\t이종진\t후불\t12. 23\t440,000\t1. 23\t440,000\t2. 24\t440,000\t3. 23\t440,000\t4. 23\t440,000\t5. 23\t440,000\t6. 23\t440,000\t7-23\t440,000\t8. 23\t440,000\t9. 24\t440,000\t10. 23\t440,000\t11. 23\t440,000\t12. 23\t440,000\n405\t김병현\t후불\t12. 30\t400,000\t1. 31\t400,000\t2. 28\t400,000\t3. 31\t400,000\t\t미납\t전입\t5/26\t6-25\t450,000\t7-25\t450,000\t8. 25\t450000\t9-25\t450,000\t10. 25\t450,000\t11. 25\t450,000\t12. 25\t450,000\n501\t김민규\t후불\t1. 1\t440,000\t1-31\t440,000\t3. 1\t440,000\t3. 31\t440,000\t4. 30\t440,000\t5-31\t440,000\t6-30\t440,000\t8. 1\t440,000\t8. 31\t440,000\t9. 30\t440,000\t10. 26\t440,000\t11. 30\t440,000\t12. 31\t500,000\n502\t강홍식\t반선불\t12. 15\t440,000\t1-15\t440,000\t2. 15\t440,000\t3. 15\t440,000\t4. 15\t440,000\t5. 15\t440,000\t6. 15\t440,000\t7. 15\t440,000\t8. 15\t440,000\t9. 15\t440,000\t1015\t440,000\t11. 15\t440,000\t12. 15\t440,000\n503\t강백찬\t후불\t12. 26\t440,000\t1. 26\t440,000\t2. 27\t440,000\t3. 26\t540,000\t4. 24\t440,000\t5. 24\t440,000\t6. 24\t440,000\t7. 25\t440,000\t8. 30\t540,000\t9. 25\t340,000\t10. 25\t440,000\t11. 21\t440,000\t12. 24\t440,000\n504\t이수현\t후불\t12. 10\t440,000\t1. 10\t440,000\t2. 10\t440,000\t3. 10\t440,000\t\t전입4/1\t5-1\t440,000\t6. 1\t440,000\t7. 1\t440,000\t8. 1\t440,000\t9. 1\t440,000\t10-1\t440,000\t11. 1\t440,000\t12. 1\t440,000\n505\t김정현\t선불\t12. 19\t350,000\t1. 14\t350,000\t2. 23\t350,000\t3. 14\t350,000\t\t전입4/1\t5-1\t400,000\t6. 1\t400,000\t7-26\t400,000\t8. 26\t400,000\t9-26\t400,000\t10-26\t400,000\t11-26\t400,000\t12. 26\t400,000\n601\t노우영\t후불\t12. 23\t440,000\t1. 23\t440,000\t2. 23\t440,000\t3. 23\t440,000\t4. 23\t440,000\t5. 23\t440,000\t6. 23\t440,000\t7.23\t440,000\t8. 24\t440,000\t9. 23\t440,000\t10. 23\t440,000\t11. 23\t440,000\t12. 23\t440,000\n602\t박정자\t후불\t12. 2\t440,000\t1. 2\t440,000\t2. 3\t440000\t3. 4\t440,000\t4. 1\t440,000\t5. 2\t440,000\t6. 2\t440,000\t7. 1\t440,000\t8. 1\t440,000\t9. 1\t440,000\t10. 1\t440,000\t11. 3\t440,000\t12. 1\t440,000\n603\t김수현\t후불\t12-49\t440,000\t1. 21\t440,000\t2. 21\t440,000\t3. 20\t440,000\t4. 20\t440,000\t5-20\t440,000\t6. 23\t440,000\t7. 27\t전입\t8. 27\t440,000\t9. 27\t440,000\t10. 28\t440,000\t11. 28\t440,000\t12. 28\t440,000\n604\t김동주\t후불\t12. 13\t440,000\t115\t440,000\t2. 13\t440,000\t3. 13\t440,000\t4. 9\t440,000\t5. 12\t440,000\t6. 11\t440,000\t7. 9\t440,000\t5. 13\t440,000\t9. 15\t440,000\t1015\t440,000\t11. 13\t440,000\t12. 15\t440,000\n605\t배은미\t후불\t12. 26\t390,000\t1. 25\t390,000\t2. 25\t390,000\t3-25\t390,000\t4. 26\t390,000\t5-26\t390,000\t6. 26\t390,000\t7. 26\t390,000\t8. 26\t390,000\t9. 25\t390,000\t10. 26\t390,000\t11. 25\t390,000\t12. 26\t390,000\n701\t주인세대\t후불\t\t주인\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\n702\t이범주\t후불\t12. 5\t540,000\t1. 5\t540,000\t2. 5\t540,000\t3. 5\t540,000\t4. 5\t540,000\t5. 6\t540,000\t6-6\t540,000\t7. 5\t540,000\t8. 6\t540,000\t9. 5\t540,000\t10. 5\t540,000\t11. 5\t540,000\t12. 5\t540,000\n703\t김상호\t후불\t12. 6\t400,000\t전입 1/17\t\t2. 17\t440,000\t3. 19\t440,000\t4. 13\t440,000\t5. 23\t440,000\t6-25\t440000\t7. 25\t440,000\t8. 25\t440,000\t9-25\t440,000\t10. 24\t440,000\t11. 25\t440,000\t12. 24\t440,000"
+  },
+  {
     id: 'monthly_matrix_2026',
     title: '2026년도 월별 수납장부 매트릭스',
     badge: '실수납 대장',
@@ -21177,29 +21225,74 @@ let activePaymentMatrixRooms = null;
 let aiConfidenceScore = 0;
 let aiCleaningStats = { roomCleaned: 0, moneyCleaned: 0, phoneCleaned: 0, dateCleaned: 0 };
 
+let selectedExcelImportYear = 2026;
+
+function setExcelImportYear(yr) {
+  selectedExcelImportYear = yr;
+  const btn26 = document.getElementById('btnImportYear2026');
+  const btn25 = document.getElementById('btnImportYear2025');
+
+  const activeCls = 'px-2 py-0.5 rounded text-[11px] font-bold bg-cyan-500 text-slate-950 shadow-xs cursor-pointer transition';
+  const inactiveCls = 'px-2 py-0.5 rounded text-[11px] font-bold text-slate-300 hover:text-white hover:bg-surface-800 cursor-pointer transition';
+
+  if (btn26) btn26.className = (yr === 2026) ? activeCls : inactiveCls;
+  if (btn25) btn25.className = (yr === 2025) ? activeCls : inactiveCls;
+
+  // 템플릿 카드 선택 연동 (2025년 선택 시 2025 템플릿 카드로 자동 스위칭)
+  if (yr === 2025 && selectedPresetId === 'monthly_matrix_2026') {
+    selectTemplatePreset('monthly_matrix_2025');
+  } else if (yr === 2026 && selectedPresetId === 'monthly_matrix_2025') {
+    selectTemplatePreset('monthly_matrix_2026');
+  }
+}
+window.setExcelImportYear = setExcelImportYear;
+
 function isPaymentMatrixText(text) {
   if (!text) return false;
   return (/호실/i.test(text) && /성명|세입자|선\/후/i.test(text) && /\d{1,2}월/i.test(text) && /월일|금액/i.test(text));
 }
 
-function parsePaymentMatrixText(text) {
+function parsePaymentMatrixText(text, explicitYear = null) {
   if (!isPaymentMatrixText(text)) return null;
   const lines = text.split(/\r\n|\n|\r/).filter(l => l.trim().length > 0);
   if (lines.length < 3) return null;
 
-  const monthsSpec = [
-    { year: 2025, month: 12, label: "25.12" },
-    { year: 2026, month: 1, label: "1월" },
-    { year: 2026, month: 2, label: "2월" },
-    { year: 2026, month: 3, label: "3월" },
-    { year: 2026, month: 4, label: "4월" },
-    { year: 2026, month: 5, label: "5월" },
-    { year: 2026, month: 6, label: "6월" },
-    { year: 2026, month: 7, label: "7월" },
-    { year: 2026, month: 8, label: "8월" },
-    { year: 2026, month: 9, label: "9월" },
-    { year: 2026, month: 10, label: "10월" },
-  ];
+  // 헤더 검사 및 연도 자동 감지
+  const headerLine = lines[0] + ' ' + (lines[1] || '');
+  const is2025 = (explicitYear === 2025) || (selectedExcelImportYear === 2025) || /2024\.12|24\.12/i.test(headerLine) || (/2025/i.test(headerLine) && !/2026/i.test(headerLine));
+
+  let monthsSpec = [];
+  if (is2025) {
+    monthsSpec = [
+      { year: 2024, month: 12, label: "24.12" },
+      { year: 2025, month: 1, label: "1월" },
+      { year: 2025, month: 2, label: "2월" },
+      { year: 2025, month: 3, label: "3월" },
+      { year: 2025, month: 4, label: "4월" },
+      { year: 2025, month: 5, label: "5월" },
+      { year: 2025, month: 6, label: "6월" },
+      { year: 2025, month: 7, label: "7월" },
+      { year: 2025, month: 8, label: "8월" },
+      { year: 2025, month: 9, label: "9월" },
+      { year: 2025, month: 10, label: "10월" },
+      { year: 2025, month: 11, label: "11월" },
+      { year: 2025, month: 12, label: "12월" },
+    ];
+  } else {
+    monthsSpec = [
+      { year: 2025, month: 12, label: "25.12" },
+      { year: 2026, month: 1, label: "1월" },
+      { year: 2026, month: 2, label: "2월" },
+      { year: 2026, month: 3, label: "3월" },
+      { year: 2026, month: 4, label: "4월" },
+      { year: 2026, month: 5, label: "5월" },
+      { year: 2026, month: 6, label: "6월" },
+      { year: 2026, month: 7, label: "7월" },
+      { year: 2026, month: 8, label: "8월" },
+      { year: 2026, month: 9, label: "9월" },
+      { year: 2026, month: 10, label: "10월" },
+    ];
+  }
 
   const parseMoney = (val) => {
     if (!val) return 0;
@@ -21212,12 +21305,19 @@ function parsePaymentMatrixText(text) {
     const s = String(dStr).trim();
     if (!s || s === '-' || s.includes('전출') || s.includes('전입') || s.includes('주인')) return '';
     
-    const m1 = s.match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})$/);
-    if (m1) return `${m1[1]}-${String(m1[2]).padStart(2, '0')}-${String(m1[3]).padStart(2, '0')}`;
+    // 25-1-3, 2025.5-10, 2026-02-01
+    const m1 = s.match(/^(\d{2,4})[-./](\d{1,2})[-./](\d{1,2})$/);
+    if (m1) {
+      let yr = parseInt(m1[1], 10);
+      if (yr < 100) yr += 2000;
+      return `${yr}-${String(m1[2]).padStart(2, '0')}-${String(m1[3]).padStart(2, '0')}`;
+    }
 
-    const m2 = s.match(/^(\d{1,2})[.\s/-]+(\d{1,2})$/);
+    // 2. 3, 10-23, 11-3, 7/3, 12:21, 5-28
+    const m2 = s.match(/^(\d{1,2})[-./:\s]+(\d{1,2})$/);
     if (m2) return `${y}-${String(m2[1]).padStart(2, '0')}-${String(m2[2]).padStart(2, '0')}`;
 
+    // 1015, 115
     const m3 = s.match(/^(\d{1,2})(\d{2})$/);
     if (m3) return `${y}-${String(m3[1]).padStart(2, '0')}-${String(m3[2]).padStart(2, '0')}`;
 
@@ -21270,7 +21370,8 @@ function parsePaymentMatrixText(text) {
       name: name,
       pay_timing: timing,
       total_paid: totalRoomPaid,
-      payments: payments
+      payments: payments,
+      is_year_2025: is2025
     });
   }
 
@@ -21302,7 +21403,8 @@ function processDirectPastedText() {
   if (isPaymentMatrixText(text)) {
     const matrixRooms = parsePaymentMatrixText(text);
     if (matrixRooms && matrixRooms.length > 0) {
-      processParsedPaymentMatrix(matrixRooms, "직접 붙여넣은 2026 월별 수납장부");
+      const is2025 = matrixRooms[0] && matrixRooms[0].is_year_2025;
+      processParsedPaymentMatrix(matrixRooms, is2025 ? "직접 붙여넣은 2025 월별 수납장부" : "직접 붙여넣은 2026 월별 수납장부");
       toggleDirectPasteBox(false);
       return;
     }
@@ -21329,9 +21431,12 @@ function processParsedPaymentMatrix(matrixRooms, sourceName = "월별 수납장�
   detectedHeaders = [];
   activeColumnMapping = {};
 
+  const is2025 = matrixRooms[0] && matrixRooms[0].is_year_2025;
+  const periodText = is2025 ? "2024.12~2025.12월" : "2025.12~2026.10월";
+
   const statusText = document.getElementById('excelFileStatusText');
   if (statusText) {
-    statusText.innerHTML = `✓ <strong>[${sourceName}]</strong> 총 <span class="text-emerald-400 font-bold">${matrixRooms.length}개실</span> (2025.12~2026.10월 실입금일/금액) 매트릭스가 완벽히 분석되었습니다!`;
+    statusText.innerHTML = `✓ <strong>[${sourceName}]</strong> 총 <span class="text-emerald-400 font-bold">${matrixRooms.length}개실</span> (${periodText} 실입금일/금액) 매트릭스가 완벽히 분석되었습니다!`;
   }
 
   const aiBox = document.getElementById('aiMappingContainer');
@@ -21345,7 +21450,7 @@ function processParsedPaymentMatrix(matrixRooms, sourceName = "월별 수납장�
   const execBtn = document.getElementById('btnExecuteBatchImport');
   if (execBtn) {
     execBtn.disabled = false;
-    execBtn.textContent = `🚀 ${matrixRooms.length}개실 월별 수납장부 일괄 반영 실행`;
+    execBtn.textContent = `🚀 ${matrixRooms.length}개실 ${is2025 ? '2025년도' : '2026년도'} 월별 수납장부 일괄 반영 실행`;
   }
 }
 window.processParsedPaymentMatrix = processParsedPaymentMatrix;
@@ -21470,8 +21575,10 @@ function loadTemplatePresetDemo(presetId, e) {
   renderTemplatePresetsUI();
 
   const preset = TEMPLATE_PRESETS.find(p => p.id === presetId) || TEMPLATE_PRESETS[0];
-  if (preset.id === 'monthly_matrix_2026' && preset.rawText) {
-    const matrix = parsePaymentMatrixText(preset.rawText);
+  if ((preset.id === 'monthly_matrix_2026' || preset.id === 'monthly_matrix_2025') && preset.rawText) {
+    const yr = (preset.id === 'monthly_matrix_2025') ? 2025 : 2026;
+    setExcelImportYear(yr);
+    const matrix = parsePaymentMatrixText(preset.rawText, yr);
     processParsedPaymentMatrix(matrix, preset.title);
     return;
   }
@@ -22101,25 +22208,22 @@ function renderExcelPreviewTable() {
   // 1. 월별 수납장부 매트릭스 모드인 경우
   if (activePaymentMatrixRooms && activePaymentMatrixRooms.length > 0) {
     const totalCount = activePaymentMatrixRooms.length;
-    if (countBadge) countBadge.textContent = `총 ${totalCount}개 호실 (2025.12 ~ 2026.10월 수납 매트릭스)`;
+    const firstRoom = activePaymentMatrixRooms[0];
+    const is2025 = Boolean(firstRoom && firstRoom.is_year_2025);
+    const periodText = is2025 ? "2024.12 ~ 2025.12월" : "2025.12 ~ 2026.10월";
+    if (countBadge) countBadge.textContent = `총 ${totalCount}개 호실 (${periodText} 수납 매트릭스)`;
+
+    const dynamicMonthHeaders = (firstRoom.payments || []).map(p => {
+      return `<th class="py-1.5 px-1.5 border-r border-slate-700 text-center text-slate-300 text-[10px] whitespace-nowrap">${p.label || (p.month + '월')}</th>`;
+    }).join('');
 
     thead.innerHTML = `
-      <tr class="bg-surface-850 border-b border-slate-700 text-[11px] sticky top-0 z-10">
+      <tr class="bg-surface-850 border-b border-slate-700 text-[11px] sticky top-0 z-10 whitespace-nowrap">
         <th class="py-1.5 px-2 border-r border-slate-700 text-slate-400 text-center w-8">No</th>
         <th class="py-1.5 px-2 border-r border-slate-700 text-cyan-300 text-center w-12">호실</th>
         <th class="py-1.5 px-2 border-r border-slate-700 text-slate-200 min-w-[70px]">세입자</th>
         <th class="py-1.5 px-1.5 border-r border-slate-700 text-center w-10">선/후</th>
-        <th class="py-1.5 px-1.5 border-r border-slate-700 text-center text-slate-300 text-[10px]">25.12</th>
-        <th class="py-1.5 px-1.5 border-r border-slate-700 text-center text-slate-300 text-[10px]">1월</th>
-        <th class="py-1.5 px-1.5 border-r border-slate-700 text-center text-slate-300 text-[10px]">2월</th>
-        <th class="py-1.5 px-1.5 border-r border-slate-700 text-center text-slate-300 text-[10px]">3월</th>
-        <th class="py-1.5 px-1.5 border-r border-slate-700 text-center text-slate-300 text-[10px]">4월</th>
-        <th class="py-1.5 px-1.5 border-r border-slate-700 text-center text-slate-300 text-[10px]">5월</th>
-        <th class="py-1.5 px-1.5 border-r border-slate-700 text-center text-slate-300 text-[10px]">6월</th>
-        <th class="py-1.5 px-1.5 border-r border-slate-700 text-center text-slate-300 text-[10px]">7월</th>
-        <th class="py-1.5 px-1.5 border-r border-slate-700 text-center text-slate-300 text-[10px]">8월</th>
-        <th class="py-1.5 px-1.5 border-r border-slate-700 text-center text-slate-300 text-[10px]">9월</th>
-        <th class="py-1.5 px-1.5 border-r border-slate-700 text-center text-slate-300 text-[10px]">10월</th>
+        ${dynamicMonthHeaders}
         <th class="py-1.5 px-2 text-right text-emerald-400 font-bold min-w-[85px]">완납합계</th>
       </tr>
     `;
@@ -22273,7 +22377,9 @@ function cleanDateValue(val) {
  */
 async function executeBatchImport() {
   if (activePaymentMatrixRooms && activePaymentMatrixRooms.length > 0) {
-    const confirmMsg = `총 ${activePaymentMatrixRooms.length}개 호실의 2025.12 ~ 2026.10월 월별 수납 내역을 현재 건물에 일괄 반영하시겠습니까?`;
+    const is2025 = Boolean(activePaymentMatrixRooms[0] && activePaymentMatrixRooms[0].is_year_2025);
+    const periodText = is2025 ? "2024.12 ~ 2025.12월(작년도)" : "2025.12 ~ 2026.10월";
+    const confirmMsg = `총 ${activePaymentMatrixRooms.length}개 호실의 ${periodText} 월별 수납 내역을 현재 건물에 일괄 반영하시겠습니까?`;
     if (!confirm(confirmMsg)) return;
 
     let serverSynced = false;
@@ -22309,7 +22415,9 @@ async function executeBatchImport() {
               tenant_name: pm.name || room.name,
               is_previous_tenant: false
             };
-            room.payments[p.month] = payObj;
+            if (p.year === 2026) {
+              room.payments[p.month] = payObj;
+            }
             room.payments[`${p.year}-${p.month}`] = payObj;
           });
         }
@@ -22320,7 +22428,7 @@ async function executeBatchImport() {
       renderAll();
 
       if (serverSynced) {
-        alert(`🎉 총 ${activePaymentMatrixRooms.length}개 호실의 2025.12~2026.10월 월별 수납장부가 실서버 DB에 성공적으로 일괄 반영되었습니다!`);
+        alert(`🎉 총 ${activePaymentMatrixRooms.length}개 호실의 ${periodText} 월별 수납장부가 실서버 DB에 성공적으로 일괄 반영되었습니다!`);
       } else {
         alert(`⚡ 총 ${activePaymentMatrixRooms.length}개 호실의 수납장부가 화면 및 브라우저에 안전하게 저장되었습니다.\n(서버 일시 지연: ${serverWarning})`);
       }

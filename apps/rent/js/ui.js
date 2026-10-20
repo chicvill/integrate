@@ -767,6 +767,31 @@ export function resolveHistoryMonthRecord(room, y, m, existingP, histories, curr
   };
 }
 
+let activePastYearFilter = 'all';
+
+export function setPastYearFilter(filterVal) {
+  activePastYearFilter = filterVal;
+  
+  // UI 탭 버튼 스타일 갱신
+  const btnAll = document.getElementById('btnPastFilterAll');
+  const btn2026 = document.getElementById('btnPastFilter2026');
+  const btn2025 = document.getElementById('btnPastFilter2025');
+
+  const activeCls = 'px-1.5 py-0.5 rounded text-purple-200 hover:text-white transition cursor-pointer bg-purple-900/70 shadow-xs font-bold';
+  const inactiveCls = 'px-1.5 py-0.5 rounded text-slate-400 hover:text-white transition cursor-pointer font-bold';
+
+  if (btnAll) btnAll.className = (filterVal === 'all') ? activeCls : inactiveCls;
+  if (btn2026) btn2026.className = (filterVal === 2026 || filterVal === '2026') ? activeCls : inactiveCls;
+  if (btn2025) btn2025.className = (filterVal === 2025 || filterVal === '2025') ? activeCls : inactiveCls;
+
+  const currentRoomNum = state.selectedRoom || (state.rooms && Object.keys(state.rooms)[0]);
+  const room = (state.rooms && currentRoomNum) ? state.rooms[currentRoomNum] : null;
+  if (room) {
+    renderPastHistorySection(room);
+  }
+}
+window.setPastYearFilter = setPastYearFilter;
+
 export function renderPastHistorySection(room) {
   const rNum = room.room_number;
   const tbody = document.getElementById('pastPaymentTableBody');
@@ -813,23 +838,38 @@ export function renderPastHistorySection(room) {
     });
   }
 
-  // ── 상단 헤더 기간 배지 업데이트 (2025.01 ~ 현재 vs 2026.01 ~ 현재) ──
+  // ── 상단 헤더 기간 배지 업데이트 ──
   const periodBadge = document.getElementById('pastRoomPeriodBadge');
   if (periodBadge) {
-    periodBadge.textContent = hasLastYearData ? `(${lastYear}.01 ~ 현재)` : `(${currentYear}.01 ~ 현재)`;
+    if (activePastYearFilter === 2026 || activePastYearFilter === '2026') {
+      periodBadge.textContent = `(2026년도 전체)`;
+    } else if (activePastYearFilter === 2025 || activePastYearFilter === '2025') {
+      periodBadge.textContent = `(2025년도 전체)`;
+    } else {
+      periodBadge.textContent = hasLastYearData ? `(${lastYear}.01 ~ 현재)` : `(${currentYear}.01 ~ 현재)`;
+    }
   }
 
-  // ── 표시 월 목록 구성 ──
-  // 작년도 데이터가 있는 건물(시크빌 등): 작년 1월부터 당해연도 당월까지 (2025.01 ~ 2026.10 내림차순)
-  // 작년도 데이터가 없는 다른 건물: 작년 데이터가 없으므로 당해연도(2026.01 ~ 2026.10) 있는 데이터만 표시
-  const startYear = hasLastYearData ? lastYear : currentYear;
+  // ── 표시 월 목록 구성 (필터 반영) ──
   const targetMonths = [];
 
-  for (let y = currentYear; y >= startYear; y--) {
-    const maxM = (y === currentYear) ? currentMonth : 12;
-    const minM = 1;
-    for (let m = maxM; m >= minM; m--) {
-      targetMonths.push({ year: y, month: m });
+  if (activePastYearFilter === 2026 || activePastYearFilter === '2026') {
+    for (let m = currentMonth; m >= 1; m--) {
+      targetMonths.push({ year: 2026, month: m });
+    }
+  } else if (activePastYearFilter === 2025 || activePastYearFilter === '2025') {
+    for (let m = 12; m >= 1; m--) {
+      targetMonths.push({ year: 2025, month: m });
+    }
+  } else {
+    // 'all' 전체
+    const startYear = hasLastYearData ? lastYear : currentYear;
+    for (let y = currentYear; y >= startYear; y--) {
+      const maxM = (y === currentYear) ? currentMonth : 12;
+      const minM = 1;
+      for (let m = maxM; m >= minM; m--) {
+        targetMonths.push({ year: y, month: m });
+      }
     }
   }
   const roomHistories = (room.tenant_histories && room.tenant_histories.length > 0)

@@ -472,7 +472,7 @@
           <section class="bg-surface-900 border-2 border-purple-500/50 rounded-xl shadow-xl overflow-hidden w-full box-border flex flex-col">
             
             <!-- Top Header in View 2 -->
-            <div class="p-1.5 sm:p-2 bg-gradient-to-r from-surface-850 to-purple-950/40 border-b border-purple-500/30 flex items-center justify-between gap-1.5">
+            <div class="p-1.5 sm:p-2 bg-gradient-to-r from-surface-850 to-purple-950/40 border-b border-purple-500/30 flex flex-wrap items-center justify-between gap-1.5">
               <div class="flex items-center gap-1.5 min-w-0">
                 <span class="text-xs">📅</span>
                 <div class="min-w-0">
@@ -484,11 +484,18 @@
                 </div>
               </div>
 
-              <!-- 처음으로 복귀 버튼 -->
-              <button type="button" onclick="switchRoomSlideView('main')" class="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-purple-950 hover:bg-purple-900 text-purple-200 border border-purple-500/50 transition flex items-center gap-0.5 shadow-sm cursor-pointer active:scale-95 shrink-0" title="처음으로 돌아가기">
-                <span>처음으로</span>
-                <span>👉</span>
-              </button>
+              <!-- 연도 선택 필터 탭 (전체 / 2026년 / 2025년) & 처음으로 복귀 버튼 -->
+              <div class="flex items-center gap-1 shrink-0">
+                <div class="inline-flex rounded-lg bg-surface-950/90 p-0.5 border border-purple-500/40 text-[10px] font-bold">
+                  <button type="button" id="btnPastFilterAll" onclick="setPastYearFilter('all')" class="px-1.5 py-0.5 rounded text-purple-200 hover:text-white transition cursor-pointer bg-purple-900/70 shadow-xs">전체</button>
+                  <button type="button" id="btnPastFilter2026" onclick="setPastYearFilter(2026)" class="px-1.5 py-0.5 rounded text-slate-400 hover:text-white transition cursor-pointer">2026년</button>
+                  <button type="button" id="btnPastFilter2025" onclick="setPastYearFilter(2025)" class="px-1.5 py-0.5 rounded text-slate-400 hover:text-white transition cursor-pointer">2025년</button>
+                </div>
+                <button type="button" onclick="switchRoomSlideView('main')" class="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-purple-950 hover:bg-purple-900 text-purple-200 border border-purple-500/50 transition flex items-center gap-0.5 shadow-sm cursor-pointer active:scale-95" title="처음으로 돌아가기">
+                  <span>처음으로</span>
+                  <span>👉</span>
+                </button>
+              </div>
             </div>
 
             <!-- Table Body (수납내역 항상 100% 펼침) -->
@@ -1171,13 +1178,20 @@
       <!-- Modal Body (스크롤 가능) -->
       <div class="flex-1 overflow-y-auto space-y-3.5 py-3 text-xs">
         
-        <!-- Step 0: 업계 표준 템플릿 서식 4종 (양식 다운로드 및 예시 데이터 즉시 체험) -->
-        <div class="space-y-1.5 p-2.5 rounded-xl bg-surface-950/70 border border-slate-800">
-          <div class="flex items-center justify-between text-xs px-0.5">
+        <!-- Step 0: 대상 연도 선택 및 업계 표준 템플릿 서식 6종 -->
+        <div class="space-y-2 p-2.5 rounded-xl bg-surface-950/70 border border-slate-800">
+          <div class="flex flex-wrap items-center justify-between text-xs px-0.5 gap-2">
             <span class="font-bold text-slate-200 flex items-center gap-1.5">
-              <span>📋</span> <span>업계 표준 템플릿 서식 (4종)</span>
+              <span>📋</span> <span>표준 템플릿 서식 & 대상 연도 선택</span>
             </span>
-            <span class="text-[11px] text-slate-400">양식을 다운받거나 <strong class="text-emerald-400">[✨ 예시 로드]</strong>를 누르면 AI 매핑을 즉시 시연합니다.</span>
+            <div class="flex items-center gap-1.5 bg-surface-900 border border-slate-700 rounded-lg p-1">
+              <span class="text-[11px] text-slate-400 font-semibold pl-1">수납 연도:</span>
+              <button type="button" id="btnImportYear2026" onclick="setExcelImportYear(2026)" class="px-2 py-0.5 rounded text-[11px] font-bold bg-cyan-500 text-slate-950 shadow-xs cursor-pointer transition">2026년도</button>
+              <button type="button" id="btnImportYear2025" onclick="setExcelImportYear(2025)" class="px-2 py-0.5 rounded text-[11px] font-bold text-slate-300 hover:text-white hover:bg-surface-800 cursor-pointer transition">2025년도(작년)</button>
+            </div>
+          </div>
+          <div class="text-[11px] text-slate-400 px-0.5">
+            양식을 다운받거나 <strong class="text-emerald-400">[✨ 예시 로드]</strong>를 누르면 2025년/2026년 수납 데이터를 즉시 시연합니다.
           </div>
           <div id="templatePresetsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
             <!-- Dynamic Template Preset Cards rendered by JS -->
@@ -1187,26 +1201,31 @@
         <!-- Step 1: 파일 업로드 & 엑셀 범위 / 화면 캡처 클립보드 붙여넣기 존 -->
         <div class="p-4 rounded-xl border-2 border-dashed border-slate-700 hover:border-cyan-500/60 bg-surface-950/60 transition text-center flex flex-col items-center justify-center gap-2 relative" id="excelDropZone" ondragover="handleExcelDragOver(event)" ondragleave="handleExcelDragLeave(event)" ondrop="handleExcelDrop(event)">
           <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv, image/*" class="hidden" onchange="handleExcelFileSelect(event)">
+          <input type="file" id="excelCameraInput" accept="image/*" capture="environment" class="hidden" onchange="handleExcelFileSelect(event)">
           <div class="flex items-center gap-2 text-2xl">
             <span>📂</span>
             <span>📋</span>
             <span>📸</span>
           </div>
           <div>
-            <div class="font-bold text-sm text-slate-200">엑셀 범위 복사본, 화면 캡처, 또는 파일(.xlsx, .csv)을 등록하세요</div>
+            <div class="font-bold text-sm text-slate-200">엑셀 범위 복사본, 화면 캡처, 종이 장부 사진을 등록하세요</div>
             <div class="text-[11px] text-slate-400 mt-0.5" id="excelFileStatusText">
-              💡 엑셀 셀 범위를 복사(Ctrl+C)하거나 화면 캡처(Win+Shift+S) 후 <strong>여기서 바로 [Ctrl + V]</strong>를 누르면 자동 매핑됩니다!
+              💡 스마트폰 카메라로 <strong>종이 장부·계약서 표를 촬영</strong>하거나, PC에서 <strong>[Ctrl + V]</strong>를 누르면 자동 분석됩니다!
             </div>
           </div>
           <div class="flex items-center gap-2 mt-1 flex-wrap justify-center">
+            <button type="button" onclick="document.getElementById('excelCameraInput').click()" class="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md active:scale-95 transition">
+              <span>📷</span>
+              <span>스마트폰 카메라로 촬영</span>
+            </button>
             <button type="button" onclick="triggerFileInputClick()" class="px-3 py-1.5 rounded-lg bg-surface-800 hover:bg-surface-700 text-cyan-300 font-semibold border border-slate-700 text-xs flex items-center gap-1 cursor-pointer transition shadow-sm active:scale-95">
-              <span>📂</span> 내 컴퓨터에서 파일/이미지 찾기
+              <span>📂</span> 파일 / 앨범 사진 찾기
             </button>
             <button type="button" id="btnClipboardPasteAction" onclick="handleClipboardPasteClick()" class="px-3 py-1.5 rounded-lg bg-indigo-900/60 hover:bg-indigo-800/80 text-indigo-200 font-semibold border border-indigo-600/60 text-xs flex items-center gap-1.5 cursor-pointer transition shadow-sm active:scale-95" title="클립보드에 복사된 엑셀 표 범위(텍스트)나 캡처 이미지를 즉시 가져와 자동 매핑합니다">
-              <span>📋</span> Ctrl+V 캡처/엑셀 붙여넣기
+              <span>📋</span> Ctrl+V 붙여넣기
             </button>
             <button type="button" onclick="toggleDirectPasteBox()" class="px-3 py-1.5 rounded-lg bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 font-semibold border border-amber-700/60 text-xs flex items-center gap-1.5 cursor-pointer transition shadow-sm active:scale-95" title="엑셀이나 메신저에서 복사한 텍스트를 직접 붙여넣어 즉시 분석합니다">
-              <span>📝</span> 텍스트 직접 붙여넣기
+              <span>📝</span> 텍스트 직접 입력
             </button>
             <button type="button" onclick="downloadSampleExcelTemplate(event)" class="px-2.5 py-1.5 rounded-lg bg-emerald-950/50 hover:bg-emerald-900 text-emerald-300 font-medium border border-emerald-800/60 text-xs flex items-center gap-1 cursor-pointer transition shadow-sm active:scale-95">
               <span>📥</span> 표준 양식 다운로드
@@ -2113,6 +2132,6 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- Universal Bundle Script -->
-  <script src="./bundle.js?v=9.5"></script>
+  <script src="./bundle.js?v=9.6"></script>
 </body>
 </html>
