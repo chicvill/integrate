@@ -1937,7 +1937,7 @@
             <span class="text-sm">📝</span>
             <span class="tracking-wide">Rent 구두 명령 (실무 빈도순 17대 표준)</span>
           </div>
-          <span class="text-[10px] text-teal-400/90 font-medium">말 · 터치 · 번호(1~17) 즉시 실행</span>
+          <span class="text-[10px] text-teal-400/90 font-medium">말 또는 원터치 즉시 실행</span>
         </div>
 
         <!-- 그룹 1: 실시간 일상 업무 (Daily Ops - 최다 빈도) -->
@@ -2137,33 +2137,6 @@
             </div>
             <span class="text-[9px] text-amber-400 bg-amber-950/80 border border-amber-700/50 px-1 py-0.5 rounded shrink-0">실행</span>
           </div>
-        </div>
-      </div>
-
-      <!-- Quick Number Selection Bar (1 ~ 17 원터치 버튼) -->
-      <div class="shrink-0 pt-2 border-t border-slate-800/80 mt-2">
-        <div class="text-[10px] text-slate-400 mb-1 flex items-center justify-between px-1">
-          <span>🔢 <b>번호 선택</b> (원터치 또는 "1번" 음성):</span>
-          <span class="text-[9px] text-teal-400 font-bold">1~17번 원클릭 실행</span>
-        </div>
-        <div class="grid grid-cols-6 sm:grid-cols-9 md:grid-cols-17 gap-1">
-          <button type="button" onclick="executeVoiceCommandById(1)" class="py-1 rounded-lg bg-surface-800 hover:bg-teal-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-teal-400 transition cursor-pointer active:scale-95">1</button>
-          <button type="button" onclick="executeVoiceCommandById(2)" class="py-1 rounded-lg bg-surface-800 hover:bg-teal-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-teal-400 transition cursor-pointer active:scale-95">2</button>
-          <button type="button" onclick="executeVoiceCommandById(3)" class="py-1 rounded-lg bg-surface-800 hover:bg-rose-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-rose-400 transition cursor-pointer active:scale-95">3</button>
-          <button type="button" onclick="executeVoiceCommandById(4)" class="py-1 rounded-lg bg-surface-800 hover:bg-teal-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-teal-400 transition cursor-pointer active:scale-95">4</button>
-          <button type="button" onclick="executeVoiceCommandById(5)" class="py-1 rounded-lg bg-surface-800 hover:bg-teal-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-teal-400 transition cursor-pointer active:scale-95">5</button>
-          <button type="button" onclick="executeVoiceCommandById(6)" class="py-1 rounded-lg bg-surface-800 hover:bg-teal-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-teal-400 transition cursor-pointer active:scale-95">6</button>
-          <button type="button" onclick="executeVoiceCommandById(7)" class="py-1 rounded-lg bg-surface-800 hover:bg-teal-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-teal-400 transition cursor-pointer active:scale-95">7</button>
-          <button type="button" onclick="executeVoiceCommandById(8)" class="py-1 rounded-lg bg-surface-800 hover:bg-teal-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-teal-400 transition cursor-pointer active:scale-95">8</button>
-          <button type="button" onclick="executeVoiceCommandById(9)" class="py-1 rounded-lg bg-surface-800 hover:bg-teal-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-teal-400 transition cursor-pointer active:scale-95">9</button>
-          <button type="button" onclick="executeVoiceCommandById(10)" class="py-1 rounded-lg bg-surface-800 hover:bg-teal-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-teal-400 transition cursor-pointer active:scale-95">10</button>
-          <button type="button" onclick="executeVoiceCommandById(11)" class="py-1 rounded-lg bg-surface-800 hover:bg-teal-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-teal-400 transition cursor-pointer active:scale-95">11</button>
-          <button type="button" onclick="executeVoiceCommandById(12)" class="py-1 rounded-lg bg-surface-800 hover:bg-teal-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-teal-400 transition cursor-pointer active:scale-95">12</button>
-          <button type="button" onclick="executeVoiceCommandById(13)" class="py-1 rounded-lg bg-surface-800 hover:bg-amber-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-amber-400 transition cursor-pointer active:scale-95">13</button>
-          <button type="button" onclick="executeVoiceCommandById(14)" class="py-1 rounded-lg bg-surface-800 hover:bg-amber-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-amber-400 transition cursor-pointer active:scale-95">14</button>
-          <button type="button" onclick="executeVoiceCommandById(15)" class="py-1 rounded-lg bg-surface-800 hover:bg-amber-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-amber-400 transition cursor-pointer active:scale-95">15</button>
-          <button type="button" onclick="executeVoiceCommandById(16)" class="py-1 rounded-lg bg-surface-800 hover:bg-amber-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-amber-400 transition cursor-pointer active:scale-95">16</button>
-          <button type="button" onclick="executeVoiceCommandById(17)" class="py-1 rounded-lg bg-surface-800 hover:bg-amber-600 hover:text-slate-950 text-slate-200 font-black text-xs border border-slate-700 hover:border-amber-400 transition cursor-pointer active:scale-95">17</button>
         </div>
       </div>
 
