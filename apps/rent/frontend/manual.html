@@ -265,38 +265,29 @@
       </div>
     </section>
 
-    <!-- 3. 건물별 월 수납 일괄 납입 처리 (범용 배치 엔진) -->
+    <!-- 3. 초간편 스마트 일괄 수납 (사진/화면 캡처 OCR & 구글 시트 복사붙여넣기) -->
     <section class="section-card">
-      <h2 class="section-title">⚡ 3. 건물별 월 수납 일괄 납입 처리 (범용 배치 엔진)</h2>
+      <h2 class="section-title">⚡ 3. 초간편 스마트 일괄 수납 (2-Way Easy Batch)</h2>
       <div class="callout">
         <strong>💡 도입 취지 및 효과</strong><br>
-        새로운 건물을 등록하거나 연도가 바뀌었을 때, 수납 내역이 비어있는 상태에서 20~29개실을 하나하나 수동으로 클릭하여 수납하는 비효율을 완전히 해소했습니다. 신비주택뿐만 아니라 시크빌, 선호빌 및 향후 추가될 모든 건물에 대해 단 몇 번의 터치로 수십~수백 건의 수납을 일괄 처리할 수 있습니다.
+        복잡한 옵션과 다단계 클릭을 과감히 걷어내고, 스마트폰과 PC 현장에서 가장 빠른 <strong>단 2가지 직관적 입력 파이프라인(사진 촬영/화면 캡처 & 시트 복사붙여넣기)</strong>으로 통합 단일화했습니다. 1년치 대용량 장부(수백 건)도 1초 만에 전산에 일괄 완납 처리됩니다.
       </div>
       <ul>
-        <li><strong>메뉴 위치:</strong> 메인 화면 좌측 상단 햄버거 메뉴(<code>[☰]</code>) 터치 ➔ <strong><code>[⚡ 건물별 월 수납 일괄 납입 처리]</code></strong> 선택.</li>
-        <li><strong>4단계 맞춤 설정 옵션:</strong>
-          <div style="margin-top: 0.6rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.75rem;">
-            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 0.8rem; border-radius: 8px;">
-              <strong style="color: #38bdf8;">① 대상 건물 선택</strong><br>
-              <span style="font-size: 0.85rem; color: #cbd5e1;">전체 건물 일괄 처리 또는 현재 관리 중인 특정 건물(신비주택, 시크빌, 선호빌 등)을 자유롭게 지정.</span>
+        <li><strong>메뉴 위치:</strong> 메인 화면 좌측 상단 햄버거 메뉴(<code>[☰]</code>) 터치 ➔ <strong><code>[⚡ 초간편 스마트 일괄 수납]</code></strong> 선택.</li>
+        <li><strong>단 2가지 일괄 입력 파이프라인:</strong>
+          <div style="margin-top: 0.6rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.75rem;">
+            <div style="background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.25); padding: 0.8rem; border-radius: 8px;">
+              <strong style="color: #34d399;">📸 ① 스마트폰 사진 촬영 & 화면 캡처 (AI Vision OCR)</strong><br>
+              <span style="font-size: 0.85rem; color: #cbd5e1;">• <strong>스마트폰/태블릿:</strong> <code>[📷 스마트폰 카메라로 촬영]</code> 버튼 터치 ➔ 종이 장부나 계약서를 사진 찍으면 호실, 세입자, 금액, 수납일을 AI가 자동 추출.<br>• <strong>PC 환경:</strong> 은행 앱이나 장부 화면을 캡처(Win+Shift+S) 후 모달 어디서든 <strong>[Ctrl + V]</strong>를 누르면 캡처 이미지가 즉시 분석됩니다.</span>
             </div>
-            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 0.8rem; border-radius: 8px;">
-              <strong style="color: #34d399;">② 대상 연도 선택</strong><br>
-              <span style="font-size: 0.85rem; color: #cbd5e1;">과거 장부 복원용 <code>2025년</code>, 현재 운영용 <code>2026년</code>, 미래 회계연도 <code>2027년</code> 등 원하는 연도를 선택.</span>
-            </div>
-            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 0.8rem; border-radius: 8px;">
-              <strong style="color: #fbbf24;">③ 수납 대상 기간 선택</strong><br>
-              <span style="font-size: 0.85rem; color: #cbd5e1;">• <strong>당월만:</strong> 선택된 특정 1개월분만 일괄 완납.<br>• <strong>1월~당월 누적:</strong> 연초부터 현재까지의 미납분 일괄 완납.<br>• <strong>1~12월 연간 전체:</strong> 1년 12개월분 전체를 일괄 전산 생성(2025년 전체 세무자료 즉시 구축에 최적).<br>• <strong>직접 기간 지정:</strong> 시작월과 종료월을 직접 설정.</span>
-            </div>
-            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 0.8rem; border-radius: 8px;">
-              <strong style="color: #c084fc;">④ 납입일자 산정 방식</strong><br>
-              <span style="font-size: 0.85rem; color: #cbd5e1;">• <strong>각 호실별 계약 약정일 자동 산출 (권장):</strong> 호실마다 서로 다른 계약 납부일(예: 5일, 10일, 25일)을 계약서에서 읽어와 정확한 실제 일자(예: 2025-05-25)로 기록.<br>• <strong>특정 납부일로 일괄 지정:</strong> 회계 기준일(예: 말일 31일 등)로 전 호실을 동일하게 기록.</span>
+            <div style="background: rgba(6,182,212,0.05); border: 1px solid rgba(6,182,212,0.25); padding: 0.8rem; border-radius: 8px;">
+              <strong style="color: #38bdf8;">📋 ② 엑셀 / 구글 시트 복사 텍스트 붙여넣기 (Ctrl + V)</strong><br>
+              <span style="font-size: 0.85rem; color: #cbd5e1;">• 엑셀이나 구글 시트에서 호실, 세입자, 월별 납입일/금액 표 범위를 복사(<code>Ctrl + C</code>)한 뒤 <strong>[2. 시트 복사 붙여넣기]</strong> 탭에 <code>Ctrl + V</code>로 붙여넣기.<br>• 11개월~연간 수납 장부(300건 이상)의 탭/엔터 구분자를 자동 인식하여 1초 만에 파싱 및 미리보기 테이블을 생성합니다.</span>
             </div>
           </div>
         </li>
-        <li style="margin-top: 0.8rem;"><strong>🛡️ 전입일 이전 데이터 보호 (가짜 체납 방지):</strong> 계약 전입일(<code>move_in_date</code>) 이전 기간은 허위 수납이나 가짜 체납이 생성되지 않도록 시스템이 자동으로 제외하여 데이터 무결성을 보장합니다.</li>
-        <li><strong>✍️ 일괄 처리 후 개별 호실 금액 수정:</strong> 일괄 수납 처리 후 특정 호실에 월세 할인이나 특이 사항이 있는 경우, 해당 호실 상세 모달에서 언제든 개별 금액 및 납부 상태를 자유롭게 수정할 수 있습니다.</li>
-        <li><strong>📊 실시간 프로그레스 바 & 리포트:</strong> 수납 처리 진행률이 실시간 게이지 바로 표시되며, 총 처리 건수, 이미 완납/전입전 제외 건수, 실패 건수를 상세히 보고합니다.</li>
+        <li style="margin-top: 0.8rem;"><strong>📊 실시간 파싱 요약 및 간이 표 검증:</strong> 데이터 입력 즉시 감지된 호실수, 총 완납 건수, 수납 합계액이 산출되어 미리보기 테이블로 전수 확인 가능합니다.</li>
+        <li><strong>🚀 원터치 전산 반영:</strong> <code>[일괄 수납 전산 반영 실행]</code> 버튼을 누르면 서버 DB(<code>integrat.db</code>)에 영구 저장되며, 화면 장부 카드와 요약 통계가 즉시 갱신됩니다.</li>
       </ul>
     </section>
 

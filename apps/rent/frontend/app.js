@@ -139,7 +139,14 @@ import {
   setEditPayTotalZero,
   setEditPayDatePreset,
   setEditPayNoteTag,
-  handleSaveEditPayment
+  handleSaveEditPayment,
+  openBatchPaymentModal,
+  closeBatchPaymentModal,
+  switchBatchModalTab,
+  handleBatchImageFileSelect,
+  resetBatchOcrPreview,
+  parseBatchDirectPasteInput,
+  handleExecuteEasyBatchPayment
 } from './js/modals.js?v=2.0';
 import {
   startVoiceRecognition,
@@ -276,6 +283,15 @@ window.setEditPayTotalZero = setEditPayTotalZero;
 window.setEditPayDatePreset = setEditPayDatePreset;
 window.setEditPayNoteTag = setEditPayNoteTag;
 window.handleSaveEditPayment = handleSaveEditPayment;
+
+// 초간편 스마트 일괄 수납 관련 (2-Way Easy Batch)
+window.openBatchPaymentModal = openBatchPaymentModal;
+window.closeBatchPaymentModal = closeBatchPaymentModal;
+window.switchBatchModalTab = switchBatchModalTab;
+window.handleBatchImageFileSelect = handleBatchImageFileSelect;
+window.resetBatchOcrPreview = resetBatchOcrPreview;
+window.parseBatchDirectPasteInput = parseBatchDirectPasteInput;
+window.handleExecuteEasyBatchPayment = handleExecuteEasyBatchPayment;
 
 // 만기 1·2개월 전 전출 확인 및 문자 순차 발송 관련
 window.openExpiryNoticeModal = openExpiryNoticeModal;
