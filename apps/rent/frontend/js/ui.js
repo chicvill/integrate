@@ -908,27 +908,27 @@ export function renderPastHistorySection(room) {
       `;
     }
 
-    // 금액란 생성 (임차료 + 관리비 구분 표시, 클릭 시 수정 모달 연동)
-    let amountHtml = '';
+    // 임차료 / 관리비 개별 컬럼 생성 (합계금액 생략, 각 항목별 클릭 수정 모달 연동)
+    let rentHtml = '';
+    let maintHtml = '';
     if (isVacancy) {
-      amountHtml = `<span class="text-slate-600 font-mono text-[11px]">-</span>`;
+      rentHtml = `<span class="text-slate-600 font-mono text-[11px]">-</span>`;
+      maintHtml = `<span class="text-slate-600 font-mono text-[11px]">-</span>`;
     } else {
       const isPaid = Boolean(p.paid && p.paid_date);
       const btnStyle = isPaid
         ? 'hover:bg-emerald-950/80 text-emerald-400 hover:text-emerald-300 border-slate-700/80 hover:border-emerald-500/60'
         : 'hover:bg-rose-950/50 text-rose-300 hover:text-rose-200 border-rose-900/60 hover:border-rose-500/50';
-      const breakdownText = (isJeonse || rAmt === 0)
-        ? `전세·관리비 ${Number(mAmt).toLocaleString()}원`
-        : `임대 ${Number(rAmt).toLocaleString()} + 관리 ${Number(mAmt).toLocaleString()}`;
-      amountHtml = `
-        <button type="button" class="btn-change-payamount inline-flex flex-col items-end px-2 py-0.5 rounded bg-surface-900/90 ${btnStyle} border font-mono transition cursor-pointer shadow-xs whitespace-nowrap leading-tight text-right" title="클릭하여 납부/청구 금액 수정 (임차료: ${Number(rAmt).toLocaleString()}원 / 관리비: ${Number(mAmt).toLocaleString()}원)" data-year="${y}" data-month="${m}" data-rent="${rAmt}" data-maint="${mAmt}" data-tot="${tot}">
-          <div class="flex items-center gap-1">
-            <span class="text-[10px] opacity-70">✏️</span>
-            <span class="text-[11px] font-bold">${Number(tot).toLocaleString()}원</span>
-          </div>
-          <div class="text-[9px] font-sans font-normal text-slate-400 opacity-90 tracking-tighter">
-            ${breakdownText}
-          </div>
+
+      rentHtml = `
+        <button type="button" class="btn-change-payamount inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-900/90 ${btnStyle} border font-mono text-[11px] font-bold transition cursor-pointer shadow-xs whitespace-nowrap" title="클릭하여 임차료/관리비 수정" data-year="${y}" data-month="${m}" data-rent="${rAmt}" data-maint="${mAmt}" data-tot="${tot}">
+          <span>${(isJeonse || rAmt === 0) ? '0원 (전세)' : Number(rAmt).toLocaleString() + '원'}</span>
+        </button>
+      `;
+
+      maintHtml = `
+        <button type="button" class="btn-change-payamount inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-900/90 ${btnStyle} border font-mono text-[11px] font-bold transition cursor-pointer shadow-xs whitespace-nowrap" title="클릭하여 임차료/관리비 수정" data-year="${y}" data-month="${m}" data-rent="${rAmt}" data-maint="${mAmt}" data-tot="${tot}">
+          <span>${Number(mAmt).toLocaleString()}원</span>
         </button>
       `;
     }
@@ -1015,7 +1015,10 @@ export function renderPastHistorySection(room) {
         ${tenantLabel}
       </td>
       <td class="py-2 px-2 border-r border-slate-800 text-right font-mono text-xs whitespace-nowrap">
-        ${amountHtml}
+        ${rentHtml}
+      </td>
+      <td class="py-2 px-2 border-r border-slate-800 text-right font-mono text-xs whitespace-nowrap">
+        ${maintHtml}
       </td>
       <td class="py-2 px-2 border-r border-slate-800 text-center whitespace-nowrap">
         ${payDateHtml}
