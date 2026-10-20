@@ -378,12 +378,20 @@ export async function handleContractPhotoSelect(event) {
         if (!isNaN(num)) document.getElementById('formMaintenance').value = num;
       }
       if (moveInVal && document.getElementById('formMoveIn')) {
-        const cleanDate = normalizeDateString(moveInVal);
-        if (cleanDate) document.getElementById('formMoveIn').value = cleanDate;
+        let cleanDate = String(moveInVal).trim();
+        try {
+          const comp = parseDateComponents(moveInVal);
+          if (comp && comp.formatted) cleanDate = comp.formatted;
+        } catch (_) {}
+        document.getElementById('formMoveIn').value = cleanDate;
       }
       if (expiryVal && document.getElementById('formExpiry')) {
-        const cleanDate = normalizeDateString(expiryVal);
-        if (cleanDate) document.getElementById('formExpiry').value = cleanDate;
+        let cleanDate = String(expiryVal).trim();
+        try {
+          const comp = parseDateComponents(expiryVal);
+          if (comp && comp.formatted) cleanDate = comp.formatted;
+        } catch (_) {}
+        document.getElementById('formExpiry').value = cleanDate;
       }
       if (leaseTypeVal && document.getElementById('formLeaseType')) {
         if (String(leaseTypeVal).includes('전세')) {
