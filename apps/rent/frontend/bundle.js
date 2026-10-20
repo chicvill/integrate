@@ -17314,6 +17314,41 @@ function renderHeaderSummary(room) {
       statusBanner.classList.remove('hidden');
     }
   }
+
+  // 상단 우측 오늘의 일시, 요일 실시간 갱신
+  updateHeaderClock();
+}
+
+/**
+ * 상단 우측 헤더의 현재 일시 및 요일 실시간 시계 업데이트
+ */
+const KOREAN_DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+
+function updateHeaderClock() {
+  const dateEl = document.getElementById('headerCurrentDate');
+  const timeEl = document.getElementById('headerCurrentTime');
+  if (!dateEl && !timeEl) return;
+
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  const dayName = KOREAN_DAY_NAMES[now.getDay()];
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  const ss = String(now.getSeconds()).padStart(2, '0');
+
+  if (dateEl) {
+    dateEl.textContent = `${y}-${m}-${d} (${dayName})`;
+  }
+  if (timeEl) {
+    timeEl.textContent = `${hh}:${mm}:${ss}`;
+  }
+}
+
+// 1초 주기로 실시간 시계 자동 갱신 보장
+if (typeof window !== 'undefined' && !window._headerClockInterval) {
+  window._headerClockInterval = setInterval(updateHeaderClock, 1000);
 }
 
 function renderMainRoomCard(room) {
