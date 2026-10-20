@@ -157,7 +157,19 @@
       <div class="space-y-1.5">
         <span class="text-[11px] font-bold text-cyan-400 uppercase tracking-wider block px-1">임대 관리 업무</span>
 
-        <!-- 0. 초간편 스마트 일괄 수납 (사진/캡처 & 텍스트 붙여넣기 2종 전용) -->
+        <!-- 0-1. 📷 장부 사진 촬영 & 엑셀 일괄 등록 (카메라/파일 AI 자동인식) -->
+        <button type="button" onclick="openExcelImportModal(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-blue-950/80 to-cyan-950/80 hover:from-blue-900/90 hover:to-cyan-900/90 text-cyan-300 border border-cyan-500/60 font-semibold flex items-center gap-2.5 cursor-pointer transition shadow-sm">
+          <span class="text-xl">📷</span>
+          <div>
+            <div class="text-xs font-bold text-white flex items-center gap-1.5">
+              <span>장부 사진 촬영 & 엑셀 일괄 등록</span>
+              <span class="text-[9px] bg-cyan-500/30 text-cyan-200 border border-cyan-500/50 px-1 py-0.2 rounded font-normal">카메라·AI 매핑</span>
+            </div>
+            <div class="text-[10px] text-cyan-300/80">스마트폰 카메라로 장부/계약서 촬영 및 엑셀 일괄 등록</div>
+          </div>
+        </button>
+
+        <!-- 0-2. 초간편 스마트 일괄 수납 (사진/캡처 & 텍스트 붙여넣기 2종 전용) -->
         <button type="button" onclick="openBatchPaymentModal(); closeMenuDrawer();" class="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-emerald-950/80 to-teal-950/80 hover:from-emerald-900/90 hover:to-teal-900/90 text-emerald-300 border border-emerald-500/60 font-semibold flex items-center gap-2.5 cursor-pointer transition shadow-sm">
           <span class="text-xl">⚡</span>
           <div>
