@@ -908,7 +908,7 @@ export function renderPastHistorySection(room) {
       `;
     }
 
-    // 금액란 생성 (공실은 빈칸 '-', 미납/완납은 해당 시점 계약 금액 표시 및 수정 지원)
+    // 금액란 생성 (임차료 + 관리비 구분 표시, 클릭 시 수정 모달 연동)
     let amountHtml = '';
     if (isVacancy) {
       amountHtml = `<span class="text-slate-600 font-mono text-[11px]">-</span>`;
@@ -917,9 +917,18 @@ export function renderPastHistorySection(room) {
       const btnStyle = isPaid
         ? 'hover:bg-emerald-950/80 text-emerald-400 hover:text-emerald-300 border-slate-700/80 hover:border-emerald-500/60'
         : 'hover:bg-rose-950/50 text-rose-300 hover:text-rose-200 border-rose-900/60 hover:border-rose-500/50';
+      const breakdownText = (isJeonse || rAmt === 0)
+        ? `전세·관리비 ${Number(mAmt).toLocaleString()}원`
+        : `임대 ${Number(rAmt).toLocaleString()} + 관리 ${Number(mAmt).toLocaleString()}`;
       amountHtml = `
-        <button type="button" class="btn-change-payamount inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-900/90 ${btnStyle} border font-mono text-[11px] font-bold transition cursor-pointer shadow-xs whitespace-nowrap" title="클릭하여 납부/청구 금액 수정" data-year="${y}" data-month="${m}" data-rent="${rAmt}" data-maint="${mAmt}" data-tot="${tot}">
-          <span>✏️</span><span>${Number(tot).toLocaleString()}원</span>
+        <button type="button" class="btn-change-payamount inline-flex flex-col items-end px-2 py-0.5 rounded bg-surface-900/90 ${btnStyle} border font-mono transition cursor-pointer shadow-xs whitespace-nowrap leading-tight text-right" title="클릭하여 납부/청구 금액 수정 (임차료: ${Number(rAmt).toLocaleString()}원 / 관리비: ${Number(mAmt).toLocaleString()}원)" data-year="${y}" data-month="${m}" data-rent="${rAmt}" data-maint="${mAmt}" data-tot="${tot}">
+          <div class="flex items-center gap-1">
+            <span class="text-[10px] opacity-70">✏️</span>
+            <span class="text-[11px] font-bold">${Number(tot).toLocaleString()}원</span>
+          </div>
+          <div class="text-[9px] font-sans font-normal text-slate-400 opacity-90 tracking-tighter">
+            ${breakdownText}
+          </div>
         </button>
       `;
     }
