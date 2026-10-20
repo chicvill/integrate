@@ -12,313 +12,37 @@
 
 /**
  * apps/rent/frontend/js/seed_data.js
- * 29개실 표준 공인 장부 시드 데이터 (2025년 실데이터 완비)
+ * 29개실 표준 공인 장부 시드 데이터 (구글 시트 2025.12 ~ 2026.10 완벽 동기화)
  */
 const CANONICAL_ROOMS_DATA = {
   "101": {
     "room_number": 101,
-    "branch_id": "main",
+    "number": 101,
     "name": "배종봉",
-    "id_number": "701127-1520023",
-    "phone": "010-5424-5780",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 2000000,
     "rent": 150000,
     "maintenance": 100000,
-    "clean_fee": 80000,
+    "deposit": 2000000,
+    "lease_type": "월세",
+    "pay_timing": "후불",
+    "phone": "010-5424-5780",
+    "id_number": "701127-1520023",
     "move_in": "2025-06-04",
     "expiry": "2026-12-10",
-    "auto_renewed": false,
     "move_out": "",
     "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
-      "2025-11": {
-        "year": 2025,
-        "month": 11,
-        "paid": true,
-        "paid_date": "2025-11-03",
-        "rent_amount": 250000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "배종봉"
-      },
-      "12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
-      "2025-12": {
-        "year": 2025,
-        "month": 12,
-        "paid": true,
-        "paid_date": "2025-12-03",
-        "rent_amount": 250000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "배종봉"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
-      "2026-1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
-      "2": {
-        "month": 2,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
-      "2026-2": {
-        "month": 2,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
-      "3": {
-        "month": 3,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
-      "2026-3": {
-        "month": 3,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
-      "4": {
-        "month": 4,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
-      "2026-4": {
-        "month": 4,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
-      "5": {
-        "month": 5,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
-      "2026-5": {
-        "month": 5,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
-      "6": {
-        "month": 6,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
-      "2026-6": {
-        "month": 6,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
-      "7": {
-        "month": 7,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
-      "2026-7": {
-        "month": 7,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
-      "8": {
-        "month": 8,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
-      "2026-8": {
-        "month": 8,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
-      "9": {
-        "month": 9,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
-      "2026-9": {
-        "month": 9,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
-      "10": {
-        "month": 10,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-10-05",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
-      "2026-10": {
-        "month": 10,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-10-05",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
-      "2026-11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
-      "2026-12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 150000,
-        "maintenance_amount": 100000,
-        "note": "",
-        "tenant_name": "배종봉",
-        "is_previous_tenant": false
-      },
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-03",
+        "rent_amount": 250000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-03",
         "rent_amount": 250000,
@@ -327,8 +51,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "배종봉"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "배종봉"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": false,
         "paid_date": "",
         "rent_amount": 0,
@@ -337,8 +71,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "배종봉"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "배종봉"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": false,
         "paid_date": "",
         "rent_amount": 0,
@@ -347,8 +91,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "배종봉"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "배종봉"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": false,
         "paid_date": "",
         "rent_amount": 0,
@@ -357,18 +111,38 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "배종봉"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
         "paid": false,
         "paid_date": "",
         "rent_amount": 0,
         "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "배종봉"
+        "note": "공실",
+        "tenant_name": "공실"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "공실"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "전입6/3",
+        "tenant_name": "배종봉"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": false,
         "paid_date": "",
         "rent_amount": 0,
@@ -377,8 +151,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "배종봉"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-03",
+        "rent_amount": 250000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-03",
         "rent_amount": 250000,
@@ -387,8 +171,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "배종봉"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-03",
+        "rent_amount": 250000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-03",
         "rent_amount": 250000,
@@ -397,8 +191,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "배종봉"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-03",
+        "rent_amount": 250000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-03",
         "rent_amount": 250000,
@@ -407,12 +211,362 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "배종봉"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-03",
         "rent_amount": 250000,
         "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2025-11": {
+        "month": 11,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-11-03",
+        "rent_amount": 250000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2025-12": {
+        "month": 12,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-12-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2026-1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2026-01": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2026-2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2026-02": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2026-3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2026-03": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2026-4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2026-04": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2026-5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2026-05": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2026-6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2026-06": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2026-7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-02",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2026-07": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-02",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-02",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2026-8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2026-08": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2026-9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-02",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2026-09": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-02",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-02",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2026-10": {
+        "month": 10,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-03",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2026-11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "2026-12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배종봉"
+      },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 150000,
+        "maintenance_amount": 100000,
         "note": "",
         "tenant_name": "배종봉"
       }
@@ -420,308 +574,32 @@ const CANONICAL_ROOMS_DATA = {
   },
   "201": {
     "room_number": 201,
-    "branch_id": "main",
+    "number": 201,
     "name": "정민준",
-    "id_number": "921013-1025438",
-    "phone": "010-5578-5358",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 5000000,
     "rent": 290000,
     "maintenance": 150000,
-    "clean_fee": 80000,
+    "deposit": 5000000,
+    "lease_type": "월세",
+    "pay_timing": "후불",
+    "phone": "010-5578-5358",
+    "id_number": "921013-1025438",
     "move_in": "2022-03-19",
-    "expiry": "2027-03-18",
-    "auto_renewed": false,
+    "expiry": "2026-12-12",
     "move_out": "",
     "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "2025-11": {
+      "2025-1": {
+        "month": 1,
         "year": 2025,
-        "month": 11,
         "paid": true,
-        "paid_date": "2025-11-21",
+        "paid_date": "2025-01-15",
         "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
         "tenant_name": "정민준"
       },
-      "12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "2025-12": {
+      "2025-01": {
+        "month": 1,
         "year": 2025,
-        "month": 12,
-        "paid": true,
-        "paid_date": "2025-12-21",
-        "rent_amount": 44000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "정민준"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "2026-1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "2": {
-        "month": 2,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "2026-2": {
-        "month": 2,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "3": {
-        "month": 3,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "2026-3": {
-        "month": 3,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "4": {
-        "month": 4,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "2026-4": {
-        "month": 4,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "5": {
-        "month": 5,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "2026-5": {
-        "month": 5,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "6": {
-        "month": 6,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "2026-6": {
-        "month": 6,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "7": {
-        "month": 7,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "2026-7": {
-        "month": 7,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "8": {
-        "month": 8,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "2026-8": {
-        "month": 8,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "9": {
-        "month": 9,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "2026-9": {
-        "month": 9,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "10": {
-        "month": 10,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "2026-10": {
-        "month": 10,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "2026-11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "2026-12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "정민준",
-        "is_previous_tenant": false
-      },
-      "2025-1": {
-        "year": 2025,
-        "month": 1,
         "paid": true,
         "paid_date": "2025-01-15",
         "rent_amount": 440000,
@@ -730,8 +608,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "정민준"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-19",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "정민준"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-19",
         "rent_amount": 440000,
@@ -740,8 +628,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "정민준"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-27",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "정민준"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-27",
         "rent_amount": 440000,
@@ -750,8 +648,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "정민준"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-23",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "정민준"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-04-23",
         "rent_amount": 440000,
@@ -760,8 +668,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "정민준"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-26",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "정민준"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-26",
         "rent_amount": 440000,
@@ -770,8 +688,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "정민준"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-25",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "정민준"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-25",
         "rent_amount": 440000,
@@ -780,8 +708,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "정민준"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-27",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "정민준"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-27",
         "rent_amount": 440000,
@@ -790,8 +728,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "정민준"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-29",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "정민준"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-29",
         "rent_amount": 440000,
@@ -800,8 +748,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "정민준"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-15",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "정민준"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-15",
         "rent_amount": 440000,
@@ -810,295 +768,324 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "정민준"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-23",
         "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
         "tenant_name": "정민준"
-      }
-    }
-  },
-  "202": {
-    "room_number": 202,
-    "branch_id": "main",
-    "name": "안동기",
-    "id_number": "701110-1814911",
-    "phone": "010-9429-4688",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 3000000,
-    "rent": 290000,
-    "maintenance": 150000,
-    "clean_fee": 80000,
-    "move_in": "2015-04-10",
-    "expiry": "2027-04-10",
-    "auto_renewed": false,
-    "move_out": "",
-    "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
       },
       "2025-11": {
-        "year": 2025,
         "month": 11,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 0,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-11-21",
+        "rent_amount": 440000,
         "maintenance_amount": 0,
-        "note": "미납",
-        "tenant_name": "안동기"
+        "note": "",
+        "tenant_name": "정민준"
       },
-      "12": {
+      "2025-12": {
         "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-12-21",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
-      },
-      "2025-12": {
-        "year": 2025,
-        "month": 12,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 0,
-        "maintenance_amount": 0,
-        "note": "미납",
-        "tenant_name": "안동기"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
+        "tenant_name": "정민준"
       },
       "2026-1": {
         "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-01-05",
+        "paid_date": "2026-01-22",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "정민준"
       },
-      "2": {
-        "month": 2,
+      "2026-01": {
+        "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-01-22",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "정민준"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-22",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "정민준"
       },
       "2026-2": {
         "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-02-23",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "정민준"
       },
-      "3": {
-        "month": 3,
+      "2026-02": {
+        "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-02-23",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "정민준"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "정민준"
       },
       "2026-3": {
         "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-03-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "정민준"
       },
-      "4": {
-        "month": 4,
+      "2026-03": {
+        "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-03-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "정민준"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-13",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "정민준"
       },
       "2026-4": {
         "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-04-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "정민준"
       },
-      "5": {
-        "month": 5,
+      "2026-04": {
+        "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-04-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "정민준"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-19",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "정민준"
       },
       "2026-5": {
         "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-05-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "정민준"
       },
-      "6": {
-        "month": 6,
+      "2026-05": {
+        "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-05-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "정민준"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "정민준"
       },
       "2026-6": {
         "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-06-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "정민준"
       },
-      "7": {
-        "month": 7,
+      "2026-06": {
+        "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-06-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "정민준"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "정민준"
       },
       "2026-7": {
         "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-07-20",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "정민준"
       },
-      "8": {
-        "month": 8,
+      "2026-07": {
+        "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-07-20",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "정민준"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-20",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "정민준"
       },
       "2026-8": {
         "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-08-20",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "정민준"
       },
-      "9": {
-        "month": 9,
+      "2026-08": {
+        "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-08-20",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "정민준"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-20",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "정민준"
       },
       "2026-9": {
         "month": 9,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-09-21",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "정민준"
       },
-      "10": {
-        "month": 10,
+      "2026-09": {
+        "month": 9,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-10-05",
+        "paid_date": "2026-09-21",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "정민준"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-21",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "정민준"
       },
       "2026-10": {
         "month": 10,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-10-05",
+        "paid_date": "2026-10-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "정민준"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-19",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "정민준"
       },
       "2026-11": {
         "month": 11,
@@ -1108,8 +1095,17 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
+        "tenant_name": "정민준"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "정민준"
       },
       "2026-12": {
         "month": 12,
@@ -1119,12 +1115,48 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "안동기",
-        "is_previous_tenant": false
+        "tenant_name": "정민준"
       },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "정민준"
+      }
+    }
+  },
+  "202": {
+    "room_number": 202,
+    "number": 202,
+    "name": "안동기",
+    "rent": 290000,
+    "maintenance": 150000,
+    "deposit": 3000000,
+    "lease_type": "월세",
+    "pay_timing": "선불",
+    "phone": "010-9429-4688",
+    "id_number": "701110-1814911",
+    "move_in": "2015-04-10",
+    "expiry": "2027-04-10",
+    "move_out": "",
+    "payments": {
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-10",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "안동기"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-10",
         "rent_amount": 440000,
@@ -1133,8 +1165,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "안동기"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-10",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "안동기"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-10",
         "rent_amount": 440000,
@@ -1143,8 +1185,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "안동기"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-10",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "안동기"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-10",
         "rent_amount": 440000,
@@ -1153,8 +1205,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "안동기"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-10",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "안동기"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-10",
         "rent_amount": 440000,
@@ -1163,8 +1225,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "안동기"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-10",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "안동기"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-10",
         "rent_amount": 440000,
@@ -1173,8 +1245,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "안동기"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-10",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "안동기"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-10",
         "rent_amount": 440000,
@@ -1183,8 +1265,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "안동기"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-10",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "안동기"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-10",
         "rent_amount": 440000,
@@ -1193,8 +1285,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "안동기"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-10",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "안동기"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-10",
         "rent_amount": 440000,
@@ -1203,8 +1305,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "안동기"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "미납",
+        "tenant_name": "안동기"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": false,
         "paid_date": "",
         "rent_amount": 0,
@@ -1213,295 +1325,324 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "안동기"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": false,
         "paid_date": "",
         "rent_amount": 0,
         "maintenance_amount": 0,
         "note": "미납",
         "tenant_name": "안동기"
-      }
-    }
-  },
-  "203": {
-    "room_number": 203,
-    "branch_id": "main",
-    "name": "이광훈",
-    "id_number": "580115-1268113",
-    "phone": "010-8417-7858",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 5000000,
-    "rent": 290000,
-    "maintenance": 150000,
-    "clean_fee": 80000,
-    "move_in": "2024-08-01",
-    "expiry": "2027-07-31",
-    "auto_renewed": false,
-    "move_out": "",
-    "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
       },
       "2025-11": {
-        "year": 2025,
         "month": 11,
-        "paid": true,
-        "paid_date": "2025-11-25",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "이광훈"
-      },
-      "12": {
-        "month": 12,
-        "year": 2026,
+        "year": 2025,
         "paid": false,
         "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "미납",
+        "tenant_name": "안동기"
       },
       "2025-12": {
-        "year": 2025,
         "month": 12,
+        "year": 2025,
         "paid": true,
-        "paid_date": "2025-11-25",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "이광훈"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 290000,
+        "paid_date": "2026-01-29",
+        "rent_amount": 1610000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
+        "note": "선납 4개월",
+        "tenant_name": "안동기"
       },
       "2026-1": {
         "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-01-05",
+        "paid_date": "2026-02-24",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "안동기"
       },
-      "2": {
-        "month": 2,
+      "2026-01": {
+        "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-02-24",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "안동기"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-24",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "안동기"
       },
       "2026-2": {
         "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-02-24",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "안동기"
       },
-      "3": {
-        "month": 3,
+      "2026-02": {
+        "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-02-24",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "안동기"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-24",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "안동기"
       },
       "2026-3": {
         "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-08-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "안동기"
       },
-      "4": {
-        "month": 4,
+      "2026-03": {
+        "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-08-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "안동기"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-13",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "안동기"
       },
       "2026-4": {
         "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-08-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "안동기"
       },
-      "5": {
-        "month": 5,
+      "2026-04": {
+        "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-08-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "안동기"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-13",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "안동기"
       },
       "2026-5": {
         "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-08-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "안동기"
       },
-      "6": {
-        "month": 6,
+      "2026-05": {
+        "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-08-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "안동기"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-13",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "안동기"
       },
       "2026-6": {
         "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-08-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "안동기"
       },
-      "7": {
-        "month": 7,
+      "2026-06": {
+        "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-08-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "안동기"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-13",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "안동기"
       },
       "2026-7": {
         "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-08-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "안동기"
       },
-      "8": {
-        "month": 8,
+      "2026-07": {
+        "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-08-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "안동기"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-13",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "안동기"
       },
       "2026-8": {
         "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-10-08",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "안동기"
       },
-      "9": {
-        "month": 9,
+      "2026-08": {
+        "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-10-08",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "안동기"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-08",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "안동기"
       },
       "2026-9": {
         "month": 9,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-10-08",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "안동기"
       },
-      "10": {
-        "month": 10,
+      "2026-09": {
+        "month": 9,
         "year": 2026,
-        "paid": false,
-        "paid_date": "",
+        "paid": true,
+        "paid_date": "2026-10-08",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "안동기"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-08",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "안동기"
       },
       "2026-10": {
         "month": 10,
         "year": 2026,
-        "paid": false,
-        "paid_date": "",
+        "paid": true,
+        "paid_date": "2026-10-08",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "안동기"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-08",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "안동기"
       },
       "2026-11": {
         "month": 11,
@@ -1511,8 +1652,17 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
+        "tenant_name": "안동기"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "안동기"
       },
       "2026-12": {
         "month": 12,
@@ -1522,12 +1672,48 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "이광훈",
-        "is_previous_tenant": false
+        "tenant_name": "안동기"
       },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "안동기"
+      }
+    }
+  },
+  "203": {
+    "room_number": 203,
+    "number": 203,
+    "name": "이광훈",
+    "rent": 290000,
+    "maintenance": 150000,
+    "deposit": 5000000,
+    "lease_type": "월세",
+    "pay_timing": "후불",
+    "phone": "010-8417-7858",
+    "id_number": "580115-1268113",
+    "move_in": "2024-08-01",
+    "expiry": "2027-07-31",
+    "move_out": "",
+    "payments": {
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-26",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-01-26",
         "rent_amount": 440000,
@@ -1536,8 +1722,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이광훈"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-26",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-26",
         "rent_amount": 440000,
@@ -1546,8 +1742,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이광훈"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-26",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-26",
         "rent_amount": 440000,
@@ -1556,8 +1762,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이광훈"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-26",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-04-26",
         "rent_amount": 440000,
@@ -1566,8 +1782,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이광훈"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-25",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-25",
         "rent_amount": 440000,
@@ -1576,8 +1802,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이광훈"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-28",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-28",
         "rent_amount": 440000,
@@ -1586,8 +1822,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이광훈"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-28",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-28",
         "rent_amount": 440000,
@@ -1596,8 +1842,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이광훈"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-28",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-28",
         "rent_amount": 440000,
@@ -1606,8 +1862,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이광훈"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-28",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-28",
         "rent_amount": 440000,
@@ -1616,12 +1882,362 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이광훈"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-26",
         "rent_amount": 440000,
         "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2025-11": {
+        "month": 11,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-11-25",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2025-12": {
+        "month": 12,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-11-35",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2026-1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2026-01": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2026-2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2026-02": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2026-3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2026-03": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2026-4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2026-04": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2026-5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2026-05": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2026-6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-24",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2026-06": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-24",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-24",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2026-7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-24",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2026-07": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-24",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-24",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2026-8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2026-08": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2026-9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-24",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2026-09": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-24",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-24",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2026-10": {
+        "month": 10,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2026-11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "2026-12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이광훈"
+      },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
         "note": "",
         "tenant_name": "이광훈"
       }
@@ -1629,308 +2245,32 @@ const CANONICAL_ROOMS_DATA = {
   },
   "204": {
     "room_number": 204,
-    "branch_id": "main",
+    "number": 204,
     "name": "주예란",
-    "id_number": "770925-2169514",
-    "phone": "010-8982-8146",
+    "rent": 290000,
+    "maintenance": 150000,
+    "deposit": 5000000,
     "lease_type": "월세",
     "pay_timing": "후불",
-    "deposit": 5000000,
-    "rent": 250000,
-    "maintenance": 150000,
-    "clean_fee": 80000,
+    "phone": "010-8982-8146",
+    "id_number": "770925-2169514",
     "move_in": "2021-06-05",
     "expiry": "2027-06-04",
-    "auto_renewed": false,
     "move_out": "",
     "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
-      "2025-11": {
-        "year": 2025,
-        "month": 11,
-        "paid": true,
-        "paid_date": "2025-11-04",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "주예란"
-      },
-      "12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
-      "2025-12": {
-        "year": 2025,
-        "month": 12,
-        "paid": true,
-        "paid_date": "2025-12-03",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "주예란"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
-      "2026-1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
-      "2": {
-        "month": 2,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
-      "2026-2": {
-        "month": 2,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
-      "3": {
-        "month": 3,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
-      "2026-3": {
-        "month": 3,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
-      "4": {
-        "month": 4,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
-      "2026-4": {
-        "month": 4,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
-      "5": {
-        "month": 5,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
-      "2026-5": {
-        "month": 5,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
-      "6": {
-        "month": 6,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
-      "2026-6": {
-        "month": 6,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
-      "7": {
-        "month": 7,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
-      "2026-7": {
-        "month": 7,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
-      "8": {
-        "month": 8,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
-      "2026-8": {
-        "month": 8,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
-      "9": {
-        "month": 9,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
-      "2026-9": {
-        "month": 9,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
-      "10": {
-        "month": 10,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-10-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
-      "2026-10": {
-        "month": 10,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-10-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
-      "2026-11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
-      "2026-12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "주예란",
-        "is_previous_tenant": false
-      },
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-02",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주예란"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-01-02",
         "rent_amount": 440000,
@@ -1939,8 +2279,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "주예란"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-03",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주예란"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-03",
         "rent_amount": 440000,
@@ -1949,8 +2299,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "주예란"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-04",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주예란"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-04",
         "rent_amount": 440000,
@@ -1959,8 +2319,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "주예란"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-03",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주예란"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-04-03",
         "rent_amount": 440000,
@@ -1969,8 +2339,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "주예란"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-04",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주예란"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-04",
         "rent_amount": 440000,
@@ -1979,8 +2359,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "주예란"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-03",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주예란"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-03",
         "rent_amount": 440000,
@@ -1989,8 +2379,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "주예란"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-03",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주예란"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-03",
         "rent_amount": 440000,
@@ -1999,8 +2399,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "주예란"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-03",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주예란"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-03",
         "rent_amount": 440000,
@@ -2009,8 +2419,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "주예란"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-03",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주예란"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-03",
         "rent_amount": 440000,
@@ -2019,295 +2439,324 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "주예란"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-02",
         "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
         "tenant_name": "주예란"
-      }
-    }
-  },
-  "205": {
-    "room_number": 205,
-    "branch_id": "main",
-    "name": "서재민",
-    "id_number": "980706-1122013",
-    "phone": "010-4947-8994",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 5000000,
-    "rent": 250000,
-    "maintenance": 150000,
-    "clean_fee": 80000,
-    "move_in": "2024-01-27",
-    "expiry": "2027-01-26",
-    "auto_renewed": false,
-    "move_out": "",
-    "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
       },
       "2025-11": {
-        "year": 2025,
         "month": 11,
+        "year": 2025,
         "paid": true,
-        "paid_date": "2025-11-25",
-        "rent_amount": 400000,
+        "paid_date": "2025-11-04",
+        "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
-        "tenant_name": "서재민"
-      },
-      "12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
+        "tenant_name": "주예란"
       },
       "2025-12": {
-        "year": 2025,
         "month": 12,
+        "year": 2025,
         "paid": true,
-        "paid_date": "2025-12-22",
-        "rent_amount": 400000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "서재민"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 250000,
+        "paid_date": "2025-12-03",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "주예란"
       },
       "2026-1": {
         "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-01-02",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "주예란"
       },
-      "2": {
-        "month": 2,
+      "2026-01": {
+        "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-01-02",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "주예란"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-02",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "주예란"
       },
       "2026-2": {
         "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-02-03",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "주예란"
       },
-      "3": {
-        "month": 3,
+      "2026-02": {
+        "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-02-03",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "주예란"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-03",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "주예란"
       },
       "2026-3": {
         "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-03-03",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "주예란"
       },
-      "4": {
-        "month": 4,
+      "2026-03": {
+        "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-03-03",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "주예란"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-03",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "주예란"
       },
       "2026-4": {
         "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-04-03",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "주예란"
       },
-      "5": {
-        "month": 5,
+      "2026-04": {
+        "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-04-03",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "주예란"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-03",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "주예란"
       },
       "2026-5": {
         "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-05-04",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "주예란"
       },
-      "6": {
-        "month": 6,
+      "2026-05": {
+        "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-05-04",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "주예란"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-04",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "주예란"
       },
       "2026-6": {
         "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-06-04",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "주예란"
       },
-      "7": {
-        "month": 7,
+      "2026-06": {
+        "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-06-04",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "주예란"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-04",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "주예란"
       },
       "2026-7": {
         "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-07-03",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "주예란"
       },
-      "8": {
-        "month": 8,
+      "2026-07": {
+        "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-07-03",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "주예란"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-03",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "주예란"
       },
       "2026-8": {
         "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-08-03",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "주예란"
       },
-      "9": {
-        "month": 9,
+      "2026-08": {
+        "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-08-03",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "주예란"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-03",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "주예란"
       },
       "2026-9": {
         "month": 9,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-09-04",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "주예란"
       },
-      "10": {
-        "month": 10,
+      "2026-09": {
+        "month": 9,
         "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 250000,
+        "paid": true,
+        "paid_date": "2026-09-04",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "주예란"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-04",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "주예란"
       },
       "2026-10": {
         "month": 10,
         "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 250000,
+        "paid": true,
+        "paid_date": "2026-10-03",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "주예란"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-03",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "주예란"
       },
       "2026-11": {
         "month": 11,
@@ -2317,8 +2766,17 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 250000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
+        "tenant_name": "주예란"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "주예란"
       },
       "2026-12": {
         "month": 12,
@@ -2328,12 +2786,48 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 250000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "서재민",
-        "is_previous_tenant": false
+        "tenant_name": "주예란"
       },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "주예란"
+      }
+    }
+  },
+  "205": {
+    "room_number": 205,
+    "number": 205,
+    "name": "서재민",
+    "rent": 250000,
+    "maintenance": 150000,
+    "deposit": 5000000,
+    "lease_type": "월세",
+    "pay_timing": "후불",
+    "phone": "010-4947-8994",
+    "id_number": "980706-1122013",
+    "move_in": "2024-01-27",
+    "expiry": "2027-01-26",
+    "move_out": "",
+    "payments": {
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-25",
+        "rent_amount": 400000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-01-25",
         "rent_amount": 400000,
@@ -2342,8 +2836,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "서재민"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-23",
+        "rent_amount": 400000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-23",
         "rent_amount": 400000,
@@ -2352,8 +2856,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "서재민"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-22",
+        "rent_amount": 400000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-22",
         "rent_amount": 400000,
@@ -2362,8 +2876,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "서재민"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-22",
+        "rent_amount": 400000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-04-22",
         "rent_amount": 400000,
@@ -2372,8 +2896,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "서재민"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-23",
+        "rent_amount": 400000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-23",
         "rent_amount": 400000,
@@ -2382,8 +2916,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "서재민"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-22",
+        "rent_amount": 400000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-22",
         "rent_amount": 400000,
@@ -2392,8 +2936,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "서재민"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-21",
+        "rent_amount": 400000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-21",
         "rent_amount": 400000,
@@ -2402,8 +2956,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "서재민"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-23",
+        "rent_amount": 400000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-23",
         "rent_amount": 400000,
@@ -2412,8 +2976,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "서재민"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-22",
+        "rent_amount": 400000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-22",
         "rent_amount": 400000,
@@ -2422,12 +2996,362 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "서재민"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-20",
         "rent_amount": 400000,
         "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2025-11": {
+        "month": 11,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-11-25",
+        "rent_amount": 400000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2025-12": {
+        "month": 12,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-12-22",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2026-1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-23",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2026-01": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-23",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-23",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2026-2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-21",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2026-02": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-21",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-21",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2026-3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-22",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2026-03": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-22",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-22",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2026-4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-21",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2026-04": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-21",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-21",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2026-5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-20",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2026-05": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-20",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-20",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2026-6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-21",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2026-06": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-21",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-21",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2026-7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-21",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2026-07": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-21",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-21",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2026-8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-21",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2026-08": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-21",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-21",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2026-9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-22",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2026-09": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-22",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-22",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2026-10": {
+        "month": 10,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2026-11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "2026-12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "서재민"
+      },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
         "note": "",
         "tenant_name": "서재민"
       }
@@ -2435,308 +3359,32 @@ const CANONICAL_ROOMS_DATA = {
   },
   "301": {
     "room_number": 301,
-    "branch_id": "main",
+    "number": 301,
     "name": "성민병원",
-    "id_number": "124233-0000347",
-    "phone": "010-9938-6293",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 5000000,
     "rent": 390000,
     "maintenance": 50000,
-    "clean_fee": 80000,
+    "deposit": 5000000,
+    "lease_type": "월세",
+    "pay_timing": "후불",
+    "phone": "010-9938-6293",
+    "id_number": "124233-0000347",
     "move_in": "2022-03-28",
     "expiry": "2027-03-27",
-    "auto_renewed": false,
     "move_out": "",
     "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
-      "2025-11": {
-        "year": 2025,
-        "month": 11,
-        "paid": true,
-        "paid_date": "2025-11-28",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "성민병원"
-      },
-      "12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
-      "2025-12": {
-        "year": 2025,
-        "month": 12,
-        "paid": true,
-        "paid_date": "2025-12-28",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "성민병원"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "정상 입금",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
-      "2026-1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "정상 입금",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
-      "2": {
-        "month": 2,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "정상 입금",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
-      "2026-2": {
-        "month": 2,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "정상 입금",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
-      "3": {
-        "month": 3,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "정상 입금",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
-      "2026-3": {
-        "month": 3,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "정상 입금",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
-      "4": {
-        "month": 4,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "정상 입금",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
-      "2026-4": {
-        "month": 4,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "정상 입금",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
-      "5": {
-        "month": 5,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "정상 입금",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
-      "2026-5": {
-        "month": 5,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "정상 입금",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
-      "6": {
-        "month": 6,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "정상 입금",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
-      "2026-6": {
-        "month": 6,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "정상 입금",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
-      "7": {
-        "month": 7,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "정상 입금",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
-      "2026-7": {
-        "month": 7,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "정상 입금",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
-      "8": {
-        "month": 8,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "미납",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
-      "2026-8": {
-        "month": 8,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "미납",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
-      "9": {
-        "month": 9,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "미납",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
-      "2026-9": {
-        "month": 9,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "미납",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
-      "10": {
-        "month": 10,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "미납",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
-      "2026-10": {
-        "month": 10,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "미납",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
-      "2026-11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
-      "2026-12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 390000,
-        "maintenance_amount": 50000,
-        "note": "",
-        "tenant_name": "성민병원",
-        "is_previous_tenant": false
-      },
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-31",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-01-31",
         "rent_amount": 440000,
@@ -2745,8 +3393,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "성민병원"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-27",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-27",
         "rent_amount": 440000,
@@ -2755,8 +3413,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "성민병원"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-27",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-27",
         "rent_amount": 440000,
@@ -2765,8 +3433,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "성민병원"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-25",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-04-25",
         "rent_amount": 440000,
@@ -2775,8 +3453,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "성민병원"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-27",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-27",
         "rent_amount": 440000,
@@ -2785,8 +3473,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "성민병원"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-27",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-27",
         "rent_amount": 440000,
@@ -2795,8 +3493,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "성민병원"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-25",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-25",
         "rent_amount": 440000,
@@ -2805,8 +3513,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "성민병원"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-28",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-28",
         "rent_amount": 440000,
@@ -2815,8 +3533,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "성민병원"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-26",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-26",
         "rent_amount": 440000,
@@ -2825,12 +3553,362 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "성민병원"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-28",
         "rent_amount": 440000,
         "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2025-11": {
+        "month": 11,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-11-28",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2025-12": {
+        "month": 12,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-12-28",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2026-1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-28",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2026-01": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-28",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-28",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2026-2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-27",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2026-02": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-27",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-27",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2026-3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-28",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2026-03": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-28",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-28",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2026-4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-28",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2026-04": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-28",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-28",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2026-5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-30",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2026-05": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-30",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-30",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2026-6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-30",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2026-06": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-30",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-30",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2026-7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-28",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2026-07": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-28",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-28",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2026-8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-28",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2026-08": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-28",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-28",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2026-9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-28",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2026-09": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-28",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-28",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2026-10": {
+        "month": 10,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2026-11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "2026-12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "성민병원"
+      },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 390000,
+        "maintenance_amount": 50000,
         "note": "",
         "tenant_name": "성민병원"
       }
@@ -2838,308 +3916,32 @@ const CANONICAL_ROOMS_DATA = {
   },
   "302": {
     "room_number": 302,
-    "branch_id": "main",
+    "number": 302,
     "name": "김지영",
-    "id_number": "690120-2150013",
-    "phone": "010-2668-9764",
-    "lease_type": "전세",
-    "pay_timing": "후불",
-    "deposit": 40000000,
     "rent": 0,
     "maintenance": 150000,
-    "clean_fee": 80000,
+    "deposit": 40000000,
+    "lease_type": "전세",
+    "pay_timing": "후불",
+    "phone": "010-2668-9764",
+    "id_number": "690120-2150013",
     "move_in": "2019-03-21",
     "expiry": "2027-03-20",
-    "auto_renewed": false,
     "move_out": "",
     "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
-      "2025-11": {
-        "year": 2025,
-        "month": 11,
-        "paid": true,
-        "paid_date": "2025-11-21",
-        "rent_amount": 150000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "김지영"
-      },
-      "12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
-      "2025-12": {
-        "year": 2025,
-        "month": 12,
-        "paid": true,
-        "paid_date": "2025-12-21",
-        "rent_amount": 150000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "김지영"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
-      "2026-1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
-      "2": {
-        "month": 2,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
-      "2026-2": {
-        "month": 2,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
-      "3": {
-        "month": 3,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
-      "2026-3": {
-        "month": 3,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
-      "4": {
-        "month": 4,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
-      "2026-4": {
-        "month": 4,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
-      "5": {
-        "month": 5,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
-      "2026-5": {
-        "month": 5,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
-      "6": {
-        "month": 6,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
-      "2026-6": {
-        "month": 6,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
-      "7": {
-        "month": 7,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
-      "2026-7": {
-        "month": 7,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
-      "8": {
-        "month": 8,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
-      "2026-8": {
-        "month": 8,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
-      "9": {
-        "month": 9,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
-      "2026-9": {
-        "month": 9,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
-      "10": {
-        "month": 10,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
-      "2026-10": {
-        "month": 10,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
-      "2026-11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
-      "2026-12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 0,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "김지영",
-        "is_previous_tenant": false
-      },
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-19",
+        "rent_amount": 150000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-01-19",
         "rent_amount": 150000,
@@ -3148,8 +3950,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김지영"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-16",
+        "rent_amount": 150000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-16",
         "rent_amount": 150000,
@@ -3158,8 +3970,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김지영"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-17",
+        "rent_amount": 150000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-17",
         "rent_amount": 150000,
@@ -3168,8 +3990,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김지영"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-16",
+        "rent_amount": 150000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-04-16",
         "rent_amount": 150000,
@@ -3178,8 +4010,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김지영"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-27",
+        "rent_amount": 150000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-27",
         "rent_amount": 150000,
@@ -3188,8 +4030,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김지영"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-17",
+        "rent_amount": 150000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-17",
         "rent_amount": 150000,
@@ -3198,8 +4050,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김지영"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-20",
+        "rent_amount": 150000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-20",
         "rent_amount": 150000,
@@ -3208,8 +4070,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김지영"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-21",
+        "rent_amount": 150000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-21",
         "rent_amount": 150000,
@@ -3218,8 +4090,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김지영"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-18",
+        "rent_amount": 150000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-18",
         "rent_amount": 150000,
@@ -3228,12 +4110,362 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김지영"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-21",
         "rent_amount": 150000,
         "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2025-11": {
+        "month": 11,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-11-21",
+        "rent_amount": 150000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2025-12": {
+        "month": 12,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-12-21",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2026-1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-18",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2026-01": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-18",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-18",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2026-2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-19",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2026-02": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-19",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-19",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2026-3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-18",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2026-03": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-18",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-18",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2026-4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-19",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2026-04": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-19",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-19",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2026-5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-19",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2026-05": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-19",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-19",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2026-6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-18",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2026-06": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-18",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-18",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2026-7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-19",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2026-07": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-19",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-19",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2026-8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-19",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2026-08": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-19",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-19",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2026-9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-17",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2026-09": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-17",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-17",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2026-10": {
+        "month": 10,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-18",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-18",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2026-11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "2026-12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김지영"
+      },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 150000,
         "note": "",
         "tenant_name": "김지영"
       }
@@ -3241,308 +4473,32 @@ const CANONICAL_ROOMS_DATA = {
   },
   "303": {
     "room_number": 303,
-    "branch_id": "main",
+    "number": 303,
     "name": "김진수",
-    "id_number": "960617-1479024",
-    "phone": "010-9169-0757",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 5000000,
     "rent": 290000,
     "maintenance": 150000,
-    "clean_fee": 80000,
+    "deposit": 5000000,
+    "lease_type": "월세",
+    "pay_timing": "후불",
+    "phone": "010-9169-0757",
+    "id_number": "960617-1479024",
     "move_in": "2025-09-12",
     "expiry": "2027-09-11",
-    "auto_renewed": false,
     "move_out": "",
     "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
-      "2025-11": {
-        "year": 2025,
-        "month": 11,
-        "paid": true,
-        "paid_date": "2025-11-12",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "김진수"
-      },
-      "12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
-      "2025-12": {
-        "year": 2025,
-        "month": 12,
-        "paid": true,
-        "paid_date": "2025-12-13",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "김진수"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
-      "2026-1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
-      "2": {
-        "month": 2,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
-      "2026-2": {
-        "month": 2,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
-      "3": {
-        "month": 3,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
-      "2026-3": {
-        "month": 3,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
-      "4": {
-        "month": 4,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
-      "2026-4": {
-        "month": 4,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
-      "5": {
-        "month": 5,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
-      "2026-5": {
-        "month": 5,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
-      "6": {
-        "month": 6,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
-      "2026-6": {
-        "month": 6,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
-      "7": {
-        "month": 7,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
-      "2026-7": {
-        "month": 7,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
-      "8": {
-        "month": 8,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
-      "2026-8": {
-        "month": 8,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
-      "9": {
-        "month": 9,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
-      "2026-9": {
-        "month": 9,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
-      "10": {
-        "month": 10,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-10-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
-      "2026-10": {
-        "month": 10,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-10-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
-      "2026-11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
-      "2026-12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "김진수",
-        "is_previous_tenant": false
-      },
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-26",
+        "rent_amount": 500000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김진수"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-01-26",
         "rent_amount": 500000,
@@ -3551,8 +4507,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김진수"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-06",
+        "rent_amount": 500000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김진수"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-06",
         "rent_amount": 500000,
@@ -3561,8 +4527,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김진수"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-25",
+        "rent_amount": 500000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김진수"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-25",
         "rent_amount": 500000,
@@ -3571,8 +4547,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김진수"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-25",
+        "rent_amount": 500000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김진수"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-04-25",
         "rent_amount": 500000,
@@ -3581,8 +4567,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김진수"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-25",
+        "rent_amount": 500000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김진수"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-25",
         "rent_amount": 500000,
@@ -3591,8 +4587,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김진수"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "김진수"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": false,
         "paid_date": "",
         "rent_amount": 0,
@@ -3601,8 +4607,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김진수"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "김진수"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": false,
         "paid_date": "",
         "rent_amount": 0,
@@ -3611,8 +4627,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김진수"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "김진수"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": false,
         "paid_date": "",
         "rent_amount": 0,
@@ -3621,8 +4647,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김진수"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "전입9/13",
+        "tenant_name": "김진수"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": false,
         "paid_date": "",
         "rent_amount": 0,
@@ -3631,434 +4667,324 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김진수"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-13",
         "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
         "tenant_name": "김진수"
-      }
-    }
-  },
-  "304": {
-    "room_number": 304,
-    "branch_id": "main",
-    "name": "공실",
-    "id_number": "",
-    "phone": "",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 0,
-    "rent": 0,
-    "maintenance": 0,
-    "clean_fee": 0,
-    "move_in": "",
-    "expiry": "",
-    "auto_renewed": false,
-    "move_out": "",
-    "payments": {
-      "2025-1": {
-        "year": 2025,
-        "month": 1,
-        "paid": true,
-        "paid_date": "2025-01-02",
-        "rent_amount": 390000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "노송병원"
-      },
-      "2025-2": {
-        "year": 2025,
-        "month": 2,
-        "paid": true,
-        "paid_date": "2025-02-03",
-        "rent_amount": 390000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "노송병원"
-      },
-      "2025-3": {
-        "year": 2025,
-        "month": 3,
-        "paid": true,
-        "paid_date": "2025-03-04",
-        "rent_amount": 390000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "노송병원"
-      },
-      "2025-4": {
-        "year": 2025,
-        "month": 4,
-        "paid": true,
-        "paid_date": "2025-04-01",
-        "rent_amount": 390000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "노송병원"
-      },
-      "2025-5": {
-        "year": 2025,
-        "month": 5,
-        "paid": true,
-        "paid_date": "2025-05-02",
-        "rent_amount": 390000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "노송병원"
-      },
-      "2025-6": {
-        "year": 2025,
-        "month": 6,
-        "paid": true,
-        "paid_date": "2025-06-02",
-        "rent_amount": 390000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "노송병원"
-      },
-      "2025-7": {
-        "year": 2025,
-        "month": 7,
-        "paid": true,
-        "paid_date": "2025-07-01",
-        "rent_amount": 390000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "노송병원"
-      },
-      "2025-8": {
-        "year": 2025,
-        "month": 8,
-        "paid": true,
-        "paid_date": "2025-08-01",
-        "rent_amount": 390000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "노송병원"
-      },
-      "2025-9": {
-        "year": 2025,
-        "month": 9,
-        "paid": true,
-        "paid_date": "2025-09-01",
-        "rent_amount": 390000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "노송병원"
-      },
-      "2025-10": {
-        "year": 2025,
-        "month": 10,
-        "paid": true,
-        "paid_date": "2025-10-01",
-        "rent_amount": 390000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "노송병원"
       },
       "2025-11": {
-        "year": 2025,
         "month": 11,
+        "year": 2025,
         "paid": true,
-        "paid_date": "2025-11-03",
-        "rent_amount": 390000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "노송병원"
-      },
-      "2025-12": {
-        "year": 2025,
-        "month": 12,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 0,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "노송병원"
-      }
-    }
-  },
-  "305": {
-    "room_number": 305,
-    "branch_id": "main",
-    "name": "박성용",
-    "id_number": "810412-1098765",
-    "phone": "010-3344-5505",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 3000000,
-    "rent": 290000,
-    "maintenance": 150000,
-    "clean_fee": 80000,
-    "move_in": "2023-04-13",
-    "expiry": "2027-04-12",
-    "auto_renewed": false,
-    "move_out": "",
-    "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
-      },
-      "2025-11": {
-        "year": 2025,
-        "month": 11,
-        "paid": true,
-        "paid_date": "2025-11-17",
+        "paid_date": "2025-11-12",
         "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
-        "tenant_name": "김인석"
-      },
-      "12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
+        "tenant_name": "김진수"
       },
       "2025-12": {
-        "year": 2025,
         "month": 12,
+        "year": 2025,
         "paid": true,
-        "paid_date": "2025-12-15",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "김인석"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
+        "paid_date": "2025-12-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김진수"
       },
       "2026-1": {
         "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-01-05",
+        "paid_date": "2026-01-12",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김진수"
       },
-      "2": {
-        "month": 2,
+      "2026-01": {
+        "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-01-12",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김진수"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-12",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김진수"
       },
       "2026-2": {
         "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-02-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김진수"
       },
-      "3": {
-        "month": 3,
+      "2026-02": {
+        "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-02-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김진수"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-13",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김진수"
       },
       "2026-3": {
         "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-03-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김진수"
       },
-      "4": {
-        "month": 4,
+      "2026-03": {
+        "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-03-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김진수"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-13",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김진수"
       },
       "2026-4": {
         "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-04-16",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김진수"
       },
-      "5": {
-        "month": 5,
+      "2026-04": {
+        "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-04-16",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김진수"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-16",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김진수"
       },
       "2026-5": {
         "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-05-16",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김진수"
       },
-      "6": {
-        "month": 6,
+      "2026-05": {
+        "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-05-16",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김진수"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-16",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김진수"
       },
       "2026-6": {
         "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-06-12",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김진수"
       },
-      "7": {
-        "month": 7,
+      "2026-06": {
+        "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-06-12",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김진수"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-12",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김진수"
       },
       "2026-7": {
         "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-07-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김진수"
       },
-      "8": {
-        "month": 8,
+      "2026-07": {
+        "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-07-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김진수"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-13",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김진수"
       },
       "2026-8": {
         "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-08-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김진수"
       },
-      "9": {
-        "month": 9,
+      "2026-08": {
+        "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-08-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김진수"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-13",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김진수"
       },
       "2026-9": {
         "month": 9,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-09-14",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김진수"
       },
-      "10": {
-        "month": 10,
+      "2026-09": {
+        "month": 9,
         "year": 2026,
-        "paid": false,
-        "paid_date": "",
+        "paid": true,
+        "paid_date": "2026-09-14",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김진수"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-14",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김진수"
       },
       "2026-10": {
         "month": 10,
         "year": 2026,
-        "paid": false,
-        "paid_date": "",
+        "paid": true,
+        "paid_date": "2026-10-14",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김진수"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-14",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김진수"
       },
       "2026-11": {
         "month": 11,
@@ -4068,8 +4994,17 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
+        "tenant_name": "김진수"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김진수"
       },
       "2026-12": {
         "month": 12,
@@ -4079,12 +5014,605 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "박성용",
-        "is_previous_tenant": false
+        "tenant_name": "김진수"
       },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김진수"
+      }
+    }
+  },
+  "304": {
+    "room_number": 304,
+    "number": 304,
+    "name": "노송병원",
+    "rent": 340000,
+    "maintenance": 50000,
+    "deposit": 10000000,
+    "lease_type": "월세",
+    "pay_timing": "후불",
+    "phone": "010-4293-5511",
+    "id_number": "137-91-92800",
+    "move_in": "2022-05-01",
+    "expiry": "2027-04-30",
+    "move_out": "",
+    "payments": {
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-02",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-02",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2025-2": {
+        "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-03",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-03",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2025-3": {
+        "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-04",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-04",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2025-4": {
+        "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-01",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-01",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2025-5": {
+        "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-02",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-02",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2025-6": {
+        "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-02",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-02",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2025-7": {
+        "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-01",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-01",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2025-8": {
+        "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-01",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-01",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2025-9": {
+        "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-01",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-01",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2025-10": {
+        "month": 10,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-10-01",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2025-11": {
+        "month": 11,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-11-03",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2025-12": {
+        "month": 12,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-08",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2026-1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-08",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2026-01": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-08",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-08",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2026-2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-20",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2026-02": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-20",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-20",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2026-3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-04",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2026-03": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-04",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-04",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2026-4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-02",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2026-04": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-02",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-02",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2026-5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-04",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2026-05": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-04",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-04",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2026-6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-02",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2026-06": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-02",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-02",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2026-7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-06",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2026-07": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-06",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-06",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2026-8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-03",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2026-08": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-03",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-03",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2026-9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-02",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2026-09": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-02",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-02",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2026-10": {
+        "month": 10,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-01",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-01",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2026-11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "2026-12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 340000,
+        "maintenance_amount": 50000,
+        "note": "",
+        "tenant_name": "노송병원"
+      }
+    }
+  },
+  "305": {
+    "room_number": 305,
+    "number": 305,
+    "name": "김인식",
+    "rent": 290000,
+    "maintenance": 150000,
+    "deposit": 3000000,
+    "lease_type": "월세",
+    "pay_timing": "후불",
+    "phone": "010-9026-2596",
+    "id_number": "137-14-88402",
+    "move_in": "2023-04-13",
+    "expiry": "2027-04-12",
+    "move_out": "",
+    "payments": {
+      "2025-1": {
+        "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-15",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김인석"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-01-15",
         "rent_amount": 440000,
@@ -4093,8 +5621,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김인석"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-17",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김인석"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-17",
         "rent_amount": 440000,
@@ -4103,8 +5641,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김인석"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-17",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김인석"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-17",
         "rent_amount": 440000,
@@ -4113,8 +5661,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김인석"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-17",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김인석"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-04-17",
         "rent_amount": 440000,
@@ -4123,8 +5681,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김인석"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-15",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김인석"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-15",
         "rent_amount": 440000,
@@ -4133,8 +5701,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김인석"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-16",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김인석"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-16",
         "rent_amount": 440000,
@@ -4143,8 +5721,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김인석"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-15",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김인석"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-15",
         "rent_amount": 440000,
@@ -4153,8 +5741,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김인석"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-18",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김인석"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-18",
         "rent_amount": 440000,
@@ -4163,8 +5761,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김인석"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-15",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김인석"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-15",
         "rent_amount": 440000,
@@ -4173,295 +5781,324 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김인석"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-15",
         "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
         "tenant_name": "김인석"
-      }
-    }
-  },
-  "401": {
-    "room_number": 401,
-    "branch_id": "main",
-    "name": "임성진",
-    "id_number": "910908-1123456",
-    "phone": "010-7788-9901",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 5000000,
-    "rent": 290000,
-    "maintenance": 150000,
-    "clean_fee": 80000,
-    "move_in": "2022-04-09",
-    "expiry": "2027-04-08",
-    "auto_renewed": false,
-    "move_out": "",
-    "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
       },
       "2025-11": {
-        "year": 2025,
         "month": 11,
+        "year": 2025,
         "paid": true,
-        "paid_date": "2025-11-14",
+        "paid_date": "2025-11-17",
         "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
-        "tenant_name": "이정도"
-      },
-      "12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
+        "tenant_name": "김인석"
       },
       "2025-12": {
-        "year": 2025,
         "month": 12,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-12-15",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "이정도"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김인식"
       },
       "2026-1": {
         "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-01-05",
+        "paid_date": "2026-01-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김인식"
       },
-      "2": {
-        "month": 2,
+      "2026-01": {
+        "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-01-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김인식"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김인식"
       },
       "2026-2": {
         "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-02-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김인식"
       },
-      "3": {
-        "month": 3,
+      "2026-02": {
+        "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-02-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김인식"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-13",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김인식"
       },
       "2026-3": {
         "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-03-16",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김인식"
       },
-      "4": {
-        "month": 4,
+      "2026-03": {
+        "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-03-16",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김인식"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-16",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김인식"
       },
       "2026-4": {
         "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-04-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김인식"
       },
-      "5": {
-        "month": 5,
+      "2026-04": {
+        "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-04-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김인식"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김인식"
       },
       "2026-5": {
         "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-05-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김인식"
       },
-      "6": {
-        "month": 6,
+      "2026-05": {
+        "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-05-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김인식"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김인식"
       },
       "2026-6": {
         "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-06-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김인식"
       },
-      "7": {
-        "month": 7,
+      "2026-06": {
+        "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-06-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김인식"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김인식"
       },
       "2026-7": {
         "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-07-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김인식"
       },
-      "8": {
-        "month": 8,
+      "2026-07": {
+        "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-07-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김인식"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김인식"
       },
       "2026-8": {
         "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-08-14",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김인식"
       },
-      "9": {
-        "month": 9,
+      "2026-08": {
+        "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-08-14",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김인식"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-14",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김인식"
       },
       "2026-9": {
         "month": 9,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-09-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김인식"
       },
-      "10": {
-        "month": 10,
+      "2026-09": {
+        "month": 9,
         "year": 2026,
-        "paid": false,
-        "paid_date": "",
+        "paid": true,
+        "paid_date": "2026-09-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김인식"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김인식"
       },
       "2026-10": {
         "month": 10,
         "year": 2026,
-        "paid": false,
-        "paid_date": "",
+        "paid": true,
+        "paid_date": "2026-10-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김인식"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김인식"
       },
       "2026-11": {
         "month": 11,
@@ -4471,8 +6108,17 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
+        "tenant_name": "정우메탈"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "정우메탈"
       },
       "2026-12": {
         "month": 12,
@@ -4482,12 +6128,48 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "임성진",
-        "is_previous_tenant": false
+        "tenant_name": "정우메탈"
       },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "정우메탈"
+      }
+    }
+  },
+  "401": {
+    "room_number": 401,
+    "number": 401,
+    "name": "이정도",
+    "rent": 290000,
+    "maintenance": 150000,
+    "deposit": 5000000,
+    "lease_type": "월세",
+    "pay_timing": "후불",
+    "phone": "010-2763-7108",
+    "id_number": "521010-1231421",
+    "move_in": "2023-04-09",
+    "expiry": "2027-04-08",
+    "move_out": "",
+    "payments": {
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-15",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이정도"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-01-15",
         "rent_amount": 440000,
@@ -4496,8 +6178,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이정도"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-14",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이정도"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-14",
         "rent_amount": 440000,
@@ -4506,8 +6198,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이정도"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-14",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이정도"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-14",
         "rent_amount": 440000,
@@ -4516,8 +6218,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이정도"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-15",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이정도"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-04-15",
         "rent_amount": 440000,
@@ -4526,8 +6238,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이정도"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-15",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이정도"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-15",
         "rent_amount": 440000,
@@ -4536,8 +6258,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이정도"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-13",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이정도"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-13",
         "rent_amount": 440000,
@@ -4546,8 +6278,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이정도"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-15",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이정도"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-15",
         "rent_amount": 440000,
@@ -4556,8 +6298,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이정도"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-14",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이정도"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-14",
         "rent_amount": 440000,
@@ -4566,8 +6318,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이정도"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-15",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이정도"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-15",
         "rent_amount": 440000,
@@ -4576,295 +6338,324 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이정도"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-15",
         "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
         "tenant_name": "이정도"
-      }
-    }
-  },
-  "402": {
-    "room_number": 402,
-    "branch_id": "main",
-    "name": "윤태식",
-    "id_number": "650228-1987654",
-    "phone": "010-1122-3344",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 3000000,
-    "rent": 290000,
-    "maintenance": 150000,
-    "clean_fee": 80000,
-    "move_in": "2021-03-01",
-    "expiry": "2027-02-28",
-    "auto_renewed": false,
-    "move_out": "",
-    "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
       },
       "2025-11": {
-        "year": 2025,
         "month": 11,
+        "year": 2025,
         "paid": true,
-        "paid_date": "2025-11-28",
+        "paid_date": "2025-11-14",
         "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
-        "tenant_name": "한윤철"
-      },
-      "12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
+        "tenant_name": "이정도"
       },
       "2025-12": {
-        "year": 2025,
         "month": 12,
+        "year": 2025,
         "paid": true,
-        "paid_date": "2025-12-28",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "한윤철"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
+        "paid_date": "2025-12-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이정도"
       },
       "2026-1": {
         "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-01-05",
+        "paid_date": "2026-01-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이정도"
       },
-      "2": {
-        "month": 2,
+      "2026-01": {
+        "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-01-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이정도"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이정도"
       },
       "2026-2": {
         "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-02-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이정도"
       },
-      "3": {
-        "month": 3,
+      "2026-02": {
+        "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-02-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이정도"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-13",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이정도"
       },
       "2026-3": {
         "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-03-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이정도"
       },
-      "4": {
-        "month": 4,
+      "2026-03": {
+        "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-03-13",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이정도"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-13",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이정도"
       },
       "2026-4": {
         "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-04-16",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이정도"
       },
-      "5": {
-        "month": 5,
+      "2026-04": {
+        "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-04-16",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이정도"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-16",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이정도"
       },
       "2026-5": {
         "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-05-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이정도"
       },
-      "6": {
-        "month": 6,
+      "2026-05": {
+        "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-05-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이정도"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이정도"
       },
       "2026-6": {
         "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-06-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이정도"
       },
-      "7": {
-        "month": 7,
+      "2026-06": {
+        "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-06-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이정도"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이정도"
       },
       "2026-7": {
         "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-07-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이정도"
       },
-      "8": {
-        "month": 8,
+      "2026-07": {
+        "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-07-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이정도"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이정도"
       },
       "2026-8": {
         "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-08-14",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이정도"
       },
-      "9": {
-        "month": 9,
+      "2026-08": {
+        "month": 8,
         "year": 2026,
-        "paid": false,
-        "paid_date": "",
+        "paid": true,
+        "paid_date": "2026-08-14",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이정도"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-14",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이정도"
       },
       "2026-9": {
         "month": 9,
         "year": 2026,
-        "paid": false,
-        "paid_date": "",
+        "paid": true,
+        "paid_date": "2026-09-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이정도"
       },
-      "10": {
-        "month": 10,
+      "2026-09": {
+        "month": 9,
         "year": 2026,
-        "paid": false,
-        "paid_date": "",
+        "paid": true,
+        "paid_date": "2026-09-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이정도"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이정도"
       },
       "2026-10": {
         "month": 10,
         "year": 2026,
-        "paid": false,
-        "paid_date": "",
+        "paid": true,
+        "paid_date": "2026-10-15",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이정도"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이정도"
       },
       "2026-11": {
         "month": 11,
@@ -4874,8 +6665,17 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
+        "tenant_name": "이정도"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이정도"
       },
       "2026-12": {
         "month": 12,
@@ -4885,12 +6685,48 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "윤태식",
-        "is_previous_tenant": false
+        "tenant_name": "이정도"
       },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이정도"
+      }
+    }
+  },
+  "402": {
+    "room_number": 402,
+    "number": 402,
+    "name": "한운철",
+    "rent": 290000,
+    "maintenance": 150000,
+    "deposit": 3000000,
+    "lease_type": "월세",
+    "pay_timing": "선불",
+    "phone": "010-9279-7975",
+    "id_number": "760813-1156821",
+    "move_in": "2024-02-28",
+    "expiry": "2027-02-28",
+    "move_out": "",
+    "payments": {
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-28",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "한윤철"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-01-28",
         "rent_amount": 440000,
@@ -4899,8 +6735,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "한윤철"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-28",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "한윤철"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-28",
         "rent_amount": 440000,
@@ -4909,8 +6755,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "한윤철"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-28",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "한윤철"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-28",
         "rent_amount": 440000,
@@ -4919,8 +6775,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "한윤철"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-29",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "한윤철"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-04-29",
         "rent_amount": 440000,
@@ -4929,8 +6795,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "한윤철"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-28",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "한윤철"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-28",
         "rent_amount": 440000,
@@ -4939,8 +6815,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "한윤철"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-28",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "한윤철"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-28",
         "rent_amount": 440000,
@@ -4949,8 +6835,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "한윤철"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-28",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "한윤철"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-28",
         "rent_amount": 440000,
@@ -4959,8 +6855,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "한윤철"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-28",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "한윤철"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-28",
         "rent_amount": 440000,
@@ -4969,8 +6875,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "한윤철"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-28",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "한윤철"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-28",
         "rent_amount": 440000,
@@ -4979,295 +6895,324 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "한윤철"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-28",
         "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
         "tenant_name": "한윤철"
-      }
-    }
-  },
-  "403": {
-    "room_number": 403,
-    "branch_id": "main",
-    "name": "정수빈",
-    "id_number": "951218-2012345",
-    "phone": "010-4455-6677",
-    "lease_type": "월세",
-    "pay_timing": "선납",
-    "deposit": 5000000,
-    "rent": 290000,
-    "maintenance": 150000,
-    "clean_fee": 80000,
-    "move_in": "2024-12-19",
-    "expiry": "2026-12-18",
-    "auto_renewed": false,
-    "move_out": "",
-    "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
       },
       "2025-11": {
-        "year": 2025,
         "month": 11,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 0,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-11-28",
+        "rent_amount": 440000,
         "maintenance_amount": 0,
-        "note": "공실",
-        "tenant_name": "김정두"
+        "note": "",
+        "tenant_name": "한윤철"
       },
-      "12": {
+      "2025-12": {
         "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-12-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
-      },
-      "2025-12": {
-        "year": 2025,
-        "month": 12,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 0,
-        "maintenance_amount": 0,
-        "note": "전입 12/19",
-        "tenant_name": "김정두"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
+        "tenant_name": "한운철"
       },
       "2026-1": {
         "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-01-05",
+        "paid_date": "2026-01-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "한운철"
       },
-      "2": {
-        "month": 2,
+      "2026-01": {
+        "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-01-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "한운철"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-28",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "한운철"
       },
       "2026-2": {
         "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-02-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "한운철"
       },
-      "3": {
-        "month": 3,
+      "2026-02": {
+        "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-02-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "한운철"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-28",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "한운철"
       },
       "2026-3": {
         "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-03-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "한운철"
       },
-      "4": {
-        "month": 4,
+      "2026-03": {
+        "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-03-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "한운철"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-28",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "한운철"
       },
       "2026-4": {
         "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-04-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "한운철"
       },
-      "5": {
-        "month": 5,
+      "2026-04": {
+        "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-04-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "한운철"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-28",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "한운철"
       },
       "2026-5": {
         "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-05-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "한운철"
       },
-      "6": {
-        "month": 6,
+      "2026-05": {
+        "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-05-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "한운철"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-28",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "한운철"
       },
       "2026-6": {
         "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-06-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "한운철"
       },
-      "7": {
-        "month": 7,
+      "2026-06": {
+        "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-06-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "한운철"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-28",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "한운철"
       },
       "2026-7": {
         "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-07-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "한운철"
       },
-      "8": {
-        "month": 8,
+      "2026-07": {
+        "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-07-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "한운철"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-28",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "한운철"
       },
       "2026-8": {
         "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-08-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "한운철"
       },
-      "9": {
-        "month": 9,
+      "2026-08": {
+        "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-08-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "한운철"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-28",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "한운철"
       },
       "2026-9": {
         "month": 9,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-09-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "한운철"
       },
-      "10": {
-        "month": 10,
+      "2026-09": {
+        "month": 9,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-10-05",
+        "paid_date": "2026-09-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "한운철"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-28",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "한운철"
       },
       "2026-10": {
         "month": 10,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-10-05",
+        "paid": false,
+        "paid_date": "",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "한운철"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "한운철"
       },
       "2026-11": {
         "month": 11,
@@ -5277,8 +7222,17 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
+        "tenant_name": "한윤철"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "한윤철"
       },
       "2026-12": {
         "month": 12,
@@ -5288,12 +7242,48 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "정수빈",
-        "is_previous_tenant": false
+        "tenant_name": "한윤철"
       },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "한윤철"
+      }
+    }
+  },
+  "403": {
+    "room_number": 403,
+    "number": 403,
+    "name": "김정두",
+    "rent": 290000,
+    "maintenance": 150000,
+    "deposit": 5000000,
+    "lease_type": "월세",
+    "pay_timing": "후불",
+    "phone": "010-3132-2713",
+    "id_number": "910905-1125625",
+    "move_in": "2025-12-19",
+    "expiry": "2026-12-18",
+    "move_out": "",
+    "payments": {
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-10",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김정두"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-01-10",
         "rent_amount": 440000,
@@ -5302,8 +7292,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김정두"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-10",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김정두"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-10",
         "rent_amount": 440000,
@@ -5312,8 +7312,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김정두"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-10",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김정두"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-10",
         "rent_amount": 440000,
@@ -5322,8 +7332,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김정두"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-10",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김정두"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-04-10",
         "rent_amount": 440000,
@@ -5332,8 +7352,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김정두"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-09",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김정두"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-09",
         "rent_amount": 440000,
@@ -5342,8 +7372,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김정두"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-10",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김정두"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-10",
         "rent_amount": 440000,
@@ -5352,8 +7392,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김정두"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-11",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김정두"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-11",
         "rent_amount": 440000,
@@ -5362,8 +7412,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김정두"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-15",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김정두"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-15",
         "rent_amount": 440000,
@@ -5372,8 +7432,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김정두"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-09",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김정두"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-09",
         "rent_amount": 440000,
@@ -5382,295 +7452,324 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김정두"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": false,
         "paid_date": "",
         "rent_amount": 0,
         "maintenance_amount": 0,
         "note": "공실",
         "tenant_name": "김정두"
-      }
-    }
-  },
-  "404": {
-    "room_number": 404,
-    "branch_id": "main",
-    "name": "이종진",
-    "id_number": "880608-1543210",
-    "phone": "010-4808-9078",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 5000000,
-    "rent": 290000,
-    "maintenance": 150000,
-    "clean_fee": 80000,
-    "move_in": "2026-06-08",
-    "expiry": "2027-06-07",
-    "auto_renewed": false,
-    "move_out": "",
-    "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
       },
       "2025-11": {
-        "year": 2025,
         "month": 11,
-        "paid": true,
-        "paid_date": "2025-11-23",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "이종진"
-      },
-      "12": {
-        "month": 12,
-        "year": 2026,
+        "year": 2025,
         "paid": false,
         "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "김정두"
       },
       "2025-12": {
-        "year": 2025,
         "month": 12,
-        "paid": true,
-        "paid_date": "2025-12-23",
-        "rent_amount": 440000,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
         "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "이종진"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
+        "note": "전입 12/19",
+        "tenant_name": "김정두"
       },
       "2026-1": {
         "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-01-05",
+        "paid_date": "2026-01-20",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김정두"
       },
-      "2": {
-        "month": 2,
+      "2026-01": {
+        "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-01-20",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김정두"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-20",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정두"
       },
       "2026-2": {
         "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-02-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김정두"
       },
-      "3": {
-        "month": 3,
+      "2026-02": {
+        "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-02-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김정두"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-19",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정두"
       },
       "2026-3": {
         "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-03-20",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김정두"
       },
-      "4": {
-        "month": 4,
+      "2026-03": {
+        "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-03-20",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김정두"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-20",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정두"
       },
       "2026-4": {
         "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-04-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김정두"
       },
-      "5": {
-        "month": 5,
+      "2026-04": {
+        "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-04-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김정두"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-19",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정두"
       },
       "2026-5": {
         "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-05-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김정두"
       },
-      "6": {
-        "month": 6,
+      "2026-05": {
+        "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-05-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김정두"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-19",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정두"
       },
       "2026-6": {
         "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-06-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김정두"
       },
-      "7": {
-        "month": 7,
+      "2026-06": {
+        "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-06-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김정두"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-19",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정두"
       },
       "2026-7": {
         "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-07-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김정두"
       },
-      "8": {
-        "month": 8,
+      "2026-07": {
+        "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-07-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김정두"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-19",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정두"
       },
       "2026-8": {
         "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-08-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김정두"
       },
-      "9": {
-        "month": 9,
+      "2026-08": {
+        "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-08-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김정두"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-19",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정두"
       },
       "2026-9": {
         "month": 9,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-09-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김정두"
       },
-      "10": {
-        "month": 10,
+      "2026-09": {
+        "month": 9,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-10-05",
+        "paid_date": "2026-09-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김정두"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-19",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정두"
       },
       "2026-10": {
         "month": 10,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-10-05",
+        "paid_date": "2026-10-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김정두"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-19",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정두"
       },
       "2026-11": {
         "month": 11,
@@ -5680,8 +7779,17 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
+        "tenant_name": "김정두"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정두"
       },
       "2026-12": {
         "month": 12,
@@ -5691,12 +7799,48 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "이종진",
-        "is_previous_tenant": false
+        "tenant_name": "김정두"
       },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정두"
+      }
+    }
+  },
+  "404": {
+    "room_number": 404,
+    "number": 404,
+    "name": "이종진",
+    "rent": 290000,
+    "maintenance": 150000,
+    "deposit": 5000000,
+    "lease_type": "월세",
+    "pay_timing": "후불",
+    "phone": "010-4808-9078",
+    "id_number": "670219-1251211",
+    "move_in": "2026-07-01",
+    "expiry": "2027-06-07",
+    "move_out": "",
+    "payments": {
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-23",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이종진"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-01-23",
         "rent_amount": 440000,
@@ -5705,8 +7849,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이종진"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-24",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이종진"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-24",
         "rent_amount": 440000,
@@ -5715,8 +7869,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이종진"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-23",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이종진"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-23",
         "rent_amount": 440000,
@@ -5725,8 +7889,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이종진"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-23",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이종진"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-04-23",
         "rent_amount": 440000,
@@ -5735,8 +7909,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이종진"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-23",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이종진"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-23",
         "rent_amount": 440000,
@@ -5745,8 +7929,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이종진"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-23",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이종진"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-23",
         "rent_amount": 440000,
@@ -5755,8 +7949,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이종진"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-23",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이종진"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-23",
         "rent_amount": 440000,
@@ -5765,8 +7969,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이종진"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-23",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이종진"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-23",
         "rent_amount": 440000,
@@ -5775,8 +7989,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이종진"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-24",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이종진"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-24",
         "rent_amount": 440000,
@@ -5785,295 +8009,324 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이종진"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-23",
         "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
         "tenant_name": "이종진"
-      }
-    }
-  },
-  "405": {
-    "room_number": 405,
-    "branch_id": "main",
-    "name": "박서현",
-    "id_number": "011015-4012345",
-    "phone": "010-9988-7766",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 5000000,
-    "rent": 290000,
-    "maintenance": 150000,
-    "clean_fee": 80000,
-    "move_in": "2026-10-15",
-    "expiry": "2027-10-14",
-    "auto_renewed": false,
-    "move_out": "",
-    "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
       },
       "2025-11": {
-        "year": 2025,
         "month": 11,
+        "year": 2025,
         "paid": true,
-        "paid_date": "2025-11-25",
-        "rent_amount": 450000,
+        "paid_date": "2025-11-23",
+        "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
-        "tenant_name": "김병현"
-      },
-      "12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
+        "tenant_name": "이종진"
       },
       "2025-12": {
-        "year": 2025,
         "month": 12,
+        "year": 2025,
         "paid": true,
-        "paid_date": "2025-12-25",
-        "rent_amount": 450000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "김병현"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
+        "paid_date": "2025-12-23",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이종진"
       },
       "2026-1": {
         "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-01-05",
+        "paid_date": "2026-01-24",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이종진"
       },
-      "2": {
-        "month": 2,
+      "2026-01": {
+        "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-01-24",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이종진"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-24",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이종진"
       },
       "2026-2": {
         "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-02-24",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이종진"
       },
-      "3": {
-        "month": 3,
+      "2026-02": {
+        "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-02-24",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이종진"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-24",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이종진"
       },
       "2026-3": {
         "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-03-23",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이종진"
       },
-      "4": {
-        "month": 4,
+      "2026-03": {
+        "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-03-23",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이종진"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이종진"
       },
       "2026-4": {
         "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-04-23",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이종진"
       },
-      "5": {
-        "month": 5,
+      "2026-04": {
+        "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-04-23",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이종진"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이종진"
       },
       "2026-5": {
         "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-05-24",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이종진"
       },
-      "6": {
-        "month": 6,
+      "2026-05": {
+        "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-05-24",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이종진"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-24",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이종진"
       },
       "2026-6": {
         "month": 6,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "전출6/4",
+        "tenant_name": "이종진"
       },
-      "7": {
-        "month": 7,
+      "2026-06": {
+        "month": 6,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "전출6/4",
+        "tenant_name": "이종진"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "전출6/4",
+        "tenant_name": "이종진"
       },
       "2026-7": {
         "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-07-07",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이종진"
       },
-      "8": {
-        "month": 8,
+      "2026-07": {
+        "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-07-07",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이종진"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-07",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이종진"
       },
       "2026-8": {
         "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-08-06",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이종진"
       },
-      "9": {
-        "month": 9,
+      "2026-08": {
+        "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-08-06",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이종진"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-06",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이종진"
       },
       "2026-9": {
         "month": 9,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-09-07",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이종진"
       },
-      "10": {
-        "month": 10,
+      "2026-09": {
+        "month": 9,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-10-05",
+        "paid_date": "2026-09-07",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이종진"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-07",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이종진"
       },
       "2026-10": {
         "month": 10,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-10-05",
+        "paid_date": "2026-10-06",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이종진"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-06",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이종진"
       },
       "2026-11": {
         "month": 11,
@@ -6083,8 +8336,17 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
+        "tenant_name": "이종진"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이종진"
       },
       "2026-12": {
         "month": 12,
@@ -6094,12 +8356,48 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "박서현",
-        "is_previous_tenant": false
+        "tenant_name": "이종진"
       },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이종진"
+      }
+    }
+  },
+  "405": {
+    "room_number": 405,
+    "number": 405,
+    "name": "김병현",
+    "rent": 290000,
+    "maintenance": 150000,
+    "deposit": 5000000,
+    "lease_type": "월세",
+    "pay_timing": "후불",
+    "phone": "010-7170-8629",
+    "id_number": "880107-1168012",
+    "move_in": "2026-04-01",
+    "expiry": "2027-03-08",
+    "move_out": "",
+    "payments": {
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-31",
+        "rent_amount": 400000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김병현"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-01-31",
         "rent_amount": 400000,
@@ -6108,8 +8406,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김병현"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-28",
+        "rent_amount": 400000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김병현"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-28",
         "rent_amount": 400000,
@@ -6118,8 +8426,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김병현"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-31",
+        "rent_amount": 400000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김병현"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-31",
         "rent_amount": 400000,
@@ -6128,8 +8446,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김병현"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "미납",
+        "tenant_name": "김병현"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": false,
         "paid_date": "",
         "rent_amount": 0,
@@ -6138,8 +8466,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김병현"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "5/26 전입",
+        "tenant_name": "김병현"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": false,
         "paid_date": "",
         "rent_amount": 0,
@@ -6148,8 +8486,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김병현"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-25",
+        "rent_amount": 450000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김병현"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-25",
         "rent_amount": 450000,
@@ -6158,8 +8506,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김병현"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-25",
+        "rent_amount": 450000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김병현"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-25",
         "rent_amount": 450000,
@@ -6168,8 +8526,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김병현"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-25",
+        "rent_amount": 450000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김병현"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-25",
         "rent_amount": 450000,
@@ -6178,8 +8546,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김병현"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-25",
+        "rent_amount": 450000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김병현"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-25",
         "rent_amount": 450000,
@@ -6188,218 +8566,214 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김병현"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-25",
         "rent_amount": 450000,
         "maintenance_amount": 0,
         "note": "",
         "tenant_name": "김병현"
-      }
-    }
-  },
-  "501": {
-    "room_number": 501,
-    "branch_id": "main",
-    "name": "최원석",
-    "id_number": "871020-1345678",
-    "phone": "010-2233-4455",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 5000000,
-    "rent": 290000,
-    "maintenance": 150000,
-    "clean_fee": 80000,
-    "move_in": "2024-10-21",
-    "expiry": "2026-10-20",
-    "auto_renewed": false,
-    "move_out": "",
-    "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
       },
       "2025-11": {
-        "year": 2025,
         "month": 11,
+        "year": 2025,
         "paid": true,
-        "paid_date": "2025-11-30",
-        "rent_amount": 440000,
+        "paid_date": "2025-11-25",
+        "rent_amount": 450000,
         "maintenance_amount": 0,
         "note": "",
-        "tenant_name": "김민규"
-      },
-      "12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
+        "tenant_name": "김병현"
       },
       "2025-12": {
-        "year": 2025,
         "month": 12,
+        "year": 2025,
         "paid": true,
-        "paid_date": "2025-12-31",
-        "rent_amount": 500000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "김민규"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 290000,
+        "paid_date": "2025-12-25",
+        "rent_amount": 300000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김병현"
       },
       "2026-1": {
         "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 290000,
+        "paid_date": "2026-01-25",
+        "rent_amount": 300000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김병현"
       },
-      "2": {
-        "month": 2,
+      "2026-01": {
+        "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 290000,
+        "paid_date": "2026-01-25",
+        "rent_amount": 300000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김병현"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-25",
+        "rent_amount": 300000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김병현"
       },
       "2026-2": {
         "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 290000,
+        "paid_date": "2026-02-25",
+        "rent_amount": 300000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김병현"
       },
-      "3": {
-        "month": 3,
+      "2026-02": {
+        "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 290000,
+        "paid_date": "2026-02-25",
+        "rent_amount": 300000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김병현"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-25",
+        "rent_amount": 300000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김병현"
       },
       "2026-3": {
         "month": 3,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "전출3/2",
+        "tenant_name": "김병현"
       },
-      "4": {
-        "month": 4,
+      "2026-03": {
+        "month": 3,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "전출3/2",
+        "tenant_name": "김병현"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "전출3/2",
+        "tenant_name": "김병현"
       },
       "2026-4": {
         "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-04-09",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김병현"
       },
-      "5": {
-        "month": 5,
+      "2026-04": {
+        "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-04-09",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김병현"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-09",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김병현"
       },
       "2026-5": {
         "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-05-08",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김병현"
       },
-      "6": {
-        "month": 6,
+      "2026-05": {
+        "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-05-08",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김병현"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-08",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김병현"
       },
       "2026-6": {
         "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-06-08",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김병현"
       },
-      "7": {
-        "month": 7,
+      "2026-06": {
+        "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-06-08",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김병현"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-08",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김병현"
       },
       "2026-7": {
         "month": 7,
@@ -6408,64 +8782,88 @@ const CANONICAL_ROOMS_DATA = {
         "paid_date": "2026-07-05",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김병현"
       },
-      "8": {
-        "month": 8,
+      "2026-07": {
+        "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-07-05",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김병현"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-05",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김병현"
       },
       "2026-8": {
         "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-08-04",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김병현"
       },
-      "9": {
-        "month": 9,
+      "2026-08": {
+        "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-08-04",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김병현"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-04",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김병현"
       },
       "2026-9": {
         "month": 9,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-09-04",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김병현"
       },
-      "10": {
-        "month": 10,
+      "2026-09": {
+        "month": 9,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-10-05",
+        "paid_date": "2026-09-04",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김병현"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-04",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김병현"
       },
       "2026-10": {
         "month": 10,
@@ -6474,9 +8872,18 @@ const CANONICAL_ROOMS_DATA = {
         "paid_date": "2026-10-05",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김병현"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-05",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김병현"
       },
       "2026-11": {
         "month": 11,
@@ -6486,8 +8893,17 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
+        "tenant_name": "김병현"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김병현"
       },
       "2026-12": {
         "month": 12,
@@ -6497,12 +8913,48 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "최원석",
-        "is_previous_tenant": false
+        "tenant_name": "김병현"
       },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김병현"
+      }
+    }
+  },
+  "501": {
+    "room_number": 501,
+    "number": 501,
+    "name": "김민규",
+    "rent": 290000,
+    "maintenance": 150000,
+    "deposit": 5000000,
+    "lease_type": "월세",
+    "pay_timing": "후불",
+    "phone": "010-3528-9240",
+    "id_number": "960426-1860829",
+    "move_in": "2024-08-30",
+    "expiry": "2027-08-31",
+    "move_out": "",
+    "payments": {
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-31",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김민규"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-01-31",
         "rent_amount": 440000,
@@ -6511,8 +8963,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김민규"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-01",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김민규"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-01",
         "rent_amount": 440000,
@@ -6521,8 +8983,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김민규"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-31",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김민규"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-31",
         "rent_amount": 440000,
@@ -6531,8 +9003,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김민규"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-30",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김민규"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-04-30",
         "rent_amount": 440000,
@@ -6541,8 +9023,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김민규"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-31",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김민규"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-31",
         "rent_amount": 440000,
@@ -6551,8 +9043,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김민규"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-30",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김민규"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-30",
         "rent_amount": 440000,
@@ -6561,8 +9063,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김민규"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-01",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김민규"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-01",
         "rent_amount": 440000,
@@ -6571,8 +9083,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김민규"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-31",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김민규"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-31",
         "rent_amount": 440000,
@@ -6581,8 +9103,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김민규"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-30",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김민규"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-30",
         "rent_amount": 440000,
@@ -6591,284 +9123,304 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김민규"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-26",
         "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
         "tenant_name": "김민규"
-      }
-    }
-  },
-  "502": {
-    "room_number": 502,
-    "branch_id": "main",
-    "name": "강현우",
-    "id_number": "931115-1876543",
-    "phone": "010-6677-8899",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 5000000,
-    "rent": 290000,
-    "maintenance": 150000,
-    "clean_fee": 80000,
-    "move_in": "2024-11-16",
-    "expiry": "2026-11-15",
-    "auto_renewed": false,
-    "move_out": "",
-    "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
       },
       "2025-11": {
-        "year": 2025,
         "month": 11,
+        "year": 2025,
         "paid": true,
-        "paid_date": "2025-11-15",
+        "paid_date": "2025-11-30",
         "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
-        "tenant_name": "강홍식"
-      },
-      "12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
+        "tenant_name": "김민규"
       },
       "2025-12": {
-        "year": 2025,
         "month": 12,
+        "year": 2025,
         "paid": true,
-        "paid_date": "2025-12-15",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "강홍식"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 290000,
+        "paid_date": "2025-12-31",
+        "rent_amount": 350000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김민규"
       },
       "2026-1": {
         "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-01-05",
+        "paid_date": "2026-02-01",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김민규"
       },
-      "2": {
-        "month": 2,
+      "2026-01": {
+        "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-02-01",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김민규"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-01",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김민규"
       },
       "2026-2": {
         "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-03-01",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김민규"
       },
-      "3": {
-        "month": 3,
+      "2026-02": {
+        "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-03-01",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김민규"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-01",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김민규"
       },
       "2026-3": {
         "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-03-31",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김민규"
       },
-      "4": {
-        "month": 4,
+      "2026-03": {
+        "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-03-31",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김민규"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-31",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김민규"
       },
       "2026-4": {
         "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-05-02",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김민규"
       },
-      "5": {
-        "month": 5,
+      "2026-04": {
+        "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-05-02",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김민규"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-02",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김민규"
       },
       "2026-5": {
         "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-05-31",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김민규"
       },
-      "6": {
-        "month": 6,
+      "2026-05": {
+        "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-05-31",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김민규"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-31",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김민규"
       },
       "2026-6": {
         "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-06-30",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김민규"
       },
-      "7": {
-        "month": 7,
+      "2026-06": {
+        "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-06-30",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김민규"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-30",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김민규"
       },
       "2026-7": {
         "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-08-02",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김민규"
       },
-      "8": {
-        "month": 8,
+      "2026-07": {
+        "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-08-02",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김민규"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-02",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김민규"
       },
       "2026-8": {
         "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-08-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김민규"
       },
-      "9": {
-        "month": 9,
+      "2026-08": {
+        "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-08-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김민규"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-28",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김민규"
       },
       "2026-9": {
         "month": 9,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-09-30",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김민규"
       },
-      "10": {
-        "month": 10,
+      "2026-09": {
+        "month": 9,
         "year": 2026,
-        "paid": false,
-        "paid_date": "",
+        "paid": true,
+        "paid_date": "2026-09-30",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김민규"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-30",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김민규"
       },
       "2026-10": {
         "month": 10,
@@ -6877,9 +9429,18 @@ const CANONICAL_ROOMS_DATA = {
         "paid_date": "",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김민규"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김민규"
       },
       "2026-11": {
         "month": 11,
@@ -6889,8 +9450,17 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
+        "tenant_name": "김민규"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김민규"
       },
       "2026-12": {
         "month": 12,
@@ -6900,12 +9470,48 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "강현우",
-        "is_previous_tenant": false
+        "tenant_name": "김민규"
       },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김민규"
+      }
+    }
+  },
+  "502": {
+    "room_number": 502,
+    "number": 502,
+    "name": "강흥식",
+    "rent": 290000,
+    "maintenance": 150000,
+    "deposit": 5000000,
+    "lease_type": "월세",
+    "pay_timing": "반선불",
+    "phone": "010-6605-5279",
+    "id_number": "800629-1223315",
+    "move_in": "2023-02-01",
+    "expiry": "2027-02-01",
+    "move_out": "",
+    "payments": {
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-15",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "강홍식"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-01-15",
         "rent_amount": 440000,
@@ -6914,8 +9520,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "강홍식"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-15",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "강홍식"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-15",
         "rent_amount": 440000,
@@ -6924,8 +9540,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "강홍식"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-15",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "강홍식"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-15",
         "rent_amount": 440000,
@@ -6934,8 +9560,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "강홍식"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-15",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "강홍식"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-04-15",
         "rent_amount": 440000,
@@ -6944,8 +9580,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "강홍식"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-15",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "강홍식"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-15",
         "rent_amount": 440000,
@@ -6954,8 +9600,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "강홍식"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-15",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "강홍식"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-15",
         "rent_amount": 440000,
@@ -6964,8 +9620,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "강홍식"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-15",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "강홍식"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-15",
         "rent_amount": 440000,
@@ -6974,8 +9640,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "강홍식"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-15",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "강홍식"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-15",
         "rent_amount": 440000,
@@ -6984,8 +9660,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "강홍식"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-15",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "강홍식"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-15",
         "rent_amount": 440000,
@@ -6994,12 +9680,362 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "강홍식"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-15",
         "rent_amount": 440000,
         "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "강홍식"
+      },
+      "2025-11": {
+        "month": 11,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-11-15",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "강홍식"
+      },
+      "2025-12": {
+        "month": 12,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-12-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "2026-1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "2026-01": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "2026-2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "2026-02": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "2026-3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "2026-03": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "2026-4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "2026-04": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "2026-5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "2026-05": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "2026-6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "2026-06": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "2026-7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "2026-07": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "2026-8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "2026-08": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "2026-9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "2026-09": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "2026-10": {
+        "month": 10,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강흥식"
+      },
+      "2026-11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강홍식"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강홍식"
+      },
+      "2026-12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강홍식"
+      },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
         "note": "",
         "tenant_name": "강홍식"
       }
@@ -7007,24 +10043,32 @@ const CANONICAL_ROOMS_DATA = {
   },
   "503": {
     "room_number": 503,
-    "branch_id": "main",
-    "name": "공실",
-    "id_number": "",
-    "phone": "",
+    "number": 503,
+    "name": "강백찬",
+    "rent": 290000,
+    "maintenance": 150000,
+    "deposit": 5000000,
     "lease_type": "월세",
     "pay_timing": "후불",
-    "deposit": 0,
-    "rent": 0,
-    "maintenance": 0,
-    "clean_fee": 0,
-    "move_in": "",
-    "expiry": "",
-    "auto_renewed": false,
+    "phone": "010-8864-2674",
+    "id_number": "020507-3937718",
+    "move_in": "2026-09-01",
+    "expiry": "2027-09-29",
     "move_out": "",
     "payments": {
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-26",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "강백찬"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-01-26",
         "rent_amount": 440000,
@@ -7033,8 +10077,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "강백찬"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-27",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "강백찬"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-27",
         "rent_amount": 440000,
@@ -7043,8 +10097,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "강백찬"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-26",
+        "rent_amount": 540000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "강백찬"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-26",
         "rent_amount": 540000,
@@ -7053,8 +10117,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "강백찬"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-24",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "강백찬"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-04-24",
         "rent_amount": 440000,
@@ -7063,8 +10137,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "강백찬"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-24",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "강백찬"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-24",
         "rent_amount": 440000,
@@ -7073,8 +10157,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "강백찬"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-24",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "강백찬"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-24",
         "rent_amount": 440000,
@@ -7083,8 +10177,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "강백찬"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-25",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "강백찬"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-25",
         "rent_amount": 440000,
@@ -7093,8 +10197,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "강백찬"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-30",
+        "rent_amount": 540000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "강백찬"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-30",
         "rent_amount": 540000,
@@ -7103,8 +10217,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "강백찬"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-25",
+        "rent_amount": 340000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "강백찬"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-25",
         "rent_amount": 340000,
@@ -7113,8 +10237,8 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "강백찬"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-25",
         "rent_amount": 440000,
@@ -7123,8 +10247,8 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "강백찬"
       },
       "2025-11": {
-        "year": 2025,
         "month": 11,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-11-21",
         "rent_amount": 440000,
@@ -7133,295 +10257,304 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "강백찬"
       },
       "2025-12": {
-        "year": 2025,
         "month": 12,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-12-24",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
         "note": "",
         "tenant_name": "강백찬"
-      }
-    }
-  },
-  "504": {
-    "room_number": 504,
-    "branch_id": "main",
-    "name": "송민규",
-    "id_number": "940331-1567890",
-    "phone": "010-3322-1144",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 5000000,
-    "rent": 290000,
-    "maintenance": 150000,
-    "clean_fee": 80000,
-    "move_in": "2023-04-01",
-    "expiry": "2027-03-31",
-    "auto_renewed": false,
-    "move_out": "",
-    "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
-      },
-      "2025-11": {
-        "year": 2025,
-        "month": 11,
-        "paid": true,
-        "paid_date": "2025-11-01",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "이수현"
-      },
-      "12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
-      },
-      "2025-12": {
-        "year": 2025,
-        "month": 12,
-        "paid": true,
-        "paid_date": "2025-12-01",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "이수현"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
       },
       "2026-1": {
         "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-01-05",
+        "paid_date": "2026-01-24",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "강백찬"
       },
-      "2": {
-        "month": 2,
+      "2026-01": {
+        "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-01-24",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "강백찬"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-24",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강백찬"
       },
       "2026-2": {
         "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-02-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "강백찬"
       },
-      "3": {
-        "month": 3,
+      "2026-02": {
+        "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-02-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "강백찬"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-19",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강백찬"
       },
       "2026-3": {
         "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-03-23",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "강백찬"
       },
-      "4": {
-        "month": 4,
+      "2026-03": {
+        "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-03-23",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "강백찬"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강백찬"
       },
       "2026-4": {
         "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-04-18",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "강백찬"
       },
-      "5": {
-        "month": 5,
+      "2026-04": {
+        "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-04-18",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "강백찬"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-18",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강백찬"
       },
       "2026-5": {
         "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-05-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "강백찬"
       },
-      "6": {
-        "month": 6,
+      "2026-05": {
+        "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-05-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "강백찬"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-19",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강백찬"
       },
       "2026-6": {
         "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-06-18",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "강백찬"
       },
-      "7": {
-        "month": 7,
+      "2026-06": {
+        "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-06-18",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "강백찬"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-18",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강백찬"
       },
       "2026-7": {
         "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-07-20",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "강백찬"
       },
-      "8": {
-        "month": 8,
+      "2026-07": {
+        "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-07-20",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "강백찬"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-20",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강백찬"
       },
       "2026-8": {
         "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-08-22",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "강백찬"
       },
-      "9": {
-        "month": 9,
+      "2026-08": {
+        "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-08-22",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "강백찬"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-22",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강백찬"
       },
       "2026-9": {
         "month": 9,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-09-23",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "강백찬"
       },
-      "10": {
-        "month": 10,
+      "2026-09": {
+        "month": 9,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-10-05",
+        "paid_date": "2026-09-23",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "강백찬"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강백찬"
       },
       "2026-10": {
         "month": 10,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-10-05",
+        "paid": false,
+        "paid_date": "",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "강백찬"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "강백찬"
       },
       "2026-11": {
         "month": 11,
@@ -7429,10 +10562,19 @@ const CANONICAL_ROOMS_DATA = {
         "paid": false,
         "paid_date": "",
         "rent_amount": 290000,
-        "maintenance_amount": 150000,
+        "maintenance_amount": 160000,
         "note": "",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
+        "tenant_name": "강백찬"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 160000,
+        "note": "",
+        "tenant_name": "강백찬"
       },
       "2026-12": {
         "month": 12,
@@ -7440,14 +10582,50 @@ const CANONICAL_ROOMS_DATA = {
         "paid": false,
         "paid_date": "",
         "rent_amount": 290000,
-        "maintenance_amount": 150000,
+        "maintenance_amount": 160000,
         "note": "",
-        "tenant_name": "송민규",
-        "is_previous_tenant": false
+        "tenant_name": "강백찬"
       },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 160000,
+        "note": "",
+        "tenant_name": "강백찬"
+      }
+    }
+  },
+  "504": {
+    "room_number": 504,
+    "number": 504,
+    "name": "이수현",
+    "rent": 290000,
+    "maintenance": 150000,
+    "deposit": 5000000,
+    "lease_type": "월세",
+    "pay_timing": "후불",
+    "phone": "010-5059-2191",
+    "id_number": "910607-1183615",
+    "move_in": "2025-04-01",
+    "expiry": "2027-03-31",
+    "move_out": "",
+    "payments": {
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-10",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이수현"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-01-10",
         "rent_amount": 440000,
@@ -7456,8 +10634,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이수현"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-10",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이수현"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-10",
         "rent_amount": 440000,
@@ -7466,8 +10654,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이수현"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-10",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이수현"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-10",
         "rent_amount": 440000,
@@ -7476,8 +10674,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이수현"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "전입4/1",
+        "tenant_name": "이수현"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": false,
         "paid_date": "",
         "rent_amount": 0,
@@ -7486,8 +10694,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이수현"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-01",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이수현"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-01",
         "rent_amount": 440000,
@@ -7496,8 +10714,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이수현"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-01",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이수현"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-01",
         "rent_amount": 440000,
@@ -7506,8 +10734,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이수현"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-01",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이수현"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-01",
         "rent_amount": 440000,
@@ -7516,8 +10754,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이수현"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-01",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이수현"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-01",
         "rent_amount": 440000,
@@ -7526,8 +10774,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이수현"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-01",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이수현"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-01",
         "rent_amount": 440000,
@@ -7536,295 +10794,324 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이수현"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-01",
         "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
         "tenant_name": "이수현"
-      }
-    }
-  },
-  "505": {
-    "room_number": 505,
-    "branch_id": "main",
-    "name": "김정현",
-    "id_number": "970629-1981044",
-    "phone": "010-9810-0443",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 5000000,
-    "rent": 290000,
-    "maintenance": 150000,
-    "clean_fee": 80000,
-    "move_in": "2026-06-29",
-    "expiry": "2027-06-28",
-    "auto_renewed": false,
-    "move_out": "",
-    "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
       },
       "2025-11": {
-        "year": 2025,
         "month": 11,
+        "year": 2025,
         "paid": true,
-        "paid_date": "2025-11-26",
-        "rent_amount": 400000,
+        "paid_date": "2025-11-01",
+        "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
-        "tenant_name": "김정현"
-      },
-      "12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
+        "tenant_name": "이수현"
       },
       "2025-12": {
-        "year": 2025,
         "month": 12,
+        "year": 2025,
         "paid": true,
-        "paid_date": "2025-12-26",
-        "rent_amount": 400000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "김정현"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
+        "paid_date": "2025-12-01",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이수현"
       },
       "2026-1": {
         "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-01-05",
+        "paid_date": "2026-01-01",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이수현"
       },
-      "2": {
-        "month": 2,
+      "2026-01": {
+        "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-01-01",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이수현"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-01",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이수현"
       },
       "2026-2": {
         "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-02-01",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이수현"
       },
-      "3": {
-        "month": 3,
+      "2026-02": {
+        "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-02-01",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이수현"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-01",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이수현"
       },
       "2026-3": {
         "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-03-01",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이수현"
       },
-      "4": {
-        "month": 4,
+      "2026-03": {
+        "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-03-01",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이수현"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-01",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이수현"
       },
       "2026-4": {
         "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-04-01",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이수현"
       },
-      "5": {
-        "month": 5,
+      "2026-04": {
+        "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-04-01",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이수현"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-01",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이수현"
       },
       "2026-5": {
         "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-05-01",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이수현"
       },
-      "6": {
-        "month": 6,
+      "2026-05": {
+        "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-05-01",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이수현"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-01",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이수현"
       },
       "2026-6": {
         "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-06-01",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이수현"
       },
-      "7": {
-        "month": 7,
+      "2026-06": {
+        "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-06-01",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이수현"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-01",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이수현"
       },
       "2026-7": {
         "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-07-01",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이수현"
       },
-      "8": {
-        "month": 8,
+      "2026-07": {
+        "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-07-01",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이수현"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-01",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이수현"
       },
       "2026-8": {
         "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-08-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이수현"
       },
-      "9": {
-        "month": 9,
+      "2026-08": {
+        "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-08-19",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이수현"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-19",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이수현"
       },
       "2026-9": {
         "month": 9,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-09-01",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이수현"
       },
-      "10": {
-        "month": 10,
+      "2026-09": {
+        "month": 9,
         "year": 2026,
-        "paid": false,
-        "paid_date": "",
+        "paid": true,
+        "paid_date": "2026-09-01",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이수현"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-01",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이수현"
       },
       "2026-10": {
         "month": 10,
         "year": 2026,
-        "paid": false,
-        "paid_date": "",
+        "paid": true,
+        "paid_date": "2026-10-01",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "이수현"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-01",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이수현"
       },
       "2026-11": {
         "month": 11,
@@ -7834,8 +11121,17 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
+        "tenant_name": "이수현"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이수현"
       },
       "2026-12": {
         "month": 12,
@@ -7845,12 +11141,48 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "김정현",
-        "is_previous_tenant": false
+        "tenant_name": "이수현"
       },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "이수현"
+      }
+    }
+  },
+  "505": {
+    "room_number": 505,
+    "number": 505,
+    "name": "김정현",
+    "rent": 250000,
+    "maintenance": 150000,
+    "deposit": 5000000,
+    "lease_type": "월세",
+    "pay_timing": "선불",
+    "phone": "010-9810-0443",
+    "id_number": "981001-1338617",
+    "move_in": "2026-07-01",
+    "expiry": "2027-06-28",
+    "move_out": "",
+    "payments": {
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-14",
+        "rent_amount": 350000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-01-14",
         "rent_amount": 350000,
@@ -7859,8 +11191,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김정현"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-23",
         "rent_amount": 350000,
@@ -7869,8 +11211,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김정현"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-14",
+        "rent_amount": 350000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-14",
         "rent_amount": 350000,
@@ -7879,8 +11231,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김정현"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "전입4/1",
+        "tenant_name": "김정현"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": false,
         "paid_date": "",
         "rent_amount": 0,
@@ -7889,8 +11251,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김정현"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-01",
+        "rent_amount": 400000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-01",
         "rent_amount": 400000,
@@ -7899,8 +11271,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김정현"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-01",
+        "rent_amount": 400000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-01",
         "rent_amount": 400000,
@@ -7909,8 +11291,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김정현"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-26",
+        "rent_amount": 400000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-26",
         "rent_amount": 400000,
@@ -7919,8 +11311,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김정현"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-26",
+        "rent_amount": 400000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-26",
         "rent_amount": 400000,
@@ -7929,8 +11331,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김정현"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-26",
+        "rent_amount": 400000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-26",
         "rent_amount": 400000,
@@ -7939,12 +11351,362 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김정현"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-26",
         "rent_amount": 400000,
         "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2025-11": {
+        "month": 11,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-11-26",
+        "rent_amount": 400000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2025-12": {
+        "month": 12,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-12-26",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2026-1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-26",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2026-01": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-26",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-26",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2026-2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-26",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2026-02": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-26",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-26",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2026-3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-26",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2026-03": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-26",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-26",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2026-4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-26",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2026-04": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-26",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-26",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2026-5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-26",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2026-05": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-26",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-26",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2026-6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-26",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "전출6/26",
+        "tenant_name": "김정현"
+      },
+      "2026-06": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-26",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "전출6/26",
+        "tenant_name": "김정현"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-26",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "전출6/26",
+        "tenant_name": "김정현"
+      },
+      "2026-7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-29",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2026-07": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-29",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-29",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2026-8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-17",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2026-08": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-17",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-17",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2026-9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-27",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2026-09": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-27",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-27",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2026-10": {
+        "month": 10,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2026-11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "2026-12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김정현"
+      },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
         "note": "",
         "tenant_name": "김정현"
       }
@@ -7952,308 +11714,32 @@ const CANONICAL_ROOMS_DATA = {
   },
   "601": {
     "room_number": 601,
-    "branch_id": "main",
-    "name": "오세진",
-    "id_number": "891230-1456789",
-    "phone": "010-5544-3322",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 5000000,
+    "number": 601,
+    "name": "노무영",
     "rent": 350000,
     "maintenance": 90000,
-    "clean_fee": 80000,
-    "move_in": "2023-12-31",
-    "expiry": "2026-12-30",
-    "auto_renewed": false,
+    "deposit": 5000000,
+    "lease_type": "월세",
+    "pay_timing": "후불",
+    "phone": "010-8764-0958",
+    "id_number": "710719-1538528",
+    "move_in": "2024-09-23",
+    "expiry": "2027-09-22",
     "move_out": "",
     "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
-      "2025-11": {
-        "year": 2025,
-        "month": 11,
-        "paid": true,
-        "paid_date": "2025-11-23",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "노우영"
-      },
-      "12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
-      "2025-12": {
-        "year": 2025,
-        "month": 12,
-        "paid": true,
-        "paid_date": "2025-12-23",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "노우영"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "정상 입금",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
-      "2026-1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "정상 입금",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
-      "2": {
-        "month": 2,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "정상 입금",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
-      "2026-2": {
-        "month": 2,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "정상 입금",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
-      "3": {
-        "month": 3,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "정상 입금",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
-      "2026-3": {
-        "month": 3,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "정상 입금",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
-      "4": {
-        "month": 4,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "정상 입금",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
-      "2026-4": {
-        "month": 4,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "정상 입금",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
-      "5": {
-        "month": 5,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "정상 입금",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
-      "2026-5": {
-        "month": 5,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "정상 입금",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
-      "6": {
-        "month": 6,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "정상 입금",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
-      "2026-6": {
-        "month": 6,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "정상 입금",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
-      "7": {
-        "month": 7,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "정상 입금",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
-      "2026-7": {
-        "month": 7,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "정상 입금",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
-      "8": {
-        "month": 8,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "정상 입금",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
-      "2026-8": {
-        "month": 8,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "정상 입금",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
-      "9": {
-        "month": 9,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "정상 입금",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
-      "2026-9": {
-        "month": 9,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "정상 입금",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
-      "10": {
-        "month": 10,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "미납",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
-      "2026-10": {
-        "month": 10,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "미납",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
-      "2026-11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
-      "2026-12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 350000,
-        "maintenance_amount": 90000,
-        "note": "",
-        "tenant_name": "오세진",
-        "is_previous_tenant": false
-      },
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-23",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노우영"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-01-23",
         "rent_amount": 440000,
@@ -8262,8 +11748,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "노우영"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-23",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노우영"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-23",
         "rent_amount": 440000,
@@ -8272,8 +11768,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "노우영"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-23",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노우영"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-23",
         "rent_amount": 440000,
@@ -8282,8 +11788,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "노우영"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-23",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노우영"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-04-23",
         "rent_amount": 440000,
@@ -8292,8 +11808,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "노우영"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-23",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노우영"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-23",
         "rent_amount": 440000,
@@ -8302,8 +11828,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "노우영"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-23",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노우영"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-23",
         "rent_amount": 440000,
@@ -8312,8 +11848,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "노우영"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-23",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노우영"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-23",
         "rent_amount": 440000,
@@ -8322,8 +11868,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "노우영"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-24",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노우영"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-24",
         "rent_amount": 440000,
@@ -8332,8 +11888,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "노우영"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-23",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노우영"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-23",
         "rent_amount": 440000,
@@ -8342,12 +11908,362 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "노우영"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-23",
         "rent_amount": 440000,
         "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노우영"
+      },
+      "2025-11": {
+        "month": 11,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-11-23",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "노우영"
+      },
+      "2025-12": {
+        "month": 12,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-12-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "2026-1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "2026-01": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "2026-2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-24",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "2026-02": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-24",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-24",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "2026-3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "2026-03": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "2026-4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "2026-04": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "2026-5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "2026-05": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "2026-6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "2026-06": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "2026-7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "2026-07": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "2026-8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "2026-08": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "2026-9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "2026-09": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-23",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "2026-10": {
+        "month": 10,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노무영"
+      },
+      "2026-11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노우영"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노우영"
+      },
+      "2026-12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
+        "note": "",
+        "tenant_name": "노우영"
+      },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 350000,
+        "maintenance_amount": 90000,
         "note": "",
         "tenant_name": "노우영"
       }
@@ -8355,308 +12271,32 @@ const CANONICAL_ROOMS_DATA = {
   },
   "602": {
     "room_number": 602,
-    "branch_id": "main",
-    "name": "유동현",
-    "id_number": "920602-1234987",
-    "phone": "010-7766-5544",
+    "number": 602,
+    "name": "박정자",
+    "rent": 290000,
+    "maintenance": 150000,
+    "deposit": 5000000,
     "lease_type": "월세",
     "pay_timing": "후불",
-    "deposit": 5000000,
-    "rent": 250000,
-    "maintenance": 150000,
-    "clean_fee": 80000,
-    "move_in": "2022-06-03",
+    "phone": "010-8025-8400",
+    "id_number": "560210-2005915",
+    "move_in": "2014-06-02",
     "expiry": "2027-06-02",
-    "auto_renewed": false,
     "move_out": "",
     "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
-      "2025-11": {
-        "year": 2025,
-        "month": 11,
-        "paid": true,
-        "paid_date": "2025-11-03",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "박정자"
-      },
-      "12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
-      "2025-12": {
-        "year": 2025,
-        "month": 12,
-        "paid": true,
-        "paid_date": "2025-12-01",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "박정자"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
-      "2026-1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
-      "2": {
-        "month": 2,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
-      "2026-2": {
-        "month": 2,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
-      "3": {
-        "month": 3,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
-      "2026-3": {
-        "month": 3,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
-      "4": {
-        "month": 4,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
-      "2026-4": {
-        "month": 4,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
-      "5": {
-        "month": 5,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
-      "2026-5": {
-        "month": 5,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
-      "6": {
-        "month": 6,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
-      "2026-6": {
-        "month": 6,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
-      "7": {
-        "month": 7,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
-      "2026-7": {
-        "month": 7,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
-      "8": {
-        "month": 8,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
-      "2026-8": {
-        "month": 8,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
-      "9": {
-        "month": 9,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
-      "2026-9": {
-        "month": 9,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
-      "10": {
-        "month": 10,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-10-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
-      "2026-10": {
-        "month": 10,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-10-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
-      "2026-11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
-      "2026-12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "유동현",
-        "is_previous_tenant": false
-      },
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-02",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "박정자"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-01-02",
         "rent_amount": 440000,
@@ -8665,8 +12305,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "박정자"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-03",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "박정자"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-03",
         "rent_amount": 440000,
@@ -8675,8 +12325,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "박정자"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-04",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "박정자"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-04",
         "rent_amount": 440000,
@@ -8685,8 +12345,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "박정자"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-01",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "박정자"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-04-01",
         "rent_amount": 440000,
@@ -8695,8 +12365,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "박정자"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-02",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "박정자"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-02",
         "rent_amount": 440000,
@@ -8705,8 +12385,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "박정자"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-02",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "박정자"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-02",
         "rent_amount": 440000,
@@ -8715,8 +12405,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "박정자"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-01",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "박정자"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-01",
         "rent_amount": 440000,
@@ -8725,8 +12425,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "박정자"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-01",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "박정자"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-01",
         "rent_amount": 440000,
@@ -8735,8 +12445,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "박정자"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-01",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "박정자"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-01",
         "rent_amount": 440000,
@@ -8745,295 +12465,324 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "박정자"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-01",
         "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
         "tenant_name": "박정자"
-      }
-    }
-  },
-  "603": {
-    "room_number": 603,
-    "branch_id": "main",
-    "name": "장진우",
-    "id_number": "960726-1890123",
-    "phone": "010-8899-0011",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 5000000,
-    "rent": 250000,
-    "maintenance": 150000,
-    "clean_fee": 80000,
-    "move_in": "2024-07-27",
-    "expiry": "2027-07-26",
-    "auto_renewed": false,
-    "move_out": "",
-    "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
       },
       "2025-11": {
-        "year": 2025,
         "month": 11,
+        "year": 2025,
         "paid": true,
-        "paid_date": "2025-11-28",
+        "paid_date": "2025-11-03",
         "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
-        "tenant_name": "김수현"
-      },
-      "12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
+        "tenant_name": "박정자"
       },
       "2025-12": {
-        "year": 2025,
         "month": 12,
+        "year": 2025,
         "paid": true,
-        "paid_date": "2025-12-28",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "김수현"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 250000,
+        "paid_date": "2025-12-01",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "박정자"
       },
       "2026-1": {
         "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-01-02",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "박정자"
       },
-      "2": {
-        "month": 2,
+      "2026-01": {
+        "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-01-02",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "박정자"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-02",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "박정자"
       },
       "2026-2": {
         "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-02-02",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "박정자"
       },
-      "3": {
-        "month": 3,
+      "2026-02": {
+        "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-02-02",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "박정자"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-02",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "박정자"
       },
       "2026-3": {
         "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-03-03",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "박정자"
       },
-      "4": {
-        "month": 4,
+      "2026-03": {
+        "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-03-03",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "박정자"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-03",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "박정자"
       },
       "2026-4": {
         "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-04-01",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "박정자"
       },
-      "5": {
-        "month": 5,
+      "2026-04": {
+        "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-04-01",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "박정자"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-01",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "박정자"
       },
       "2026-5": {
         "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-05-04",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "박정자"
       },
-      "6": {
-        "month": 6,
+      "2026-05": {
+        "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-05-04",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "박정자"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-04",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "박정자"
       },
       "2026-6": {
         "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-06-02",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "박정자"
       },
-      "7": {
-        "month": 7,
+      "2026-06": {
+        "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-06-02",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "박정자"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-02",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "박정자"
       },
       "2026-7": {
         "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-07-01",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "박정자"
       },
-      "8": {
-        "month": 8,
+      "2026-07": {
+        "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-07-01",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "박정자"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-01",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "박정자"
       },
       "2026-8": {
         "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-08-27",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "박정자"
       },
-      "9": {
-        "month": 9,
+      "2026-08": {
+        "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-08-27",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "박정자"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-27",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "박정자"
       },
       "2026-9": {
         "month": 9,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 250000,
+        "paid_date": "2026-09-01",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "박정자"
       },
-      "10": {
-        "month": 10,
+      "2026-09": {
+        "month": 9,
         "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 250000,
+        "paid": true,
+        "paid_date": "2026-09-01",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "박정자"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-01",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "박정자"
       },
       "2026-10": {
         "month": 10,
         "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 250000,
+        "paid": true,
+        "paid_date": "2026-10-01",
+        "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "박정자"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-01",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "박정자"
       },
       "2026-11": {
         "month": 11,
@@ -9043,8 +12792,17 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 250000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
+        "tenant_name": "박정자"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "박정자"
       },
       "2026-12": {
         "month": 12,
@@ -9054,12 +12812,48 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 250000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "장진우",
-        "is_previous_tenant": false
+        "tenant_name": "박정자"
       },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "박정자"
+      }
+    }
+  },
+  "603": {
+    "room_number": 603,
+    "number": 603,
+    "name": "김수현",
+    "rent": 290000,
+    "maintenance": 150000,
+    "deposit": 5000000,
+    "lease_type": "월세",
+    "pay_timing": "후불",
+    "phone": "010-9277-9233",
+    "id_number": "921203-1235714",
+    "move_in": "2025-07-27",
+    "expiry": "2027-07-26",
+    "move_out": "",
+    "payments": {
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-21",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김수현"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-01-21",
         "rent_amount": 440000,
@@ -9068,8 +12862,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김수현"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-21",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김수현"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-21",
         "rent_amount": 440000,
@@ -9078,8 +12882,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김수현"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-20",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김수현"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-20",
         "rent_amount": 440000,
@@ -9088,8 +12902,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김수현"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-20",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김수현"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-04-20",
         "rent_amount": 440000,
@@ -9098,8 +12922,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김수현"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-20",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김수현"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-20",
         "rent_amount": 440000,
@@ -9108,8 +12942,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김수현"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-23",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김수현"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-23",
         "rent_amount": 440000,
@@ -9118,8 +12962,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김수현"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "전입",
+        "tenant_name": "김수현"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": false,
         "paid_date": "",
         "rent_amount": 0,
@@ -9128,8 +12982,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김수현"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-27",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김수현"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-27",
         "rent_amount": 440000,
@@ -9138,8 +13002,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김수현"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-27",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김수현"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-27",
         "rent_amount": 440000,
@@ -9148,295 +13022,324 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김수현"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-28",
         "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
         "tenant_name": "김수현"
-      }
-    }
-  },
-  "604": {
-    "room_number": 604,
-    "branch_id": "main",
-    "name": "조현아",
-    "id_number": "940415-2678901",
-    "phone": "010-4433-2211",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 5000000,
-    "rent": 290000,
-    "maintenance": 150000,
-    "clean_fee": 80000,
-    "move_in": "2023-04-16",
-    "expiry": "2027-04-15",
-    "auto_renewed": false,
-    "move_out": "",
-    "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
       },
       "2025-11": {
-        "year": 2025,
         "month": 11,
+        "year": 2025,
         "paid": true,
-        "paid_date": "2025-11-13",
+        "paid_date": "2025-11-28",
         "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
-        "tenant_name": "김동주"
-      },
-      "12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
+        "tenant_name": "김수현"
       },
       "2025-12": {
-        "year": 2025,
         "month": 12,
+        "year": 2025,
         "paid": true,
-        "paid_date": "2025-12-15",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "김동주"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
+        "paid_date": "2025-12-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김수현"
       },
       "2026-1": {
         "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-01-05",
+        "paid_date": "2026-01-27",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김수현"
       },
-      "2": {
-        "month": 2,
+      "2026-01": {
+        "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-01-27",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김수현"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-27",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김수현"
       },
       "2026-2": {
         "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-02-27",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김수현"
       },
-      "3": {
-        "month": 3,
+      "2026-02": {
+        "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-02-27",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김수현"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-27",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김수현"
       },
       "2026-3": {
         "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-03-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김수현"
       },
-      "4": {
-        "month": 4,
+      "2026-03": {
+        "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-03-28",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김수현"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-28",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김수현"
       },
       "2026-4": {
         "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-04-27",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김수현"
       },
-      "5": {
-        "month": 5,
+      "2026-04": {
+        "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-04-27",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김수현"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-27",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김수현"
       },
       "2026-5": {
         "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-05-27",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김수현"
       },
-      "6": {
-        "month": 6,
+      "2026-05": {
+        "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-05-27",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김수현"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-27",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김수현"
       },
       "2026-6": {
         "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-06-27",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김수현"
       },
-      "7": {
-        "month": 7,
+      "2026-06": {
+        "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-06-27",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김수현"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-27",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김수현"
       },
       "2026-7": {
         "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-07-27",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김수현"
       },
-      "8": {
-        "month": 8,
+      "2026-07": {
+        "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-07-27",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김수현"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-27",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김수현"
       },
       "2026-8": {
         "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-08-05",
+        "paid_date": "2026-08-27",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김수현"
       },
-      "9": {
-        "month": 9,
+      "2026-08": {
+        "month": 8,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-08-27",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김수현"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-27",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김수현"
       },
       "2026-9": {
         "month": 9,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-09-05",
+        "paid_date": "2026-09-27",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김수현"
       },
-      "10": {
-        "month": 10,
+      "2026-09": {
+        "month": 9,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-10-05",
+        "paid_date": "2026-09-27",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김수현"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-27",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김수현"
       },
       "2026-10": {
         "month": 10,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-10-05",
+        "paid": false,
+        "paid_date": "",
         "rent_amount": 290000,
         "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
+        "note": "",
+        "tenant_name": "김수현"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김수현"
       },
       "2026-11": {
         "month": 11,
@@ -9446,8 +13349,17 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
+        "tenant_name": "김수현"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김수현"
       },
       "2026-12": {
         "month": 12,
@@ -9457,12 +13369,48 @@ const CANONICAL_ROOMS_DATA = {
         "rent_amount": 290000,
         "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "조현아",
-        "is_previous_tenant": false
+        "tenant_name": "김수현"
       },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김수현"
+      }
+    }
+  },
+  "604": {
+    "room_number": 604,
+    "number": 604,
+    "name": "김동주",
+    "rent": 290000,
+    "maintenance": 150000,
+    "deposit": 5000000,
+    "lease_type": "월세",
+    "pay_timing": "후불",
+    "phone": "010-7709-8970",
+    "id_number": "990913-1155417",
+    "move_in": "2024-04-16",
+    "expiry": "2027-04-15",
+    "move_out": "",
+    "payments": {
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-15",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김동주"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-01-15",
         "rent_amount": 440000,
@@ -9471,8 +13419,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김동주"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-13",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김동주"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-13",
         "rent_amount": 440000,
@@ -9481,8 +13439,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김동주"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-13",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김동주"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-13",
         "rent_amount": 440000,
@@ -9491,8 +13459,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김동주"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-09",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김동주"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-04-09",
         "rent_amount": 440000,
@@ -9501,8 +13479,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김동주"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-12",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김동주"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-12",
         "rent_amount": 440000,
@@ -9511,8 +13499,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김동주"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-11",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김동주"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-11",
         "rent_amount": 440000,
@@ -9521,8 +13519,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김동주"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-09",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김동주"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-09",
         "rent_amount": 440000,
@@ -9531,8 +13539,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김동주"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-13",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김동주"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-13",
         "rent_amount": 440000,
@@ -9541,8 +13559,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김동주"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-15",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김동주"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-15",
         "rent_amount": 440000,
@@ -9551,295 +13579,324 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김동주"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-15",
         "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
         "tenant_name": "김동주"
-      }
-    }
-  },
-  "605": {
-    "room_number": 605,
-    "branch_id": "main",
-    "name": "한상철",
-    "id_number": "750526-1122334",
-    "phone": "010-1234-5678",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 5000000,
-    "rent": 290000,
-    "maintenance": 100000,
-    "clean_fee": 80000,
-    "move_in": "2022-05-27",
-    "expiry": "2027-05-26",
-    "auto_renewed": false,
-    "move_out": "",
-    "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 100000,
-        "note": "",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
       },
       "2025-11": {
-        "year": 2025,
         "month": 11,
+        "year": 2025,
         "paid": true,
-        "paid_date": "2025-11-25",
-        "rent_amount": 390000,
+        "paid_date": "2025-11-13",
+        "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
-        "tenant_name": "배은미"
-      },
-      "12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 100000,
-        "note": "",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
+        "tenant_name": "김동주"
       },
       "2025-12": {
-        "year": 2025,
         "month": 12,
+        "year": 2025,
         "paid": true,
-        "paid_date": "2025-12-26",
-        "rent_amount": 390000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "배은미"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
+        "paid_date": "2025-12-15",
         "rent_amount": 290000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
       },
       "2026-1": {
         "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-01-05",
+        "paid_date": "2026-01-14",
         "rent_amount": 290000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
       },
-      "2": {
-        "month": 2,
+      "2026-01": {
+        "month": 1,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-01-14",
         "rent_amount": 290000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-14",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
       },
       "2026-2": {
         "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-02-05",
+        "paid_date": "2026-02-13",
         "rent_amount": 290000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
       },
-      "3": {
-        "month": 3,
+      "2026-02": {
+        "month": 2,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-02-13",
         "rent_amount": 290000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-13",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
       },
       "2026-3": {
         "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-03-05",
+        "paid_date": "2026-03-13",
         "rent_amount": 290000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
       },
-      "4": {
-        "month": 4,
+      "2026-03": {
+        "month": 3,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-03-13",
         "rent_amount": 290000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-13",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
       },
       "2026-4": {
         "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-04-05",
+        "paid_date": "2026-04-15",
         "rent_amount": 290000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
       },
-      "5": {
-        "month": 5,
+      "2026-04": {
+        "month": 4,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-04-15",
         "rent_amount": 290000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
       },
       "2026-5": {
         "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-05-05",
+        "paid_date": "2026-05-13",
         "rent_amount": 290000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
       },
-      "6": {
-        "month": 6,
+      "2026-05": {
+        "month": 5,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-05-13",
         "rent_amount": 290000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-13",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
       },
       "2026-6": {
         "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-06-05",
+        "paid_date": "2026-06-15",
         "rent_amount": 290000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
       },
-      "7": {
-        "month": 7,
+      "2026-06": {
+        "month": 6,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-06-15",
         "rent_amount": 290000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
       },
       "2026-7": {
         "month": 7,
         "year": 2026,
         "paid": true,
-        "paid_date": "2026-07-05",
+        "paid_date": "2026-07-16",
         "rent_amount": 290000,
-        "maintenance_amount": 100000,
-        "note": "정상 입금",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
       },
-      "8": {
-        "month": 8,
+      "2026-07": {
+        "month": 7,
         "year": 2026,
-        "paid": false,
-        "paid_date": "",
+        "paid": true,
+        "paid_date": "2026-07-16",
         "rent_amount": 290000,
-        "maintenance_amount": 100000,
-        "note": "미납",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-16",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
       },
       "2026-8": {
         "month": 8,
         "year": 2026,
-        "paid": false,
-        "paid_date": "",
+        "paid": true,
+        "paid_date": "2026-08-16",
         "rent_amount": 290000,
-        "maintenance_amount": 100000,
-        "note": "미납",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
       },
-      "9": {
-        "month": 9,
+      "2026-08": {
+        "month": 8,
         "year": 2026,
-        "paid": false,
-        "paid_date": "",
+        "paid": true,
+        "paid_date": "2026-08-16",
         "rent_amount": 290000,
-        "maintenance_amount": 100000,
-        "note": "미납",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-16",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
       },
       "2026-9": {
         "month": 9,
         "year": 2026,
-        "paid": false,
-        "paid_date": "",
+        "paid": true,
+        "paid_date": "2026-09-15",
         "rent_amount": 290000,
-        "maintenance_amount": 100000,
-        "note": "미납",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
       },
-      "10": {
-        "month": 10,
+      "2026-09": {
+        "month": 9,
         "year": 2026,
-        "paid": false,
-        "paid_date": "",
+        "paid": true,
+        "paid_date": "2026-09-15",
         "rent_amount": 290000,
-        "maintenance_amount": 100000,
-        "note": "미납",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-15",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
       },
       "2026-10": {
         "month": 10,
         "year": 2026,
-        "paid": false,
-        "paid_date": "",
+        "paid": true,
+        "paid_date": "2026-10-14",
         "rent_amount": 290000,
-        "maintenance_amount": 100000,
-        "note": "미납",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-14",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
       },
       "2026-11": {
         "month": 11,
@@ -9847,10 +13904,19 @@ const CANONICAL_ROOMS_DATA = {
         "paid": false,
         "paid_date": "",
         "rent_amount": 290000,
-        "maintenance_amount": 100000,
+        "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
+        "tenant_name": "김동주"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
       },
       "2026-12": {
         "month": 12,
@@ -9858,14 +13924,50 @@ const CANONICAL_ROOMS_DATA = {
         "paid": false,
         "paid_date": "",
         "rent_amount": 290000,
-        "maintenance_amount": 100000,
+        "maintenance_amount": 150000,
         "note": "",
-        "tenant_name": "한상철",
-        "is_previous_tenant": false
+        "tenant_name": "김동주"
       },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김동주"
+      }
+    }
+  },
+  "605": {
+    "room_number": 605,
+    "number": 605,
+    "name": "배은미",
+    "rent": 290000,
+    "maintenance": 100000,
+    "deposit": 5000000,
+    "lease_type": "월세",
+    "pay_timing": "후불",
+    "phone": "010-7367-0187",
+    "id_number": "960124-2157011",
+    "move_in": "2024-05-26",
+    "expiry": "2027-05-26",
+    "move_out": "",
+    "payments": {
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-25",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-01-25",
         "rent_amount": 390000,
@@ -9874,8 +13976,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "배은미"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-25",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-25",
         "rent_amount": 390000,
@@ -9884,8 +13996,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "배은미"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-25",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-25",
         "rent_amount": 390000,
@@ -9894,8 +14016,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "배은미"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-26",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-04-26",
         "rent_amount": 390000,
@@ -9904,8 +14036,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "배은미"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-26",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-26",
         "rent_amount": 390000,
@@ -9914,8 +14056,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "배은미"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-26",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-26",
         "rent_amount": 390000,
@@ -9924,8 +14076,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "배은미"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-26",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-26",
         "rent_amount": 390000,
@@ -9934,8 +14096,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "배은미"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-26",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-26",
         "rent_amount": 390000,
@@ -9944,8 +14116,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "배은미"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-25",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-25",
         "rent_amount": 390000,
@@ -9954,54 +14136,354 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "배은미"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-26",
         "rent_amount": 390000,
         "maintenance_amount": 0,
         "note": "",
         "tenant_name": "배은미"
-      }
-    }
-  },
-  "701": {
-    "room_number": 701,
-    "branch_id": "main",
-    "name": "권도윤",
-    "id_number": "900815-1345678",
-    "phone": "010-6655-4433",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 5000000,
-    "rent": 290000,
-    "maintenance": 150000,
-    "clean_fee": 80000,
-    "move_in": "2025-08-16",
-    "expiry": "2027-08-15",
-    "auto_renewed": false,
-    "move_out": "",
-    "payments": {
+      },
+      "2025-11": {
+        "month": 11,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-11-25",
+        "rent_amount": 390000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2025-12": {
+        "month": 12,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-12-26",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2026-1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-26",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2026-01": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-26",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-26",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2026-2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2026-02": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2026-3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2026-03": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2026-4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-26",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2026-04": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-26",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-26",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2026-5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2026-05": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2026-6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2026-06": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2026-7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-26",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2026-07": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-26",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-26",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2026-8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-26",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2026-08": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-26",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-26",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2026-9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-26",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2026-09": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-26",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-26",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2026-10": {
+        "month": 10,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
+      "2026-11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
+        "note": "",
+        "tenant_name": "배은미"
+      },
       "11": {
         "month": 11,
         "year": 2026,
         "paid": false,
         "paid_date": "",
         "rent_amount": 290000,
-        "maintenance_amount": 150000,
+        "maintenance_amount": 100000,
         "note": "",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
+        "tenant_name": "배은미"
       },
-      "2025-11": {
-        "year": 2025,
-        "month": 11,
+      "2026-12": {
+        "month": 12,
+        "year": 2026,
         "paid": false,
         "paid_date": "",
-        "rent_amount": 0,
-        "maintenance_amount": 0,
+        "rent_amount": 290000,
+        "maintenance_amount": 100000,
         "note": "",
-        "tenant_name": "주인세대"
+        "tenant_name": "배은미"
       },
       "12": {
         "month": 12,
@@ -10009,14 +14491,250 @@ const CANONICAL_ROOMS_DATA = {
         "paid": false,
         "paid_date": "",
         "rent_amount": 290000,
-        "maintenance_amount": 150000,
+        "maintenance_amount": 100000,
         "note": "",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
+        "tenant_name": "배은미"
+      }
+    }
+  },
+  "701": {
+    "room_number": 701,
+    "number": 701,
+    "name": "주인세대",
+    "rent": 0,
+    "maintenance": 0,
+    "deposit": 0,
+    "lease_type": "월세",
+    "pay_timing": "후불",
+    "phone": "",
+    "id_number": "",
+    "move_in": "",
+    "expiry": "",
+    "move_out": "",
+    "payments": {
+      "2025-1": {
+        "month": 1,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "공실"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "공실"
+      },
+      "2025-2": {
+        "month": 2,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "공실"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "공실"
+      },
+      "2025-3": {
+        "month": 3,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "공실"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "공실"
+      },
+      "2025-4": {
+        "month": 4,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "공실"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "공실"
+      },
+      "2025-5": {
+        "month": 5,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "공실"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "공실"
+      },
+      "2025-6": {
+        "month": 6,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "공실"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "공실"
+      },
+      "2025-7": {
+        "month": 7,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "공실"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "공실"
+      },
+      "2025-8": {
+        "month": 8,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "공실"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "공실"
+      },
+      "2025-9": {
+        "month": 9,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "공실"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "공실"
+      },
+      "2025-10": {
+        "month": 10,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "공실"
+      },
+      "2025-11": {
+        "month": 11,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "공실",
+        "tenant_name": "공실"
       },
       "2025-12": {
-        "year": 2025,
         "month": 12,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
+      },
+      "2026-1": {
+        "month": 1,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
+      },
+      "2026-01": {
+        "month": 1,
+        "year": 2026,
         "paid": false,
         "paid_date": "",
         "rent_amount": 0,
@@ -10027,338 +14745,306 @@ const CANONICAL_ROOMS_DATA = {
       "1": {
         "month": 1,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
-      },
-      "2026-1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
-      },
-      "2": {
-        "month": 2,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
       },
       "2026-2": {
         "month": 2,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
       },
-      "3": {
-        "month": 3,
+      "2026-02": {
+        "month": 2,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
       },
       "2026-3": {
         "month": 3,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
       },
-      "4": {
-        "month": 4,
+      "2026-03": {
+        "month": 3,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
       },
       "2026-4": {
         "month": 4,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
       },
-      "5": {
-        "month": 5,
+      "2026-04": {
+        "month": 4,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
       },
       "2026-5": {
         "month": 5,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
       },
-      "6": {
-        "month": 6,
+      "2026-05": {
+        "month": 5,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
       },
       "2026-6": {
         "month": 6,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
       },
-      "7": {
-        "month": 7,
+      "2026-06": {
+        "month": 6,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
       },
       "2026-7": {
         "month": 7,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
       },
-      "8": {
-        "month": 8,
+      "2026-07": {
+        "month": 7,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
       },
       "2026-8": {
         "month": 8,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
       },
-      "9": {
-        "month": 9,
+      "2026-08": {
+        "month": 8,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
       },
       "2026-9": {
         "month": 9,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
       },
-      "10": {
-        "month": 10,
+      "2026-09": {
+        "month": 9,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-10-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
       },
       "2026-10": {
         "month": 10,
         "year": 2026,
-        "paid": true,
-        "paid_date": "2026-10-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
       },
       "2026-11": {
         "month": 11,
         "year": 2026,
         "paid": false,
         "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
+        "rent_amount": 0,
+        "maintenance_amount": 0,
         "note": "",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
+        "tenant_name": "주인세대"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "주인세대"
       },
       "2026-12": {
         "month": 12,
         "year": 2026,
         "paid": false,
         "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "권도윤",
-        "is_previous_tenant": false
-      },
-      "2025-1": {
-        "year": 2025,
-        "month": 1,
-        "paid": false,
-        "paid_date": "",
         "rent_amount": 0,
         "maintenance_amount": 0,
         "note": "",
         "tenant_name": "주인세대"
       },
-      "2025-2": {
-        "year": 2025,
-        "month": 2,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 0,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "주인세대"
-      },
-      "2025-3": {
-        "year": 2025,
-        "month": 3,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 0,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "주인세대"
-      },
-      "2025-4": {
-        "year": 2025,
-        "month": 4,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 0,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "주인세대"
-      },
-      "2025-5": {
-        "year": 2025,
-        "month": 5,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 0,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "주인세대"
-      },
-      "2025-6": {
-        "year": 2025,
-        "month": 6,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 0,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "주인세대"
-      },
-      "2025-7": {
-        "year": 2025,
-        "month": 7,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 0,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "주인세대"
-      },
-      "2025-8": {
-        "year": 2025,
-        "month": 8,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 0,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "주인세대"
-      },
-      "2025-9": {
-        "year": 2025,
-        "month": 9,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 0,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "주인세대"
-      },
-      "2025-10": {
-        "year": 2025,
-        "month": 10,
+      "12": {
+        "month": 12,
+        "year": 2026,
         "paid": false,
         "paid_date": "",
         "rent_amount": 0,
@@ -10370,308 +15056,32 @@ const CANONICAL_ROOMS_DATA = {
   },
   "702": {
     "room_number": 702,
-    "branch_id": "main",
-    "name": "배은지",
-    "id_number": "950404-2456789",
-    "phone": "010-3322-9988",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 6000000,
+    "number": 702,
+    "name": "이범주",
     "rent": 290000,
     "maintenance": 250000,
-    "clean_fee": 80000,
+    "deposit": 6000000,
+    "lease_type": "월세",
+    "pay_timing": "후불",
+    "phone": "010-5749-1106",
+    "id_number": "901106-1158022",
     "move_in": "2024-04-05",
     "expiry": "2027-04-04",
-    "auto_renewed": false,
     "move_out": "",
     "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
-      "2025-11": {
-        "year": 2025,
-        "month": 11,
-        "paid": true,
-        "paid_date": "2025-11-05",
-        "rent_amount": 540000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "이범주"
-      },
-      "12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
-      "2025-12": {
-        "year": 2025,
-        "month": 12,
-        "paid": true,
-        "paid_date": "2025-12-05",
-        "rent_amount": 540000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "이범주"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "정상 입금",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
-      "2026-1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "정상 입금",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
-      "2": {
-        "month": 2,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "정상 입금",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
-      "2026-2": {
-        "month": 2,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "정상 입금",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
-      "3": {
-        "month": 3,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "정상 입금",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
-      "2026-3": {
-        "month": 3,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "정상 입금",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
-      "4": {
-        "month": 4,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "정상 입금",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
-      "2026-4": {
-        "month": 4,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "정상 입금",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
-      "5": {
-        "month": 5,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "정상 입금",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
-      "2026-5": {
-        "month": 5,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "정상 입금",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
-      "6": {
-        "month": 6,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "정상 입금",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
-      "2026-6": {
-        "month": 6,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "정상 입금",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
-      "7": {
-        "month": 7,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "정상 입금",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
-      "2026-7": {
-        "month": 7,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "정상 입금",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
-      "8": {
-        "month": 8,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "정상 입금",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
-      "2026-8": {
-        "month": 8,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "정상 입금",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
-      "9": {
-        "month": 9,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "정상 입금",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
-      "2026-9": {
-        "month": 9,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "정상 입금",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
-      "10": {
-        "month": 10,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-10-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "정상 입금",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
-      "2026-10": {
-        "month": 10,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-10-05",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "정상 입금",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
-      "2026-11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
-      "2026-12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 290000,
-        "maintenance_amount": 250000,
-        "note": "",
-        "tenant_name": "배은지",
-        "is_previous_tenant": false
-      },
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-01-05",
+        "rent_amount": 540000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-01-05",
         "rent_amount": 540000,
@@ -10680,8 +15090,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이범주"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-05",
+        "rent_amount": 540000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-05",
         "rent_amount": 540000,
@@ -10690,8 +15110,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이범주"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-05",
+        "rent_amount": 540000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-05",
         "rent_amount": 540000,
@@ -10700,8 +15130,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이범주"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-05",
+        "rent_amount": 540000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-04-05",
         "rent_amount": 540000,
@@ -10710,8 +15150,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이범주"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-06",
+        "rent_amount": 540000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-06",
         "rent_amount": 540000,
@@ -10720,8 +15170,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이범주"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-06",
+        "rent_amount": 540000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-06",
         "rent_amount": 540000,
@@ -10730,8 +15190,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이범주"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-05",
+        "rent_amount": 540000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-05",
         "rent_amount": 540000,
@@ -10740,8 +15210,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이범주"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-06",
+        "rent_amount": 540000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-06",
         "rent_amount": 540000,
@@ -10750,8 +15230,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이범주"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-05",
+        "rent_amount": 540000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-05",
         "rent_amount": 540000,
@@ -10760,12 +15250,362 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "이범주"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-05",
         "rent_amount": 540000,
         "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2025-11": {
+        "month": 11,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-11-05",
+        "rent_amount": 540000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2025-12": {
+        "month": 12,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-12-05",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2026-1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-05",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2026-01": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-05",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-01-05",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2026-2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-05",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2026-02": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-05",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-05",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2026-3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-06",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2026-03": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-06",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-06",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2026-4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-05",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2026-04": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-05",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-05",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2026-5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-06",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2026-05": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-06",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-06",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2026-6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-06",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2026-06": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-06",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-06",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2026-7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-06",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2026-07": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-06",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-06",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2026-8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-06",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2026-08": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-06",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-06",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2026-9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-06",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2026-09": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-06",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-06",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2026-10": {
+        "month": 10,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-05",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-10-05",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2026-11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "2026-12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
+        "note": "",
+        "tenant_name": "이범주"
+      },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 250000,
         "note": "",
         "tenant_name": "이범주"
       }
@@ -10773,308 +15613,32 @@ const CANONICAL_ROOMS_DATA = {
   },
   "703": {
     "room_number": 703,
-    "branch_id": "main",
-    "name": "황태훈",
-    "id_number": "980122-1789012",
-    "phone": "010-6789-0123",
+    "number": 703,
+    "name": "김상호",
+    "rent": 290000,
+    "maintenance": 150000,
+    "deposit": 5000000,
     "lease_type": "월세",
     "pay_timing": "후불",
-    "deposit": 5000000,
-    "rent": 250000,
-    "maintenance": 150000,
-    "clean_fee": 80000,
-    "move_in": "2025-01-23",
+    "phone": "010-8212-9257",
+    "id_number": "570709-1006015",
+    "move_in": "2026-02-01",
     "expiry": "2027-01-22",
-    "auto_renewed": false,
     "move_out": "",
     "payments": {
-      "11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
-      "2025-11": {
-        "year": 2025,
-        "month": 11,
-        "paid": true,
-        "paid_date": "2025-11-25",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "김상호"
-      },
-      "12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
-      "2025-12": {
-        "year": 2025,
-        "month": 12,
-        "paid": true,
-        "paid_date": "2025-12-24",
-        "rent_amount": 440000,
-        "maintenance_amount": 0,
-        "note": "",
-        "tenant_name": "김상호"
-      },
-      "1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
-      "2026-1": {
-        "month": 1,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-01-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
-      "2": {
-        "month": 2,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
-      "2026-2": {
-        "month": 2,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-02-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
-      "3": {
-        "month": 3,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
-      "2026-3": {
-        "month": 3,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-03-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
-      "4": {
-        "month": 4,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
-      "2026-4": {
-        "month": 4,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-04-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
-      "5": {
-        "month": 5,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
-      "2026-5": {
-        "month": 5,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-05-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
-      "6": {
-        "month": 6,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
-      "2026-6": {
-        "month": 6,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-06-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
-      "7": {
-        "month": 7,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
-      "2026-7": {
-        "month": 7,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-07-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
-      "8": {
-        "month": 8,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
-      "2026-8": {
-        "month": 8,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-08-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
-      "9": {
-        "month": 9,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
-      "2026-9": {
-        "month": 9,
-        "year": 2026,
-        "paid": true,
-        "paid_date": "2026-09-05",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "정상 입금",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
-      "10": {
-        "month": 10,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
-      "2026-10": {
-        "month": 10,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "미납",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
-      "2026-11": {
-        "month": 11,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
-      "2026-12": {
-        "month": 12,
-        "year": 2026,
-        "paid": false,
-        "paid_date": "",
-        "rent_amount": 250000,
-        "maintenance_amount": 150000,
-        "note": "",
-        "tenant_name": "황태훈",
-        "is_previous_tenant": false
-      },
       "2025-1": {
-        "year": 2025,
         "month": 1,
+        "year": 2025,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "전입 1/17",
+        "tenant_name": "김상호"
+      },
+      "2025-01": {
+        "month": 1,
+        "year": 2025,
         "paid": false,
         "paid_date": "",
         "rent_amount": 0,
@@ -11083,8 +15647,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김상호"
       },
       "2025-2": {
-        "year": 2025,
         "month": 2,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-02-17",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2025-02": {
+        "month": 2,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-02-17",
         "rent_amount": 440000,
@@ -11093,8 +15667,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김상호"
       },
       "2025-3": {
-        "year": 2025,
         "month": 3,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-03-19",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2025-03": {
+        "month": 3,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-03-19",
         "rent_amount": 440000,
@@ -11103,8 +15687,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김상호"
       },
       "2025-4": {
-        "year": 2025,
         "month": 4,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-04-13",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2025-04": {
+        "month": 4,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-04-13",
         "rent_amount": 440000,
@@ -11113,8 +15707,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김상호"
       },
       "2025-5": {
-        "year": 2025,
         "month": 5,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-05-23",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2025-05": {
+        "month": 5,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-05-23",
         "rent_amount": 440000,
@@ -11123,8 +15727,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김상호"
       },
       "2025-6": {
-        "year": 2025,
         "month": 6,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-06-25",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2025-06": {
+        "month": 6,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-06-25",
         "rent_amount": 440000,
@@ -11133,8 +15747,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김상호"
       },
       "2025-7": {
-        "year": 2025,
         "month": 7,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-07-25",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2025-07": {
+        "month": 7,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-07-25",
         "rent_amount": 440000,
@@ -11143,8 +15767,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김상호"
       },
       "2025-8": {
-        "year": 2025,
         "month": 8,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-08-25",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2025-08": {
+        "month": 8,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-08-25",
         "rent_amount": 440000,
@@ -11153,8 +15787,18 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김상호"
       },
       "2025-9": {
-        "year": 2025,
         "month": 9,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-09-25",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2025-09": {
+        "month": 9,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-09-25",
         "rent_amount": 440000,
@@ -11163,148 +15807,368 @@ const CANONICAL_ROOMS_DATA = {
         "tenant_name": "김상호"
       },
       "2025-10": {
-        "year": 2025,
         "month": 10,
+        "year": 2025,
         "paid": true,
         "paid_date": "2025-10-24",
         "rent_amount": 440000,
         "maintenance_amount": 0,
         "note": "",
         "tenant_name": "김상호"
+      },
+      "2025-11": {
+        "month": 11,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-11-25",
+        "rent_amount": 440000,
+        "maintenance_amount": 0,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2025-12": {
+        "month": 12,
+        "year": 2025,
+        "paid": true,
+        "paid_date": "2025-12-06",
+        "rent_amount": 250000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2026-1": {
+        "month": 1,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "1/23전입",
+        "tenant_name": "김상호"
+      },
+      "2026-01": {
+        "month": 1,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "1/23전입",
+        "tenant_name": "김상호"
+      },
+      "1": {
+        "month": 1,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 0,
+        "maintenance_amount": 0,
+        "note": "1/23전입",
+        "tenant_name": "김상호"
+      },
+      "2026-2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-24",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2026-02": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-24",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2": {
+        "month": 2,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-02-24",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2026-3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2026-03": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "3": {
+        "month": 3,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-03-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2026-4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2026-04": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "4": {
+        "month": 4,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-04-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2026-5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-26",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2026-05": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-26",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "5": {
+        "month": 5,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-05-26",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2026-6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2026-06": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "6": {
+        "month": 6,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-06-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2026-7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2026-07": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "7": {
+        "month": 7,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-07-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2026-8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2026-08": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "8": {
+        "month": 8,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-08-25",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2026-9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2026-09": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "9": {
+        "month": 9,
+        "year": 2026,
+        "paid": true,
+        "paid_date": "2026-09-23",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2026-10": {
+        "month": 10,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "10": {
+        "month": 10,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2026-11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "11": {
+        "month": 11,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "2026-12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
+      },
+      "12": {
+        "month": 12,
+        "year": 2026,
+        "paid": false,
+        "paid_date": "",
+        "rent_amount": 290000,
+        "maintenance_amount": 150000,
+        "note": "",
+        "tenant_name": "김상호"
       }
     }
   }
 };
-
-const DEFAULT_EXPENSES = [
-  {
-    "id": "exp-2026-10-01",
-    "branch_id": "main",
-    "date": "2026-10-05",
-    "item": "승강기 정기 안전점검비",
-    "amount": 150000,
-    "note": "현대엘리베이터 10월분 정기점검 완료",
-    "receipt_type": "세금계산서",
-    "receipt_info": "현대엘리베이터(주) 105-81-12345"
-  },
-  {
-    "id": "exp-2026-10-02",
-    "branch_id": "main",
-    "date": "2026-10-10",
-    "item": "공용 계단 청소 및 방역소독",
-    "amount": 200000,
-    "note": "클린하우스 10월 정기 청소 및 해충 방역",
-    "receipt_type": "간이영수증",
-    "receipt_info": "클린하우스 종합관리"
-  },
-  {
-    "id": "exp-2026-10-03",
-    "branch_id": "main",
-    "date": "2026-10-15",
-    "item": "공용 전기요금 (승강기/복도조명)",
-    "amount": 184500,
-    "note": "한국전력공사 9월 사용분 고지서 자동납부",
-    "receipt_type": "지로영수증",
-    "receipt_info": "한전 고객번호 02-1234-5678"
-  },
-  {
-    "id": "exp-2026-10-04",
-    "branch_id": "main",
-    "date": "2026-10-17",
-    "item": "건물 종합 화재보험료",
-    "amount": 85000,
-    "note": "삼성화재 다세대/원룸 화재보험 10월분",
-    "receipt_type": "카드영수증",
-    "receipt_info": "삼성화재해상보험(주)"
-  }
-];
-
-const DEFAULT_TENANT_HISTORIES = [
-  {
-    "id": "hist-304-kim",
-    "branch_id": "main",
-    "room_number": 304,
-    "name": "김영호",
-    "id_number": "850314-1******",
-    "phone": "010-3344-9988",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 5000000,
-    "rent": 290000,
-    "maintenance": 150000,
-    "clean_fee": 80000,
-    "move_in": "2024-09-01",
-    "expiry": "2026-08-31",
-    "move_out": "2026-08-31",
-    "retention_until": "2027-08-31",
-    "metadata_json": {
-      "reason": "만기 퇴실 (보증금 500만 전액 정산 반환 완료)"
-    }
-  },
-  {
-    "id": "hist-503-jang",
-    "branch_id": "main",
-    "room_number": 503,
-    "name": "장지아",
-    "id_number": "910722-2******",
-    "phone": "010-8864-2674",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 5000000,
-    "rent": 290000,
-    "maintenance": 150000,
-    "clean_fee": 80000,
-    "move_in": "2024-03-01",
-    "expiry": "2026-07-31",
-    "move_out": "2026-07-31",
-    "retention_until": "2027-07-31",
-    "metadata_json": {
-      "reason": "타 지역 이직으로 인한 조기 퇴실 (정산 완료)"
-    }
-  },
-  {
-    "id": "hist-405-jung",
-    "branch_id": "main",
-    "room_number": 405,
-    "name": "정다윤",
-    "id_number": "931120-2******",
-    "phone": "010-5678-9012",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 5000000,
-    "rent": 250000,
-    "maintenance": 150000,
-    "clean_fee": 80000,
-    "move_in": "2024-01-01",
-    "expiry": "2025-12-31",
-    "move_out": "2025-12-31",
-    "retention_until": "2026-12-31",
-    "metadata_json": {
-      "reason": "만기 이사 (아카이빙 완료)"
-    }
-  },
-  {
-    "id": "hist-703-hwang",
-    "branch_id": "main",
-    "room_number": 703,
-    "name": "황태훈(구)",
-    "id_number": "790514-1******",
-    "phone": "010-6789-0123",
-    "lease_type": "월세",
-    "pay_timing": "후불",
-    "deposit": 5000000,
-    "rent": 250000,
-    "maintenance": 150000,
-    "clean_fee": 80000,
-    "move_in": "2024-01-01",
-    "expiry": "2025-12-31",
-    "move_out": "2025-12-31",
-    "retention_until": "2026-12-31",
-    "metadata_json": {
-      "reason": "결혼으로 인한 분가"
-    }
-  }
-];
 
 /**
  * apps/rent/frontend/js/api.js

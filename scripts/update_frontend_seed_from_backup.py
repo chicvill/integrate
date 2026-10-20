@@ -60,7 +60,7 @@ if re.search(pattern, state_content):
     updated_content = re.sub(pattern, new_func, state_content, count=1)
     with open(STATE_JS_PATH, "w", encoding="utf-8") as f:
         f.write(updated_content)
-    print("✅ apps/rent/frontend/js/state.js 기본 시드 데이터 갱신 완료!")
+    print("[OK] apps/rent/frontend/js/state.js default seed updated!")
 else:
-    print("❌ 패턴 매칭 실패")
+    print("[FAIL] Pattern matching failed")
     sys.exit(1)
