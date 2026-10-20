@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MQnet 임차관리 rent2 (스마트 모바일)</title>
+  <style>
+    /* ── 흰 바탕 검은 글씨 순수 미니멀리즘 (High-Contrast Monochrome) ── */
+    :root {
+      --bg: #ffffff;
+      --fg: #000000;
+      --line: #000000;
+      --line-subtle: #d0d0d0;
+      --card-bg: #ffffff;
+      --btn-fg: #ffffff;
+      --btn-bg: #000000;
+      --font: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--fg);
+      font-family: var(--font);
+      font-size: 14px;
+      line-height: 1.5;
+      padding-bottom: 90px; /* 하단 액션바 공간 */
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea {
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--fg);
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 0;
+      padding: 8px 12px;
+      appearance: none;
+    }
+    button {
+      cursor: pointer;
+      font-weight: 700;
+      background: var(--btn-bg);
+      color: var(--btn-fg);
+      border: 1px solid var(--line);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: opacity 0.15s;
+    }
+    button:active { opacity: 0.7; }
+    button.btn-outline {
+      background: var(--bg);
+      color: var(--fg);
+    }
+    button.btn-sm { padding: 4px 8px; font-size: 12px; }
+
+    /* ── 헤더 ── */
+    header {
+      border-bottom: 2px solid var(--line);
+      padding: 12px 16px;
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand { font-size: 17px; font-weight: 900; letter-spacing: -0.5px; }
+    .brand span { font-size: 11px; font-weight: 400; border: 1px solid var(--line); padding: 1px 4px; margin-left: 6px; vertical-align: middle; }
+    .header-right { display: flex; align-items: center; gap: 8px; }
+
+    /* ── 메인 컨테이너 ── */
+    .container { max-width: 960px; margin: 0 auto; padding: 12px 16px; }
+
+    /* ── 상단 맥락 알림 배너 (Alert Banner) ── */
+    #appAlert {
+      display: none;
+      border: 2px solid var(--line);
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    /* ── 3대 핵심 브리핑 카드 (미납, 만기, 공실) ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .stat-card {
+      border: 2px solid var(--line);
+      padding: 10px 12px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .stat-card.active {
+      background: #000;
+      color: #fff;
+    }
+    .stat-card .label { font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+    .stat-card .val { font-size: 20px; font-weight: 900; }
+    .stat-card .sub { font-size: 10px; margin-top: 2px; }
+
+    /* ── 상단 탭 (호실 관제 / 세무 보고서 / 지출 내역) ── */
+    .nav-tabs {
+      display: flex;
+      border-bottom: 2px solid var(--line);
+      margin-bottom: 14px;
+      overflow-x: auto;
+    }
+    .nav-tab {
+      padding: 8px 14px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--fg);
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      white-space: nowrap;
+    }
+    .nav-tab.active {
+      border-bottom: 3px solid var(--line);
+      background: transparent;
+      color: var(--fg);
+    }
+
+    /* ── 호실 카드 그리드 ── */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .room-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 10px;
+    }
+    .room-card {
+      border: 1px solid var(--line);
+      padding: 12px;
+      background: var(--card-bg);
+      position: relative;
+    }
+    .room-card.status-unpaid { border: 2px solid #000; }
+    .room-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 1px solid var(--line-subtle);
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+    }
+    .room-number { font-size: 18px; font-weight: 900; }
+    .room-badge {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border: 1px solid var(--line);
+    }
+    .badge-paid { background: #000; color: #fff; }
+    .badge-unpaid { background: #fff; color: #000; border-width: 2px; }
+    .badge-vacant { background: #fff; color: #888; border-color: #aaa; }
+    .badge-prep { background: #fff; color: #000; border-style: dashed; }
+
+    .room-body { font-size: 13px; margin-bottom: 10px; }
+    .room-body .row { display: flex; justify-content: space-between; margin-bottom: 3px; }
+    .room-body .tenant-name { font-weight: 700; font-size: 14px; }
+    .room-actions { display: flex; gap: 6px; }
+    .room-actions button { flex: 1; }
+
+    /* ── 세무 섹션 (부가세 / 종합소득세) ── */
+    .tax-box {
+      border: 2px solid var(--line);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .tax-title { font-size: 16px; font-weight: 900; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .tax-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .tax-metric {
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+    }
+    .tax-metric .label { font-size: 11px; color: #444; }
+    .tax-metric .val { font-size: 16px; font-weight: 800; }
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    table.data-table th, table.data-table td {
+      border: 1px solid var(--line);
+      padding: 6px 8px;
+      text-align: left;
+    }
+    table.data-table th { background: #f2f2f2; font-weight: 800; }
+    table.data-table td.num { text-align: right; }
+
+    /* ── 하단 고정 액션바 (스마트폰 최적화) ── */
+    .bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #000;
+      color: #fff;
+      display: flex;
+      padding: 8px 12px;
+      gap: 8px;
+      z-index: 200;
+      border-top: 2px solid #000;
+    }
+    .bottom-bar button {
+      flex: 1;
+      padding: 10px 4px;
+      font-size: 13px;
+      background: #fff;
+      color: #000;
+      border: none;
+    }
+    .bottom-bar button.btn-primary {
+      background: #000;
+      color: #fff;
+      border: 1px solid #fff;
+    }
+
+    /* ── 모달 레이어 ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-content {
+      background: #fff;
+      border: 2px solid #000;
+      max-width: 500px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 18px;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #000;
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+    }
+    .modal-header h3 { font-size: 16px; font-weight: 900; }
+    .close-btn { background: none; border: none; font-size: 20px; font-weight: 900; color: #000; padding: 0 4px; }
+
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-weight: 700; font-size: 12px; margin-bottom: 4px; }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; }
+
+    /* 인쇄 모드 */
+    @media print {
+      body { padding: 0; }
+      header, .bottom-bar, .nav-tabs, .room-actions, button { display: none !important; }
+      .container { max-width: 100%; padding: 0; }
+      .room-card { break-inside: avoid; border: 1px solid #000; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 헤더 -->
+  <header>
+    <div class="brand">
+      MQnet rent2
+      <span>객체/무자판</span>
+    </div>
+    <div class="header-right">
+      <select id="branchSelect" onchange="switchBranch(this.value)" style="font-weight:700;">
+        <option value="main">시크빌 1호점</option>
+      </select>
+      <a href="manual.html" target="_blank" style="font-size:12px;font-weight:700;border:1px solid #000;padding:4px 6px;">매뉴얼</a>
+    </div>
+  </header>
+
+  <!-- 본문 컨테이너 -->
+  <div class="container">
+    <div id="appAlert"></div>
+
+    <!-- 3대 핵심 브리핑 카드 -->
+    <div class="stats-grid">
+      <div class="stat-card" id="cardUnpaid" onclick="filterRooms('unpaid')">
+        <div class="label">당월 미납</div>
+        <div class="val" id="statUnpaid">-</div>
+        <div class="sub" id="statUnpaidAmount">0원</div>
+      </div>
+      <div class="stat-card" id="cardExpiring" onclick="filterRooms('expiring')">
+        <div class="label">만기 임박</div>
+        <div class="val" id="statExpiring">-</div>
+        <div class="sub">65일 이내</div>
+      </div>
+      <div class="stat-card" id="cardVacant" onclick="filterRooms('vacant')">
+        <div class="label">현재 공실</div>
+        <div class="val" id="statVacant">-</div>
+        <div class="sub" id="statTotalRooms">전체 -실</div>
+      </div>
+    </div>
+
+    <!-- 탭 네비게이션 -->
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="setTab('rooms')">호실 관제</button>
+      <button class="nav-tab" onclick="setTab('tax')">세무 자료 (부가세/종소세)</button>
+      <button class="nav-tab" onclick="setTab('expenses')">지출 장부</button>
+      <button class="nav-tab" onclick="setTab('ai')">AI 도구 비서</button>
+    </div>
+
+    <!-- [섹션 1] 호실 관제 -->
+    <div id="secRooms">
+      <div class="filter-bar">
+        <input type="text" id="roomSearch" placeholder="호실/세입자 검색..." oninput="renderRooms()" style="flex:1;min-width:140px;">
+        <select id="filterStatus" onchange="renderRooms()">
+          <option value="all">전체 상태</option>
+          <option value="unpaid">미납만</option>
+          <option value="paid">완납만</option>
+          <option value="vacant">공실만</option>
+          <option value="expiring">만기임박만</option>
+        </select>
+        <button class="btn-outline btn-sm" onclick="reloadRooms()">새로고침</button>
+      </div>
+
+      <div class="room-grid" id="roomGrid">
+        <div style="padding:20px;text-align:center;">호실 데이터를 불러오는 중...</div>
+      </div>
+    </div>
+
+    <!-- [섹션 2] 세무 자료 (부가세 & 종합소득세) -->
+    <div id="secTax" style="display:none;">
+      <!-- 부가가치세 -->
+      <div class="tax-box">
+        <div class="tax-title">
+          <span>부가가치세 신고 자료</span>
+          <div style="display:flex;gap:6px;">
+            <select id="vatPeriod" onchange="loadVatReport()" style="padding:4px 6px;font-size:12px;">
+              <option value="1">1기 (1~6월)</option>
+              <option value="2">2기 (7~12월)</option>
+            </select>
+            <button class="btn-sm" onclick="downloadVat('excel')">Excel</button>
+            <button class="btn-sm btn-outline" onclick="downloadVat('csv')">CSV</button>
+          </div>
+        </div>
+        <div class="tax-summary-grid">
+          <div class="tax-metric">
+            <div class="label">총 입금 월세</div>
+            <div class="val" id="vatTotalCollected">0원</div>
+          </div>
+          <div class="tax-metric">
+            <div class="label">공급가액 (매출)</div>
+            <div class="val" id="vatSupply">0원</div>
+          </div>
+          <div class="tax-metric">
+            <div class="label">부가가치세 (10%)</div>
+            <div class="val" id="vatTax">0원</div>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="data-table" id="vatTable">
+            <thead>
+              <tr><th>호실</th><th>임차인</th><th>임대형태</th><th>공급가액</th><th>부가세</th><th>수납상태</th></tr>
+            </thead>
+            <tbody><tr><td colspan="6" style="text-align:center;">조회 중...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 종합소득세 -->
+      <div class="tax-box">
+        <div class="tax-title">
+          <span>종합소득세 임대소득 & 필요경비</span>
+          <div style="display:flex;gap:6px;">
+            <select id="taxYear" onchange="loadIncomeTax()" style="padding:4px 6px;font-size:12px;">
+              <option value="2026">2026년</option>
+              <option value="2025">2025년</option>
+            </select>
+            <button class="btn-sm" onclick="downloadIncomeTax('excel')">Excel</button>
+            <button class="btn-sm btn-outline" onclick="downloadIncomeTax('csv')">CSV</button>
+          </div>
+        </div>
+        <div class="tax-summary-grid">
+          <div class="tax-metric">
+            <div class="label">연간 총수입(월세)</div>
+            <div class="val" id="taxRentIncome">0원</div>
+          </div>
+          <div class="tax-metric">
+            <div class="label">필요경비 합계</div>
+            <div class="val" id="taxExpense">0원</div>
+          </div>
+          <div class="tax-metric">
+            <div class="label">예상 임대소득</div>
+            <div class="val" id="taxNetIncome">0원</div>
+          </div>
+        </div>
+        <div style="font-weight:700;margin:10px 0 6px 0;font-size:13px;">증빙유형별 경비 집계</div>
+        <table class="data-table" id="taxReceiptTable">
+          <thead><tr><th>증빙 구분</th><th>금액</th><th>세무 비고</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- [섹션 3] 지출 장부 -->
+    <div id="secExpenses" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div style="font-weight:900;font-size:16px;">지출 전표 내역</div>
+        <button onclick="openModal('modalExpense')">+ 지출 직접 입력</button>
+      </div>
+      <table class="data-table" id="expensesTable">
+        <thead><tr><th>일자</th><th>항목</th><th>금액</th><th>증빙</th><th>적요</th><th>관리</th></tr></thead>
+        <tbody><tr><td colspan="6" style="text-align:center;">조회 중...</td></tr></tbody>
+      </table>
+    </div>
+
+    <!-- [섹션 4] AI 질의 비서 -->
+    <div id="secAI" style="display:none;">
+      <div class="tax-box">
+        <div class="tax-title">AI 도구 비서 (자연어 질의)</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <input type="text" id="aiInput" placeholder="예: 201호 정보 보여줘, 이번 달 미납 누구야?, 302호 만기 언제야?" style="flex:1;" onkeydown="if(event.key==='Enter')sendAI()">
+          <button onclick="sendAI()">질문</button>
+        </div>
+        <div id="aiResponse" style="border:1px solid #000;padding:12px;min-height:100px;white-space:pre-wrap;background:#fafafa;">질문을 입력하면 도메인 객체를 통해 즉답합니다.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 모바일 고정 하단 퀵 액션 바 (Zero-Typing) ── -->
+  <div class="bottom-bar">
+    <button onclick="openModal('modalPaste')">📋 문자 붙여넣기</button>
+    <button onclick="openModal('modalScan')">📷 카메라/스캔</button>
+    <button class="btn-primary" onclick="setTab('tax')">📊 세무자료</button>
+  </div>
+
+  <!-- ── 모달 1: 통장 입금 문자 / 카톡 알림 붙여넣기 (스마트 인제스트) ── -->
+  <div class="modal-overlay" id="modalPaste">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>📋 통장 입금 문자 즉시 수납</h3>
+        <button class="close-btn" onclick="closeModal('modalPaste')">×</button>
+      </div>
+      <div class="form-group">
+        <label>은행 입금 알림 문자 또는 카톡 텍스트 붙여넣기:</label>
+        <textarea id="pasteText" rows="5" placeholder="예시:&#10;[KB] 05/10 14:20 201호 홍길동 500,000원 입금&#10;또는 302호 45만원 입금완료" oninput="previewPaste()"></textarea>
+      </div>
+      <div id="pastePreview" style="border:1px dashed #000;padding:10px;margin-bottom:12px;font-size:12px;background:#f9f9f9;display:none;">
+        <div style="font-weight:800;margin-bottom:4px;">[파싱 미리보기]</div>
+        <div id="pastePreviewBody"></div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button style="flex:1;" onclick="submitPastePayment()">원클릭 수납 확정</button>
+        <button class="btn-outline" onclick="closeModal('modalPaste')">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 모달 2: 카메라 촬영 / OCR 스캔 (계약서 / 영수증) ── -->
+  <div class="modal-overlay" id="modalScan">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>📷 계약서 & 영수증 카메라 스캔</h3>
+        <button class="close-btn" onclick="closeModal('modalScan')">×</button>
+      </div>
+      <div class="form-group">
+        <label>스캔 대상 선택:</label>
+        <select id="scanKind">
+          <option value="contract">임대차 계약서 (호실·세입자·금액 자동 갱신)</option>
+          <option value="receipt">지출 영수증 (일자·금액·증빙 자동 전표등록)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>카메라 촬영 또는 사진 파일 선택:</label>
+        <input type="file" id="scanFile" accept="image/*" capture="environment" onchange="previewScanImage(event)">
+      </div>
+      <div id="scanImagePreviewBox" style="display:none;margin-bottom:12px;text-align:center;">
+        <img id="scanImagePreview" src="" style="max-width:100%;max-height:200px;border:1px solid #000;">
+      </div>
+      <div id="scanResultBox" style="display:none;border:1px solid #000;padding:10px;font-size:12px;margin-bottom:12px;background:#fafafa;"></div>
+      <div style="display:flex;gap:8px;">
+        <button style="flex:1;" id="btnScanRun" onclick="runScanOCR()">AI 스캔 및 자동 등록</button>
+        <button class="btn-outline" onclick="closeModal('modalScan')">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 모달 3: 호실 상세 / 계약 수정 ── -->
+  <div class="modal-overlay" id="modalRoom">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalRoomTitle">호실 상세 정보</h3>
+        <button class="close-btn" onclick="closeModal('modalRoom')">×</button>
+      </div>
+      <form id="roomForm" onsubmit="saveRoomForm(event)">
+        <input type="hidden" id="rfRoomNumber">
+        <div class="form-group">
+          <label>세입자명 (공란 저장 시 퇴실/공실 처리):</label>
+          <input type="text" id="rfName">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="form-group">
+            <label>연락처:</label>
+            <input type="text" id="rfPhone">
+          </div>
+          <div class="form-group">
+            <label>주민번호:</label>
+            <input type="text" id="rfIdNumber">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="form-group">
+            <label>보증금(원):</label>
+            <input type="number" id="rfDeposit">
+          </div>
+          <div class="form-group">
+            <label>월세(원):</label>
+            <input type="number" id="rfRent">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="form-group">
+            <label>관리비(원):</label>
+            <input type="number" id="rfMaintenance">
+          </div>
+          <div class="form-group">
+            <label>선/후불:</label>
+            <select id="rfPayTiming">
+              <option value="후불">후불</option>
+              <option value="선불">선불</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="form-group">
+            <label>입주일:</label>
+            <input type="date" id="rfMoveIn">
+          </div>
+          <div class="form-group">
+            <label>만기일:</label>
+            <input type="date" id="rfExpiry">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <button type="submit" style="flex:1;">계약 정보 저장</button>
+          <button type="button" class="btn-outline" onclick="closeModal('modalRoom')">닫기</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── 모달 4: 지출 직접 입력 ── -->
+  <div class="modal-overlay" id="modalExpense">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>지출 전표 등록</h3>
+        <button class="close-btn" onclick="closeModal('modalExpense')">×</button>
+      </div>
+      <form onsubmit="saveExpense(event)">
+        <div class="form-group">
+          <label>지출일자:</label>
+          <input type="date" id="expDate" required>
+        </div>
+        <div class="form-group">
+          <label>지출 항목 (예: 201호 도배, 보일러 수리, 공과금):</label>
+          <input type="text" id="expItem" required>
+        </div>
+        <div class="form-group">
+          <label>금액(원):</label>
+          <input type="number" id="expAmount" required>
+        </div>
+        <div class="form-group">
+          <label>증빙 유형 (종합소득세 필요경비 증빙):</label>
+          <select id="expReceiptType">
+            <option value="신용카드">신용카드</option>
+            <option value="세금계산서">세금계산서</option>
+            <option value="현금영수증">현금영수증</option>
+            <option value="간이영수증">간이영수증 (3만원 초과 주의)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>적요 / 메모:</label>
+          <input type="text" id="expNote">
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <button type="submit" style="flex:1;">지출 전표 저장</button>
+          <button type="button" class="btn-outline" onclick="closeModal('modalExpense')">취소</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // ── 상태 관리 ──
+    let curBranch = "main";
+    let allRooms = [];
+    let curFilter = "all";
+    let scanBase64 = "";
+
+    const API_BASE = "/api";
+
+    // ── 안내 배너 (Banner Alert UX) ──
+    function setAlert(msg, type = "info") {
+      const el = document.getElementById("appAlert");
+      if (!msg) { el.style.display = "none"; return; }
+      el.style.display = "block";
+      el.textContent = msg;
+      el.style.background = type === "error" ? "#000" : (type === "success" ? "#fff" : "#f4f4f4");
+      el.style.color = type === "error" ? "#fff" : "#000";
+      el.style.borderColor = "#000";
+    }
+
+    // ── 초기 기동 ──
+    window.addEventListener("DOMContentLoaded", async () => {
+      document.getElementById("expDate").value = new Date().toISOString().slice(0, 10);
+      await loadBranches();
+      await reloadRooms();
+    });
+
+    async function loadBranches() {
+      try {
+        const res = await fetch(`${API_BASE}/branches`);
+        const data = await res.json();
+        const sel = document.getElementById("branchSelect");
+        sel.innerHTML = "";
+        (data.branches || []).forEach(b => {
+          const opt = document.createElement("option");
+          opt.value = b.branch_id;
+          opt.textContent = b.name;
+          sel.appendChild(opt);
+        });
+        if (sel.options.length) {
+          curBranch = sel.value;
+        }
+      } catch (err) {
+        console.error("지점 로드 실패", err);
+      }
+    }
+
+    function switchBranch(bid) {
+      curBranch = bid;
+      reloadRooms();
+      if (document.getElementById("secTax").style.display !== "none") {
+        loadVatReport();
+        loadIncomeTax();
+      }
+    }
+
+    // ── 탭 전환 ──
+    function setTab(name) {
+      document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
+      event.target.classList.add("active");
+      document.getElementById("secRooms").style.display = name === "rooms" ? "block" : "none";
+      document.getElementById("secTax").style.display = name === "tax" ? "block" : "none";
+      document.getElementById("secExpenses").style.display = name === "expenses" ? "block" : "none";
+      document.getElementById("secAI").style.display = name === "ai" ? "block" : "none";
+
+      if (name === "tax") { loadVatReport(); loadIncomeTax(); }
+      if (name === "expenses") { loadExpenses(); }
+    }
+
+    // ── 호실 데이터 및 3대 핵심 브리핑 ──
+    async function reloadRooms() {
+      try {
+        setAlert("호실 데이터 동기화 중...", "info");
+        const res = await fetch(`${API_BASE}/rooms?branch_id=${curBranch}`);
+        const data = await res.json();
+        allRooms = data.rooms || [];
+        
+        // 브리핑 집계
+        let unpaidCount = 0, unpaidAmount = 0, vacantCount = 0, expiringCount = 0;
+        const now = new Date();
+        const curY = now.getFullYear(), curM = now.getMonth() + 1;
+
+        allRooms.forEach(r => {
+          const pays = r.payments || {};
+          const curPay = pays[`${curY}-${curM}`] || pays[curM] || {};
+          const isVacant = !r.name;
+
+          if (isVacant) {
+            vacantCount++;
+          } else {
+            if (!curPay.paid && curPay.rent_amount > 0) {
+              unpaidCount++;
+              unpaidAmount += (curPay.rent_amount + (curPay.maintenance_amount || 0));
+            }
+          }
+          if (r.diff_days !== undefined && r.diff_days <= 65 && r.diff_days >= 0) {
+            expiringCount++;
+          }
+        });
+
+        document.getElementById("statUnpaid").textContent = `${unpaidCount}개실`;
+        document.getElementById("statUnpaidAmount").textContent = `${unpaidAmount.toLocaleString()}원`;
+        document.getElementById("statExpiring").textContent = `${expiringCount}개실`;
+        document.getElementById("statVacant").textContent = `${vacantCount}개실`;
+        document.getElementById("statTotalRooms").textContent = `전체 ${allRooms.length}개실`;
+
+        setAlert("", "info");
+        renderRooms();
+      } catch (err) {
+        setAlert("호실 데이터를 불러오지 못했습니다.", "error");
+      }
+    }
+
+    function filterRooms(status) {
+      curFilter = curFilter === status ? "all" : status;
+      document.getElementById("filterStatus").value = curFilter;
+      document.querySelectorAll(".stat-card").forEach(c => c.classList.remove("active"));
+      if (curFilter === "unpaid") document.getElementById("cardUnpaid").classList.add("active");
+      if (curFilter === "expiring") document.getElementById("cardExpiring").classList.add("active");
+      if (curFilter === "vacant") document.getElementById("cardVacant").classList.add("active");
+      renderRooms();
+    }
+
+    function renderRooms() {
+      const q = (document.getElementById("roomSearch").value || "").trim().toLowerCase();
+      const st = document.getElementById("filterStatus").value;
+      const grid = document.getElementById("roomGrid");
+      grid.innerHTML = "";
+
+      const now = new Date();
+      const curY = now.getFullYear(), curM = now.getMonth() + 1;
+
+      const filtered = allRooms.filter(r => {
+        const pays = r.payments || {};
+        const curPay = pays[`${curY}-${curM}`] || pays[curM] || {};
+        const isVacant = !r.name;
+        const isUnpaid = !isVacant && !curPay.paid && curPay.rent_amount > 0;
+        const isPaid = !isVacant && curPay.paid;
+        const isExpiring = r.diff_days !== undefined && r.diff_days <= 65 && r.diff_days >= 0;
+
+        if (st === "unpaid" && !isUnpaid) return false;
+        if (st === "paid" && !isPaid) return false;
+        if (st === "vacant" && !isVacant) return false;
+        if (st === "expiring" && !isExpiring) return false;
+
+        if (q) {
+          const matchRoom = String(r.room_number).includes(q);
+          const matchTenant = (r.name || "").toLowerCase().includes(q);
+          if (!matchRoom && !matchTenant) return false;
+        }
+        return true;
+      });
+
+      if (!filtered.length) {
+        grid.innerHTML = `<div style="grid-column:1/-1;padding:30px;text-align:center;border:1px dashed #000;">조건에 해당하는 호실이 없습니다.</div>`;
+        return;
+      }
+
+      filtered.forEach(r => {
+        const pays = r.payments || {};
+        const curPay = pays[`${curY}-${curM}`] || pays[curM] || {};
+        const isVacant = !r.name;
+        const isUnpaid = !isVacant && !curPay.paid && curPay.rent_amount > 0;
+        const badgeClass = isVacant ? "badge-vacant" : (isUnpaid ? "badge-unpaid" : "badge-paid");
+        const badgeText = isVacant ? "공실" : (isUnpaid ? "당월 미납" : "완납");
+
+        const card = document.createElement("div");
+        card.className = `room-card ${isUnpaid ? "status-unpaid" : ""}`;
+        card.innerHTML = `
+          <div class="room-header">
+            <span class="room-number">${r.room_number}호</span>
+            <span class="room-badge ${badgeClass}">${badgeText}</span>
+          </div>
+          <div class="room-body">
+            <div class="row">
+              <span class="tenant-name">${r.name || "(공실)"}</span>
+              <span>${r.phone || ""}</span>
+            </div>
+            <div class="row" style="color:#444;">
+              <span>${r.lease_type || "월세"} 보 ${r.deposit?.toLocaleString() || 0} / 월 ${r.rent?.toLocaleString() || 0}</span>
+              <span>관 ${r.maintenance?.toLocaleString() || 0}</span>
+            </div>
+            <div class="row" style="font-size:11px;color:#666;margin-top:4px;">
+              <span>만기: ${r.expiry || "-"}</span>
+              <span>${curM}월 상태: ${curPay.paid ? "납부완료" : (isVacant ? "공실" : "미납")}</span>
+            </div>
+          </div>
+          <div class="room-actions">
+            ${!isVacant && !curPay.paid ? `<button class="btn-sm" onclick="quickPay(${r.room_number})">당월 수납</button>` : ""}
+            <button class="btn-sm btn-outline" onclick="openRoomDetail(${r.room_number})">정보/수정</button>
+            ${!isVacant ? `<button class="btn-sm btn-outline" onclick="endContract(${r.room_number}, '${r.name}')">퇴실</button>` : ""}
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // ── 원클릭 빠른 수납 ──
+    async function quickPay(roomNum) {
+      if (!confirm(`${roomNum}호 당월 수납(정상 입금)으로 처리하시겠습니까?`)) return;
+      const now = new Date();
+      try {
+        const res = await fetch(`${API_BASE}/rooms/${roomNum}/payment?branch_id=${curBranch}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            month: now.getMonth() + 1,
+            year: now.getFullYear(),
+            paid: true,
+            paid_date: now.toISOString().slice(0, 10),
+            note: "모바일 원클릭 수납"
+          })
+        });
+        const data = await res.json();
+        setAlert(`${roomNum}호 정상 수납 처리되었습니다.`, "success");
+        await reloadRooms();
+      } catch (err) {
+        setAlert("수납 처리에 실패했습니다.", "error");
+      }
+    }
+
+    // ── 퇴실 처리 ──
+    async function endContract(roomNum, tenantName) {
+      if (!confirm(`${roomNum}호 ${tenantName} 세입자를 오늘 날짜로 퇴실 처리하시겠습니까? 이력은 자동 보존됩니다.`)) return;
+      try {
+        const res = await fetch(`${API_BASE}/rooms/${roomNum}/contract?branch_id=${curBranch}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: "", move_out: new Date().toISOString().slice(0, 10) })
+        });
+        setAlert(`${roomNum}호 퇴실 처리 및 이력 보존 완료`, "success");
+        await reloadRooms();
+      } catch (err) {
+        setAlert("퇴실 처리에 실패했습니다.", "error");
+      }
+    }
+
+    // ── 호실 상세 수정 모달 ──
+    function openRoomDetail(roomNum) {
+      const r = allRooms.find(x => x.room_number === roomNum);
+      if (!r) return;
+      document.getElementById("modalRoomTitle").textContent = `${roomNum}호 계약 상세/수정`;
+      document.getElementById("rfRoomNumber").value = roomNum;
+      document.getElementById("rfName").value = r.name || "";
+      document.getElementById("rfPhone").value = r.phone || "";
+      document.getElementById("rfIdNumber").value = r.id_number || "";
+      document.getElementById("rfDeposit").value = r.deposit || 0;
+      document.getElementById("rfRent").value = r.rent || 0;
+      document.getElementById("rfMaintenance").value = r.maintenance || 0;
+      document.getElementById("rfPayTiming").value = r.pay_timing || "후불";
+      document.getElementById("rfMoveIn").value = r.move_in || "";
+      document.getElementById("rfExpiry").value = r.expiry || "";
+      openModal("modalRoom");
+    }
+
+    async function saveRoomForm(e) {
+      e.preventDefault();
+      const n = document.getElementById("rfRoomNumber").value;
+      const payload = {
+        name: document.getElementById("rfName").value.trim(),
+        phone: document.getElementById("rfPhone").value.trim(),
+        id_number: document.getElementById("rfIdNumber").value.trim(),
+        deposit: Number(document.getElementById("rfDeposit").value),
+        rent: Number(document.getElementById("rfRent").value),
+        maintenance: Number(document.getElementById("rfMaintenance").value),
+        pay_timing: document.getElementById("rfPayTiming").value,
+        move_in: document.getElementById("rfMoveIn").value,
+        expiry: document.getElementById("rfExpiry").value
+      };
+      try {
+        const res = await fetch(`${API_BASE}/rooms/${n}/contract?branch_id=${curBranch}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        closeModal("modalRoom");
+        setAlert(`${n}호 계약 정보가 저장되었습니다.`, "success");
+        await reloadRooms();
+      } catch (err) {
+        setAlert("계약 저장 실패", "error");
+      }
+    }
+
+    // ── [스마트 인제스트 1] 통장 입금 문자 붙여넣기 ──
+    function previewPaste() {
+      const txt = document.getElementById("pasteText").value.trim();
+      const box = document.getElementById("pastePreview");
+      const body = document.getElementById("pastePreviewBody");
+      if (!txt) { box.style.display = "none"; return; }
+
+      // 호실 & 금액 간단 미리보기
+      const roomM = txt.match(/(\d{3,4})\s*호?/);
+      const moneyM = txt.match(/(\d{1,3}(?:,\d{3})+|\d{4,9})\s*원?/) || txt.match(/(\d+)만\s*원?/);
+
+      box.style.display = "block";
+      body.innerHTML = `인식 호실: <b>${roomM ? roomM[1] + "호" : "미인식"}</b> | 금액: <b>${moneyM ? moneyM[0] : "미인식"}</b>`;
+    }
+
+    async function submitPastePayment() {
+      const text = document.getElementById("pasteText").value.trim();
+      if (!text) { alert("문자 내용을 입력해 주세요."); return; }
+
+      setAlert("입금 문자 분석 및 수납 처리 중...", "info");
+      try {
+        const res = await fetch(`${API_BASE}/smart/paste-payment`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, branch_id: curBranch, auto_apply: true })
+        });
+        const data = await res.json();
+        if (data.success && data.applied_count > 0) {
+          setAlert(`성공: ${data.applied_count}건의 수납이 자동 완료되었습니다!`, "success");
+          closeModal("modalPaste");
+          document.getElementById("pasteText").value = "";
+          await reloadRooms();
+        } else {
+          setAlert(data.message || "문자에서 호실 또는 금액을 찾지 못했습니다.", "error");
+        }
+      } catch (err) {
+        setAlert("문자 수납 처리 중 오류 발생", "error");
+      }
+    }
+
+    // ── [스마트 인제스트 2] 카메라 촬영 / OCR 스캔 ──
+    function previewScanImage(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        scanBase64 = e.target.result;
+        document.getElementById("scanImagePreview").src = scanBase64;
+        document.getElementById("scanImagePreviewBox").style.display = "block";
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function runScanOCR() {
+      if (!scanBase64) { alert("촬영하거나 업로드할 사진을 선택하세요."); return; }
+      const kind = document.getElementById("scanKind").value;
+      const endpoint = kind === "contract" ? `${API_BASE}/smart/ocr-contract` : `${API_BASE}/smart/ocr-receipt`;
+      const btn = document.getElementById("btnScanRun");
+      btn.disabled = true;
+      btn.textContent = "AI 분석 중... ⏳";
+      setAlert("이미지 AI OCR 분석 진행 중...", "info");
+
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image_base64: scanBase64, branch_id: curBranch, auto_apply: true })
+        });
+        const data = await res.json();
+        const resBox = document.getElementById("scanResultBox");
+        resBox.style.display = "block";
+        resBox.textContent = JSON.stringify(data.extracted || data.extracted_rows || data, null, 2);
+
+        if (data.success) {
+          setAlert(data.message || "성공적으로 반영되었습니다.", "success");
+          await reloadRooms();
+        } else {
+          setAlert(data.message || "OCR 분석 실패", "error");
+        }
+      } catch (err) {
+        setAlert("OCR 요청 중 통신 오류", "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "AI 스캔 및 자동 등록";
+      }
+    }
+
+    // ── [세무 리포트] 부가세 및 종합소득세 ──
+    async function loadVatReport() {
+      const p = document.getElementById("vatPeriod").value;
+      const sm = p === "1" ? 1 : 7;
+      const em = p === "1" ? 6 : 12;
+      const yr = new Date().getFullYear();
+
+      try {
+        const res = await fetch(`${API_BASE}/vat-report?branch_id=${curBranch}&start_month=${sm}&end_month=${em}&year=${yr}`);
+        const data = await res.json();
+        document.getElementById("vatTotalCollected").textContent = `${data.total_collected.toLocaleString()}원`;
+        document.getElementById("vatSupply").textContent = `${data.total_supply.toLocaleString()}원`;
+        document.getElementById("vatTax").textContent = `${data.total_vat.toLocaleString()}원`;
+
+        const tb = document.querySelector("#vatTable tbody");
+        tb.innerHTML = "";
+        (data.rows || []).forEach(r => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td><b>${r.room_number}호</b></td>
+            <td>${r.tenant_name}</td>
+            <td>${r.lease_type}</td>
+            <td class="num">${r.supply_value.toLocaleString()}원</td>
+            <td class="num">${r.vat_value.toLocaleString()}원</td>
+            <td>${r.status}</td>
+          `;
+          tb.appendChild(tr);
+        });
+      } catch (err) {
+        console.error("부가세 로드 실패", err);
+      }
+    }
+
+    function downloadVat(fmt) {
+      const p = document.getElementById("vatPeriod").value;
+      const sm = p === "1" ? 1 : 7, em = p === "1" ? 6 : 12;
+      location.href = `${API_BASE}/vat-report/download?branch_id=${curBranch}&start_month=${sm}&end_month=${em}&format_type=${fmt}`;
+    }
+
+    async function loadIncomeTax() {
+      const yr = document.getElementById("taxYear").value;
+      try {
+        const res = await fetch(`${API_BASE}/tax/income-tax?branch_id=${curBranch}&year=${yr}`);
+        const data = await res.json();
+        document.getElementById("taxRentIncome").textContent = `${data.total_rent_income.toLocaleString()}원`;
+        document.getElementById("taxExpense").textContent = `${data.total_expense.toLocaleString()}원`;
+        document.getElementById("taxNetIncome").textContent = `${data.net_income.toLocaleString()}원`;
+
+        const tb = document.querySelector("#taxReceiptTable tbody");
+        tb.innerHTML = "";
+        for (const [k, v] of Object.entries(data.by_receipt || {})) {
+          const tr = document.createElement("tr");
+          const note = ["세금계산서", "신용카드", "현금영수증"].includes(k) ? "적격증빙" : (k === "간이영수증" ? "3만원 초과 시 가산세" : "-");
+          tr.innerHTML = `<td><b>${k}</b></td><td class="num">${v.toLocaleString()}원</td><td>${note}</td>`;
+          tb.appendChild(tr);
+        }
+      } catch (err) {
+        console.error("종소세 로드 실패", err);
+      }
+    }
+
+    function downloadIncomeTax(fmt) {
+      const yr = document.getElementById("taxYear").value;
+      location.href = `${API_BASE}/tax/income-tax/${fmt}?branch_id=${curBranch}&year=${yr}`;
+    }
+
+    // ── 지출 장부 ──
+    async function loadExpenses() {
+      try {
+        const res = await fetch(`${API_BASE}/expenses?branch_id=${curBranch}`);
+        const data = await res.json();
+        const tb = document.querySelector("#expensesTable tbody");
+        tb.innerHTML = "";
+        (data.expenses || []).forEach(e => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${e.date}</td>
+            <td><b>${e.item}</b></td>
+            <td class="num">${e.amount.toLocaleString()}원</td>
+            <td>${e.receipt_type || "간이영수증"}</td>
+            <td>${e.note || ""}</td>
+            <td><button class="btn-sm btn-outline" onclick="deleteExpense('${e.id}')">삭제</button></td>
+          `;
+          tb.appendChild(tr);
+        });
+      } catch (err) {
+        console.error("지출 로드 실패", err);
+      }
+    }
+
+    async function saveExpense(e) {
+      e.preventDefault();
+      const payload = {
+        date: document.getElementById("expDate").value,
+        item: document.getElementById("expItem").value.trim(),
+        amount: Number(document.getElementById("expAmount").value),
+        receipt_type: document.getElementById("expReceiptType").value,
+        note: document.getElementById("expNote").value.trim()
+      };
+      try {
+        await fetch(`${API_BASE}/expenses?branch_id=${curBranch}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        closeModal("modalExpense");
+        setAlert("지출 전표가 등록되었습니다.", "success");
+        loadExpenses();
+      } catch (err) {
+        setAlert("지출 등록 실패", "error");
+      }
+    }
+
+    async function deleteExpense(eid) {
+      if (!confirm("지출 내역을 삭제하시겠습니까?")) return;
+      try {
+        await fetch(`${API_BASE}/expenses/${eid}?branch_id=${curBranch}`, { method: "DELETE" });
+        loadExpenses();
+      } catch (err) {
+        alert("삭제 실패");
+      }
+    }
+
+    // ── AI 질의 ──
+    async function sendAI() {
+      const inp = document.getElementById("aiInput");
+      const q = inp.value.trim();
+      if (!q) return;
+      const out = document.getElementById("aiResponse");
+      out.textContent = "AI 분석 및 도구 호출 중... ⏳";
+      try {
+        const res = await fetch(`${API_BASE}/ai/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: q, building: curBranch })
+        });
+        const data = await res.json();
+        out.textContent = data.reply || JSON.stringify(data, null, 2);
+      } catch (err) {
+        out.textContent = "질의 응답 실패 (서버 연결 확인)";
+      }
+    }
+
+    // ── 모달 유틸 ──
+    function openModal(id) { document.getElementById(id).classList.add("open"); }
+    function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+  </script>
+</body>
+</html>

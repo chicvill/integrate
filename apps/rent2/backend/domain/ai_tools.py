@@ -210,6 +210,28 @@ def read_contract_image(image_base64: str) -> Dict[str, Any]:
                 "message": f"계약서 AI 분석 실패 ({e}). 사진이 흐리거나 일시적 API 지연입니다. 다시 촬영하거나 직접 입력해 주세요."}
 
 
+RECEIPT_OCR_PROMPT = ("이 이미지는 영수증, 간이영수증, 세금계산서, 이체증, 신용카드 영수증 캡처입니다. "
+                       "일자(YYYY-MM-DD), 지출품목(상호 또는 물품명), 지출금액(숫자만), 증빙유형(세금계산서/신용카드/현금영수증/간이영수증 중 하나), 적요를 "
+                       "추출해 JSON 객체로 출력하세요. 예: {\"date\":\"2026-05-10\",\"item\":\"보일러 부품 교체\",\"amount\":75000,\"receipt_type\":\"신용카드\",\"note\":\"203호 난방 수리\"}")
+
+
+def read_receipt_image(image_base64: str) -> Dict[str, Any]:
+    """영수증 사진에서 지출 항목, 금액, 증빙유형을 추출한다."""
+    if not agent.api_key():
+        return {"success": False, "has_api_key": False, "data": None, "source": "no_api_key",
+                "message": "서버에 GEMINI_API_KEY가 설정되어 있지 않아 영수증 AI 스캔이 제한됩니다. 직접 입력해 주세요."}
+    head, _, body = image_base64.rpartition(",")
+    mime = "image/jpeg" if "jpeg" in head or "jpg" in head else "image/webp" if "webp" in head else "image/png"
+    try:
+        parsed = agent.gemini_json(RECEIPT_OCR_PROMPT, body, mime)
+        if isinstance(parsed, list) and parsed:
+            parsed = parsed[0]
+        return {"success": bool(parsed), "data": parsed, "source": "gemini_vision"}
+    except Exception as e:
+        return {"success": False, "has_api_key": True, "data": None, "source": "ocr_failed",
+                "message": f"영수증 AI 분석 실패 ({e}). 다시 촬영하거나 직접 입력해 주세요."}
+
+
 def system_prompt(user: Any) -> str:
     return (f"당신은 원룸 임차관리 AI 비서입니다. 건물·계약서·수납·지출 객체를 도구로 조회/변경합니다. 오늘은 {today().isoformat()}.\n"
             f"사용자: {user.summary()}. 한국어로 간결하게 답하고, 숫자는 도구 결과만 사용하세요(추측 금지).\n"

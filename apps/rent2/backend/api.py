@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Body, Depends, Header, HTTPException, Query, Response
 
-from .domain import ALIASES, Building, agent, ask
+from .domain import ALIASES, Building, agent, ask, parser
 from .domain import ai_tools, vat
 from .domain.rent import Contract, Expense, Unit, num, today
 from .kernel.base import recall, store
@@ -476,3 +476,148 @@ def ai_execute(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
     except LookupError as e:
         raise HTTPException(404, str(e))
     return {"success": True, "result": out, "message": agent.say(out)}
+
+
+# ── 스마트 인제스트 (카메라 / 클립보드 붙여넣기 자동화) ──
+@router.post("/smart/paste-payment")
+def smart_paste_payment(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
+    """은행 입금 알림 문자/카톡 텍스트 붙여넣기 ➡️ 호실·금액·일자 자동 파싱 및 수납 처리"""
+    text = (p.get("text") or "").strip()
+    bid = Building.canon(user.branch or p.get("branch_id") or "main")
+    if not text:
+        raise HTTPException(400, "분석할 문자 또는 카톡 텍스트를 입력해 주세요.")
+    
+    parsed_list = parser.parse_batch_bank_messages(text, bid)
+    if not parsed_list:
+        single = parser.parse_bank_message(text, bid)
+        parsed_list = [single] if single["room_number"] else []
+        
+    if not parsed_list:
+        return {"success": False, "message": "입금 문자에서 호실 또는 금액을 추출하지 못했습니다.", "items": []}
+
+    auto_apply = bool(p.get("auto_apply", True))
+    applied = []
+    b = _b(bid)
+
+    for item in parsed_list:
+        room = item["room_number"]
+        if room in b.units and auto_apply and item["amount"] > 0:
+            u = b.unit(room)
+            pay_obj = u.pay(
+                month=item["target_month"],
+                year=item["target_year"],
+                paid_date=item["paid_date"],
+                note=f"문자 자동수납 ({item['detected_tenant'] or '입금자'} {item['amount']:,}원)",
+                rent_amount=item["amount"]
+            )
+            item["applied"] = True
+            item["payment_id"] = pay_obj.id
+            applied.append(item)
+        else:
+            item["applied"] = False
+
+    return {
+        "success": True,
+        "branch_id": bid,
+        "total_parsed": len(parsed_list),
+        "applied_count": len(applied),
+        "items": parsed_list,
+        "message": f"총 {len(parsed_list)}건의 입금 내역 중 {len(applied)}건이 자동 수납 처리되었습니다."
+    }
+
+
+@router.post("/smart/ocr-contract")
+def smart_ocr_contract(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
+    """계약서 카메라 사진 ➡️ OCR 텍스트 추출 및 계약 등록"""
+    img = p.get("image_base64") or ""
+    if not img:
+        raise HTTPException(400, "분석할 이미지 데이터(base64)가 필요합니다.")
+    res = ai_tools.read_contract_image(img)
+    if not res.get("success"):
+        return res
+    
+    bid = Building.canon(user.branch or p.get("branch_id") or "main")
+    b = _b(bid)
+    auto_apply = bool(p.get("auto_apply", False))
+    saved_contracts = []
+
+    for row in res.get("rows", []):
+        room_n = num(row.get("호실") or row.get("room_number") or row.get("room"))
+        if room_n and auto_apply:
+            u = b.unit(room_n)
+            c = u.update({
+                "name": row.get("세입자") or row.get("name") or "",
+                "phone": row.get("연락처") or row.get("phone") or "",
+                "id_number": row.get("주민등록번호") or row.get("id_number") or "",
+                "deposit": num(row.get("보증금") or row.get("deposit")),
+                "rent": num(row.get("월세") or row.get("rent")),
+                "maintenance": num(row.get("관리비") or row.get("maintenance")),
+                "move_in": row.get("전입일") or row.get("move_in") or today().isoformat(),
+                "expiry": row.get("만기일") or row.get("expiry") or ""
+            })
+            if c:
+                saved_contracts.append(c.model_dump())
+
+    return {
+        "success": True,
+        "extracted_rows": res.get("rows", []),
+        "applied_contracts": saved_contracts,
+        "message": f"{len(res.get('rows', []))}건의 계약서 항목이 인식되었습니다."
+    }
+
+
+@router.post("/smart/ocr-receipt")
+def smart_ocr_receipt(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
+    """영수증 카메라 사진 ➡️ OCR 텍스트 추출 및 지출 전표 등록"""
+    img = p.get("image_base64") or ""
+    if not img:
+        raise HTTPException(400, "분석할 이미지 데이터(base64)가 필요합니다.")
+    res = ai_tools.read_receipt_image(img)
+    if not res.get("success"):
+        return res
+
+    data = res.get("data") or {}
+    bid = Building.canon(user.branch or p.get("branch_id") or "main")
+    auto_apply = bool(p.get("auto_apply", True))
+    exp_obj = None
+
+    if auto_apply and data.get("amount"):
+        exp_obj = Expense(
+            building_id=bid,
+            date=data.get("date") or today().isoformat(),
+            item=data.get("item") or "지출",
+            amount=num(data.get("amount")),
+            receipt_type=data.get("receipt_type") or "신용카드",
+            note=data.get("note") or "스마트 영수증 스캔"
+        ).save("ocr_scanned")
+
+    return {
+        "success": True,
+        "extracted": data,
+        "expense": exp_obj.model_dump() if exp_obj else None,
+        "message": f"영수증 지출({num(data.get('amount')):,}원)이 인식되어 등록되었습니다." if exp_obj else "영수증이 인식되었습니다."
+    }
+
+
+# ── 종합소득세 및 세무 보고서 ──
+@router.get("/tax/income-tax")
+def get_income_tax_report(branch_id: str = "main", year: Optional[int] = None):
+    b = _b(branch_id)
+    return vat.income_tax_report(b, year)
+
+
+@router.get("/tax/income-tax/excel")
+def download_income_tax_excel(branch_id: str = "main", year: Optional[int] = None):
+    b = _b(branch_id)
+    rep = vat.income_tax_report(b, year)
+    y = rep["year"]
+    return _attach(vat.income_tax_excel_bytes(rep), "application/vnd.ms-excel", f"{b.name}_종합소득세_{y}년.xls")
+
+
+@router.get("/tax/income-tax/csv")
+def download_income_tax_csv(branch_id: str = "main", year: Optional[int] = None):
+    b = _b(branch_id)
+    rep = vat.income_tax_report(b, year)
+    y = rep["year"]
+    return _attach(vat.income_tax_csv_bytes(rep), "text/csv; charset=utf-8", f"{b.name}_종합소득세_{y}년.csv")
+
