@@ -333,8 +333,11 @@ class Building(Obj):
     def resolve(cls, ref: Optional[str]) -> Optional["Building"]:
         ref = (ref or "main").strip()
         found = cls.get(ref)
+        if found:
+            return found
         low = ref.lower()
-        return found or next((b for b in cls.all() if low == b.name.lower() or low in {a.lower() for a in b.aliases}), None)
+        matched = next((b for b in cls.all() if low in (b.id.lower(), b.name.lower()) or low in {a.lower() for a in b.aliases}), None)
+        return matched or (cls.all()[0] if cls.all() else None)
 
     @classmethod
     def canon(cls, ref: Optional[str]) -> str:

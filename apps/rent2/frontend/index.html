@@ -680,11 +680,14 @@
       if (name === "expenses") { loadExpenses(); }
     }
 
-    // ── 호실 데이터 및 3대 핵심 브리핑 ──
     async function reloadRooms() {
       try {
         setAlert("호실 데이터 동기화 중...", "info");
         const res = await fetch(`${API_BASE}/rooms?branch_id=${curBranch}`);
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        const data = await res.json();
         const rawRooms = data.rooms || {};
         allRooms = Array.isArray(rawRooms) ? rawRooms : Object.values(rawRooms);
         
@@ -706,8 +709,13 @@
               unpaidAmount += (curPay.rent_amount + (curPay.maintenance_amount || 0));
             }
           }
-          if (r.diff_days !== undefined && r.diff_days <= 65 && r.diff_days >= 0) {
-            expiringCount++;
+          if (r.expiry) {
+            const expD = new Date(r.expiry);
+            const diffDays = Math.ceil((expD - now) / (1000 * 60 * 60 * 24));
+            if (diffDays >= 0 && diffDays <= 65) {
+              expiringCount++;
+              r.diff_days = diffDays;
+            }
           }
         });
 
@@ -720,7 +728,8 @@
         setAlert("", "info");
         renderRooms();
       } catch (err) {
-        setAlert("호실 데이터를 불러오지 못했습니다.", "error");
+        console.error("reloadRooms 에러:", err);
+        setAlert(`호실 데이터를 불러오지 못했습니다. (${err.message})`, "error");
       }
     }
 

@@ -185,7 +185,9 @@ def chat(message: str, user: User, context: dict, system: str, mode: str = "conf
     token = current_user.set(user)
 
     def call(name: str, args: dict) -> Any:
-        args = {**{k: v for k, v in context.items() if k in TOOLS[name].params and k not in args}, **args}
+        for k, v in context.items():
+            if k in TOOLS[name].params and (k not in args or not args[k]):
+                args[k] = v
         try:
             if TOOLS[name].write and mode == "confirm":
                 p = hold(name, args, user)
