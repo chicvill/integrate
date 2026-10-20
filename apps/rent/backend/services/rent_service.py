@@ -726,6 +726,7 @@ class RentService:
             except Exception:
                 pass
         
+        last_err_msg = ""
         # Base64 헤더 분리 (data:image/png;base64,... -> raw base64)
         clean_b64 = image_base64
         mime_type = "image/png"
@@ -738,12 +739,12 @@ class RentService:
 
         if api_key:
             prompt = (
-                "이 이미지는 부동산 임대차 현황표, 종이 장부 또는 엑셀 캡처 이미지입니다. "
-                "표에 포함된 각 행의 호실번호, 세입자(성명), 보증금, 월세(차임), 관리비, 입주일(전입일), 전화번호(연락처), 비고 등을 "
-                "JSON 배열로 빠짐없이 추출해주세요. "
-                "각 행 객체는 표의 열 제목을 key로 하고 해당 행의 값을 value로 가져야 합니다. "
-                "반드시 오직 유효한 JSON 배열만 출력하세요. 마크다운(```json)이나 다른 설명은 생략하세요. "
-                "예: [{\"호실\": \"101\", \"세입자\": \"고종훈\", \"보증금\": \"2000000\", \"월세\": \"250000\", \"관리비\": \"80000\", \"연락처\": \"010-4281-6453\"}]"
+                "이 이미지는 종이 부동산 임대차계약서, 월세계약서, 전세계약서, 입주신청서, 또는 장부/엑셀 캡처 이미지입니다. "
+                "계약서 서식 또는 표 내용에서 호실번호(소재지/동호수), 세입자(임차인 성명), 보증금, 월세(차임), 관리비, "
+                "전입일(입주일/계약시작일), 만기일(계약종료일), 연락처(전화번호/휴대폰), 주민등록번호(식별키) 등을 "
+                "빠짐없이 추출하여 JSON 형식으로 출력해주세요. "
+                "단건 계약서인 경우에도 반드시 하나의 요소를 가진 JSON 배열로 반환하세요. 마크다운이나 다른 설명 없이 순수 JSON만 출력하세요. "
+                "예: [{\"호실\": \"201\", \"세입자\": \"홍길동\", \"보증금\": \"5000000\", \"월세\": \"300000\", \"관리비\": \"30000\", \"전입일\": \"2026-10-20\", \"만기일\": \"2027-10-20\", \"연락처\": \"010-1234-5678\"}]"
             )
             payload_data = {
                 "contents": [{
@@ -762,7 +763,16 @@ class RentService:
                 }
             }
 
-            candidate_models = ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"]
+            candidate_models = [
+                "gemini-3.5-flash",
+                "gemini-2.5-flash-lite",
+                "gemini-3.1-flash-lite",
+                "gemini-3-flash-preview",
+                "gemini-flash-latest",
+                "gemini-3.7-flash",
+                "gemma-4-26b-a4b-it"
+            ]
+            last_err_msg = ""
             for model_name in candidate_models:
                 try:
                     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
@@ -771,20 +781,35 @@ class RentService:
                         data=json.dumps(payload_data).encode("utf-8"),
                         headers={"Content-Type": "application/json"}
                     )
-                    with urllib.request.urlopen(req, timeout=45) as response:
+                    with urllib.request.urlopen(req, timeout=35) as response:
                         res_body = json.loads(response.read().decode("utf-8"))
                         text_resp = res_body["candidates"][0]["content"]["parts"][0]["text"].strip()
                         if text_resp.startswith("```"):
                             text_resp = re.sub(r"^```(?:json)?\s*", "", text_resp)
                             text_resp = re.sub(r"\s*```$", "", text_resp)
-                        parsed_rows = json.loads(text_resp.strip())
-                        if isinstance(parsed_rows, list) and len(parsed_rows) > 0:
+                        parsed = json.loads(text_resp.strip())
+                        
+                        parsed_rows = []
+                        if isinstance(parsed, list):
+                            parsed_rows = parsed
+                        elif isinstance(parsed, dict):
+                            # 만약 {"contracts": [...]} 나 {"data": [...]} 처럼 래핑된 경우
+                            for k, v in parsed.items():
+                                if isinstance(v, list) and len(v) > 0 and isinstance(v[0], dict):
+                                    parsed_rows = v
+                                    break
+                            if not parsed_rows:
+                                # 단일 계약서 dict 객체인 경우
+                                parsed_rows = [parsed]
+
+                        if parsed_rows and len(parsed_rows) > 0:
                             return {
                                 "success": True,
                                 "rows": parsed_rows,
                                 "source": f"gemini_vision_{model_name}"
                             }
                 except Exception as e_model:
+                    last_err_msg = str(e_model)
                     print(f"[OCR Warning] model {model_name} failed: {e_model}")
                     continue
 
@@ -793,7 +818,7 @@ class RentService:
             "success": False,
             "has_api_key": bool(api_key),
             "rows": [],
-            "message": "이미지 AI 분석을 완료하지 못했습니다. CSV 파일 업로드 또는 [텍스트 직접 붙여넣기]를 이용해 주세요." if api_key else "서버에 GEMINI_API_KEY가 설정되어 있지 않아 이미지/사진 AI 스캔이 제한됩니다. CSV 파일 업로드 또는 [텍스트 직접 붙여넣기]를 이용해 주세요.",
+            "message": f"계약서 AI 분석 실패 ({last_err_msg}). 일시적 구글 API 지연이거나 사진이 흐립니다. 다시 촬영하시거나 직접 입력해 주세요." if api_key else "서버에 GEMINI_API_KEY가 설정되어 있지 않아 이미지/사진 AI 스캔이 제한됩니다. 직접 입력해 주세요.",
             "source": "ocr_failed" if api_key else "no_api_key"
         }
 
