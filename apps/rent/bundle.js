@@ -14482,6 +14482,7 @@ function openModal(id) {
   if (m) {
     m.classList.remove('hidden');
     m.classList.add('flex');
+    m.style.display = 'flex';
   }
 }
 
@@ -14490,6 +14491,7 @@ function closeModal(id) {
   if (m) {
     m.classList.remove('flex');
     m.classList.add('hidden');
+    m.style.display = 'none';
   }
 }
 
@@ -19695,6 +19697,17 @@ function openEditPaymentModal(roomNumber, month, year, initialFocus = 'all') {
   }, 100);
 }
 
+function selectEditPayStatus(status) {
+  const paidRadio = document.getElementById('editPayStatusPaid');
+  const unpaidRadio = document.getElementById('editPayStatusUnpaid');
+  if (status === 'paid') {
+    if (paidRadio) paidRadio.checked = true;
+  } else {
+    if (unpaidRadio) unpaidRadio.checked = true;
+  }
+  handleEditPayStatusChange();
+}
+
 function handleEditPayStatusChange() {
   const paidRadio = document.getElementById('editPayStatusPaid');
   const isPaid = paidRadio ? paidRadio.checked : true;
@@ -19704,13 +19717,13 @@ function handleEditPayStatusChange() {
 
   if (isPaid) {
     if (paidLabel) {
-      paidLabel.className = 'flex items-center justify-center gap-2 p-2 rounded-xl border border-emerald-500/50 bg-emerald-950/40 text-emerald-300 font-bold text-xs cursor-pointer hover:bg-emerald-950/60 transition';
+      paidLabel.className = 'flex items-center justify-center gap-2 p-2 rounded-xl border-2 border-emerald-500 bg-emerald-950/60 text-emerald-200 font-black text-xs cursor-pointer shadow-sm transition';
     }
     if (unpaidLabel) {
       unpaidLabel.className = 'flex items-center justify-center gap-2 p-2 rounded-xl border border-slate-700 bg-surface-850 text-slate-400 font-bold text-xs cursor-pointer hover:bg-rose-950/40 hover:text-rose-300 transition';
     }
     if (dateSec) {
-      dateSec.classList.remove('opacity-40');
+      dateSec.classList.remove('opacity-60');
       dateSec.querySelectorAll('input, button').forEach(el => el.disabled = false);
     }
   } else {
@@ -19718,11 +19731,12 @@ function handleEditPayStatusChange() {
       paidLabel.className = 'flex items-center justify-center gap-2 p-2 rounded-xl border border-slate-700 bg-surface-850 text-slate-400 font-bold text-xs cursor-pointer hover:bg-emerald-950/40 hover:text-emerald-300 transition';
     }
     if (unpaidLabel) {
-      unpaidLabel.className = 'flex items-center justify-center gap-2 p-2 rounded-xl border border-rose-500/50 bg-rose-950/40 text-rose-300 font-bold text-xs cursor-pointer hover:bg-rose-950/60 transition';
+      unpaidLabel.className = 'flex items-center justify-center gap-2 p-2 rounded-xl border-2 border-rose-500 bg-rose-950/60 text-rose-200 font-black text-xs cursor-pointer shadow-sm transition';
     }
     if (dateSec) {
-      dateSec.classList.add('opacity-40');
-      dateSec.querySelectorAll('input, button').forEach(el => el.disabled = true);
+      // 미납이라도 날짜 클릭/선택 시 자동으로 완납으로 바뀔 수 있도록 disabled 하지 않고 부드럽게 유지
+      dateSec.classList.add('opacity-75');
+      dateSec.querySelectorAll('input, button').forEach(el => el.disabled = false);
     }
   }
 }
@@ -19828,6 +19842,8 @@ function setEditPayDatePreset(preset) {
     const lastDay = new Date(yr, mo, 0).getDate();
     dateInput.value = `${yr}-${padMo}-${String(lastDay).padStart(2, '0')}`;
   }
+  // 날짜 프리셋을 클릭하면 자동으로 완납 상태로 전환
+  selectEditPayStatus('paid');
 }
 
 function setEditPayNoteTag(tag) {
@@ -19959,6 +19975,7 @@ if (typeof window !== 'undefined') {
   window.handleVatYearChange = handleVatYearChange;
   window.openCurrentMonthPaymentEditModal = openCurrentMonthPaymentEditModal;
   window.openEditPaymentModal = openEditPaymentModal;
+  window.selectEditPayStatus = selectEditPayStatus;
   window.handleEditPayStatusChange = handleEditPayStatusChange;
   window.handleEditPayTotalInput = handleEditPayTotalInput;
   window.handleEditPayDetailInput = handleEditPayDetailInput;
@@ -21690,6 +21707,7 @@ window.handleNewBranchSubmit = handleNewBranchSubmit;
 // 수납 금액 및 납부일자 정밀 수정 모달 관련
 window.openCurrentMonthPaymentEditModal = openCurrentMonthPaymentEditModal;
 window.openEditPaymentModal = openEditPaymentModal;
+window.selectEditPayStatus = selectEditPayStatus;
 window.handleEditPayStatusChange = handleEditPayStatusChange;
 window.handleEditPayTotalInput = handleEditPayTotalInput;
 window.handleEditPayDetailInput = handleEditPayDetailInput;

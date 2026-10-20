@@ -2,6 +2,9 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.5, maximum-scale=3.0, user-scalable=yes, viewport-fit=cover">
   <title>부동산 임차관리 시스템 - MQnet SaaS Edition</title>
   
@@ -887,8 +890,8 @@
   </div>
 
   <!-- 4-1. 수납 금액 및 납부일자 정밀 수정 모달 (Edit Payment Modal) -->
-  <div id="editPaymentModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-xs z-50 hidden items-center justify-center p-3 select-none">
-    <div class="bg-surface-900 border border-slate-700/80 rounded-2xl max-w-md w-full p-4 sm:p-5 shadow-2xl flex flex-col space-y-3.5 max-h-[92vh] overflow-y-auto">
+  <div id="editPaymentModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-xs z-50 hidden items-center justify-center p-2.5 sm:p-4 select-none">
+    <div class="bg-surface-900 border border-slate-700/80 rounded-2xl max-w-md w-full p-4 sm:p-5 shadow-2xl flex flex-col space-y-3 max-h-[88vh] overflow-y-auto overscroll-contain">
       
       <!-- 헤더 -->
       <div class="flex items-center justify-between pb-2.5 border-b border-slate-800">
@@ -912,11 +915,11 @@
       <div class="space-y-1.5">
         <label class="block text-xs font-semibold text-slate-300">수납 상태 구분</label>
         <div class="grid grid-cols-2 gap-2">
-          <label id="editPayStatusPaidLabel" class="flex items-center justify-center gap-2 p-2 rounded-xl border border-emerald-500/50 bg-emerald-950/40 text-emerald-300 font-bold text-xs cursor-pointer hover:bg-emerald-950/60 transition">
+          <label id="editPayStatusPaidLabel" onclick="selectEditPayStatus('paid')" class="flex items-center justify-center gap-2 p-2 rounded-xl border border-emerald-500/50 bg-emerald-950/40 text-emerald-300 font-bold text-xs cursor-pointer hover:bg-emerald-950/60 transition">
             <input type="radio" name="editPayStatusRadio" id="editPayStatusPaid" value="paid" checked class="accent-emerald-500" onchange="handleEditPayStatusChange()">
             <span>🟢 완납 (수납 확인)</span>
           </label>
-          <label id="editPayStatusUnpaidLabel" class="flex items-center justify-center gap-2 p-2 rounded-xl border border-slate-700 bg-surface-850 text-slate-400 font-bold text-xs cursor-pointer hover:bg-rose-950/40 hover:text-rose-300 transition">
+          <label id="editPayStatusUnpaidLabel" onclick="selectEditPayStatus('unpaid')" class="flex items-center justify-center gap-2 p-2 rounded-xl border border-slate-700 bg-surface-850 text-slate-400 font-bold text-xs cursor-pointer hover:bg-rose-950/40 hover:text-rose-300 transition">
             <input type="radio" name="editPayStatusRadio" id="editPayStatusUnpaid" value="unpaid" class="accent-rose-500" onchange="handleEditPayStatusChange()">
             <span>🔴 미납 (미납 환원)</span>
           </label>
@@ -929,7 +932,7 @@
           <label class="text-xs font-semibold text-slate-300">실제 은행 입금일자 (수납일)</label>
           <span class="text-[10px] text-cyan-400 font-mono">YYYY-MM-DD</span>
         </div>
-        <input type="date" id="editPayDate" class="w-full bg-surface-800 border border-slate-700 focus:border-cyan-500 rounded-xl px-3 py-2 text-white font-mono text-xs focus:outline-none">
+        <input type="date" id="editPayDate" onchange="selectEditPayStatus('paid')" class="w-full bg-surface-800 border border-slate-700 focus:border-cyan-500 rounded-xl px-3 py-2 text-white font-mono text-xs focus:outline-none">
         
         <!-- 퀵 날짜 버튼 -->
         <div class="flex items-center gap-1.5 pt-0.5">
@@ -983,7 +986,7 @@
       </div>
 
       <!-- 하단 액션 버튼 -->
-      <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+      <div class="flex items-center justify-end gap-2 pt-2.5 pb-0.5 border-t border-slate-800 shrink-0">
         <button type="button" onclick="closeModal('editPaymentModal')" class="px-4 py-2 rounded-xl bg-surface-800 hover:bg-surface-700 text-slate-300 text-xs font-medium cursor-pointer transition">
           취소
         </button>
@@ -2126,6 +2129,6 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- Universal Bundle Script -->
-  <script src="./bundle.js?v=7.0"></script>
+  <script src="./bundle.js?v=8.1"></script>
 </body>
 </html>

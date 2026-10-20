@@ -131,6 +131,7 @@ import {
   updateSmsAlert,
   openCurrentMonthPaymentEditModal,
   openEditPaymentModal,
+  selectEditPayStatus,
   handleEditPayStatusChange,
   handleEditPayTotalInput,
   handleEditPayDetailInput,
@@ -266,6 +267,7 @@ window.handleNewBranchSubmit = handleNewBranchSubmit;
 // 수납 금액 및 납부일자 정밀 수정 모달 관련
 window.openCurrentMonthPaymentEditModal = openCurrentMonthPaymentEditModal;
 window.openEditPaymentModal = openEditPaymentModal;
+window.selectEditPayStatus = selectEditPayStatus;
 window.handleEditPayStatusChange = handleEditPayStatusChange;
 window.handleEditPayTotalInput = handleEditPayTotalInput;
 window.handleEditPayDetailInput = handleEditPayDetailInput;
