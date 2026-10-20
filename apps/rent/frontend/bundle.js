@@ -17884,9 +17884,14 @@ function renderPastHistorySection(room) {
       `;
     } else if (p.paid) {
       actionHtml = `
-        <button type="button" onclick="handleCancelPayment(${rNum}, ${m}, ${y})" class="btn-cancel-past inline-block px-2 py-0.5 rounded text-[10px] font-normal bg-slate-800/80 hover:bg-rose-950/50 text-slate-400 hover:text-rose-300 border border-slate-700/60 hover:border-rose-500/40 transition whitespace-nowrap cursor-pointer shadow-xs" data-year="${y}" data-month="${m}">
-          취소
-        </button>
+        <div class="inline-flex items-center justify-center gap-1">
+          <button type="button" class="btn-open-edit-past inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-800 hover:bg-surface-700 text-cyan-300 border border-slate-700 transition cursor-pointer shadow-xs whitespace-nowrap" data-year="${y}" data-month="${m}" title="수납 금액 및 납부일자 수정">
+            수정
+          </button>
+          <button type="button" onclick="handleCancelPayment(${rNum}, ${m}, ${y})" class="btn-cancel-past inline-block px-1.5 py-0.5 rounded text-[10px] font-normal bg-slate-800/80 hover:bg-rose-950/50 text-slate-400 hover:text-rose-300 border border-slate-700/60 hover:border-rose-500/40 transition whitespace-nowrap cursor-pointer shadow-xs" data-year="${y}" data-month="${m}">
+            취소
+          </button>
+        </div>
       `;
     } else {
       actionHtml = `
@@ -17894,7 +17899,10 @@ function renderPastHistorySection(room) {
           <button type="button" onclick="handleProcessPayment(${rNum}, ${m}, ${y})" class="btn-pay-past inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-600 hover:bg-cyan-500 text-white transition shadow-xs whitespace-nowrap cursor-pointer active:scale-95" title="수납 처리" data-year="${y}" data-month="${m}">
             수납
           </button>
-          <button type="button" onclick="handleSetPastVacancy(${rNum}, ${m}, ${y})" class="btn-set-vacancy-past inline-block px-1.5 py-0.5 rounded text-[10px] font-normal bg-slate-800/90 hover:bg-amber-950/60 text-slate-400 hover:text-amber-300 border border-slate-700/70 hover:border-amber-500/50 transition cursor-pointer shadow-xs whitespace-nowrap" title="공실로 전환" data-year="${y}" data-month="${m}">
+          <button type="button" class="btn-open-edit-past inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-800 hover:bg-surface-700 text-cyan-300 border border-slate-700 transition cursor-pointer shadow-xs whitespace-nowrap" data-year="${y}" data-month="${m}" title="금액 및 청구정보 수정">
+            수정
+          </button>
+          <button type="button" onclick="handleSetPastVacancy(${rNum}, ${m}, ${y})" class="btn-set-vacancy-past inline-block px-1 py-0.5 rounded text-[10px] font-normal bg-slate-800/90 hover:bg-amber-950/60 text-slate-400 hover:text-amber-300 border border-slate-700/70 hover:border-amber-500/50 transition cursor-pointer shadow-xs whitespace-nowrap" title="공실로 전환" data-year="${y}" data-month="${m}">
             공실
           </button>
         </div>
@@ -17942,6 +17950,17 @@ function renderPastHistorySection(room) {
       const mo = parseInt(btn.dataset.month, 10);
       if (typeof window.openEditPaymentModal === 'function') {
         window.openEditPaymentModal(rNum, mo, yr, 'date');
+      }
+    };
+  });
+
+  tbody.querySelectorAll('.btn-open-edit-past').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const yr = parseInt(btn.dataset.year, 10);
+      const mo = parseInt(btn.dataset.month, 10);
+      if (typeof window.openEditPaymentModal === 'function') {
+        window.openEditPaymentModal(rNum, mo, yr, 'all');
       }
     };
   });
@@ -25064,10 +25083,6 @@ if (typeof window !== 'undefined') {
   window.handleExecuteEasyBatchPayment = handleExecuteEasyBatchPayment;
 
   window.closeBatchPaymentModal = closeBatchPaymentModal;
-  window.setBatchPeriodMode = setBatchPeriodMode;
-  window.handleBatchDateModeChange = handleBatchDateModeChange;
-  window.updateBatchPaymentPreview = updateBatchPaymentPreview;
-  window.handleBatchPaymentSubmit = handleBatchPaymentSubmit;
   window.setVatTaxPreset = setVatTaxPreset;
   window.handleVatYearChange = handleVatYearChange;
   window.openCurrentMonthPaymentEditModal = openCurrentMonthPaymentEditModal;

@@ -5730,10 +5730,6 @@ if (typeof window !== 'undefined') {
   window.handleExecuteEasyBatchPayment = handleExecuteEasyBatchPayment;
 
   window.closeBatchPaymentModal = closeBatchPaymentModal;
-  window.setBatchPeriodMode = setBatchPeriodMode;
-  window.handleBatchDateModeChange = handleBatchDateModeChange;
-  window.updateBatchPaymentPreview = updateBatchPaymentPreview;
-  window.handleBatchPaymentSubmit = handleBatchPaymentSubmit;
   window.setVatTaxPreset = setVatTaxPreset;
   window.handleVatYearChange = handleVatYearChange;
   window.openCurrentMonthPaymentEditModal = openCurrentMonthPaymentEditModal;
