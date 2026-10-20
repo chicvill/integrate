@@ -884,17 +884,23 @@ export function renderPastHistorySection(room) {
       `;
     }
 
-    // 납부일자 생성
+    // 납부일자 생성 (완납 시 실입금일자 표시, 미납 시 일자지정 퀵버튼 노출하여 즉시 지정 가능)
     let payDateHtml = '';
-    if (!isVacancy && p.paid && p.paid_date) {
+    if (isVacancy) {
+      payDateHtml = `<span class="text-slate-600 font-mono text-[11px]">-</span>`;
+    } else if (p.paid && p.paid_date) {
       const displayDate = p.paid_date;
       payDateHtml = `
-        <button type="button" class="btn-change-paydate inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-900/90 hover:bg-cyan-950/80 text-cyan-300 hover:text-cyan-200 border border-slate-700/80 hover:border-cyan-500/60 font-mono text-[11px] font-semibold transition cursor-pointer shadow-xs whitespace-nowrap" title="클릭하여 은행 실입금일자로 수정" data-year="${y}" data-month="${m}" data-date="${displayDate}">
+        <button type="button" class="btn-change-paydate inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-900/90 hover:bg-cyan-950/80 text-cyan-300 hover:text-cyan-200 border border-slate-700/80 hover:border-cyan-500/60 font-mono text-[11px] font-semibold transition cursor-pointer shadow-xs whitespace-nowrap" title="클릭하여 은행 실입금일자 및 수납 정보 수정" data-year="${y}" data-month="${m}" data-date="${displayDate}">
           <span class="text-[10px] opacity-70">📅</span><span>${displayDate}</span>
         </button>
       `;
     } else {
-      payDateHtml = `<span class="text-slate-600 font-mono text-[11px]">-</span>`;
+      payDateHtml = `
+        <button type="button" class="btn-change-paydate inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-900/90 hover:bg-slate-800 text-slate-400 hover:text-cyan-300 border border-slate-700/60 hover:border-cyan-500/50 font-mono text-[10px] transition cursor-pointer shadow-xs whitespace-nowrap" title="클릭하여 은행 실입금일자 지정 및 수납 처리" data-year="${y}" data-month="${m}">
+          <span>📅</span><span>일자지정</span>
+        </button>
+      `;
     }
 
     // 상태 배지 생성 (공실/미납/입주월은 클릭 시 즉시 공실↔미납 전환 지원)
@@ -968,33 +974,23 @@ export function renderPastHistorySection(room) {
   });
 
   tbody.querySelectorAll('.btn-change-payamount').forEach(btn => {
-    btn.onclick = async (e) => {
+    btn.onclick = (e) => {
       e.stopPropagation();
       const yr = parseInt(btn.dataset.year, 10);
       const mo = parseInt(btn.dataset.month, 10);
-      const curTot = parseInt(btn.dataset.tot, 10) || 0;
-      const curRent = parseInt(btn.dataset.rent, 10) || 0;
-      const curMaint = parseInt(btn.dataset.maint, 10) || 0;
-
-      const newTotStr = window.prompt(`[${rNum}호 ${yr}년 ${mo}월분]\n수정할 납부/청구 금액(원)을 입력하세요:\n(현재: ${curTot.toLocaleString()}원)`, String(curTot));
-      if (newTotStr !== null && newTotStr.trim() !== '') {
-        const newTot = parseInt(newTotStr.replace(/[^\d]/g, ''), 10);
-        if (!isNaN(newTot) && newTot >= 0 && newTot !== curTot) {
-          await handleChangePaymentAmount(rNum, mo, yr, newTot, curRent, curMaint);
-        }
+      if (typeof window.openEditPaymentModal === 'function') {
+        window.openEditPaymentModal(rNum, mo, yr, 'amount');
       }
     };
   });
 
   tbody.querySelectorAll('.btn-change-paydate').forEach(btn => {
-    btn.onclick = async (e) => {
+    btn.onclick = (e) => {
       e.stopPropagation();
       const yr = parseInt(btn.dataset.year, 10);
       const mo = parseInt(btn.dataset.month, 10);
-      const curDate = btn.dataset.date || `${yr}-${String(mo).padStart(2, '0')}-10`;
-      const newDate = window.prompt(`[${rNum}호 ${yr}년 ${mo}월분]\n은행 거래내역상 실제 입금일자를 입력하세요 (YYYY-MM-DD):`, curDate);
-      if (newDate && newDate.trim() && newDate.trim() !== curDate) {
-        await handleChangePaymentDate(rNum, mo, yr, newDate.trim());
+      if (typeof window.openEditPaymentModal === 'function') {
+        window.openEditPaymentModal(rNum, mo, yr, 'date');
       }
     };
   });

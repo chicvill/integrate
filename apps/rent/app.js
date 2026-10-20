@@ -128,7 +128,17 @@ import {
   handleSendSmsReceipt,
   handlePhoneMessageClick,
   calculateDepositTargetPeriods,
-  updateSmsAlert
+  updateSmsAlert,
+  openCurrentMonthPaymentEditModal,
+  openEditPaymentModal,
+  handleEditPayStatusChange,
+  handleEditPayTotalInput,
+  handleEditPayDetailInput,
+  restoreEditPayContractDefault,
+  setEditPayTotalZero,
+  setEditPayDatePreset,
+  setEditPayNoteTag,
+  handleSaveEditPayment
 } from './js/modals.js?v=2.0';
 import {
   startVoiceRecognition,
@@ -252,6 +262,18 @@ window.saveTestSnapshot = saveTestSnapshot;
 window.restoreTestSnapshot = restoreTestSnapshot;
 window.openNewBranchModal = openNewBranchModal;
 window.handleNewBranchSubmit = handleNewBranchSubmit;
+
+// 수납 금액 및 납부일자 정밀 수정 모달 관련
+window.openCurrentMonthPaymentEditModal = openCurrentMonthPaymentEditModal;
+window.openEditPaymentModal = openEditPaymentModal;
+window.handleEditPayStatusChange = handleEditPayStatusChange;
+window.handleEditPayTotalInput = handleEditPayTotalInput;
+window.handleEditPayDetailInput = handleEditPayDetailInput;
+window.restoreEditPayContractDefault = restoreEditPayContractDefault;
+window.setEditPayTotalZero = setEditPayTotalZero;
+window.setEditPayDatePreset = setEditPayDatePreset;
+window.setEditPayNoteTag = setEditPayNoteTag;
+window.handleSaveEditPayment = handleSaveEditPayment;
 
 // 만기 1·2개월 전 전출 확인 및 문자 순차 발송 관련
 window.openExpiryNoticeModal = openExpiryNoticeModal;

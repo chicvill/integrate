@@ -12971,17 +12971,23 @@ function renderPastHistorySection(room) {
       `;
     }
 
-    // 납부일자 생성
+    // 납부일자 생성 (완납 시 실입금일자 표시, 미납 시 일자지정 퀵버튼 노출하여 즉시 지정 가능)
     let payDateHtml = '';
-    if (!isVacancy && p.paid && p.paid_date) {
+    if (isVacancy) {
+      payDateHtml = `<span class="text-slate-600 font-mono text-[11px]">-</span>`;
+    } else if (p.paid && p.paid_date) {
       const displayDate = p.paid_date;
       payDateHtml = `
-        <button type="button" class="btn-change-paydate inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-900/90 hover:bg-cyan-950/80 text-cyan-300 hover:text-cyan-200 border border-slate-700/80 hover:border-cyan-500/60 font-mono text-[11px] font-semibold transition cursor-pointer shadow-xs whitespace-nowrap" title="클릭하여 은행 실입금일자로 수정" data-year="${y}" data-month="${m}" data-date="${displayDate}">
+        <button type="button" class="btn-change-paydate inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-900/90 hover:bg-cyan-950/80 text-cyan-300 hover:text-cyan-200 border border-slate-700/80 hover:border-cyan-500/60 font-mono text-[11px] font-semibold transition cursor-pointer shadow-xs whitespace-nowrap" title="클릭하여 은행 실입금일자 및 수납 정보 수정" data-year="${y}" data-month="${m}" data-date="${displayDate}">
           <span class="text-[10px] opacity-70">📅</span><span>${displayDate}</span>
         </button>
       `;
     } else {
-      payDateHtml = `<span class="text-slate-600 font-mono text-[11px]">-</span>`;
+      payDateHtml = `
+        <button type="button" class="btn-change-paydate inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-900/90 hover:bg-slate-800 text-slate-400 hover:text-cyan-300 border border-slate-700/60 hover:border-cyan-500/50 font-mono text-[10px] transition cursor-pointer shadow-xs whitespace-nowrap" title="클릭하여 은행 실입금일자 지정 및 수납 처리" data-year="${y}" data-month="${m}">
+          <span>📅</span><span>일자지정</span>
+        </button>
+      `;
     }
 
     // 상태 배지 생성 (공실/미납/입주월은 클릭 시 즉시 공실↔미납 전환 지원)
@@ -13055,33 +13061,23 @@ function renderPastHistorySection(room) {
   });
 
   tbody.querySelectorAll('.btn-change-payamount').forEach(btn => {
-    btn.onclick = async (e) => {
+    btn.onclick = (e) => {
       e.stopPropagation();
       const yr = parseInt(btn.dataset.year, 10);
       const mo = parseInt(btn.dataset.month, 10);
-      const curTot = parseInt(btn.dataset.tot, 10) || 0;
-      const curRent = parseInt(btn.dataset.rent, 10) || 0;
-      const curMaint = parseInt(btn.dataset.maint, 10) || 0;
-
-      const newTotStr = window.prompt(`[${rNum}호 ${yr}년 ${mo}월분]\n수정할 납부/청구 금액(원)을 입력하세요:\n(현재: ${curTot.toLocaleString()}원)`, String(curTot));
-      if (newTotStr !== null && newTotStr.trim() !== '') {
-        const newTot = parseInt(newTotStr.replace(/[^\d]/g, ''), 10);
-        if (!isNaN(newTot) && newTot >= 0 && newTot !== curTot) {
-          await handleChangePaymentAmount(rNum, mo, yr, newTot, curRent, curMaint);
-        }
+      if (typeof window.openEditPaymentModal === 'function') {
+        window.openEditPaymentModal(rNum, mo, yr, 'amount');
       }
     };
   });
 
   tbody.querySelectorAll('.btn-change-paydate').forEach(btn => {
-    btn.onclick = async (e) => {
+    btn.onclick = (e) => {
       e.stopPropagation();
       const yr = parseInt(btn.dataset.year, 10);
       const mo = parseInt(btn.dataset.month, 10);
-      const curDate = btn.dataset.date || `${yr}-${String(mo).padStart(2, '0')}-10`;
-      const newDate = window.prompt(`[${rNum}호 ${yr}년 ${mo}월분]\n은행 거래내역상 실제 입금일자를 입력하세요 (YYYY-MM-DD):`, curDate);
-      if (newDate && newDate.trim() && newDate.trim() !== curDate) {
-        await handleChangePaymentDate(rNum, mo, yr, newDate.trim());
+      if (typeof window.openEditPaymentModal === 'function') {
+        window.openEditPaymentModal(rNum, mo, yr, 'date');
       }
     };
   });
@@ -19584,6 +19580,371 @@ async function handleBatchPaymentSubmit(e) {
   }
 }
 
+// ── 수납 금액 및 실입금일자 정밀 수정 모달 제어 ──
+
+function openCurrentMonthPaymentEditModal() {
+  const rNum = state.selectedRoom;
+  if (!rNum) return;
+  openEditPaymentModal(rNum, currentMonth, currentYear, 'all');
+}
+
+function openEditPaymentModal(roomNumber, month, year, initialFocus = 'all') {
+  roomNumber = Number(roomNumber);
+  month = Number(month);
+  year = Number(year || currentYear);
+
+  const room = state.rooms[roomNumber];
+  if (!room) {
+    showTopToast(`호실 ${roomNumber}호 정보를 찾을 수 없습니다.`, 'error');
+    return;
+  }
+
+  const pKey = `${year}-${month}`;
+  const pKeyPad = `${year}-${String(month).padStart(2, '0')}`;
+  const payments = room.payments || {};
+  const curPay = payments[pKey] || payments[pKeyPad] || (year === currentYear ? payments[month] : null) || {};
+
+  // 세입자명
+  let tenantName = room.name || '공실';
+  if (curPay.tenant_name) {
+    tenantName = curPay.tenant_name;
+  }
+
+  // Hidden values
+  const rNumEl = document.getElementById('editPayRoomNum');
+  const yrEl = document.getElementById('editPayYear');
+  const moEl = document.getElementById('editPayMonth');
+  if (rNumEl) rNumEl.value = roomNumber;
+  if (yrEl) yrEl.value = year;
+  if (moEl) moEl.value = month;
+
+  // Subtitle
+  const subEl = document.getElementById('editPaySubtitle');
+  if (subEl) {
+    subEl.textContent = `[${roomNumber}호 ${tenantName}] ${year}년 ${String(month).padStart(2, '0')}월분`;
+  }
+
+  // 상태 (완납 vs 미납)
+  const isPaid = Boolean(curPay.paid && curPay.paid_date);
+  const paidRadio = document.getElementById('editPayStatusPaid');
+  const unpaidRadio = document.getElementById('editPayStatusUnpaid');
+  if (isPaid) {
+    if (paidRadio) paidRadio.checked = true;
+  } else {
+    if (unpaidRadio) unpaidRadio.checked = true;
+  }
+  handleEditPayStatusChange();
+
+  // 날짜
+  const dateInput = document.getElementById('editPayDate');
+  if (dateInput) {
+    if (curPay.paid_date) {
+      dateInput.value = curPay.paid_date;
+    } else {
+      // 기본 납부일자: 당월 10일
+      const defaultDate = `${year}-${String(month).padStart(2, '0')}-10`;
+      dateInput.value = defaultDate;
+    }
+  }
+
+  // 금액 계산
+  const isJeonse = (room.lease_type === '전세');
+  let rentAmt = 0;
+  let maintAmt = 0;
+
+  if (curPay.rent_amount !== undefined && curPay.rent_amount !== null) {
+    rentAmt = Number(curPay.rent_amount) || 0;
+  } else {
+    rentAmt = isJeonse ? 0 : (Number(room.rent) || 0);
+  }
+
+  if (curPay.maintenance_amount !== undefined && curPay.maintenance_amount !== null) {
+    maintAmt = Number(curPay.maintenance_amount) || 0;
+  } else {
+    maintAmt = Number(room.maintenance) || 0;
+  }
+
+  const totAmt = rentAmt + maintAmt;
+
+  const totEl = document.getElementById('editPayTotalAmount');
+  const rentEl = document.getElementById('editPayRentAmount');
+  const maintEl = document.getElementById('editPayMaintAmount');
+  const prevEl = document.getElementById('editPayTotalPreview');
+
+  if (totEl) totEl.value = totAmt;
+  if (rentEl) rentEl.value = rentAmt;
+  if (maintEl) maintEl.value = maintAmt;
+  if (prevEl) prevEl.textContent = `${totAmt.toLocaleString()}원`;
+
+  // 메모
+  const noteEl = document.getElementById('editPayNote');
+  if (noteEl) {
+    noteEl.value = curPay.note || '은행 확인 입금';
+  }
+
+  openModal('editPaymentModal');
+
+  // Focus
+  setTimeout(() => {
+    if (initialFocus === 'date' && dateInput) {
+      dateInput.focus();
+    } else if (initialFocus === 'amount' && totEl) {
+      totEl.focus();
+      totEl.select();
+    }
+  }, 100);
+}
+
+function handleEditPayStatusChange() {
+  const paidRadio = document.getElementById('editPayStatusPaid');
+  const isPaid = paidRadio ? paidRadio.checked : true;
+  const paidLabel = document.getElementById('editPayStatusPaidLabel');
+  const unpaidLabel = document.getElementById('editPayStatusUnpaidLabel');
+  const dateSec = document.getElementById('editPayDateSection');
+
+  if (isPaid) {
+    if (paidLabel) {
+      paidLabel.className = 'flex items-center justify-center gap-2 p-2 rounded-xl border border-emerald-500/50 bg-emerald-950/40 text-emerald-300 font-bold text-xs cursor-pointer hover:bg-emerald-950/60 transition';
+    }
+    if (unpaidLabel) {
+      unpaidLabel.className = 'flex items-center justify-center gap-2 p-2 rounded-xl border border-slate-700 bg-surface-850 text-slate-400 font-bold text-xs cursor-pointer hover:bg-rose-950/40 hover:text-rose-300 transition';
+    }
+    if (dateSec) {
+      dateSec.classList.remove('opacity-40');
+      dateSec.querySelectorAll('input, button').forEach(el => el.disabled = false);
+    }
+  } else {
+    if (paidLabel) {
+      paidLabel.className = 'flex items-center justify-center gap-2 p-2 rounded-xl border border-slate-700 bg-surface-850 text-slate-400 font-bold text-xs cursor-pointer hover:bg-emerald-950/40 hover:text-emerald-300 transition';
+    }
+    if (unpaidLabel) {
+      unpaidLabel.className = 'flex items-center justify-center gap-2 p-2 rounded-xl border border-rose-500/50 bg-rose-950/40 text-rose-300 font-bold text-xs cursor-pointer hover:bg-rose-950/60 transition';
+    }
+    if (dateSec) {
+      dateSec.classList.add('opacity-40');
+      dateSec.querySelectorAll('input, button').forEach(el => el.disabled = true);
+    }
+  }
+}
+
+function handleEditPayTotalInput(val) {
+  const newTotal = parseInt(String(val).replace(/[^\d]/g, ''), 10) || 0;
+  const rNum = Number(document.getElementById('editPayRoomNum')?.value || 0);
+  const room = state.rooms[rNum];
+  const isJeonse = (room && room.lease_type === '전세');
+
+  let newRent = 0;
+  let newMaint = newTotal;
+
+  if (isJeonse) {
+    newRent = 0;
+    newMaint = newTotal;
+  } else {
+    const baseMaint = (room ? Number(room.maintenance) : 0) || 50000;
+    if (newTotal >= baseMaint) {
+      newMaint = baseMaint;
+      newRent = newTotal - baseMaint;
+    } else {
+      newMaint = newTotal;
+      newRent = 0;
+    }
+  }
+
+  const rentEl = document.getElementById('editPayRentAmount');
+  const maintEl = document.getElementById('editPayMaintAmount');
+  const prevEl = document.getElementById('editPayTotalPreview');
+
+  if (rentEl) rentEl.value = newRent;
+  if (maintEl) maintEl.value = newMaint;
+  if (prevEl) prevEl.textContent = `${newTotal.toLocaleString()}원`;
+}
+
+function handleEditPayDetailInput() {
+  const rentEl = document.getElementById('editPayRentAmount');
+  const maintEl = document.getElementById('editPayMaintAmount');
+  const totEl = document.getElementById('editPayTotalAmount');
+  const prevEl = document.getElementById('editPayTotalPreview');
+
+  const r = parseInt(rentEl?.value, 10) || 0;
+  const m = parseInt(maintEl?.value, 10) || 0;
+  const tot = r + m;
+
+  if (totEl) totEl.value = tot;
+  if (prevEl) prevEl.textContent = `${tot.toLocaleString()}원`;
+}
+
+function restoreEditPayContractDefault() {
+  const rNum = Number(document.getElementById('editPayRoomNum')?.value || 0);
+  const room = state.rooms[rNum];
+  if (!room) return;
+
+  const isJeonse = (room.lease_type === '전세');
+  const rAmt = isJeonse ? 0 : (Number(room.rent) || 0);
+  const mAmt = Number(room.maintenance) || 0;
+  const tot = rAmt + mAmt;
+
+  const totEl = document.getElementById('editPayTotalAmount');
+  const rentEl = document.getElementById('editPayRentAmount');
+  const maintEl = document.getElementById('editPayMaintAmount');
+  const prevEl = document.getElementById('editPayTotalPreview');
+
+  if (totEl) totEl.value = tot;
+  if (rentEl) rentEl.value = rAmt;
+  if (maintEl) maintEl.value = mAmt;
+  if (prevEl) prevEl.textContent = `${tot.toLocaleString()}원`;
+}
+
+function setEditPayTotalZero() {
+  const totEl = document.getElementById('editPayTotalAmount');
+  const rentEl = document.getElementById('editPayRentAmount');
+  const maintEl = document.getElementById('editPayMaintAmount');
+  const prevEl = document.getElementById('editPayTotalPreview');
+  const unpaidRadio = document.getElementById('editPayStatusUnpaid');
+
+  if (totEl) totEl.value = 0;
+  if (rentEl) rentEl.value = 0;
+  if (maintEl) maintEl.value = 0;
+  if (prevEl) prevEl.textContent = '0원';
+  if (unpaidRadio) {
+    unpaidRadio.checked = true;
+    handleEditPayStatusChange();
+  }
+}
+
+function setEditPayDatePreset(preset) {
+  const yr = Number(document.getElementById('editPayYear')?.value || currentYear);
+  const mo = Number(document.getElementById('editPayMonth')?.value || currentMonth);
+  const dateInput = document.getElementById('editPayDate');
+  if (!dateInput) return;
+
+  const padMo = String(mo).padStart(2, '0');
+  if (preset === 'today') {
+    dateInput.value = formattedToday();
+  } else if (preset === '10') {
+    dateInput.value = `${yr}-${padMo}-10`;
+  } else if (preset === '25') {
+    dateInput.value = `${yr}-${padMo}-25`;
+  } else if (preset === 'end') {
+    const lastDay = new Date(yr, mo, 0).getDate();
+    dateInput.value = `${yr}-${padMo}-${String(lastDay).padStart(2, '0')}`;
+  }
+}
+
+function setEditPayNoteTag(tag) {
+  const noteEl = document.getElementById('editPayNote');
+  if (noteEl) noteEl.value = tag;
+}
+
+async function handleSaveEditPayment() {
+  const btn = document.getElementById('btnSaveEditPayment');
+  const rNum = Number(document.getElementById('editPayRoomNum')?.value || 0);
+  const yr = Number(document.getElementById('editPayYear')?.value || currentYear);
+  const mo = Number(document.getElementById('editPayMonth')?.value || currentMonth);
+
+  if (!rNum) {
+    showTopToast('호실 정보가 올바르지 않습니다.', 'error');
+    return;
+  }
+
+  const room = state.rooms[rNum];
+  const tenantName = (room && room.name) ? room.name : '공실';
+
+  const paidRadio = document.getElementById('editPayStatusPaid');
+  const isPaid = paidRadio ? paidRadio.checked : true;
+
+  const dateInput = document.getElementById('editPayDate');
+  const paidDate = dateInput ? dateInput.value : `${yr}-${String(mo).padStart(2, '0')}-10`;
+
+  const rentAmt = parseInt(document.getElementById('editPayRentAmount')?.value, 10) || 0;
+  const maintAmt = parseInt(document.getElementById('editPayMaintAmount')?.value, 10) || 0;
+  const totAmt = rentAmt + maintAmt;
+  const note = document.getElementById('editPayNote')?.value?.trim() || (isPaid ? '은행 확인 입금' : '미납 처리');
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span>⏳</span><span>저장 중...</span>`;
+  }
+
+  try {
+    const pKey = `${yr}-${mo}`;
+    const pKeyPad = `${yr}-${String(mo).padStart(2, '0')}`;
+
+    if (!isPaid) {
+      // 미납 처리 (취소 API 호출)
+      if (state.isOnline) {
+        const res = await apiCancelPayment(rNum, mo, state.currentBranch, yr, note);
+        if (res) state.rooms[rNum] = res;
+      }
+      if (room && room.payments) {
+        const existing = room.payments[pKey] || room.payments[pKeyPad] || (yr === currentYear ? room.payments[mo] : {}) || {};
+        const payObj = {
+          ...existing,
+          month: mo,
+          year: yr,
+          paid: false,
+          paid_date: '',
+          rent_amount: rentAmt,
+          maintenance_amount: maintAmt,
+          note: note,
+          tenant_name: existing.tenant_name || tenantName
+        };
+        room.payments[pKey] = payObj;
+        room.payments[pKeyPad] = payObj;
+        if (yr === currentYear) room.payments[mo] = payObj;
+      }
+    } else {
+      // 완납 처리 (수납 API 호출)
+      if (state.isOnline) {
+        const res = await apiProcessPayment(
+          rNum,
+          mo,
+          state.currentBranch,
+          paidDate,
+          note,
+          tenantName,
+          yr,
+          rentAmt,
+          maintAmt
+        );
+        if (res) state.rooms[rNum] = res;
+      }
+      if (room && room.payments) {
+        const existing = room.payments[pKey] || room.payments[pKeyPad] || (yr === currentYear ? room.payments[mo] : {}) || {};
+        const payObj = {
+          ...existing,
+          month: mo,
+          year: yr,
+          paid: true,
+          paid_date: paidDate,
+          rent_amount: rentAmt,
+          maintenance_amount: maintAmt,
+          note: note,
+          tenant_name: existing.tenant_name || tenantName
+        };
+        room.payments[pKey] = payObj;
+        room.payments[pKeyPad] = payObj;
+        if (yr === currentYear) room.payments[mo] = payObj;
+      }
+    }
+
+    saveLocalFallback();
+    renderAll();
+    closeModal('editPaymentModal');
+
+    const statusText = isPaid ? `완납 (${totAmt.toLocaleString()}원 / ${paidDate})` : '미납 환원';
+    showTopToast(`✅ [${rNum}호 ${yr}년 ${mo}월] ${statusText} 저장 완료!`, 'success');
+
+  } catch (err) {
+    console.error("Save edit payment error:", err);
+    showTopToast(`❌ 수납 저장 실패: ${err.message}`, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<span>💾 저장 및 적용</span>`;
+    }
+  }
+}
+
 if (typeof window !== 'undefined') {
   window.fillBankPresetSms = fillBankPresetSms;
   window.fillSampleSmsText = fillSampleSmsText;
@@ -19596,6 +19957,16 @@ if (typeof window !== 'undefined') {
   window.handleBatchPaymentSubmit = handleBatchPaymentSubmit;
   window.setVatTaxPreset = setVatTaxPreset;
   window.handleVatYearChange = handleVatYearChange;
+  window.openCurrentMonthPaymentEditModal = openCurrentMonthPaymentEditModal;
+  window.openEditPaymentModal = openEditPaymentModal;
+  window.handleEditPayStatusChange = handleEditPayStatusChange;
+  window.handleEditPayTotalInput = handleEditPayTotalInput;
+  window.handleEditPayDetailInput = handleEditPayDetailInput;
+  window.restoreEditPayContractDefault = restoreEditPayContractDefault;
+  window.setEditPayTotalZero = setEditPayTotalZero;
+  window.setEditPayDatePreset = setEditPayDatePreset;
+  window.setEditPayNoteTag = setEditPayNoteTag;
+  window.handleSaveEditPayment = handleSaveEditPayment;
 }
 
 
@@ -21315,6 +21686,18 @@ window.saveTestSnapshot = saveTestSnapshot;
 window.restoreTestSnapshot = restoreTestSnapshot;
 window.openNewBranchModal = openNewBranchModal;
 window.handleNewBranchSubmit = handleNewBranchSubmit;
+
+// 수납 금액 및 납부일자 정밀 수정 모달 관련
+window.openCurrentMonthPaymentEditModal = openCurrentMonthPaymentEditModal;
+window.openEditPaymentModal = openEditPaymentModal;
+window.handleEditPayStatusChange = handleEditPayStatusChange;
+window.handleEditPayTotalInput = handleEditPayTotalInput;
+window.handleEditPayDetailInput = handleEditPayDetailInput;
+window.restoreEditPayContractDefault = restoreEditPayContractDefault;
+window.setEditPayTotalZero = setEditPayTotalZero;
+window.setEditPayDatePreset = setEditPayDatePreset;
+window.setEditPayNoteTag = setEditPayNoteTag;
+window.handleSaveEditPayment = handleSaveEditPayment;
 
 // 만기 1·2개월 전 전출 확인 및 문자 순차 발송 관련
 window.openExpiryNoticeModal = openExpiryNoticeModal;
