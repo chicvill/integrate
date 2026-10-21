@@ -69,6 +69,8 @@ from apps.rent2.backend.api import router as rent2_router
 from apps.rent2.backend.main import ROOT as RENT2_ROOT
 from apps.rent2.backend.kernel.base import use_store as rent2_use_store
 from apps.rent2.backend.domain import bootstrap as rent2_bootstrap
+from apps.studycafe2.backend.api import router as studycafe2_router
+from apps.selfstudy2.backend.api import router as selfstudy2_router
 
 rent2_db_path = os.getenv("RENT2_DB") or os.path.join(RENT2_ROOT, "data", "rent2.db")
 rent2_use_store(rent2_db_path)
@@ -237,6 +239,8 @@ app.include_router(files_router, prefix="/api/filebrowser", include_in_schema=Fa
 # 12. 원룸 임차료 관리 시스템 (Rent Management 29-Rooms)
 app.include_router(rent_router, prefix="/api/rent", tags=["원룸 임차료 관리 (29개실)"])
 app.include_router(rent2_router, prefix="/api/rent2", tags=["원룸 임차관리 rent2 (스마트 모바일)"])
+app.include_router(studycafe2_router, prefix="/api/studycafe2", tags=["스터디카페 studycafe2 (스마트 객체)"])
+app.include_router(selfstudy2_router, prefix="/api/selfstudy2", tags=["셀프스터디 selfstudy2 (스마트 객체)"])
 
 # 13. 솔루션 분리 배포 & 패키징 센터 (Deployer & Distro Studio)
 app.include_router(deployer_router, prefix="/api/deployer", tags=["솔루션 배포 & 패키징 센터"])
@@ -317,10 +321,18 @@ studycafe_frontend = os.path.abspath(os.path.join(os.path.dirname(__file__), "..
 if os.path.exists(studycafe_frontend):
     app.mount("/studycafe", NoCacheStaticFiles(directory=studycafe_frontend, html=True), name="studycafe_app")
 
+studycafe2_frontend = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "studycafe2", "frontend"))
+if os.path.exists(studycafe2_frontend):
+    app.mount("/studycafe2", NoCacheStaticFiles(directory=studycafe2_frontend, html=True), name="studycafe2_app")
+
 # ── 2. 자기주도학습 웹앱 (StudyCafe 연동형 SaaS 템플릿 표준 번들리스 서빙) ──
 selfstudy_frontend = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "selfstudy", "frontend"))
 if os.path.exists(selfstudy_frontend):
     app.mount("/selfstudy", NoCacheStaticFiles(directory=selfstudy_frontend, html=True), name="selfstudy_app")
+
+selfstudy2_frontend = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "selfstudy2", "frontend"))
+if os.path.exists(selfstudy2_frontend):
+    app.mount("/selfstudy2", NoCacheStaticFiles(directory=selfstudy2_frontend, html=True), name="selfstudy2_app")
 
 store_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "store", "frontend", "dist"))
 if os.path.exists(store_dist):

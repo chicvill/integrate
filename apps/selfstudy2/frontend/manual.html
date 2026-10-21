@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>SelfStudy 2.0 운영 매뉴얼</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #000; background: #fff; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+    h1, h2, h3 { border-bottom: 2px solid #000; padding-bottom: 6px; margin-top: 28px; margin-bottom: 12px; }
+    .header-box { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 3px solid #000; padding-bottom: 12px; margin-bottom: 24px; }
+    .print-btn { background: #000; color: #fff; border: 1px solid #000; padding: 8px 16px; font-weight: 800; cursor: pointer; text-decoration: none; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; }
+    th, td { border: 1px solid #000; padding: 8px; text-align: left; font-size: 13px; }
+    th { background: #f2f2f2; }
+    ul { margin-left: 20px; margin-bottom: 14px; }
+    @media print {
+      body { margin: 0; padding: 0; }
+      .print-btn { display: none; }
+      h1, h2 { page-break-after: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header-box">
+    <div>
+      <h1 style="border:none;margin:0;padding:0;">SelfStudy 2.0 공식 운영 매뉴얼</h1>
+      <div style="font-size:12px;color:#555;">관리형 독서실 순공시간 관제 및 대면 상담 지도 지침</div>
+    </div>
+    <button class="print-btn" onclick="window.print()">🖨️ 매뉴얼 인쇄 / PDF 저장</button>
+  </div>
+
+  <h2>1. 시스템 개요</h2>
+  <p>SelfStudy 2.0은 수험생의 의무 등원/하원 관리, 실시간 순공시간 타이머 산출, 주간 대면 학습 코칭 일지 작성을 순수 도메인 객체(Student, Attendance, Consultation) 기반으로 지원하는 지능형 관리형 독서실 플랫폼입니다.</p>
+
+  <h2>2. 핵심 운영 규정</h2>
+  <ul>
+    <li><b>의무 등원 규정</b>: 매일 08:30까지 의무 입실 (이후 등원 시 지각 자동 판정 및 학부모 알림 연동).</li>
+    <li><b>순공시간 자동 산출</b>: 등원 시각부터 하원 시각까지의 체류 시간을 분 단위로 정밀 누적하여 당일 목표 순공시간(10시간) 달성률을 측정.</li>
+    <li><b>대면 학습 코칭 일지</b>: 담당 실장/멘토가 주 1~2회 학생별 학습 태도, 집중도, 기출 풀이 진도를 점검하고 상담 일지를 영구 보존.</li>
+  </ul>
+
+  <h2>3. AI 자연어 도구 비서 명령어 예시</h2>
+  <table>
+    <thead><tr><th>자연어 입력</th><th>실행 도구</th><th>동작 설명</th></tr></thead>
+    <tbody>
+      <tr><td>"강민석 등원시켜줘"</td><td>check_in_student</td><td>등원 시각 기록 및 순공 타이머 시작</td></tr>
+      <tr><td>"이지은 하원 처리해줘"</td><td>check_out_student</td><td>하원 완료 및 오늘 총 순공시간 자동 산출</td></tr>
+      <tr><td>"오늘 독서실 현황 브리핑해줘"</td><td>daily_briefing</td><td>총원, 학습중, 하원, 누적 순공시간 요약</td></tr>
+      <tr><td>"윤도현 학생 리포트 보여줘"</td><td>student_report</td><td>출결, 순공시간, 최근 상담 일지 종합 보고</td></tr>
+    </tbody>
+  </table>
+
+  <h2>4. 비상 연락처 및 기술 지원</h2>
+  <p>MQ 관리형 교육센터 본원: 010-2345-6789 (담당: 수험관리 총괄실)</p>
+</body>
+</html>

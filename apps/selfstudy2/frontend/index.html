@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SelfStudy2 — 관리형 독서실 순공 관제 시스템</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #000000;
+      --card-bg: #ffffff;
+      --line: #000000;
+      --line-subtle: #cccccc;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-family);
+      line-height: 1.4;
+      padding-bottom: 70px;
+    }
+    header {
+      border-bottom: 2px solid var(--line);
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 100;
+    }
+    .brand { font-size: 18px; font-weight: 900; letter-spacing: -0.5px; }
+    .header-links a {
+      color: var(--fg);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid var(--line);
+      padding: 4px 8px;
+    }
+    .container { max-width: 960px; margin: 0 auto; padding: 14px 16px; }
+
+    /* ── 상단 3대 브리핑 메트릭 ── */
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .metric-box {
+      border: 1px solid var(--line);
+      padding: 10px;
+      text-align: center;
+    }
+    .metric-box .label { font-size: 11px; font-weight: 700; color: #555; }
+    .metric-box .val { font-size: 20px; font-weight: 900; margin-top: 2px; }
+
+    /* ── 탭 ── */
+    .nav-tabs {
+      display: flex;
+      border-bottom: 2px solid var(--line);
+      margin-bottom: 14px;
+      gap: 4px;
+      overflow-x: auto;
+    }
+    .nav-tab {
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 800;
+      background: #fff;
+      color: #000;
+      border: 1px solid var(--line);
+      border-bottom: none;
+      cursor: pointer;
+    }
+    .nav-tab.active { background: #000; color: #fff; }
+
+    /* ── 안내 알림 배너 ── */
+    .app-alert {
+      border: 2px solid #000;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: none;
+    }
+    .app-alert.warning { background: #fffbe6; border-color: #d48806; color: #d48806; }
+    .app-alert.error { background: #fff1f0; border-color: #cf1322; color: #cf1322; }
+    .app-alert.success { background: #f6ffed; border-color: #389e0d; color: #389e0d; }
+
+    /* ── 학생 출결/순공 카드 그리드 ── */
+    .student-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .student-card {
+      border: 1px solid var(--line);
+      padding: 12px;
+      background: #fff;
+      position: relative;
+    }
+    .student-card.status-학습중 { border-width: 2px; }
+    .student-card.status-귀가 { background: #fafafa; border-color: #888; }
+    .student-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 1px solid var(--line-subtle);
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+    }
+    .student-name { font-size: 16px; font-weight: 900; }
+    .seat-badge { font-size: 10px; font-weight: 800; border: 1px solid #000; padding: 1px 4px; }
+    .student-body { font-size: 12px; margin-bottom: 10px; }
+    .student-body .row { display: flex; justify-content: space-between; margin-bottom: 3px; }
+    .student-actions { display: flex; gap: 4px; }
+    .student-actions button {
+      flex: 1;
+      padding: 6px 4px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #fff;
+      color: #000;
+      border: 1px solid #000;
+      cursor: pointer;
+    }
+    .student-actions button:hover { background: #000; color: #fff; }
+
+    /* ── 테이블 ── */
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    table.data-table th, table.data-table td {
+      border: 1px solid var(--line);
+      padding: 6px 8px;
+      text-align: left;
+    }
+    table.data-table th { background: #f2f2f2; font-weight: 800; }
+
+    /* ── 하단 고정 바 ── */
+    .bottom-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: #000;
+      color: #fff;
+      display: flex;
+      padding: 8px 12px;
+      gap: 8px;
+      z-index: 200;
+      border-top: 2px solid #000;
+    }
+    .bottom-bar button {
+      flex: 1;
+      padding: 10px 4px;
+      font-size: 13px;
+      font-weight: 800;
+      background: #fff;
+      color: #000;
+      border: none;
+      cursor: pointer;
+    }
+    .bottom-bar button.btn-primary {
+      background: #000;
+      color: #fff;
+      border: 1px solid #fff;
+    }
+
+    /* ── 모달 ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-content {
+      background: #fff;
+      border: 2px solid #000;
+      padding: 18px;
+      width: 100%;
+      max-width: 440px;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #000;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+    .form-group { margin-bottom: 10px; }
+    .form-group label { display: block; font-size: 11px; font-weight: 800; margin-bottom: 4px; }
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #000;
+      font-size: 13px;
+    }
+    button.btn-block {
+      width: 100%;
+      padding: 10px;
+      background: #000;
+      color: #fff;
+      border: 1px solid #000;
+      font-weight: 800;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">SELFSTUDY 2.0</div>
+    <div class="header-links">
+      <a href="manual.html" target="_blank">📖 매뉴얼 / 인쇄</a>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="app-alert" id="appAlert"></div>
+
+    <!-- 3대 핵심 브리핑 -->
+    <div class="metric-grid">
+      <div class="metric-box">
+        <div class="label">재원생</div>
+        <div class="val" id="metricTotal">5</div>
+      </div>
+      <div class="metric-box">
+        <div class="label">학습 중 (귀가)</div>
+        <div class="val" id="metricStudying">0 (0)</div>
+      </div>
+      <div class="metric-box">
+        <div class="label">오늘 총 순공시간</div>
+        <div class="val" id="metricHours">0h</div>
+      </div>
+    </div>
+
+    <!-- 탭 네비게이션 -->
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="setTab('students')">학생 출결/순공 관제</button>
+      <button class="nav-tab" onclick="setTab('consult')">대면 지도/상담일지</button>
+      <button class="nav-tab" onclick="setTab('ai')">AI 코칭 비서</button>
+    </div>
+
+    <!-- [탭 1] 학생 출결/순공 관제 -->
+    <div id="secStudents">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:12px;font-weight:800;">재원생 실시간 순공시간 현황판</span>
+        <button style="border:1px solid #000;background:#fff;padding:4px 8px;font-size:11px;font-weight:700;" onclick="loadStudents()">새로고침 🔄</button>
+      </div>
+      <div class="student-grid" id="studentGrid">
+        <div>학생 정보 로딩 중...</div>
+      </div>
+    </div>
+
+    <!-- [탭 2] 상담 일지 -->
+    <div id="secConsult" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="font-weight:900;font-size:14px;">대면 학습 상담 일지</div>
+        <button style="border:1px solid #000;background:#000;color:#fff;padding:4px 8px;font-size:11px;" onclick="openModal('modalConsult')">+ 상담 일지 작성</button>
+      </div>
+      <table class="data-table" id="consultTable">
+        <thead>
+          <tr><th>일자</th><th>학생명</th><th>집중도</th><th>상담 지도 내용</th><th>담당</th></tr>
+        </thead>
+        <tbody><tr><td colspan="5" style="text-align:center;">조회 중...</td></tr></tbody>
+      </table>
+    </div>
+
+    <!-- [탭 3] AI 코칭 비서 -->
+    <div id="secAI" style="display:none;">
+      <div style="border:2px solid #000;padding:14px;">
+        <div style="font-weight:900;font-size:15px;margin-bottom:8px;">관리형 독서실 전담 학습코칭 AI 비서</div>
+        <div style="font-size:12px;color:#555;margin-bottom:12px;">자연어로 명령하면 출결 및 상담 객체가 즉시 반응합니다. (예: "강민석 등원시켜줘", "이지은 하원 처리", "오늘 출결 현황 브리핑해줘", "윤도현 리포트 보여줘")</div>
+        <div style="display:flex;gap:6px;margin-bottom:12px;">
+          <input type="text" id="aiInput" placeholder="명령 또는 질문을 입력하세요..." style="flex:1;padding:8px;border:1px solid #000;font-size:13px;" onkeydown="if(event.key==='Enter')sendAI()">
+          <button style="background:#000;color:#fff;padding:0 14px;border:1px solid #000;font-weight:800;" onclick="sendAI()">실행</button>
+        </div>
+        <div id="aiResponse" style="border:1px solid #000;padding:12px;min-height:100px;font-size:13px;white-space:pre-wrap;background:#fafafa;">결과가 여기에 표시됩니다.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 모바일 고정 하단 퀵 액션 바 ── -->
+  <div class="bottom-bar">
+    <button onclick="openModal('modalStudent')">+ 신규 학생 등록</button>
+    <button onclick="openModal('modalConsult')">📝 상담일지 작성</button>
+    <button class="btn-primary" onclick="setTab('ai')">🤖 AI 비서</button>
+  </div>
+
+  <!-- ── 신규 학생 등록 모달 ── -->
+  <div class="modal-overlay" id="modalStudent">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>+ 관리형 수험생 등록</h3>
+        <button onclick="closeModal('modalStudent')" style="border:none;background:none;font-size:18px;font-weight:900;">×</button>
+      </div>
+      <div class="form-group">
+        <label>학생 성함:</label>
+        <input type="text" id="stName" placeholder="홍길동">
+      </div>
+      <div class="form-group">
+        <label>학생 전화번호:</label>
+        <input type="tel" id="stPhone" placeholder="01012345678">
+      </div>
+      <div class="form-group">
+        <label>목표 시험:</label>
+        <input type="text" id="stExam" placeholder="수능(의대), 9급 국가직 등">
+      </div>
+      <div class="form-group">
+        <label>지정 고정석:</label>
+        <input type="text" id="stSeat" placeholder="S-06">
+      </div>
+      <div class="form-group">
+        <label>학부모 연락처 (안심 SMS):</label>
+        <input type="tel" id="stParent" placeholder="01099998888">
+      </div>
+      <button class="btn-block" onclick="submitStudent()">수험생 등록 완료</button>
+    </div>
+  </div>
+
+  <!-- ── 상담일지 작성 모달 ── -->
+  <div class="modal-overlay" id="modalConsult">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>📝 대면 학습 상담 일지</h3>
+        <button onclick="closeModal('modalConsult')" style="border:none;background:none;font-size:18px;font-weight:900;">×</button>
+      </div>
+      <div class="form-group">
+        <label>상담 대상 학생:</label>
+        <select id="csStudent"></select>
+      </div>
+      <div class="form-group">
+        <label>학습 태도 / 집중도:</label>
+        <select id="csRating">
+          <option value="우수">우수 (집중도 최상, 졸음 없음)</option>
+          <option value="양호" selected>양호 (목표 시간 유지)</option>
+          <option value="집중필요">집중 필요 (기상 지각 / 잦은 외출)</option>
+          <option value="졸음주의">졸음 주의 (휴게실 리프레시 지도)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>상담 피드백 내용:</label>
+        <textarea id="csNotes" rows="4" placeholder="예: 취침 루틴 12시 이전으로 재조정 지도. 국어 기출 2회차 풀이 점검."></textarea>
+      </div>
+      <button class="btn-block" onclick="submitConsult()">상담 일지 저장</button>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "/api/selfstudy2";
+    let cachedStudents = [];
+
+    function setTab(tab) {
+      document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
+      event.target.classList.add("active");
+      document.getElementById("secStudents").style.display = tab === "students" ? "block" : "none";
+      document.getElementById("secConsult").style.display = tab === "consult" ? "block" : "none";
+      document.getElementById("secAI").style.display = tab === "ai" ? "block" : "none";
+      if (tab === "students") loadStudents();
+      if (tab === "consult") loadConsultations();
+    }
+
+    function setAlert(msg, type = "success") {
+      const el = document.getElementById("appAlert");
+      el.className = `app-alert ${type}`;
+      el.textContent = msg;
+      el.style.display = "block";
+      setTimeout(() => { el.style.display = "none"; }, 4000);
+    }
+
+    async function loadStudents() {
+      try {
+        const res = await fetch(`${API_BASE}/students`);
+        const data = await res.json();
+        cachedStudents = data.students || [];
+
+        const grid = document.getElementById("studentGrid");
+        grid.innerHTML = "";
+
+        let studying = 0, checkedOut = 0, totalHours = 0;
+
+        cachedStudents.forEach(s => {
+          if (s.status === "학습중") studying++;
+          if (s.status === "귀가") checkedOut++;
+          totalHours += s.pure_study_hours;
+
+          const card = document.createElement("div");
+          card.className = `student-card status-${s.status}`;
+
+          let actions = "";
+          if (s.status === "학습중") {
+            actions = `<button onclick="checkOutStudent('${s.phone}')">하원 처리 🏠</button>`;
+          } else {
+            actions = `<button onclick="checkInStudent('${s.phone}')">등원 처리 🔔</button>`;
+          }
+
+          card.innerHTML = `
+            <div class="student-header">
+              <span class="student-name">${s.name}</span>
+              <span class="seat-badge">${s.assigned_seat}</span>
+            </div>
+            <div class="student-body">
+              <div class="row"><span style="color:#666;">목표:</span> <b>${s.target_exam}</b></div>
+              <div class="row"><span style="color:#666;">상태:</span> <b>${s.status}</b></div>
+              <div class="row"><span style="color:#666;">등원:</span> <span>${s.check_in_at}</span></div>
+              <div class="row"><span style="color:#666;">하원:</span> <span>${s.check_out_at}</span></div>
+              <div class="row" style="margin-top:6px;border-top:1px dashed #ccc;padding-top:4px;">
+                <span>오늘 순공:</span> <b style="font-size:14px;">${s.pure_study_hours}시간</b>
+              </div>
+            </div>
+            <div class="student-actions">${actions}</div>
+          `;
+          grid.appendChild(card);
+        });
+
+        document.getElementById("metricTotal").textContent = cachedStudents.length;
+        document.getElementById("metricStudying").textContent = `${studying} (${checkedOut})`;
+        document.getElementById("metricHours").textContent = `${totalHours.toFixed(1)}h`;
+
+        // 상담 모달 셀렉트 옵션 채우기
+        const csSelect = document.getElementById("csStudent");
+        csSelect.innerHTML = cachedStudents.map(s => `<option value="${s.name}">${s.name} (${s.assigned_seat})</option>`).join("");
+      } catch (err) {
+        console.error("학생 로드 실패", err);
+      }
+    }
+
+    async function checkInStudent(phone) {
+      try {
+        const res = await fetch(`${API_BASE}/students/${phone}/check-in`, { method: "POST" });
+        const data = await res.json();
+        setAlert(data.message, "success");
+        loadStudents();
+      } catch (err) { setAlert("등원 처리 실패", "error"); }
+    }
+
+    async function checkOutStudent(phone) {
+      try {
+        const res = await fetch(`${API_BASE}/students/${phone}/check-out`, { method: "POST" });
+        const data = await res.json();
+        setAlert(data.message, "success");
+        loadStudents();
+      } catch (err) { setAlert("하원 처리 실패", "error"); }
+    }
+
+    async function submitStudent() {
+      const name = document.getElementById("stName").value.trim();
+      const phone = document.getElementById("stPhone").value.trim();
+      const target_exam = document.getElementById("stExam").value.trim();
+      const assigned_seat = document.getElementById("stSeat").value.trim();
+      const parent_phone = document.getElementById("stParent").value.trim();
+      if (!name || !phone) { alert("이름과 전화번호를 입력하세요."); return; }
+
+      try {
+        await fetch(`${API_BASE}/students`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, phone, target_exam, assigned_seat, parent_phone })
+        });
+        closeModal("modalStudent");
+        setAlert("수험생 등록 완료", "success");
+        loadStudents();
+      } catch (err) { setAlert("학생 등록 실패", "error"); }
+    }
+
+    async function loadConsultations() {
+      try {
+        const res = await fetch(`${API_BASE}/consultations`);
+        const data = await res.json();
+        const tb = document.querySelector("#consultTable tbody");
+        tb.innerHTML = "";
+        (data.consultations || []).forEach(c => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${c.date}</td>
+            <td><b>${c.student_name}</b></td>
+            <td>${c.focus_rating}</td>
+            <td>${c.notes}</td>
+            <td>${c.consultant}</td>
+          `;
+          tb.appendChild(tr);
+        });
+      } catch (err) { console.error("상담 로드 실패", err); }
+    }
+
+    async function submitConsult() {
+      const student_name = document.getElementById("csStudent").value;
+      const focus_rating = document.getElementById("csRating").value;
+      const notes = document.getElementById("csNotes").value.trim();
+      if (!notes) { alert("상담 피드백을 입력하세요."); return; }
+
+      try {
+        await fetch(`${API_BASE}/consultations`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ student_name, focus_rating, notes })
+        });
+        closeModal("modalConsult");
+        setAlert("상담 일지 저장 완료", "success");
+        loadConsultations();
+      } catch (err) { setAlert("상담 저장 실패", "error"); }
+    }
+
+    async function sendAI() {
+      const inp = document.getElementById("aiInput");
+      const q = inp.value.trim();
+      if (!q) return;
+      const out = document.getElementById("aiResponse");
+      out.textContent = "AI 비서 분석 및 도구 호출 중... ⏳";
+      try {
+        const res = await fetch(`${API_BASE}/ai/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: q, mode: "auto" })
+        });
+        const data = await res.json();
+        out.textContent = data.reply || JSON.stringify(data, null, 2);
+        loadStudents();
+      } catch (err) {
+        out.textContent = "AI 통신 실패";
+      }
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add("open"); }
+    function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+
+    // 초기화
+    loadStudents();
+  </script>
+</body>
+</html>

@@ -11,7 +11,7 @@ from ..kernel import agent
 from ..kernel.agent import tool
 from ..kernel.base import recall, store
 from . import vat
-from .rent import Building, Contract, Expense, num, today
+from .rent import Building, Contract, Expense, num, pdate, today
 
 
 def _ym(year: int, month: int) -> Tuple[int, int]:
@@ -171,7 +171,7 @@ def new_contract(building: str, unit: int, tenant_name: str, deposit: int, rent:
 
 # ───────────── 오프라인 규칙 (API 키 없이도 동작 · 결정적 테스트용) ─────────────
 def _args(msg: str, ctx: dict, **extra: Any) -> dict:
-    t, a = today(), {}
+    t, a = today(), dict(ctx)
     if (m := re.search(r"(\d{3,4})\s*호?", msg)):
         a["unit"] = int(m.group(1))
     if (m := re.search(r"(\d{4})\s*년", msg)):
@@ -203,10 +203,11 @@ def _modify_contract_rule(m: re.Match, ctx: dict) -> List[Tuple[str, dict]]:
     u_num = int(u_match.group(1))
     args: Dict[str, Any] = {"unit": u_num}
     d = pdate(msg)
-    if d and ("만기" in msg or "종료" in msg or "연장" in msg):
-        args["expiry"] = d.isoformat()
-    elif d and ("입주" in msg or "전입" in msg):
-        args["move_in"] = d.isoformat()
+    if d:
+        if "입주" in msg or "전입" in msg or "시작" in msg:
+            args["move_in"] = d.isoformat()
+        else:
+            args["expiry"] = d.isoformat()
     amt = re.search(r"(\d[\d,]*)\s*(만)?\s*원", msg)
     if amt:
         val = num(amt.group(1)) * (10000 if amt.group(2) else 1)
@@ -238,7 +239,7 @@ def _vat(m: re.Match, ctx: dict) -> List[Tuple[str, dict]]:
 
 
 agent.OFFLINE_RULES[:] = [(re.compile(p, re.I), fn) for p, fn in [
-    (r"수정|변경|바꿔|연장", _modify_contract_rule),
+    (r"수정|변경|바꿔|연장|\b(?:만기|입주).*(?:\d{4}[-./년\s]\d{1,2}|\d{8})", _modify_contract_rule),
     (r"납부\s*취소|수납\s*취소|입금\s*취소", _plan("cancel_payment")),
     (r"(납부|수납|입금|납입)\s*(처리|완료|했|확인)", _plan("record_payment")),
     (r"퇴실|전출|이사\s*나", _plan("end_contract")),
