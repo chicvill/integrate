@@ -48,6 +48,14 @@ def parse_bank_message(text: str, default_building: str = "main") -> Dict[str, A
                 candidates.append(val)
         if candidates:
             amount = candidates[0]
+        else:
+            # 호실 번호를 제외한 2~3자리 숫자(예: '403호 29', '44')를 만원 단위로 해석 시도
+            no_room_text = _ROOM_RE.sub("", clean)
+            short_num_m = re.search(r"\b(\d{2,3})\b", no_room_text)
+            if short_num_m:
+                short_val = int(short_num_m.group(1))
+                if 10 <= short_val <= 900:  # 10만 ~ 900만 범위
+                    amount = short_val * 10000
 
     # 3. 입금 일자 추출
     t = today()
@@ -92,24 +100,40 @@ def parse_bank_message(text: str, default_building: str = "main") -> Dict[str, A
         except Exception:
             pass
 
+    expected_total = expected_rent + expected_maint
+    is_fallback = False
+    # 금액이 입력되지 않았으나 계약 정보가 존재하는 경우: 계약 기준 당월 청구액으로 자동 스마트 폴백
+    if amount == 0 and expected_total > 0:
+        amount = expected_total
+        is_fallback = True
+
     # 입금 대상 월 판정 (입금일의 월 기준)
     p_dt = pdate(paid_date) or t
     target_month = p_dt.month
     target_year = p_dt.year
 
+    success_flag = bool(room_number > 0 and amount > 0)
+    msg = ""
+    if success_flag:
+        fallback_str = " (계약금액 자동적용)" if is_fallback else ""
+        msg = f"{room_number}호 {amount:,}원{fallback_str} ({p_dt.month}월분)"
+    else:
+        msg = "호실 번호(예: 403호)를 파악하지 못했습니다."
+
     return {
-        "success": bool(room_number > 0 and amount > 0),
+        "success": success_flag,
         "raw_text": clean,
         "room_number": room_number,
         "amount": amount,
+        "is_fallback_amount": is_fallback,
         "paid_date": paid_date,
         "target_year": target_year,
         "target_month": target_month,
         "detected_tenant": tenant_candidate,
         "expected_tenant": expected_tenant,
-        "expected_total": expected_rent + expected_maint,
+        "expected_total": expected_total,
         "matched": bool(matched_unit is not None),
-        "message": f"{room_number}호 {amount:,}원 ({p_dt.month}월분)" if (room_number and amount) else "호실 또는 금액을 파악하지 못했습니다."
+        "message": msg
     }
 
 

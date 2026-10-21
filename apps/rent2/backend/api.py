@@ -167,16 +167,45 @@ def fill_payments(p: Dict[str, Any] = Body_, branch_id: str = "main"):
 @router.post("/rooms/{n}/payment")
 def pay(n: int, p: Dict[str, Any] = Body(...), branch_id: str = "main"):
     u = _unit(branch_id, n)
-    u.pay(num(p.get("month")), p.get("year"), p.get("paid_date"), p.get("note") or "정상 입금", p.get("tenant_name"),
-          p.get("rent_amount"), p.get("maintenance_amount"))
-    return u.room()
+    force = bool(p.get("force_month"))
+    if force and p.get("month"):
+        p_obj = u.pay(num(p.get("month")), p.get("year"), p.get("paid_date"), p.get("note") or "정상 입금",
+                      p.get("tenant_name"), p.get("rent_amount"), p.get("maintenance_amount"))
+        app_y, app_m, was_oldest = p_obj.year, p_obj.month, False
+    else:
+        # 비즈니스 규칙: 미납월 중 가장 오래된 월부터 우선 적용 (FIFO)
+        p_obj, app_y, app_m, was_oldest = u.pay_fifo(
+            paid_date=p.get("paid_date"),
+            note=p.get("note") or "정상 입금",
+            tenant_name=p.get("tenant_name"),
+            rent_amount=p.get("rent_amount"),
+            maintenance_amount=p.get("maintenance_amount"),
+            fallback_month=num(p.get("month")),
+            fallback_year=num(p.get("year")) if p.get("year") else None
+        )
+    res = u.room()
+    res["applied_period"] = f"{app_y}-{app_m:02d}"
+    res["was_oldest_unpaid"] = was_oldest
+    return res
 
 
 @router.post("/rooms/{n}/cancel-payment")
 def cancel(n: int, p: Dict[str, Any] = Body(...), branch_id: str = "main"):
     u = _unit(branch_id, n)
-    u.cancel(num(p.get("month")), p.get("year"), p.get("note"))
-    return u.room()
+    force = bool(p.get("force_month"))
+    if force and p.get("month"):
+        p_obj = u.cancel(num(p.get("month")), p.get("year"), p.get("note"))
+        c_y, c_m = p_obj.year, p_obj.month
+    else:
+        # 비즈니스 규칙: 완납월 중 가장 최근월에 우선 적용 (LIFO)
+        p_obj, c_y, c_m = u.cancel_lifo(
+            note=p.get("note") or "납부 취소",
+            fallback_month=num(p.get("month")),
+            fallback_year=num(p.get("year")) if p.get("year") else None
+        )
+    res = u.room()
+    res["cancelled_period"] = f"{c_y}-{c_m:02d}"
+    return res
 
 
 @router.post("/payments/batch-collect")
@@ -492,10 +521,10 @@ def smart_paste_payment(p: Dict[str, Any] = Body(...), user: User = Depends(me))
     parsed_list = parser.parse_batch_bank_messages(text, bid)
     if not parsed_list:
         single = parser.parse_bank_message(text, bid)
-        parsed_list = [single] if single["room_number"] else []
+        parsed_list = [single] if single.get("room_number") else []
         
     if not parsed_list:
-        return {"success": False, "message": "입금 문자에서 호실 또는 금액을 추출하지 못했습니다.", "items": []}
+        return {"success": False, "message": "입금 문자에서 호실 번호(예: 403호 또는 403)를 찾지 못했습니다.", "items": []}
 
     auto_apply = bool(p.get("auto_apply", True))
     applied = []
@@ -503,28 +532,44 @@ def smart_paste_payment(p: Dict[str, Any] = Body(...), user: User = Depends(me))
 
     for item in parsed_list:
         room = item["room_number"]
-        if room in b.units and auto_apply and item["amount"] > 0:
+        if room in b.units and auto_apply:
             u = b.unit(room)
-            pay_obj = u.pay(
-                month=item["target_month"],
-                year=item["target_year"],
-                paid_date=item["paid_date"],
-                note=f"문자 자동수납 ({item['detected_tenant'] or '입금자'} {item['amount']:,}원)",
-                rent_amount=item["amount"]
-            )
-            item["applied"] = True
-            item["payment_id"] = pay_obj.id
-            applied.append(item)
+            amt = item["amount"]
+            # 금액이 0이면 호실의 활성 계약 기준 월세+관리비로 자동 충당
+            if amt <= 0:
+                c = u.active()
+                amt = (c.monthly_rent + c.maintenance) if c else 0
+
+            if amt > 0:
+                note_suffix = " (계약금액 자동적용)" if item.get("is_fallback_amount") or item["amount"] == 0 else ""
+                pay_obj, app_y, app_m, was_oldest = u.pay_fifo(
+                    paid_date=item["paid_date"],
+                    note=f"문자 자동수납 ({item['detected_tenant'] or '입금자'} {amt:,}원{note_suffix})",
+                    tenant_name=item.get("detected_tenant"),
+                    rent_amount=amt,
+                    fallback_month=item["target_month"],
+                    fallback_year=item["target_year"]
+                )
+                item["applied"] = True
+                item["applied_amount"] = amt
+                item["applied_year"] = app_y
+                item["applied_month"] = app_m
+                item["was_oldest_unpaid"] = was_oldest
+                item["payment_id"] = pay_obj.id
+                applied.append(item)
+            else:
+                item["applied"] = False
         else:
             item["applied"] = False
 
+    ok = len(applied) > 0
     return {
-        "success": True,
+        "success": ok,
         "branch_id": bid,
         "total_parsed": len(parsed_list),
         "applied_count": len(applied),
         "items": parsed_list,
-        "message": f"총 {len(parsed_list)}건의 입금 내역 중 {len(applied)}건이 자동 수납 처리되었습니다."
+        "message": f"총 {len(parsed_list)}건 중 {len(applied)}건이 자동 수납 처리되었습니다." if ok else "호실 계약 정보 또는 입금 금액을 확인하지 못했습니다."
     }
 
 
