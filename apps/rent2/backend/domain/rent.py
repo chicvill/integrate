@@ -527,7 +527,7 @@ class Building(Obj):
         return sorted(Expense.find(self.id), key=lambda e: e.date, reverse=True)
 
     def update(self, data: Dict[str, Any]) -> "Building":
-        for k in ("name", "contact_phone", "address", "is_active", "billing_status", "last_paid_at"):
+        for k in ("name", "contact_phone", "address", "is_active", "billing_status", "last_paid_at", "monthly_fee", "billing_due_day", "fee_plan"):
             if data.get(k) is not None:
                 setattr(self, k, data[k])
         return self.save("updated")

@@ -288,14 +288,16 @@
   <!-- 헤더 -->
   <header>
     <div class="brand">
-      MQnet rent2
-      <span>객체/무자판</span>
+      RENT 2.0
+      <span>객체/지점격리</span>
     </div>
     <div class="header-right">
-      <select id="branchSelect" onchange="switchBranch(this.value)" style="font-weight:700;">
-        <option value="main">시크빌 1호점</option>
+      <select id="branchSelect" onchange="switchBranch(this.value)" style="font-weight:700;max-width:140px;">
+        <option value="main">지점 로딩 중...</option>
       </select>
-      <a href="manual.html" target="_blank" style="font-size:12px;font-weight:700;border:1px solid #000;padding:4px 6px;">매뉴얼</a>
+      <span id="userBadge" style="font-size:11px;font-weight:800;border:1px solid #000;padding:4px 6px;background:#f5f5f5;">로그인 필요</span>
+      <button id="btnAuthAction" class="btn-sm btn-outline" onclick="handleAuthButtonClick()">로그인</button>
+      <a href="manual.html" target="_blank" style="font-size:12px;font-weight:700;border:1px solid #000;padding:4px 6px;">📖 매뉴얼</a>
     </div>
   </header>
 
@@ -324,10 +326,11 @@
 
     <!-- 탭 네비게이션 -->
     <div class="nav-tabs">
-      <button class="nav-tab active" onclick="setTab('rooms')">호실 관제</button>
-      <button class="nav-tab" onclick="setTab('tax')">세무 자료 (부가세/종소세)</button>
-      <button class="nav-tab" onclick="setTab('expenses')">지출 장부</button>
-      <button class="nav-tab" onclick="setTab('ai')">AI 도구 비서</button>
+      <button class="nav-tab active" id="tabRooms" onclick="setTab('rooms')">호실 관제</button>
+      <button class="nav-tab" id="tabTax" onclick="setTab('tax')">세무 자료 (부가세/종소세)</button>
+      <button class="nav-tab" id="tabExpenses" onclick="setTab('expenses')">지출 장부</button>
+      <button class="nav-tab" id="tabAI" onclick="setTab('ai')">AI 도구 비서</button>
+      <button class="nav-tab" id="tabBranches" onclick="setTab('branches')" style="display:none;background:#f5f5f5;font-weight:800;">🏢 본사 매장 관리</button>
     </div>
 
     <!-- [섹션 1] 호실 관제 -->
@@ -446,6 +449,43 @@
         <div id="aiResponse" style="border:1px solid #000;padding:12px;min-height:100px;white-space:pre-wrap;background:#fafafa;">질문을 입력하면 도메인 객체를 통해 즉답합니다.</div>
       </div>
     </div>
+
+    <!-- [섹션 5] 본사 매장 총괄 관리 (admin 전용) -->
+    <div id="secBranches" style="display:none;">
+      <!-- 본사 가맹 매장 요약 브리핑 -->
+      <div class="tax-summary-grid" style="margin-bottom:16px;">
+        <div class="tax-metric">
+          <div class="tax-metric-label">총 가맹 매장 수</div>
+          <div class="tax-metric-val" id="statBranchTotal">-</div>
+        </div>
+        <div class="tax-metric">
+          <div class="tax-metric-label">사용료 완납 매장</div>
+          <div class="tax-metric-val" id="statBranchPaid" style="color:#2e7d32;">-</div>
+        </div>
+        <div class="tax-metric">
+          <div class="tax-metric-label">사용료 미납/연체</div>
+          <div class="tax-metric-val" id="statBranchOverdue" style="color:#c62828;">-</div>
+        </div>
+        <div class="tax-metric">
+          <div class="tax-metric-label">당월 본사 사용료 수납액</div>
+          <div class="tax-metric-val" id="statBranchFeeTotal">-</div>
+        </div>
+      </div>
+
+      <!-- 상단 액션 바 -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px;flex-wrap:wrap;">
+        <div style="font-weight:800;font-size:16px;">🏢 가맹 매장 목록 및 솔루션 사용료 수납</div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-primary" onclick="openModal('modalNewBranch')">➕ 신규 매장(건물) 개설</button>
+          <button class="btn-outline" onclick="loadAdminBranches()">새로고침</button>
+        </div>
+      </div>
+
+      <!-- 매장 카드 그리드 -->
+      <div id="branchListGrid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));gap:14px;">
+        <div style="padding:20px;text-align:center;border:1px dashed #000;grid-column:1/-1;">매장 목록을 불러오는 중...</div>
+      </div>
+    </div>
   </div>
 
   <!-- ── 모바일 고정 하단 퀵 액션 바 (Zero-Typing) ── -->
@@ -453,6 +493,39 @@
     <button onclick="openModal('modalPaste')">📋 문자 붙여넣기</button>
     <button onclick="openModal('modalScan')">📷 카메라/스캔</button>
     <button class="btn-primary" onclick="setTab('tax')">📊 세무자료</button>
+  </div>
+
+  <!-- ── 모달 0: 사용자 로그인 / 지점 격리 인증 ── -->
+  <div class="modal-overlay" id="modalLogin">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🔐 RENT2 지점 관리자 로그인</h3>
+        <button class="close-btn" onclick="closeModal('modalLogin')">×</button>
+      </div>
+      <div style="font-size:12px;color:#555;margin-bottom:12px;">
+        계정 권한에 따라 소속 건물의 정보만 안전하게 격리되어 표시됩니다.
+      </div>
+      <form onsubmit="handleLoginSubmit(event)">
+        <div class="form-group">
+          <label>아이디 (Username):</label>
+          <input type="text" id="loginUsername" placeholder="예: admin, sunho, chic, sinbi" required>
+        </div>
+        <div class="form-group">
+          <label>비밀번호 (Password):</label>
+          <input type="password" id="loginPassword" placeholder="기본 비밀번호: 1212" value="1212" required>
+        </div>
+        <button type="submit" style="width:100%;margin-bottom:12px;padding:10px;">로그인</button>
+      </form>
+      <div style="border-top:1px dashed #ccc;padding-top:10px;">
+        <div style="font-size:11px;font-weight:800;margin-bottom:6px;">⚡ 빠른 테스트 원클릭 로그인:</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <button type="button" class="btn-outline btn-sm" onclick="quickLogin('admin','1212')">👑 본사 총괄 (admin)</button>
+          <button type="button" class="btn-outline btn-sm" onclick="quickLogin('sunho','1212')">🏢 선호빌 점주 (sunho)</button>
+          <button type="button" class="btn-outline btn-sm" onclick="quickLogin('chic','1212')">🏢 시크빌 점주 (chic)</button>
+          <button type="button" class="btn-outline btn-sm" onclick="quickLogin('sinbi','1212')">🏢 신비주택 점주 (sinbi)</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ── 모달 1: 통장 입금 문자 / 카톡 알림 붙여넣기 (스마트 인제스트) ── -->
@@ -611,14 +684,116 @@
     </div>
   </div>
 
+  <!-- ── 모달 6: 신규 매장(건물) 개설 (admin 전용) ── -->
+  <div class="modal-overlay" id="modalNewBranch">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🏢 신규 매장(건물) 개설</h3>
+        <button class="close-btn" onclick="closeModal('modalNewBranch')">×</button>
+      </div>
+      <form onsubmit="handleCreateBranchSubmit(event)">
+        <div class="form-group">
+          <label>매장 고유 식별코드 (ID):</label>
+          <input type="text" id="nbBranchId" placeholder="예: branch_gangnam (영문/숫자/밑줄)" required>
+        </div>
+        <div class="form-group">
+          <label>매장/건물명:</label>
+          <input type="text" id="nbName" placeholder="예: 강남 원룸텔" required>
+        </div>
+        <div class="form-group">
+          <label>점주/관리자 연락처:</label>
+          <input type="text" id="nbPhone" placeholder="예: 010-1234-5678">
+        </div>
+        <div class="form-group">
+          <label>소재지 주소:</label>
+          <input type="text" id="nbAddress" placeholder="예: 서울시 강남구 테헤란로 123">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="form-group">
+            <label>월 솔루션 사용료 (원):</label>
+            <input type="number" id="nbMonthlyFee" value="150000" required>
+          </div>
+          <div class="form-group">
+            <label>사용료 납부 지정일:</label>
+            <input type="number" id="nbDueDay" value="25" min="1" max="31" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>초기 호실 자동 생성 (호실 수):</label>
+          <input type="number" id="nbRooms" placeholder="예: 15 (201호~215호 자동 생성)" value="15">
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <button type="submit" style="flex:1;">신규 매장 등록 완료</button>
+          <button type="button" class="btn-outline" onclick="closeModal('modalNewBranch')">취소</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── 모달 7: 매장 사용료 수납 상태 및 설정 변경 ── -->
+  <div class="modal-overlay" id="modalBranchBilling">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="billingModalTitle">💵 매장 사용료 수납 설정</h3>
+        <button class="close-btn" onclick="closeModal('modalBranchBilling')">×</button>
+      </div>
+      <form onsubmit="handleUpdateBranchBillingSubmit(event)">
+        <input type="hidden" id="bbBranchId">
+        <div class="form-group">
+          <label>매장명:</label>
+          <input type="text" id="bbBranchName" readonly style="background:#f0f0f0;">
+        </div>
+        <div class="form-group">
+          <label>수납 상태:</label>
+          <select id="bbBillingStatus">
+            <option value="PAID">완납 (PAID) - 정상 가맹</option>
+            <option value="PENDING">청구중 (PENDING) - 청구서 발행</option>
+            <option value="OVERDUE">미납/연체 (OVERDUE) - 사용료 지연</option>
+          </select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="form-group">
+            <label>월 솔루션 사용료 (원):</label>
+            <input type="number" id="bbMonthlyFee" required>
+          </div>
+          <div class="form-group">
+            <label>납부 지정일 (매월):</label>
+            <input type="number" id="bbDueDay" min="1" max="31" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>최종 납부일:</label>
+          <input type="date" id="bbLastPaidAt">
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <button type="submit" style="flex:1;">수납 정보 저장</button>
+          <button type="button" class="btn-outline" onclick="closeModal('modalBranchBilling')">취소</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     // ── 상태 관리 ──
     let curBranch = "main";
     let allRooms = [];
     let curFilter = "all";
     let scanBase64 = "";
+    let currentUser = null;
 
     const API_BASE = (location.pathname.startsWith("/rent2") || location.pathname.includes("/rent2")) ? "/api/rent2" : "/api";
+
+    // ── 토큰 관리 ──
+    function getToken() {
+      return localStorage.getItem("rent2_token") || "";
+    }
+    function setToken(tok) {
+      if (tok) {
+        localStorage.setItem("rent2_token", tok);
+      } else {
+        localStorage.removeItem("rent2_token");
+      }
+    }
 
     // ── 안내 배너 (Banner Alert UX) ──
     function setAlert(msg, type = "info") {
@@ -626,32 +801,221 @@
       if (!msg) { el.style.display = "none"; return; }
       el.style.display = "block";
       el.textContent = msg;
-      el.style.background = type === "error" ? "#000" : (type === "success" ? "#fff" : "#f4f4f4");
+      el.style.background = type === "error" ? "#000" : (type === "success" ? "#fff" : (type === "warning" ? "#fff8e1" : "#f4f4f4"));
       el.style.color = type === "error" ? "#fff" : "#000";
       el.style.borderColor = "#000";
+    }
+
+    // ── 통합 API 클라이언트 (JWT 헤더 자동 주입 & 401/403 차단 안내) ──
+    async function apiFetch(url, options = {}) {
+      options.headers = options.headers || {};
+      const token = getToken();
+      if (token) {
+        options.headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      try {
+        const res = await fetch(url, options);
+
+        if (res.status === 401) {
+          setAlert("🔐 로그인이 필요하거나 세션이 만료되었습니다. 다시 로그인해 주세요.", "warning");
+          currentUser = null;
+          updateAuthUI(null);
+          openModal("modalLogin");
+          return res;
+        }
+
+        if (res.status === 403) {
+          let detail = "접근 거부: 본인 소속 건물 외 타 건물의 정보에는 접근할 수 없습니다.";
+          try {
+            const errData = await res.clone().json();
+            if (errData && errData.detail) detail = errData.detail;
+          } catch (_) {}
+          setAlert(`🚫 ${detail}`, "error");
+          return res;
+        }
+
+        return res;
+      } catch (err) {
+        console.error("apiFetch 통신 실패:", err);
+        throw err;
+      }
+    }
+
+    // ── 인증 상태 UI 동기화 ──
+    function updateAuthUI(user) {
+      const badge = document.getElementById("userBadge");
+      const btn = document.getElementById("btnAuthAction");
+      const sel = document.getElementById("branchSelect");
+
+      if (user) {
+        const roleName = user.role === "superadmin" ? "👑 본사 총괄" : "🏢 지점 관리자";
+        const bName = user.branch_name || (user.branch === "main" ? "시크빌" : (user.branch === "branch_5611" ? "선호빌" : (user.branch === "branch_9348" ? "신비주택" : (user.branch || "전체"))));
+        if (badge) badge.textContent = `${roleName} | ${bName} (${user.username})`;
+        if (btn) {
+          btn.textContent = "로그아웃";
+          btn.onclick = logout;
+        }
+        if (sel) {
+          if (user.role !== "superadmin") {
+            sel.disabled = true;
+            sel.title = "지점 관리자는 본인 소속 건물로만 고정됩니다.";
+            const tabBr = document.getElementById("tabBranches");
+            if (tabBr) tabBr.style.display = "none";
+          } else {
+            sel.disabled = false;
+            sel.title = "건물을 전환하여 전체 관리할 수 있습니다.";
+            const tabBr = document.getElementById("tabBranches");
+            if (tabBr) tabBr.style.display = "inline-block";
+          }
+        }
+      } else {
+        if (badge) badge.textContent = "⚠️ 로그인 필요";
+        if (btn) {
+          btn.textContent = "로그인";
+          btn.onclick = () => openModal("modalLogin");
+        }
+        if (sel) {
+          sel.disabled = true;
+        }
+        const tabBr = document.getElementById("tabBranches");
+        if (tabBr) tabBr.style.display = "none";
+      }
+    }
+
+    function handleAuthButtonClick() {
+      if (currentUser) {
+        logout();
+      } else {
+        openModal("modalLogin");
+      }
+    }
+
+    // ── 세션 복원 및 검증 ──
+    async function restoreSession() {
+      const tok = getToken();
+      if (!tok) {
+        updateAuthUI(null);
+        openModal("modalLogin");
+        return false;
+      }
+      try {
+        const res = await apiFetch(`${API_BASE}/auth/me`);
+        if (res.ok) {
+          const data = await res.json();
+          currentUser = data.user;
+          updateAuthUI(currentUser);
+          return true;
+        }
+      } catch (err) {
+        console.warn("세션 검증 통신 오류", err);
+      }
+      updateAuthUI(null);
+      openModal("modalLogin");
+      return false;
+    }
+
+    // ── 로그인 제출 처리 ──
+    async function handleLoginSubmit(event) {
+      if (event) event.preventDefault();
+      const username = document.getElementById("loginUsername").value.trim();
+      const password = document.getElementById("loginPassword").value.trim();
+      if (!username) {
+        setAlert("아이디를 입력해 주세요.", "warning");
+        return;
+      }
+
+      setAlert("로그인 인증 확인 중...", "info");
+      try {
+        const res = await fetch(`${API_BASE}/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password })
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          setAlert(err.detail || "로그인 실패: 아이디 또는 비밀번호가 올바르지 않습니다.", "error");
+          return;
+        }
+
+        const data = await res.json();
+        setToken(data.access_token);
+        currentUser = data.user;
+        updateAuthUI(currentUser);
+        closeModal("modalLogin");
+        setAlert(`✅ 로그인 성공: ${currentUser.username}님 환영합니다. (소속: ${currentUser.branch || "본사"})`, "success");
+
+        await loadBranches();
+        await reloadRooms();
+      } catch (err) {
+        setAlert("로그인 요청 실패: " + (err.message || ""), "error");
+      }
+    }
+
+    // ── 빠른 테스트 계정 원클릭 로그인 ──
+    async function quickLogin(user, pass) {
+      document.getElementById("loginUsername").value = user;
+      document.getElementById("loginPassword").value = pass;
+      await handleLoginSubmit();
+    }
+
+    // ── 로그아웃 ──
+    function logout() {
+      setToken(null);
+      currentUser = null;
+      updateAuthUI(null);
+      allRooms = [];
+      renderRooms();
+      document.getElementById("statUnpaid").textContent = "-";
+      document.getElementById("statUnpaidAmount").textContent = "0원";
+      document.getElementById("statExpiring").textContent = "-";
+      document.getElementById("statVacant").textContent = "-";
+      document.getElementById("statTotalRooms").textContent = "0개실";
+      setAlert("로그아웃 되었습니다. 지점 관리자 계정으로 로그인해 주세요.", "info");
+      openModal("modalLogin");
     }
 
     // ── 초기 기동 ──
     window.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("expDate").value = new Date().toISOString().slice(0, 10);
-      await loadBranches();
-      await reloadRooms();
+      const authenticated = await restoreSession();
+      if (authenticated) {
+        await loadBranches();
+        await reloadRooms();
+      }
     });
 
+    // ── 지점 목록 로드 (권한별 필터링 자동 반영) ──
     async function loadBranches() {
       try {
-        const res = await fetch(`${API_BASE}/branches`);
+        const res = await apiFetch(`${API_BASE}/branches`);
+        if (!res.ok) return;
         const data = await res.json();
         const sel = document.getElementById("branchSelect");
         sel.innerHTML = "";
-        (data.branches || []).forEach(b => {
+        const branches = data.branches || [];
+
+        branches.forEach(b => {
           const opt = document.createElement("option");
           opt.value = b.branch_id;
           opt.textContent = b.name;
           sel.appendChild(opt);
         });
-        if (sel.options.length) {
-          curBranch = sel.value;
+
+        if (branches.length > 0) {
+          if (currentUser && currentUser.role !== "superadmin") {
+            const targetBid = currentUser.branch || branches[0].branch_id;
+            sel.value = targetBid;
+            curBranch = targetBid;
+            sel.disabled = true;
+          } else {
+            sel.disabled = false;
+            if (!branches.some(b => b.branch_id === curBranch)) {
+              curBranch = branches[0].branch_id;
+            }
+            sel.value = curBranch;
+          }
         }
       } catch (err) {
         console.error("지점 로드 실패", err);
@@ -659,31 +1023,273 @@
     }
 
     function switchBranch(bid) {
+      if (currentUser && currentUser.role !== "superadmin" && bid !== currentUser.branch) {
+        setAlert("🚫 타 건물의 정보는 접근할 수 없습니다.", "error");
+        return;
+      }
       curBranch = bid;
       reloadRooms();
       if (document.getElementById("secTax").style.display !== "none") {
         loadVatReport();
         loadIncomeTax();
       }
+      if (document.getElementById("secExpenses").style.display !== "none") {
+        loadExpenses();
+      }
     }
 
     // ── 탭 전환 ──
     function setTab(name) {
       document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
-      event.target.classList.add("active");
+      const tabBtn = document.getElementById(`tab${name.charAt(0).toUpperCase() + name.slice(1)}`);
+      if (tabBtn) tabBtn.classList.add("active");
+      else if (event && event.target && event.target.classList.contains("nav-tab")) event.target.classList.add("active");
+
       document.getElementById("secRooms").style.display = name === "rooms" ? "block" : "none";
       document.getElementById("secTax").style.display = name === "tax" ? "block" : "none";
       document.getElementById("secExpenses").style.display = name === "expenses" ? "block" : "none";
       document.getElementById("secAI").style.display = name === "ai" ? "block" : "none";
+      const secBr = document.getElementById("secBranches");
+      if (secBr) secBr.style.display = name === "branches" ? "block" : "none";
 
       if (name === "tax") { loadVatReport(); loadIncomeTax(); }
       if (name === "expenses") { loadExpenses(); }
+      if (name === "branches") { loadAdminBranches(); }
     }
 
+    // ── [본사 매장 총괄 & 솔루션 사용료 수납] ──
+    let adminBranchesList = [];
+
+    async function loadAdminBranches() {
+      try {
+        setAlert("본사 가맹 매장 및 사용료 수납 데이터를 불러오는 중...", "info");
+        const res = await apiFetch(`${API_BASE}/branches`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        adminBranchesList = data.branches || [];
+
+        // 본사 통계 집계
+        let paidCount = 0, overdueCount = 0, feeCollectedTotal = 0;
+        adminBranchesList.forEach(b => {
+          const st = (b.billing_status || "PAID").toUpperCase();
+          const fee = Number(b.monthly_fee) || 0;
+          if (st === "PAID") {
+            paidCount++;
+            feeCollectedTotal += fee;
+          } else {
+            overdueCount++;
+          }
+        });
+
+        document.getElementById("statBranchTotal").textContent = `${adminBranchesList.length}개 매장`;
+        document.getElementById("statBranchPaid").textContent = `${paidCount}개 완료`;
+        document.getElementById("statBranchOverdue").textContent = `${overdueCount}개 미납/연체`;
+        document.getElementById("statBranchFeeTotal").textContent = `${feeCollectedTotal.toLocaleString()}원`;
+
+        renderAdminBranches();
+        setAlert("", "info");
+      } catch (err) {
+        console.error("loadAdminBranches 실패:", err);
+        setAlert("매장 목록 로드 실패: " + (err.message || ""), "error");
+      }
+    }
+
+    function renderAdminBranches() {
+      const grid = document.getElementById("branchListGrid");
+      if (!grid) return;
+      grid.innerHTML = "";
+
+      if (!adminBranchesList.length) {
+        grid.innerHTML = `<div style="grid-column:1/-1;padding:30px;text-align:center;border:1px dashed #000;">등록된 가맹 매장이 없습니다.</div>`;
+        return;
+      }
+
+      adminBranchesList.forEach(b => {
+        const card = document.createElement("div");
+        card.className = "room-card";
+        const st = (b.billing_status || "PAID").toUpperCase();
+        const isPaid = st === "PAID";
+        const isOverdue = st === "OVERDUE";
+        const badgeColor = isPaid ? "#2e7d32" : (isOverdue ? "#c62828" : "#f57f17");
+        const badgeBg = isPaid ? "#e8f5e9" : (isOverdue ? "#ffebee" : "#fffde7");
+        const badgeText = isPaid ? "완납 (정상)" : (isOverdue ? "미납/연체" : "청구중");
+
+        const fee = Number(b.monthly_fee) || 150000;
+        const dueDay = b.billing_due_day || 25;
+        const roomCount = b.total_rooms !== undefined ? b.total_rooms : (b.rooms_count || "-");
+
+        card.innerHTML = `
+          <div class="room-header">
+            <span class="room-number" style="font-size:15px;">${b.name}</span>
+            <span style="background:${badgeBg};color:${badgeColor};padding:3px 8px;border:1px solid ${badgeColor};font-weight:800;font-size:11px;">
+              ${badgeText}
+            </span>
+          </div>
+          <div class="room-body">
+            <div class="row">
+              <span style="font-weight:700;">ID: ${b.branch_id}</span>
+              <span>총 <b>${roomCount}</b>개실</span>
+            </div>
+            <div class="row" style="color:#333;">
+              <span>월 사용료: <b>${fee.toLocaleString()}원</b></span>
+              <span>납부지정일: 매월 ${dueDay}일</span>
+            </div>
+            <div class="row" style="font-size:11px;color:#666;margin-top:4px;">
+              <span>최종 납부일: ${b.last_paid_at || "내역 없음"}</span>
+              <span>연락처: ${b.contact_phone || "-"}</span>
+            </div>
+            ${b.address ? `<div style="font-size:11px;color:#777;margin-top:2px;">소재지: ${b.address}</div>` : ""}
+          </div>
+          <div class="room-actions" style="margin-top:10px;">
+            <button class="btn-sm" style="background:#000;color:#fff;" onclick="switchBranchAndGo('${b.branch_id}')">🚀 관제 이동</button>
+            <button class="btn-sm" style="background:#2e7d32;color:#fff;border-color:#2e7d32;" onclick="quickPayBranchFee('${b.branch_id}', '${b.name}')">💵 사용료 수납</button>
+            <button class="btn-sm btn-outline" onclick="openBranchBillingModal('${b.branch_id}')">⚙️ 설정</button>
+            ${b.branch_id !== 'main' ? `<button class="btn-sm btn-outline" style="color:#c62828;border-color:#c62828;" onclick="deleteAdminBranch('${b.branch_id}', '${b.name}')">삭제</button>` : ''}
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // ── 매장 원클릭 이동 (지점 전환 후 관제 화면으로 즉시 이동) ──
+    function switchBranchAndGo(bid) {
+      curBranch = bid;
+      const sel = document.getElementById("branchSelect");
+      if (sel) sel.value = bid;
+      setTab("rooms");
+      reloadRooms();
+      setAlert(`🏢 [${bid}] 매장 관제 모드로 이동했습니다.`, "info");
+    }
+
+    // ── 매장 솔루션 사용료 원클릭 수납 완료 처리 ──
+    async function quickPayBranchFee(bid, name) {
+      if (!confirm(`[${name}] 매장의 당월 솔루션 월 사용료를 '수납 완료(완납)' 처리하시겠습니까?`)) return;
+      try {
+        const res = await apiFetch(`${API_BASE}/branches/${bid}/pay-fee`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paid_date: new Date().toISOString().slice(0, 10) })
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setAlert(`✅ ${data.message || '수납 완료되었습니다.'}`, "success");
+        await loadAdminBranches();
+      } catch (err) {
+        setAlert("사용료 수납 처리에 실패했습니다: " + (err.message || ""), "error");
+      }
+    }
+
+    // ── 매장 사용료 및 수납 상태 설정 모달 열기 ──
+    function openBranchBillingModal(bid) {
+      const b = adminBranchesList.find(x => x.branch_id === bid);
+      if (!b) return;
+      document.getElementById("bbBranchId").value = b.branch_id;
+      document.getElementById("bbBranchName").value = `${b.name} (${b.branch_id})`;
+      document.getElementById("bbBillingStatus").value = b.billing_status || "PAID";
+      document.getElementById("bbMonthlyFee").value = b.monthly_fee || 150000;
+      document.getElementById("bbDueDay").value = b.billing_due_day || 25;
+      document.getElementById("bbLastPaidAt").value = b.last_paid_at || new Date().toISOString().slice(0, 10);
+      document.getElementById("billingModalTitle").textContent = `💵 [${b.name}] 사용료 수납 설정`;
+      openModal("modalBranchBilling");
+    }
+
+    async function handleUpdateBranchBillingSubmit(e) {
+      e.preventDefault();
+      const bid = document.getElementById("bbBranchId").value;
+      const payload = {
+        billing_status: document.getElementById("bbBillingStatus").value,
+        monthly_fee: Number(document.getElementById("bbMonthlyFee").value),
+        billing_due_day: Number(document.getElementById("bbDueDay").value),
+        last_paid_at: document.getElementById("bbLastPaidAt").value
+      };
+      try {
+        const res = await apiFetch(`${API_BASE}/branches/${bid}/billing`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        closeModal("modalBranchBilling");
+        setAlert(`✅ 매장 수납 설정이 정상적으로 저장되었습니다.`, "success");
+        await loadAdminBranches();
+      } catch (err) {
+        setAlert("수납 설정 저장 실패: " + (err.message || ""), "error");
+      }
+    }
+
+    // ── 신규 매장(건물) 개설 처리 ──
+    async function handleCreateBranchSubmit(e) {
+      e.preventDefault();
+      const bid = document.getElementById("nbBranchId").value.trim();
+      const name = document.getElementById("nbName").value.trim();
+      const phone = document.getElementById("nbPhone").value.trim();
+      const address = document.getElementById("nbAddress").value.trim();
+      const monthly_fee = Number(document.getElementById("nbMonthlyFee").value);
+      const billing_due_day = Number(document.getElementById("nbDueDay").value);
+      const room_count = Number(document.getElementById("nbRooms").value) || 15;
+
+      if (!bid || !name) {
+        setAlert("매장 ID와 매장명을 입력해 주세요.", "warning");
+        return;
+      }
+
+      setAlert(`신규 매장 '${name}' 개설 중... ⏳`, "info");
+      try {
+        const res = await apiFetch(`${API_BASE}/branches`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            branch_id: bid,
+            name,
+            contact_phone: phone,
+            address,
+            monthly_fee,
+            billing_due_day,
+            room_count
+          })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || `HTTP ${res.status}`);
+        }
+
+        closeModal("modalNewBranch");
+        setAlert(`🎉 신규 매장 '${name}'(${room_count}개실)이 성공적으로 개설되었습니다!`, "success");
+        // 입력 폼 초기화
+        document.getElementById("nbBranchId").value = "";
+        document.getElementById("nbName").value = "";
+        document.getElementById("nbPhone").value = "";
+        document.getElementById("nbAddress").value = "";
+        await loadBranches();
+        await loadAdminBranches();
+      } catch (err) {
+        setAlert(`매장 개설 실패: ${err.message}`, "error");
+      }
+    }
+
+    // ── 매장 삭제 ──
+    async function deleteAdminBranch(bid, name) {
+      if (!confirm(`⚠️ 정말로 '${name}' (${bid}) 매장을 삭제하시겠습니까?\n모든 호실, 계약, 수납 데이터가 함께 삭제됩니다.`)) return;
+      try {
+        const res = await apiFetch(`${API_BASE}/branches/${bid}`, { method: "DELETE" });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || `HTTP ${res.status}`);
+        }
+        setAlert(`'${name}' 매장이 삭제되었습니다.`, "info");
+        await loadBranches();
+        await loadAdminBranches();
+      } catch (err) {
+        setAlert(`매장 삭제 실패: ${err.message}`, "error");
+      }
+    }
+
+    // ── 호실 목록 동기화 ──
     async function reloadRooms() {
       try {
         setAlert("호실 데이터 동기화 중...", "info");
-        const res = await fetch(`${API_BASE}/rooms?branch_id=${curBranch}`);
+        const res = await apiFetch(`${API_BASE}/rooms?branch_id=${curBranch}`);
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
         }
@@ -827,7 +1433,7 @@
 
       const now = new Date();
       try {
-        const res = await fetch(`${API_BASE}/rooms/${roomNum}/payment?branch_id=${curBranch}`, {
+        const res = await apiFetch(`${API_BASE}/rooms/${roomNum}/payment?branch_id=${curBranch}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -838,6 +1444,7 @@
             note: "원클릭 수납"
           })
         });
+        if (!res.ok) return;
         const data = await res.json();
         const pLabel = data.applied_period || `${now.getFullYear()}-${now.getMonth() + 1}`;
         const suffix = data.was_oldest_unpaid ? " (오래된 미납 우선 충당)" : "";
@@ -853,7 +1460,7 @@
       if (!confirm(`[${roomNum}호] 가장 최근에 수납된 월을 취소(미납으로 환원)하시겠습니까?`)) return;
       const now = new Date();
       try {
-        const res = await fetch(`${API_BASE}/rooms/${roomNum}/cancel-payment?branch_id=${curBranch}`, {
+        const res = await apiFetch(`${API_BASE}/rooms/${roomNum}/cancel-payment?branch_id=${curBranch}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -862,6 +1469,7 @@
             note: "납부 취소"
           })
         });
+        if (!res.ok) return;
         const data = await res.json();
         const cLabel = data.cancelled_period || "해당 월";
         setAlert(`↩️ [${roomNum}호] ${cLabel}분(가장 최근 수납월)이 취소(미납 환원)되었습니다.`, "warning");
@@ -875,11 +1483,12 @@
     async function endContract(roomNum, tenantName) {
       if (!confirm(`${roomNum}호 ${tenantName} 세입자를 오늘 날짜로 퇴실 처리하시겠습니까? 이력은 자동 보존됩니다.`)) return;
       try {
-        const res = await fetch(`${API_BASE}/rooms/${roomNum}/contract?branch_id=${curBranch}`, {
+        const res = await apiFetch(`${API_BASE}/rooms/${roomNum}/contract?branch_id=${curBranch}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name: "", move_out: new Date().toISOString().slice(0, 10) })
         });
+        if (!res.ok) return;
         setAlert(`${roomNum}호 퇴실 처리 및 이력 보존 완료`, "success");
         await reloadRooms();
       } catch (err) {
@@ -920,11 +1529,12 @@
         expiry: document.getElementById("rfExpiry").value
       };
       try {
-        const res = await fetch(`${API_BASE}/rooms/${n}/contract?branch_id=${curBranch}`, {
+        const res = await apiFetch(`${API_BASE}/rooms/${n}/contract?branch_id=${curBranch}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         });
+        if (!res.ok) return;
         closeModal("modalRoom");
         setAlert(`${n}호 계약 정보가 저장되었습니다.`, "success");
         await reloadRooms();
@@ -985,11 +1595,12 @@
 
       setAlert("입금 문자 분석 및 즉시 수납 처리 중...", "info");
       try {
-        const res = await fetch(`${API_BASE}/smart/paste-payment`, {
+        const res = await apiFetch(`${API_BASE}/smart/paste-payment`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text, branch_id: curBranch, auto_apply: true })
         });
+        if (!res.ok) return;
         const data = await res.json();
         if (data.success && data.applied_count > 0) {
           const first = data.items?.[0];
@@ -1032,11 +1643,12 @@
       setAlert("이미지 AI OCR 분석 진행 중...", "info");
 
       try {
-        const res = await fetch(endpoint, {
+        const res = await apiFetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ image_base64: scanBase64, branch_id: curBranch, auto_apply: true })
         });
+        if (!res.ok) return;
         const data = await res.json();
         const resBox = document.getElementById("scanResultBox");
         resBox.style.display = "block";
@@ -1064,7 +1676,8 @@
       const yr = new Date().getFullYear();
 
       try {
-        const res = await fetch(`${API_BASE}/vat-report?branch_id=${curBranch}&start_month=${sm}&end_month=${em}&year=${yr}`);
+        const res = await apiFetch(`${API_BASE}/vat-report?branch_id=${curBranch}&start_month=${sm}&end_month=${em}&year=${yr}`);
+        if (!res.ok) return;
         const data = await res.json();
         document.getElementById("vatTotalCollected").textContent = `${data.total_collected.toLocaleString()}원`;
         document.getElementById("vatSupply").textContent = `${data.total_supply.toLocaleString()}원`;
@@ -1092,13 +1705,15 @@
     function downloadVat(fmt) {
       const p = document.getElementById("vatPeriod").value;
       const sm = p === "1" ? 1 : 7, em = p === "1" ? 6 : 12;
-      location.href = `${API_BASE}/vat-report/download?branch_id=${curBranch}&start_month=${sm}&end_month=${em}&format_type=${fmt}`;
+      const token = getToken();
+      window.open(`${API_BASE}/vat-report/download?branch_id=${curBranch}&start_month=${sm}&end_month=${em}&format_type=${fmt}&token=${encodeURIComponent(token)}`);
     }
 
     async function loadIncomeTax() {
       const yr = document.getElementById("taxYear").value;
       try {
-        const res = await fetch(`${API_BASE}/tax/income-tax?branch_id=${curBranch}&year=${yr}`);
+        const res = await apiFetch(`${API_BASE}/tax/income-tax?branch_id=${curBranch}&year=${yr}`);
+        if (!res.ok) return;
         const data = await res.json();
         document.getElementById("taxRentIncome").textContent = `${data.total_rent_income.toLocaleString()}원`;
         document.getElementById("taxExpense").textContent = `${data.total_expense.toLocaleString()}원`;
@@ -1119,13 +1734,15 @@
 
     function downloadIncomeTax(fmt) {
       const yr = document.getElementById("taxYear").value;
-      location.href = `${API_BASE}/tax/income-tax/${fmt}?branch_id=${curBranch}&year=${yr}`;
+      const token = getToken();
+      window.open(`${API_BASE}/tax/income-tax/${fmt}?branch_id=${curBranch}&year=${yr}&token=${encodeURIComponent(token)}`);
     }
 
     // ── 지출 장부 ──
     async function loadExpenses() {
       try {
-        const res = await fetch(`${API_BASE}/expenses?branch_id=${curBranch}`);
+        const res = await apiFetch(`${API_BASE}/expenses?branch_id=${curBranch}`);
+        if (!res.ok) return;
         const data = await res.json();
         const tb = document.querySelector("#expensesTable tbody");
         tb.innerHTML = "";
@@ -1156,11 +1773,12 @@
         note: document.getElementById("expNote").value.trim()
       };
       try {
-        await fetch(`${API_BASE}/expenses?branch_id=${curBranch}`, {
+        const res = await apiFetch(`${API_BASE}/expenses?branch_id=${curBranch}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         });
+        if (!res.ok) return;
         closeModal("modalExpense");
         setAlert("지출 전표가 등록되었습니다.", "success");
         loadExpenses();
@@ -1172,10 +1790,11 @@
     async function deleteExpense(eid) {
       if (!confirm("지출 내역을 삭제하시겠습니까?")) return;
       try {
-        await fetch(`${API_BASE}/expenses/${eid}?branch_id=${curBranch}`, { method: "DELETE" });
+        const res = await apiFetch(`${API_BASE}/expenses/${eid}?branch_id=${curBranch}`, { method: "DELETE" });
+        if (!res.ok) return;
         loadExpenses();
       } catch (err) {
-        alert("삭제 실패");
+        setAlert("삭제 실패", "error");
       }
     }
 
@@ -1187,11 +1806,12 @@
       const out = document.getElementById("aiResponse");
       out.textContent = "AI 분석 및 도구 호출 중... ⏳";
       try {
-        const res = await fetch(`${API_BASE}/ai/chat`, {
+        const res = await apiFetch(`${API_BASE}/ai/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: q, building: curBranch, mode: "auto" })
         });
+        if (!res.ok) return;
         const data = await res.json();
         out.textContent = data.reply || JSON.stringify(data, null, 2);
         // 쓰기 도구(수정, 납부, 퇴실 등)가 실행되었으면 호실 카드 즉시 자동 동기화
