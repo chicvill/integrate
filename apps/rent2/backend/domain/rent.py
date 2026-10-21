@@ -64,6 +64,9 @@ class Contract(Obj):
     phone: str = ""
     lease_type: str = "월세"          # 월세 / 전세
     pay_timing: str = "후불"          # 선불 / 후불
+    vat_target: bool = True         # 부가세 산출 대상 실 (체크 시 과세, 미체크 시 면세/제외)
+    vat_separate: bool = False      # 부가세 별도 수납 여부 (체크 시 별도+세금영수증, 미체크 시 월세포함)
+    vat_included: bool = True       # 기존 호환 (not vat_separate)
     deposit: int = 0
     rent: int = 0
     maintenance: int = 0
@@ -115,14 +118,16 @@ class Contract(Obj):
     def history_row(self) -> Dict[str, Any]:
         return {"id": self.id, "branch_id": self.building_id, "room_number": self.unit, "name": self.tenant_name,
                 "id_number": self.id_number, "phone": self.phone, "lease_type": self.lease_type,
-                "pay_timing": self.pay_timing, "deposit": self.deposit, "rent": self.rent,
+                "pay_timing": self.pay_timing, "vat_target": self.vat_target, "vat_separate": self.vat_separate,
+                "vat_included": self.vat_included, "deposit": self.deposit, "rent": self.rent,
                 "maintenance": self.maintenance, "clean_fee": self.clean_fee, "move_in": self.move_in,
                 "expiry": self.expiry, "move_out": self.move_out, "retention_until": self.retention_until,
                 "metadata_json": self.memo}
 
     def summary(self) -> str:
         state = "거주중" if self.active else f"퇴실 {self.move_out}"
-        return (f"{self.unit}호 {self.tenant_name or '(공실)'} · {self.lease_type} 보증금 {self.deposit:,} / 월세 {self.rent:,}"
+        vat_str = "VAT제외(면세)" if not self.vat_target else ("VAT별도" if self.vat_separate else "VAT포함")
+        return (f"{self.unit}호 {self.tenant_name or '(공실)'} · {self.lease_type}({vat_str}) 보증금 {self.deposit:,} / 월세 {self.rent:,}"
                 f" + 관리비 {self.maintenance:,} · {self.move_in}~{self.expiry} · {state}")
 
 
@@ -165,7 +170,8 @@ class Expense(Obj):
 
 # ───────────────────────────── 호실 (뷰) ─────────────────────────────
 FORM = {"name": "tenant_name", "id_number": "id_number", "phone": "phone", "lease_type": "lease_type",
-        "pay_timing": "pay_timing", "deposit": "deposit", "rent": "rent", "maintenance": "maintenance",
+        "pay_timing": "pay_timing", "vat_target": "vat_target", "vat_separate": "vat_separate", "vat_included": "vat_included",
+        "deposit": "deposit", "rent": "rent", "maintenance": "maintenance",
         "clean_fee": "clean_fee", "move_in": "move_in", "expiry": "expiry", "move_out": "move_out"}
 MONEY = {"deposit", "rent", "maintenance", "clean_fee"}
 
@@ -416,8 +422,16 @@ class Unit:
             v = form.get(k)
             if v is None or (k == "name" and not v) or (k == "id_number" and not v and c.id_number):
                 continue            # 이름 비움=퇴실(이름은 이력으로 보존) · 주민번호 공란 제출 시 기존 값 보호
-            setattr(c, attr, num(v) if k in MONEY else str(v).strip())
-        if leaving and c.tenant_name:
+            if attr in ("vat_target", "vat_separate", "vat_included"):
+                val = True if v in (True, "true", "True", "1", 1, "포함") else False
+                setattr(c, attr, val)
+                if attr == "vat_separate":
+                    c.vat_included = not val
+            else:
+                setattr(c, attr, num(v) if k in MONEY else str(v).strip())
+        if form.get("move_out") is not None:
+            c.move_out = (form.get("move_out") or "").strip()
+        elif leaving and c.tenant_name:
             c.move_out = out or today().isoformat()
         if form.get("note"):
             c.memo = {**c.memo, "note": form["note"]}
@@ -442,8 +456,10 @@ class Unit:
                 pay[pm] = row
         unpaid_list = [f"{y}-{m:02d}" for (y, m) in self.unpaid_periods()]
         return {"room_number": self.number, "branch_id": self.b.id, "name": f.tenant_name, "id_number": f.id_number,
-                "phone": f.phone, "lease_type": f.lease_type, "pay_timing": f.pay_timing, "deposit": f.deposit,
-                "rent": f.rent, "maintenance": f.maintenance, "clean_fee": f.clean_fee, "move_in": f.move_in,
+                "phone": f.phone, "lease_type": f.lease_type, "pay_timing": f.pay_timing,
+                "vat_target": getattr(f, "vat_target", True), "vat_separate": getattr(f, "vat_separate", False),
+                "vat_included": getattr(f, "vat_included", True),
+                "deposit": f.deposit, "rent": f.rent, "maintenance": f.maintenance, "clean_fee": f.clean_fee, "move_in": f.move_in,
                 "expiry": f.expiry, "auto_renewed": renewed, "move_out": f.move_out, "payments": pay,
                 "unpaid_months": unpaid_list, "tenant_histories": [h.history_row() for h in self.ended()]}
 

@@ -23,15 +23,62 @@ def report(b: Building, start: int = 1, end: int = 6, year: Optional[int] = None
     for u in b.view():
         if rooms and u.number not in rooms:
             continue
-        ps = {m: u.period(year, m) for m in months}
-        amounts = {m: 0 if p["vacancy"] else p["rent_amount"] for m, p in ps.items()}
-        total = sum(amounts.values())
-        supply = round(total / 1.1)
         c = u.latest()
-        rows.append({"room_number": u.number, "tenant_name": _display((c.tenant_name if c else "") or "공실", {p["tenant_name"] for p in ps.values() if not p["vacancy"]}),
-                     "id_number": c.id_number if c else "", "lease_type": c.lease_type if c else "월세", "deposit": c.deposit if c else 0,
-                     "monthly_amounts": amounts, "period_total": total, "supply_value": supply, "vat_value": total - supply,
-                     "status": "완납" if all(p["paid"] for p in ps.values()) else ("미납" if total == 0 else "부분완납")})
+        ps = {m: u.period(year, m) for m in months}
+        
+        # [비즈니스 규칙] 임차인이 있는 경우 미납액도 부가세 포함됨 (공급시기 도래 원칙)
+        amounts = {}
+        for m in months:
+            p = ps[m]
+            if p["vacancy"]:
+                amounts[m] = 0
+            else:
+                amt = p.get("rent_amount")
+                if amt is not None and amt > 0:
+                    amounts[m] = amt
+                elif c and c.monthly_rent > 0:
+                    amounts[m] = c.monthly_rent
+                else:
+                    amounts[m] = 0
+
+        is_vat_target = getattr(c, "vat_target", True) if c else True
+        is_vat_sep = getattr(c, "vat_separate", False) if c else False
+        raw_sum = sum(amounts.values())
+
+        if not is_vat_target:
+            # 1. 부가세 산출 제외 실 (면세/비과세 실)
+            vat_label = "제외(면세)"
+            total = raw_sum
+            supply = raw_sum
+            vat_val = 0
+        elif is_vat_sep:
+            # 2. 부가세 별도 수납 실 (세금영수증/계산서 별도 발행)
+            vat_label = "별도(발행)"
+            supply = raw_sum
+            vat_val = round(supply * 0.1)
+            total = supply + vat_val
+        else:
+            # 3. 부가세 포함 수납 실 (일반 과세 실)
+            vat_label = "포함"
+            total = raw_sum
+            supply = round(total / 1.1)
+            vat_val = total - supply
+
+        rows.append({
+            "room_number": u.number,
+            "tenant_name": _display((c.tenant_name if c else "") or "공실", {p["tenant_name"] for p in ps.values() if not p["vacancy"]}),
+            "id_number": c.id_number if c else "",
+            "lease_type": c.lease_type if c else "월세",
+            "vat_target": is_vat_target,
+            "vat_separate": is_vat_sep,
+            "vat_included": (not is_vat_sep) if is_vat_target else False,
+            "vat_label": vat_label,
+            "deposit": c.deposit if c else 0,
+            "monthly_amounts": amounts,
+            "period_total": total,
+            "supply_value": supply,
+            "vat_value": vat_val
+        })
     return {"success": True, "branch_id": b.id, "year": year, "start_month": start, "end_month": end, "months": months,
             "total_collected": sum(r["period_total"] for r in rows), "total_supply": sum(r["supply_value"] for r in rows),
             "total_vat": sum(r["vat_value"] for r in rows), "saved_vat_target_rooms": b.vat_target_rooms, "rows": rows}
@@ -39,12 +86,12 @@ def report(b: Building, start: int = 1, end: int = 6, year: Optional[int] = None
 
 def _table(d: Dict[str, Any]) -> Tuple[list, list, list]:
     ms = d["months"]
-    head = ["호실", "임차인", "주민(사업자)번호", "임대유형", "보증금", *[f"{m}월" for m in ms], "기간총합계(VAT포함)", "공급가액", "부가가치세(10%)", "수납상태"]
-    body = [[f'{r["room_number"]}호', r["tenant_name"], r["id_number"] or "-", r["lease_type"], r["deposit"],
-             *[r["monthly_amounts"][m] for m in ms], r["period_total"], r["supply_value"], r["vat_value"], r["status"]] for r in d["rows"]]
+    head = ["호실", "임차인", "주민(사업자)번호", "임대유형", "부가세", "보증금", *[f"{m}월" for m in ms], "기간총합계(VAT포함)", "공급가액", "부가가치세(10%)"]
+    body = [[r["room_number"], r["tenant_name"], r["id_number"] or "-", r["lease_type"], r.get("vat_label", "포함"), r["deposit"],
+             *[r["monthly_amounts"][m] for m in ms], r["period_total"], r["supply_value"], r["vat_value"]] for r in d["rows"]]
     sums = [sum(r["monthly_amounts"][m] for r in d["rows"]) for m in ms]
-    foot = ["합계", f'총 {len(body)}개실', "-", "-", sum(r["deposit"] for r in d["rows"]), *sums,
-            d["total_collected"], d["total_supply"], d["total_vat"], "-"]
+    foot = ["합계", f'총 {len(body)}개실', "-", "-", "-", sum(r["deposit"] for r in d["rows"]), *sums,
+            d["total_collected"], d["total_supply"], d["total_vat"]]
     return head, body, foot
 
 

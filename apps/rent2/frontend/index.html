@@ -37,6 +37,20 @@
       padding: 8px 12px;
       appearance: none;
     }
+    input[type="checkbox"] {
+      appearance: auto !important;
+      -webkit-appearance: checkbox !important;
+      -moz-appearance: checkbox !important;
+      width: 18px !important;
+      height: 18px !important;
+      min-width: 18px !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      border: 1.5px solid #166534 !important;
+      accent-color: #166534 !important;
+      cursor: pointer;
+      display: inline-block !important;
+    }
     button {
       cursor: pointer;
       font-weight: 700;
@@ -56,10 +70,10 @@
     }
     button.btn-sm { padding: 4px 8px; font-size: 12px; }
 
-    /* ── 헤더 ── */
+    /* ── 헤더 (슬림 & 줄바꿈 방지) ── */
     header {
       border-bottom: 2px solid var(--line);
-      padding: 12px 16px;
+      padding: 8px 10px;
       position: sticky;
       top: 0;
       background: var(--bg);
@@ -67,91 +81,112 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 6px;
     }
-    .brand { font-size: 17px; font-weight: 900; letter-spacing: -0.5px; }
-    .brand span { font-size: 11px; font-weight: 400; border: 1px solid var(--line); padding: 1px 4px; margin-left: 6px; vertical-align: middle; }
-    .header-right { display: flex; align-items: center; gap: 8px; }
+    .brand { font-size: 16px; font-weight: 900; letter-spacing: -0.5px; white-space: nowrap; flex-shrink: 0; }
+    .header-right { display: flex; align-items: center; gap: 4px; overflow-x: auto; flex-shrink: 0; }
+    .header-right select, .header-right button, .header-right span, .header-right a { white-space: nowrap; }
 
-    /* ── 메인 컨테이너 ── */
-    .container { max-width: 960px; margin: 0 auto; padding: 12px 16px; }
+    /* ── 메인 컨테이너 (여백 최소화) ── */
+    .container { max-width: 960px; margin: 0 auto; padding: 8px 10px; }
 
     /* ── 상단 맥락 알림 배너 (Alert Banner) ── */
     #appAlert {
       display: none;
-      border: 2px solid var(--line);
-      padding: 10px 14px;
-      margin-bottom: 12px;
-      font-weight: 600;
-      font-size: 13px;
+      border: 1.5px solid var(--line);
+      padding: 6px 10px;
+      margin-bottom: 8px;
+      font-weight: 700;
+      font-size: 12px;
     }
 
-    /* ── 4대 핵심 브리핑 카드 (수납, 미납, 만기, 공실) ── */
+    /* ── 4대 핵심 브리핑 카드 (수납, 미납, 만기, 공실 - 초압축 슬림 바) ── */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-    @media (max-width: 640px) {
-      .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
+      gap: 4px;
+      margin-bottom: 8px;
     }
     .stat-card {
-      border: 2px solid var(--line);
-      padding: 10px 12px;
+      border: 1.5px solid var(--line);
+      padding: 5px 3px;
       cursor: pointer;
       text-align: center;
+      background: #fff;
     }
     .stat-card.active {
       background: #000;
       color: #fff;
     }
-    .stat-card .label { font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
-    .stat-card .val { font-size: 20px; font-weight: 900; }
-    .stat-card .sub { font-size: 10px; margin-top: 2px; }
+    .stat-card .label { font-size: 10px; font-weight: 800; margin-bottom: 1px; white-space: nowrap; letter-spacing: -0.5px; }
+    .stat-card .val { font-size: 15px; font-weight: 900; line-height: 1.1; }
+    .stat-card .sub { font-size: 9px; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.85; }
 
-    /* ── 상단 탭 (호실 관제 / 세무 보고서 / 지출 내역) ── */
+    select {
+      border: 1px solid #94a3b8 !important;
+      border-radius: 4px !important;
+      background-color: #ffffff;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 6px center;
+      padding-right: 20px !important;
+    }
+    select:focus {
+      border-color: #166534 !important;
+      outline: none;
+    }
+
+    /* ── 상단 메인 메뉴 탭 (진한 녹색 & 가는 사각형 박스 형태) ── */
     .nav-tabs {
       display: flex;
-      border-bottom: 2px solid var(--line);
-      margin-bottom: 14px;
+      margin-bottom: 10px;
       overflow-x: auto;
+      gap: 5px;
+      padding-bottom: 2px;
+      border-bottom: none;
     }
     .nav-tab {
-      padding: 8px 14px;
+      padding: 6px 11px;
       font-weight: 800;
-      font-size: 13px;
+      font-size: 12.5px;
       cursor: pointer;
-      border: none;
-      background: transparent;
-      color: var(--fg);
-      border-bottom: 3px solid transparent;
-      margin-bottom: -2px;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      background: #f8fafc;
+      color: #334155;
       white-space: nowrap;
+      transition: all 0.15s ease-in-out;
+    }
+    .nav-tab:hover {
+      background: #f0fdf4;
+      border-color: #166534;
+      color: #166534;
     }
     .nav-tab.active {
-      border-bottom: 3px solid var(--line);
-      background: transparent;
-      color: var(--fg);
+      background: #166534 !important; /* 메인 메뉴 진한 녹색 강조 */
+      color: #ffffff !important;
+      border: 1px solid #14532d !important;
+      border-radius: 4px;
+      font-weight: 900;
+      box-shadow: 0 1px 2px rgba(22, 101, 52, 0.2);
     }
 
-    /* ── 호실 카드 그리드 ── */
+    /* ── 호실 필터 바 ── */
     .filter-bar {
       display: flex;
-      gap: 8px;
-      margin-bottom: 12px;
+      gap: 4px;
+      margin-bottom: 8px;
       align-items: center;
-      flex-wrap: wrap;
     }
+    .filter-bar input, .filter-bar select { padding: 4px 6px; font-size: 12px; height: 30px; }
     .room-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 6px;
     }
     .room-card {
-      border: 1px solid var(--line);
-      padding: 12px;
+      border: 1.5px solid var(--line);
+      padding: 8px 10px;
       background: var(--card-bg);
       position: relative;
     }
@@ -159,61 +194,134 @@
     .room-header {
       display: flex;
       justify-content: space-between;
-      align-items: baseline;
+      align-items: center;
       border-bottom: 1px solid var(--line-subtle);
-      padding-bottom: 6px;
-      margin-bottom: 8px;
+      padding-bottom: 4px;
+      margin-bottom: 6px;
     }
-    .room-number { font-size: 18px; font-weight: 900; }
+    .room-number { font-size: 15px; font-weight: 900; }
     .room-badge {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 800;
-      padding: 2px 6px;
+      padding: 1px 5px;
       border: 1px solid var(--line);
     }
     .badge-paid { background: #000; color: #fff; }
-    .badge-unpaid { background: #fff; color: #000; border-width: 2px; }
-    .badge-vacant { background: #fff; color: #888; border-color: #aaa; }
+    .badge-unpaid { background: #fff; color: #000; border-width: 1.5px; }
+    .badge-vacant { background: #fff; color: #777; border-color: #bbb; }
     .badge-prep { background: #fff; color: #000; border-style: dashed; }
 
-    .room-body { font-size: 13px; margin-bottom: 10px; }
-    .room-body .row { display: flex; justify-content: space-between; margin-bottom: 3px; }
-    .room-body .tenant-name { font-weight: 700; font-size: 14px; }
-    .room-actions { display: flex; gap: 6px; }
-    .room-actions button { flex: 1; }
+    .room-body { font-size: 12px; margin-bottom: 6px; }
+    .room-body .row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px; }
+    .room-body .tenant-name { font-weight: 800; font-size: 13px; }
+    .room-actions { display: flex; gap: 4px; margin-top: 6px; }
+    .room-actions button { flex: 1; padding: 4px 4px; font-size: 11px; font-weight: 700; white-space: nowrap; }
 
     /* ── 세무 섹션 (부가세 / 종합소득세) ── */
     .tax-box {
-      border: 2px solid var(--line);
-      padding: 16px;
-      margin-bottom: 16px;
+      border: 1.5px solid var(--line);
+      padding: 12px;
+      margin-bottom: 14px;
+      background: #fff;
     }
-    .tax-title { font-size: 16px; font-weight: 900; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .tax-title {
+      font-size: 14px;
+      font-weight: 900;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
     .tax-summary-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-      gap: 8px;
-      margin-bottom: 14px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    @media (max-width: 380px) {
+      .tax-summary-grid {
+        grid-template-columns: 1fr;
+      }
     }
     .tax-metric {
       border: 1px solid var(--line);
-      padding: 8px 10px;
+      padding: 6px 8px;
+      background: #fafafa;
     }
-    .tax-metric .label { font-size: 11px; color: #444; }
-    .tax-metric .val { font-size: 16px; font-weight: 800; }
+    .tax-metric .label {
+      font-size: 10px;
+      color: #666;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .tax-metric .val {
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+      margin-top: 2px;
+    }
+
+    /* 가로 / 세로 스크롤 컨테이너 */
+    .table-scroll-container {
+      width: 100%;
+      max-height: 420px;
+      max-height: min(56vh, 440px);
+      overflow-x: auto;
+      overflow-y: auto;
+      border: 1.5px solid var(--line);
+      background: #fff;
+      -webkit-overflow-scrolling: touch;
+      margin-top: 6px;
+    }
+    .table-scroll-container::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .table-scroll-container::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 3px;
+    }
+    .table-scroll-container::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
     table.data-table {
       width: 100%;
+      min-width: 540px;
       border-collapse: collapse;
       font-size: 12px;
-      margin-top: 10px;
     }
     table.data-table th, table.data-table td {
       border: 1px solid var(--line);
-      padding: 6px 8px;
+      padding: 5px 6px;
+      font-size: 11.5px;
       text-align: left;
+      white-space: nowrap; /* 글자 세로 줄바꿈 방지 */
     }
-    table.data-table th { background: #f2f2f2; font-weight: 800; }
-    table.data-table td.num { text-align: right; }
+    table.data-table th {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: #f2f2f2;
+      font-weight: 800;
+      text-align: center !important; /* 호실, 임차인... 모든 제목 가운데 정렬 */
+      box-shadow: 0 1px 0 #000;
+    }
+    table.data-table tfoot td {
+      position: sticky;
+      bottom: 0;
+      z-index: 4;
+      background: #f2f2f2;
+      font-weight: 800;
+      box-shadow: 0 -1px 0 #000;
+    }
+    table.data-table td.center { text-align: center; }
+    table.data-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    table.data-table tr:hover td { background: #fcfcfc; }
+    #vatTable { min-width: 820px; }
 
     /* ── 하단 고정 액션바 (스마트폰 최적화) ── */
     .bottom-bar {
@@ -292,17 +400,14 @@
 
   <!-- 헤더 -->
   <header>
-    <div class="brand">
-      RENT 2.0
-      <span>객체/지점격리</span>
-    </div>
+    <div class="brand">RENT 2.0</div>
     <div class="header-right">
-      <select id="branchSelect" onchange="switchBranch(this.value)" style="font-weight:700;max-width:140px;">
+      <select id="branchSelect" onchange="switchBranch(this.value)" style="font-weight:700;max-width:115px;padding:3px 4px;font-size:12px;">
         <option value="main">지점 로딩 중...</option>
       </select>
-      <span id="userBadge" style="font-size:11px;font-weight:800;border:1px solid #000;padding:4px 6px;background:#f5f5f5;">로그인 필요</span>
-      <button id="btnAuthAction" class="btn-sm btn-outline" onclick="handleAuthButtonClick()">로그인</button>
-      <a href="manual.html" target="_blank" style="font-size:12px;font-weight:700;border:1px solid #000;padding:4px 6px;">📖 매뉴얼</a>
+      <span id="userBadge" style="font-size:11px;font-weight:800;border:1px solid #000;padding:3px 5px;background:#f5f5f5;">-</span>
+      <button id="btnAuthAction" class="btn-sm btn-outline" style="padding:3px 6px;font-size:11px;" onclick="handleAuthButtonClick()">로그인</button>
+      <a href="manual.html" target="_blank" style="font-size:11px;font-weight:700;border:1px solid #000;padding:3px 5px;">📖 매뉴얼</a>
     </div>
   </header>
 
@@ -391,12 +496,27 @@
             <div class="val" id="vatTax">0원</div>
           </div>
         </div>
-        <div style="overflow-x:auto;">
+        <div class="table-scroll-container">
           <table class="data-table" id="vatTable">
             <thead>
-              <tr><th>호실</th><th>임차인</th><th>임대형태</th><th>공급가액</th><th>부가세</th><th>수납상태</th></tr>
+              <tr id="vatTableHeadRow">
+                <th class="center" style="min-width:44px;">호실</th>
+                <th class="center" style="min-width:60px;">임차인</th>
+                <th class="center" style="min-width:44px;">유형</th>
+                <th class="center" style="min-width:48px;">부가세</th>
+                <th class="center" style="min-width:72px;">1월</th>
+                <th class="center" style="min-width:72px;">2월</th>
+                <th class="center" style="min-width:72px;">3월</th>
+                <th class="center" style="min-width:72px;">4월</th>
+                <th class="center" style="min-width:72px;">5월</th>
+                <th class="center" style="min-width:72px;">6월</th>
+                <th class="center" style="min-width:82px;background:#e9ecef;">납입합계</th>
+                <th class="center" style="min-width:82px;">공급가액</th>
+                <th class="center" style="min-width:76px;">세액(10%)</th>
+              </tr>
             </thead>
-            <tbody><tr><td colspan="6" style="text-align:center;">조회 중...</td></tr></tbody>
+            <tbody><tr><td colspan="13" style="text-align:center;">조회 중...</td></tr></tbody>
+            <tfoot id="vatTableFoot"></tfoot>
           </table>
         </div>
       </div>
@@ -405,8 +525,8 @@
       <div class="tax-box">
         <div class="tax-title">
           <span>종합소득세 임대소득 & 필요경비</span>
-          <div style="display:flex;gap:6px;">
-            <select id="taxYear" onchange="loadIncomeTax()" style="padding:4px 6px;font-size:12px;">
+          <div style="display:flex;gap:4px;align-items:center;">
+            <select id="taxYear" onchange="loadIncomeTax()" style="padding:3px 6px;font-size:12px;font-weight:700;">
               <option value="2026">2026년</option>
               <option value="2025">2025년</option>
             </select>
@@ -429,10 +549,12 @@
           </div>
         </div>
         <div style="font-weight:700;margin:10px 0 6px 0;font-size:13px;">증빙유형별 경비 집계</div>
-        <table class="data-table" id="taxReceiptTable">
-          <thead><tr><th>증빙 구분</th><th>금액</th><th>세무 비고</th></tr></thead>
-          <tbody></tbody>
-        </table>
+        <div class="table-scroll-container" style="max-height:220px;">
+          <table class="data-table" id="taxReceiptTable" style="min-width:320px;">
+            <thead><tr><th>증빙 구분</th><th style="text-align:right;">금액</th><th>세무 비고</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -442,10 +564,12 @@
         <div style="font-weight:900;font-size:16px;">지출 전표 내역</div>
         <button onclick="openModal('modalExpense')">+ 지출 직접 입력</button>
       </div>
-      <table class="data-table" id="expensesTable">
-        <thead><tr><th>일자</th><th>항목</th><th>금액</th><th>증빙</th><th>적요</th><th>관리</th></tr></thead>
-        <tbody><tr><td colspan="6" style="text-align:center;">조회 중...</td></tr></tbody>
-      </table>
+      <div class="table-scroll-container">
+        <table class="data-table" id="expensesTable" style="min-width:540px;">
+          <thead><tr><th>일자</th><th>항목</th><th style="text-align:right;">금액</th><th>증빙</th><th>적요</th><th class="center">관리</th></tr></thead>
+          <tbody><tr><td colspan="6" style="text-align:center;">조회 중...</td></tr></tbody>
+        </table>
+      </div>
     </div>
 
     <!-- [섹션 4] AI 질의 비서 -->
@@ -635,7 +759,24 @@
             </select>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+
+        <!-- 부가세 2가지 체크 버튼 (과세 대상 실 & 별도 수납/세금영수증 발행) -->
+        <div style="border:1px solid #94a3b8;border-radius:4px;padding:10px 12px;margin-bottom:12px;background:#f8fafc;">
+          <div style="font-size:12px;font-weight:800;margin-bottom:8px;color:#166534;">부가세(VAT) 산출 및 수납 구분 (체크 버튼)</div>
+          <div style="display:grid;grid-template-columns:1fr;gap:8px;">
+            <label for="rfVatTarget" style="display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;cursor:pointer;padding:6px 10px;border-radius:4px;background:#ffffff;border:1px solid #cbd5e1;">
+              <input type="checkbox" id="rfVatTarget" checked>
+              <span>부가세 산출에 포함 (신고 대상 실)</span>
+            </label>
+            <label for="rfVatSeparate" style="display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;cursor:pointer;padding:6px 10px;border-radius:4px;background:#ffffff;border:1px solid #cbd5e1;">
+              <input type="checkbox" id="rfVatSeparate">
+              <span>부가세 별도 수납 (세금영수증/계산서 별도 발행)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 계약 기간 3대 일정: 입주일 - 만기일 - 퇴거일 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
           <div class="form-group">
             <label>입주일:</label>
             <input type="date" id="rfMoveIn">
@@ -643,6 +784,10 @@
           <div class="form-group">
             <label>만기일:</label>
             <input type="date" id="rfExpiry">
+          </div>
+          <div class="form-group">
+            <label>퇴거일 (전출):</label>
+            <input type="date" id="rfMoveOut">
           </div>
         </div>
         <div style="display:flex;gap:8px;margin-top:14px;">
@@ -859,9 +1004,11 @@
       const sel = document.getElementById("branchSelect");
 
       if (user) {
-        const roleName = user.role === "superadmin" ? "👑 본사 총괄" : "🏢 지점 관리자";
-        const bName = user.branch_name || (user.branch === "main" ? "시크빌" : (user.branch === "branch_5611" ? "선호빌" : (user.branch === "branch_9348" ? "신비주택" : (user.branch || "전체"))));
-        if (badge) badge.textContent = `${roleName} | ${bName} (${user.username})`;
+        const icon = user.role === "superadmin" ? "👑" : "🏢";
+        if (badge) {
+          badge.textContent = `${icon} ${user.username}`;
+          badge.title = `${user.role === "superadmin" ? "본사총괄" : "지점관리자"} (${user.username})`;
+        }
         if (btn) {
           btn.textContent = "로그아웃";
           btn.onclick = logout;
@@ -869,18 +1016,18 @@
         if (sel) {
           if (user.role !== "superadmin") {
             sel.disabled = true;
-            sel.title = "지점 관리자는 본인 소속 건물로만 고정됩니다.";
+            sel.title = "소속 건물 고정";
             const tabBr = document.getElementById("tabBranches");
             if (tabBr) tabBr.style.display = "none";
           } else {
             sel.disabled = false;
-            sel.title = "건물을 전환하여 전체 관리할 수 있습니다.";
+            sel.title = "건물 전환";
             const tabBr = document.getElementById("tabBranches");
             if (tabBr) tabBr.style.display = "inline-block";
           }
         }
       } else {
-        if (badge) badge.textContent = "⚠️ 로그인 필요";
+        if (badge) badge.textContent = "로그인";
         if (btn) {
           btn.textContent = "로그인";
           btn.onclick = () => openModal("modalLogin");
@@ -1343,13 +1490,14 @@
           }
         });
 
-        document.getElementById("statPaid").textContent = `${paidCount}개실`;
-        document.getElementById("statPaidAmount").textContent = `${paidAmount.toLocaleString()}원`;
-        document.getElementById("statUnpaid").textContent = `${unpaidCount}개실`;
-        document.getElementById("statUnpaidAmount").textContent = `${unpaidAmount.toLocaleString()}원`;
-        document.getElementById("statExpiring").textContent = `${expiringCount}개실`;
-        document.getElementById("statVacant").textContent = `${vacantCount}개실`;
-        document.getElementById("statTotalRooms").textContent = `전체 ${allRooms.length}개실`;
+        const fmtMoney = amt => (amt >= 10000 ? `${Math.round(amt / 10000).toLocaleString()}만원` : `${amt.toLocaleString()}원`);
+        document.getElementById("statPaid").textContent = `${paidCount}실`;
+        document.getElementById("statPaidAmount").textContent = fmtMoney(paidAmount);
+        document.getElementById("statUnpaid").textContent = `${unpaidCount}실`;
+        document.getElementById("statUnpaidAmount").textContent = fmtMoney(unpaidAmount);
+        document.getElementById("statExpiring").textContent = `${expiringCount}실`;
+        document.getElementById("statVacant").textContent = `${vacantCount}실`;
+        document.getElementById("statTotalRooms").textContent = `총 ${allRooms.length}실`;
 
         setAlert("", "info");
         renderRooms();
@@ -1411,34 +1559,38 @@
         const isVacant = !r.name;
         const isUnpaid = !isVacant && !curPay.paid && curPay.rent_amount > 0;
         const badgeClass = isVacant ? "badge-vacant" : (isUnpaid ? "badge-unpaid" : "badge-paid");
-        const badgeText = isVacant ? "공실" : (isUnpaid ? "당월 미납" : "완납");
+        const badgeText = isVacant ? "공실" : (isUnpaid ? "미납" : "완납");
+
+        // 간결한 금액 표시 (예: 월50만 / 보500)
+        const rentStr = r.rent ? `${(r.rent / 10000)}만` : "0";
+        const depStr = r.deposit ? `${(r.deposit / 10000)}만` : "0";
+        const mntStr = r.maintenance ? ` · 관${(r.maintenance / 10000)}만` : "";
+        const vatBadge = r.vat_target === false ? " · VAT제외" : (r.vat_separate ? " · VAT별도" : "");
+        const costSummary = isVacant ? "현재 공실" : `월${rentStr}(보${depStr})${mntStr}${vatBadge}`;
 
         const card = document.createElement("div");
         card.className = `room-card ${isUnpaid ? "status-unpaid" : ""}`;
         card.innerHTML = `
           <div class="room-header">
-            <span class="room-number">${r.room_number}호</span>
+            <div>
+              <span class="room-number">${r.room_number}호</span>
+              <span style="font-size:13px;font-weight:800;margin-left:4px;">${r.name || "(공실)"}</span>
+              ${isUnpaid ? `<span style="color:#c62828;font-weight:900;font-size:11px;margin-left:2px;">[미납]</span>` : ""}
+            </div>
             <span class="room-badge ${badgeClass}">${badgeText}</span>
           </div>
           <div class="room-body">
             <div class="row">
-              <span class="tenant-name">${r.name || "(공실)"}</span>
-              <span>${r.phone || ""}</span>
+              <span style="font-weight:700;">${costSummary}</span>
+              <span style="color:#666;font-size:11px;">${r.phone || ""}</span>
             </div>
-            <div class="row" style="color:#444;">
-              <span>${r.lease_type || "월세"} 보 ${r.deposit?.toLocaleString() || 0} / 월 ${r.rent?.toLocaleString() || 0}</span>
-              <span>관 ${r.maintenance?.toLocaleString() || 0}</span>
-            </div>
-            <div class="row" style="font-size:11px;color:#666;margin-top:4px;">
-              <span>만기: ${r.expiry || "-"}</span>
-              <span>${curM}월 상태: ${curPay.paid ? "납부완료" : (isVacant ? "공실" : "미납")}</span>
-            </div>
+            ${r.move_out ? `<div class="row" style="color:#777;font-size:11px;margin-top:1px;"><span>만기: ${r.expiry || "-"}</span><span style="color:#c62828;font-weight:700;">퇴거: ${r.move_out}</span></div>` : (r.expiry ? `<div class="row" style="color:#777;font-size:11px;margin-top:1px;"><span>만기: ${r.expiry}</span><span>${r.diff_days !== undefined ? r.diff_days + '일 남음' : ''}</span></div>` : "")}
           </div>
           <div class="room-actions">
-            ${!isVacant && !curPay.paid ? `<button class="btn-sm" onclick="quickPay(${r.room_number})">당월 수납</button>` : ""}
-            ${!isVacant && curPay.paid ? `<button class="btn-sm btn-outline" style="color:#c62828;border-color:#c62828;" onclick="quickCancelPay(${r.room_number})">수납 취소</button>` : ""}
-            <button class="btn-sm btn-outline" onclick="openRoomDetail(${r.room_number})">정보/수정</button>
-            ${!isVacant ? `<button class="btn-sm btn-outline" onclick="endContract(${r.room_number}, '${r.name}')">퇴실</button>` : ""}
+            ${!isVacant && !curPay.paid ? `<button class="btn-sm" style="background:#000;color:#fff;" onclick="quickPay(${r.room_number})">당월수납</button>` : ""}
+            ${!isVacant && curPay.paid ? `<button class="btn-sm btn-outline" style="color:#c62828;border-color:#c62828;" onclick="quickCancelPay(${r.room_number})">수납취소</button>` : ""}
+            <button class="btn-sm btn-outline" onclick="openRoomDetail(${r.room_number})">수정</button>
+            ${!isVacant ? `<button class="btn-sm btn-outline" onclick="endContract(${r.room_number}, '${r.name}')">퇴실</button>` : `<button class="btn-sm btn-outline" onclick="openRoomDetail(${r.room_number})">+입주계약</button>`}
           </div>
         `;
         grid.appendChild(card);
@@ -1530,14 +1682,18 @@
       document.getElementById("rfRent").value = r.rent || 0;
       document.getElementById("rfMaintenance").value = r.maintenance || 0;
       document.getElementById("rfPayTiming").value = r.pay_timing || "후불";
+      document.getElementById("rfVatTarget").checked = (r.vat_target !== false && r.vat_target !== "false");
+      document.getElementById("rfVatSeparate").checked = (r.vat_separate === true || r.vat_separate === "true");
       document.getElementById("rfMoveIn").value = r.move_in || "";
       document.getElementById("rfExpiry").value = r.expiry || "";
+      document.getElementById("rfMoveOut").value = r.move_out || "";
       openModal("modalRoom");
     }
 
     async function saveRoomForm(e) {
       e.preventDefault();
       const n = document.getElementById("rfRoomNumber").value;
+      const vatSeparate = document.getElementById("rfVatSeparate").checked;
       const payload = {
         name: document.getElementById("rfName").value.trim(),
         phone: document.getElementById("rfPhone").value.trim(),
@@ -1546,8 +1702,12 @@
         rent: Number(document.getElementById("rfRent").value),
         maintenance: Number(document.getElementById("rfMaintenance").value),
         pay_timing: document.getElementById("rfPayTiming").value,
+        vat_target: document.getElementById("rfVatTarget").checked,
+        vat_separate: vatSeparate,
+        vat_included: !vatSeparate,
         move_in: document.getElementById("rfMoveIn").value,
-        expiry: document.getElementById("rfExpiry").value
+        expiry: document.getElementById("rfExpiry").value,
+        move_out: document.getElementById("rfMoveOut").value
       };
       try {
         const res = await apiFetch(`${API_BASE}/rooms/${n}/contract?branch_id=${curBranch}`, {
@@ -1704,20 +1864,85 @@
         document.getElementById("vatSupply").textContent = `${data.total_supply.toLocaleString()}원`;
         document.getElementById("vatTax").textContent = `${data.total_vat.toLocaleString()}원`;
 
-        const tb = document.querySelector("#vatTable tbody");
-        tb.innerHTML = "";
-        (data.rows || []).forEach(r => {
+        const months = data.months || (p === "1" ? [1,2,3,4,5,6] : [7,8,9,10,11,12]);
+        const thead = document.querySelector("#vatTable thead");
+        const tbody = document.querySelector("#vatTable tbody");
+        const tfoot = document.getElementById("vatTableFoot");
+
+        // 1. 헤더 월별 컬럼 동적 반영 (모든 제목 가운데 정렬)
+        const monthThs = months.map(m => `<th class="center" style="min-width:72px;">${m}월</th>`).join("");
+        thead.innerHTML = `
+          <tr id="vatTableHeadRow">
+            <th class="center" style="min-width:44px;">호실</th>
+            <th class="center" style="min-width:60px;">임차인</th>
+            <th class="center" style="min-width:44px;">유형</th>
+            <th class="center" style="min-width:48px;">부가세</th>
+            ${monthThs}
+            <th class="center" style="min-width:82px;background:#e9ecef;">납입합계</th>
+            <th class="center" style="min-width:82px;">공급가액</th>
+            <th class="center" style="min-width:76px;">세액(10%)</th>
+          </tr>
+        `;
+
+        // 2. 바디 렌더링 (101호->101, 상태 컬럼 삭제, 부가세포함여부 표시)
+        tbody.innerHTML = "";
+        const rows = data.rows || [];
+        if (!rows.length) {
+          const colSpan = 4 + months.length + 3;
+          tbody.innerHTML = `<tr><td colspan="${colSpan}" class="center" style="padding:24px;color:#666;">해당 기간의 부가가치세 신고 내역이 없습니다.</td></tr>`;
+          if (tfoot) tfoot.innerHTML = "";
+          return;
+        }
+
+        const monthSums = {};
+        months.forEach(m => { monthSums[m] = 0; });
+
+        rows.forEach(r => {
           const tr = document.createElement("tr");
+          const mAmounts = r.monthly_amounts || {};
+          const monthTds = months.map(m => {
+            const val = mAmounts[m] || 0;
+            monthSums[m] += val;
+            return `<td class="num">${val > 0 ? val.toLocaleString() + '원' : '-'}</td>`;
+          }).join("");
+
+          const vLabel = r.vat_label || "포함";
+          let vBadge = `<span style="display:inline-block;padding:1px 5px;background:#f1f5f9;color:#334155;border-radius:2px;font-size:10.5px;font-weight:700;">포함</span>`;
+          if (vLabel.includes("별도")) {
+            vBadge = `<span style="display:inline-block;padding:1px 5px;background:#166534;color:#fff;border-radius:2px;font-size:10.5px;font-weight:700;">별도(발행)</span>`;
+          } else if (vLabel.includes("제외") || vLabel.includes("면세")) {
+            vBadge = `<span style="display:inline-block;padding:1px 5px;border:1px solid #94a3b8;color:#64748b;border-radius:2px;font-size:10.5px;font-weight:700;">제외(면세)</span>`;
+          }
+
           tr.innerHTML = `
-            <td><b>${r.room_number}호</b></td>
-            <td>${r.tenant_name}</td>
-            <td>${r.lease_type}</td>
-            <td class="num">${r.supply_value.toLocaleString()}원</td>
-            <td class="num">${r.vat_value.toLocaleString()}원</td>
-            <td>${r.status}</td>
+            <td class="center"><b>${r.room_number}</b></td>
+            <td class="center">${r.tenant_name || "-"}</td>
+            <td class="center">${r.lease_type || "월세"}</td>
+            <td class="center">${vBadge}</td>
+            ${monthTds}
+            <td class="num" style="font-weight:800;background:#fafafa;">${(r.period_total || 0).toLocaleString()}원</td>
+            <td class="num">${(r.supply_value || 0).toLocaleString()}원</td>
+            <td class="num">${(r.vat_value || 0).toLocaleString()}원</td>
           `;
-          tb.appendChild(tr);
+          tbody.appendChild(tr);
         });
+
+        // 3. 하단 월별 합계행 (tfoot, 상태 열 삭제)
+        if (tfoot) {
+          const monthSumTds = months.map(m => `<td class="num" style="font-weight:800;">${monthSums[m].toLocaleString()}원</td>`).join("");
+          tfoot.innerHTML = `
+            <tr style="background:#f2f2f2;font-weight:800;border-top:2px solid #000;">
+              <td class="center">합계</td>
+              <td class="center">${rows.length}개실</td>
+              <td class="center">-</td>
+              <td class="center">-</td>
+              ${monthSumTds}
+              <td class="num" style="font-weight:900;background:#e9ecef;">${data.total_collected.toLocaleString()}원</td>
+              <td class="num" style="font-weight:900;">${data.total_supply.toLocaleString()}원</td>
+              <td class="num" style="font-weight:900;">${data.total_vat.toLocaleString()}원</td>
+            </tr>
+          `;
+        }
       } catch (err) {
         console.error("부가세 로드 실패", err);
       }
