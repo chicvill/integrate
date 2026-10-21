@@ -238,3 +238,34 @@ async def reject_upgrade(req_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="신청을 찾을 수 없습니다.")
     return {"success": True, "message": "등업 신청이 반려되었습니다."}
 
+
+# ── ⚡ 스마트 인제스트 (Universal Smart Ingest & Camera OCR) ──
+from ..services.smart_service import smart_service
+from typing import Dict, Any
+from fastapi import Body
+
+@router.post("/smart/detect-input", summary="만능 입력 형식 자동 감지")
+async def detect_input(payload: Dict[str, Any] = Body(...)):
+    """문자, 구글시트 URL, 로컬 파일경로, 클립보드 사진을 실시간 감지하여 최적의 액션 안내"""
+    return smart_service.detect_input(
+        text=payload.get("text", ""),
+        image_base64=payload.get("image_base64", "")
+    )
+
+
+@router.post("/smart/universal-ingest", summary="만능 스마트 인제스트 통합 실행")
+async def universal_ingest(payload: Dict[str, Any] = Body(...)):
+    """감지된 데이터(문자 수납, 구글시트 동기화, 로컬 파일 동기화, 사진 OCR)를 원클릭 실행"""
+    bid = payload.get("branch_id") or "main"
+    return smart_service.universal_ingest(payload, branch_id=bid)
+
+
+@router.post("/smart/camera-ocr", summary="스마트폰 카메라/사진 Gemini Vision OCR 분석")
+async def camera_ocr(payload: Dict[str, Any] = Body(...)):
+    """스마트폰 카메라(capture=environment) 사진 또는 영수증/문서를 Vision AI로 분석"""
+    img = payload.get("image_base64")
+    if not img:
+        raise HTTPException(status_code=400, detail="이미지 데이터가 전달되지 않았습니다.")
+    return smart_service.process_camera_ocr(img, prompt=payload.get("prompt"))
+
+

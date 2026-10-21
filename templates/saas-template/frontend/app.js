@@ -9,6 +9,19 @@ import { getApiBase, fetchWithAuth, fetchBranches, createBranch } from './js/api
 import { state } from './js/state.js?v=2.0';
 import { renderItems, renderBranchOptions, updateKpis, showToast } from './js/ui.js?v=2.0';
 import { openItemModal, closeItemModal, openBranchModal, closeBranchModal, openAiModal, closeAiModal } from './js/modals.js?v=2.0';
+import {
+  initSmartIngest,
+  openUniversalPasteModal,
+  closeUniversalPasteModal,
+  openCameraScanModal,
+  closeCameraScanModal,
+  handleClipboardPaste,
+  previewUniversalPaste,
+  submitUniversalIngest,
+  clearPasteImage,
+  previewCameraImage,
+  submitCameraScan
+} from './js/smart_ingest.js?v=2.0';
 
 // API Base URL
 const API_BASE = getApiBase('{{APP_ID}}');
@@ -181,6 +194,28 @@ function setupEventListeners() {
   document.getElementById('openAiModalBtn')?.addEventListener('click', openAiModal);
   document.getElementById('closeAiModalBtn')?.addEventListener('click', closeAiModal);
   document.getElementById('submitAiBtn')?.addEventListener('click', handleRunAiAnalysis);
+
+  // ── 스마트 인제스트 (Universal Smart Ingest & Camera Scan) 바인딩 ──
+  document.getElementById('openUniversalPasteBtn')?.addEventListener('click', openUniversalPasteModal);
+  document.getElementById('closeUniversalPasteModalBtn')?.addEventListener('click', closeUniversalPasteModal);
+  document.getElementById('cancelUniversalPasteBtn')?.addEventListener('click', closeUniversalPasteModal);
+  
+  const pasteTextarea = document.getElementById('universalPasteText');
+  pasteTextarea?.addEventListener('input', previewUniversalPaste);
+  pasteTextarea?.addEventListener('paste', handleClipboardPaste);
+  document.getElementById('clearPasteImgBtn')?.addEventListener('click', clearPasteImage);
+  document.getElementById('universalSubmitBtn')?.addEventListener('click', () => submitUniversalIngest(API_BASE));
+
+  document.getElementById('openCameraScanBtn')?.addEventListener('click', openCameraScanModal);
+  document.getElementById('closeCameraScanModalBtn')?.addEventListener('click', closeCameraScanModal);
+  document.getElementById('cancelCameraScanBtn')?.addEventListener('click', closeCameraScanModal);
+  document.getElementById('cameraDirectInput')?.addEventListener('change', previewCameraImage);
+  document.getElementById('cameraGalleryInput')?.addEventListener('change', previewCameraImage);
+  document.getElementById('cameraScanSubmitBtn')?.addEventListener('click', () => submitCameraScan(API_BASE));
+
+  initSmartIngest({
+    onSuccess: () => loadData()
+  });
 
   // 검색 & 필터
   document.getElementById('statusFilter')?.addEventListener('change', (e) => {

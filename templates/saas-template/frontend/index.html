@@ -82,8 +82,14 @@
         </select>
       </div>
       <div class="action-buttons">
+        <button id="openUniversalPasteBtn" class="btn btn-secondary btn-sm" title="문자/구글시트/파일경로/사진(Ctrl+V) 만능 붙여넣기">
+          <span>📋</span> 만능 붙여넣기
+        </button>
+        <button id="openCameraScanBtn" class="btn btn-secondary btn-sm" title="모바일 후면 카메라 직촬영 및 문서 OCR 스캔">
+          <span>📷</span> 카메라 / 스캔
+        </button>
         <button id="openAiModalBtn" class="btn btn-ai btn-sm">
-          <span>✨</span> AI 분석 / 어시스턴트
+          <span>✨</span> AI 어시스턴트
         </button>
         <button id="openCreateModalBtn" class="btn btn-primary btn-sm">
           <span>+</span> 신규 등록
@@ -203,6 +209,86 @@
         <div id="aiResultBox" class="ai-result-box" style="display: none; margin-top: 1rem;">
           <div class="ai-result-header">분석 결과:</div>
           <div id="aiResultContent" class="ai-result-content"></div>
+        </div>
+      </div>
+  <!-- Modal: 만능 스마트 붙여넣기 (문자 · 구글시트 · 파일경로 · 사진 Ctrl+V) -->
+  <div id="universalPasteModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card" style="max-width: 580px; width: 95%;">
+      <div class="modal-header">
+        <h3 class="modal-title">📋 만능 스마트 붙여넣기</h3>
+        <button id="closeUniversalPasteModalBtn" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.75rem; line-height: 1.5; background: rgba(255,255,255,0.03); padding: 0.6rem 0.8rem; border-radius: 8px; border: 1px solid var(--border-color);">
+          💡 <strong>어떤 형식이든 자유롭게 붙여넣으세요!</strong><br>
+          알림 문자 · 구글시트 URL · 엑셀/사진 파일경로 · 클립보드 사진(Ctrl+V)을 자동 감지하여 처리합니다.
+        </div>
+        <div class="form-group">
+          <label class="form-label">복사한 내용 붙여넣기 (텍스트 또는 사진 Ctrl+V):</label>
+          <textarea id="universalPasteText" class="form-textarea" rows="4" placeholder="여기에 복사한 내용을 붙여넣으세요 (Ctrl+V):&#10;• 알림/입금 문자: [알림] 05/10 500,000원 처리 완료&#10;• 구글시트 URL: https://docs.google.com/spreadsheets/d/...&#10;• 로컬 파일경로: C:\데이터.xlsx 또는 C:\영수증.jpg&#10;• 사진: 캡처 도구로 복사 후 Ctrl+V"></textarea>
+        </div>
+
+        <!-- 클립보드 사진 감지 미리보기 -->
+        <div id="universalPasteImageSection" style="display: none; border: 1px solid var(--accent-purple); padding: 0.75rem; margin-bottom: 0.75rem; background: rgba(192, 132, 252, 0.05); border-radius: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <span style="font-size: 0.8rem; font-weight: 700; color: var(--accent-purple);">📷 붙여넣은 사진 (클립보드 감지)</span>
+            <button type="button" id="clearPasteImgBtn" class="btn btn-secondary btn-xs">사진 삭제</button>
+          </div>
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <img id="universalPasteImgPreview" src="" alt="클립보드 사진" style="width: 64px; height: 64px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color);">
+            <div style="font-size: 0.8rem; color: #cbd5e1;">클립보드 사진이 감지되었습니다. 실행 시 Vision AI가 자동 분석합니다.</div>
+          </div>
+        </div>
+
+        <!-- 감지 결과 프리뷰 박스 -->
+        <div id="universalPastePreviewBox" style="display: none; border: 1px solid var(--border-color); padding: 0.75rem; margin-bottom: 0.75rem; background: rgba(255,255,255,0.02); border-radius: 8px; font-size: 0.825rem;">
+          <div id="universalPasteBadge" style="display: inline-block; padding: 2px 8px; font-size: 0.75rem; font-weight: 700; border-radius: 4px; margin-bottom: 0.4rem;">
+            [감지된 유형]
+          </div>
+          <div id="universalPasteBody" style="line-height: 1.45; color: var(--text-main);"></div>
+        </div>
+
+        <div class="modal-footer" style="padding-top: 0.5rem;">
+          <button type="button" id="cancelUniversalPasteBtn" class="btn btn-secondary">취소</button>
+          <button type="button" id="universalSubmitBtn" class="btn btn-primary" style="flex: 2;">⚡ 스마트 자동 실행</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: 스마트폰 후면 카메라 직촬영 & OCR 스캔 -->
+  <div id="cameraScanModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card" style="max-width: 520px; width: 95%;">
+      <div class="modal-header">
+        <h3 class="modal-title">📷 카메라 촬영 / 파일 스캔</h3>
+        <button id="closeCameraScanModalBtn" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.75rem;">
+          스마트폰 카메라로 실물 영수증/문서를 직접 촬영하거나 갤러리 파일을 업로드하세요.
+        </div>
+
+        <!-- 카메라/파일 선택 버튼 -->
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+          <label class="btn btn-primary btn-sm" style="flex: 1; cursor: pointer; text-align: center;">
+            <span>📸</span> 카메라 직접 촬영
+            <input type="file" id="cameraDirectInput" accept="image/*" capture="environment" style="display: none;">
+          </label>
+          <label class="btn btn-secondary btn-sm" style="flex: 1; cursor: pointer; text-align: center;">
+            <span>📁</span> 갤러리/파일 찾기
+            <input type="file" id="cameraGalleryInput" accept="image/*,application/pdf" style="display: none;">
+          </label>
+        </div>
+
+        <div id="cameraFileName" style="font-size: 0.75rem; color: #64748b; margin-bottom: 0.5rem;">선택된 파일 없음</div>
+
+        <div id="cameraPreviewBox" style="display: none; text-align: center; margin-bottom: 0.75rem; border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 8px;">
+          <img id="cameraImgPreview" src="" alt="촬영 미리보기" style="max-height: 180px; max-width: 100%; border-radius: 6px; object-fit: contain;">
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="cancelCameraScanBtn" class="btn btn-secondary">취소</button>
+          <button type="button" id="cameraScanSubmitBtn" class="btn btn-ai" style="flex: 2;">⚡ AI Vision 스캔 분석</button>
         </div>
       </div>
     </div>

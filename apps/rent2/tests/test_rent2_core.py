@@ -48,9 +48,9 @@ class TestRent2(unittest.TestCase):
         self.assertIsNotNone(c)
         self.assertEqual(c.tenant_name, "홍길동")
         
-        # 1월(입주월) 상태 확인: 후불 익월 청구 정상 판정
+        # 1월(입주월) 상태 확인: 후불 입주월 공실/익월청구 원칙 판정
         p_jan = u.period(2026, 1)
-        self.assertTrue(p_jan["paid"])
+        self.assertTrue(p_jan.get("vacancy"))
         self.assertIn("후불", p_jan["note"])
         
         # 수납 처리
