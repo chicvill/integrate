@@ -85,12 +85,17 @@
       font-size: 13px;
     }
 
-    /* ── 3대 핵심 브리핑 카드 (미납, 만기, 공실) ── */
+    /* ── 4대 핵심 브리핑 카드 (수납, 미납, 만기, 공실) ── */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 8px;
       margin-bottom: 16px;
+    }
+    @media (max-width: 640px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
     .stat-card {
       border: 2px solid var(--line);
@@ -305,8 +310,13 @@
   <div class="container">
     <div id="appAlert"></div>
 
-    <!-- 3대 핵심 브리핑 카드 -->
+    <!-- 4대 핵심 브리핑 카드 (수납, 미납, 만기, 공실) -->
     <div class="stats-grid">
+      <div class="stat-card" id="cardPaid" onclick="filterRooms('paid')">
+        <div class="label">당월 수납</div>
+        <div class="val" id="statPaid">-</div>
+        <div class="sub" id="statPaidAmount">0원</div>
+      </div>
       <div class="stat-card" id="cardUnpaid" onclick="filterRooms('unpaid')">
         <div class="label">당월 미납</div>
         <div class="val" id="statUnpaid">-</div>
@@ -967,6 +977,8 @@
       updateAuthUI(null);
       allRooms = [];
       renderRooms();
+      document.getElementById("statPaid").textContent = "-";
+      document.getElementById("statPaidAmount").textContent = "0원";
       document.getElementById("statUnpaid").textContent = "-";
       document.getElementById("statUnpaidAmount").textContent = "0원";
       document.getElementById("statExpiring").textContent = "-";
@@ -1297,7 +1309,8 @@
         const rawRooms = data.rooms || {};
         allRooms = Array.isArray(rawRooms) ? rawRooms : Object.values(rawRooms);
         
-        // 브리핑 집계
+        // 브리핑 집계 (수납, 미납, 만기, 공실)
+        let paidCount = 0, paidAmount = 0;
         let unpaidCount = 0, unpaidAmount = 0, vacantCount = 0, expiringCount = 0;
         const now = new Date();
         const curY = now.getFullYear(), curM = now.getMonth() + 1;
@@ -1310,9 +1323,14 @@
           if (isVacant) {
             vacantCount++;
           } else {
-            if (!curPay.paid && curPay.rent_amount > 0) {
+            const rentTotal = (curPay.rent_amount !== undefined ? curPay.rent_amount : (r.rent || 0)) + 
+                              (curPay.maintenance_amount !== undefined ? curPay.maintenance_amount : (r.maintenance || 0));
+            if (curPay.paid) {
+              paidCount++;
+              paidAmount += (curPay.amount || rentTotal);
+            } else if (curPay.rent_amount > 0 || (r.rent || 0) > 0) {
               unpaidCount++;
-              unpaidAmount += (curPay.rent_amount + (curPay.maintenance_amount || 0));
+              unpaidAmount += rentTotal;
             }
           }
           if (r.expiry) {
@@ -1325,6 +1343,8 @@
           }
         });
 
+        document.getElementById("statPaid").textContent = `${paidCount}개실`;
+        document.getElementById("statPaidAmount").textContent = `${paidAmount.toLocaleString()}원`;
         document.getElementById("statUnpaid").textContent = `${unpaidCount}개실`;
         document.getElementById("statUnpaidAmount").textContent = `${unpaidAmount.toLocaleString()}원`;
         document.getElementById("statExpiring").textContent = `${expiringCount}개실`;
@@ -1343,6 +1363,7 @@
       curFilter = curFilter === status ? "all" : status;
       document.getElementById("filterStatus").value = curFilter;
       document.querySelectorAll(".stat-card").forEach(c => c.classList.remove("active"));
+      if (curFilter === "paid") document.getElementById("cardPaid").classList.add("active");
       if (curFilter === "unpaid") document.getElementById("cardUnpaid").classList.add("active");
       if (curFilter === "expiring") document.getElementById("cardExpiring").classList.add("active");
       if (curFilter === "vacant") document.getElementById("cardVacant").classList.add("active");
