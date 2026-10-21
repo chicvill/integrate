@@ -217,24 +217,38 @@ class Unit:
                                  is_future=is_future, vacancy=True)
         if c:
             first = _month(c.move_in) == i
+            is_postpay = getattr(c, "pay_timing", "후불") == "후불"
+            # [비즈니스 규칙] 전입월이고 계약서가 후불이면 실입금(완납)이 아닌 한 공실 처리 (익월 청구/당월 비과세)
+            # 선불이면 미납 처리 (전입월 당일 납부 의무 발생/과세 대상)
+            is_postpay_vacant = first and is_postpay and not (p and p.paid)
+
             if not c.active:
                 paid, note = past, "이전 세입자 정상 입금 (전출)" if past else ""
             elif first:
-                paid, note = True, ("입주월 (후불 익월 청구/정상)" if c.lease_type == "월세" and c.pay_timing == "후불" else "입주월 선납 완납")
+                if is_postpay_vacant:
+                    paid, note = False, "전입월 (후불 공실)"
+                else:
+                    paid, note = (p.paid if p else (c.pay_timing != "후불" and past)), ("입주월 완납" if (p and p.paid) else "입주월 선납 미납")
             elif is_future:
                 paid, note = False, "청구 예정 (미도래)"
             else:
                 paid, note = past, "정상 입금" if past else ""
-            d.update(tenant_name=c.tenant_name, tenant_id_number=c.id_number, is_previous_tenant=not c.active,
-                     paid=paid, paid_date=f"{y}-{m:02d}-10" if paid else "", rent_amount=c.monthly_rent,
-                     maintenance_amount=c.maintenance, note=note, contract_id=c.id, vacancy=False)
-            if p:   # 유효한 계약 기간 중 실제 수납 기록이 있으면 반영
-                d.update(paid=p.paid, paid_date=p.paid_date, note=p.note,
-                         tenant_name=p.tenant_name or d["tenant_name"], tenant_id_number=p.tenant_id_number or d["tenant_id_number"])
-                if p.rent_amount is not None:
-                    d["rent_amount"] = p.rent_amount
-                if p.maintenance_amount is not None:
-                    d["maintenance_amount"] = p.maintenance_amount
+
+            if is_postpay_vacant:
+                d.update(tenant_name="공실", tenant_id_number="", is_previous_tenant=False,
+                         paid=False, paid_date="", rent_amount=0, maintenance_amount=0,
+                         note="전입월(후불 공실)", contract_id=c.id, vacancy=True)
+            else:
+                d.update(tenant_name=c.tenant_name, tenant_id_number=c.id_number, is_previous_tenant=not c.active,
+                         paid=paid, paid_date=f"{y}-{m:02d}-10" if paid else "", rent_amount=c.monthly_rent,
+                         maintenance_amount=c.maintenance, note=note, contract_id=c.id, vacancy=False)
+                if p:   # 유효한 계약 기간 중 실제 수납 기록이 있으면 반영
+                    d.update(paid=p.paid, paid_date=p.paid_date, note=p.note,
+                             tenant_name=p.tenant_name or d["tenant_name"], tenant_id_number=p.tenant_id_number or d["tenant_id_number"])
+                    if p.rent_amount is not None:
+                        d["rent_amount"] = p.rent_amount
+                    if p.maintenance_amount is not None:
+                        d["maintenance_amount"] = p.maintenance_amount
         else:
             # [비즈니스 규칙] 이전 세입자 전출일 ~ 현 세입자 입주일 사이 (계약 없는 기간):
             # 과거 잔존 Payment 기록이 있더라도 무조건 "공실"로 확정!
@@ -456,7 +470,7 @@ class Unit:
         for py, pm in sorted(window):
             r = self.period(py, pm)
             row = {k: r[k] for k in ("paid", "paid_date", "rent_amount", "maintenance_amount", "note", "tenant_name")}
-            row.update(month=pm, year=py, is_previous_tenant=r["is_previous_tenant"])
+            row.update(month=pm, year=py, is_previous_tenant=r["is_previous_tenant"], vacancy=r.get("vacancy", False))
             pay[f"{py}-{pm}"] = row
             if year is None or py == year:
                 pay[pm] = row

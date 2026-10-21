@@ -1791,14 +1791,50 @@
         const payInfo = pays[key] || pays[p.month] || {};
 
         const isPaid = Boolean(payInfo.paid);
+        const periodIdx = p.year * 12 + p.month;
+
+        // 입주일 / 퇴실일 인덱스 계산 (이전 세입자 전출일 ~ 현 세입자 입주일 사이 또는 전입일 이전은 공실)
+        let moveInIdx = 0;
+        if (room.move_in) {
+          const parts = room.move_in.split("-");
+          if (parts.length >= 2) moveInIdx = parseInt(parts[0], 10) * 12 + parseInt(parts[1], 10);
+        }
+        let moveOutIdx = 9999999;
+        if (room.move_out) {
+          const parts = room.move_out.split("-");
+          if (parts.length >= 2) moveOutIdx = parseInt(parts[0], 10) * 12 + parseInt(parts[1], 10);
+        }
+
+        const isBeforeMoveIn = moveInIdx > 0 && periodIdx < moveInIdx && !payInfo.is_previous_tenant && !isPaid;
+        const isMoveInMonth = moveInIdx > 0 && periodIdx === moveInIdx;
+        const payTiming = room.pay_timing || "후불";
+        // [비즈니스 규칙]: 전입월이고 계약서가 후불이면 실입금이 없는 한 공실(익월 청구/당월 비과세), 선불(선납)이면 미납
+        const isPostpayMoveInVacant = isMoveInMonth && payTiming === "후불" && !isPaid;
+
+        const isAfterMoveOut = moveOutIdx < 9999999 && periodIdx > moveOutIdx && !isPaid;
+
+        const isExplicitVacant = Boolean(payInfo.vacancy) || 
+                                payInfo.tenant_name === "공실" || 
+                                payInfo.note === "공실" ||
+                                (payInfo.note && payInfo.note.includes("공실")) ||
+                                (!room.name || room.name === "(공실)");
+
+        let rawRentAmt = Number(payInfo.rent_amount !== undefined ? payInfo.rent_amount : (room.rent || 0));
+        let rawMaintAmt = Number(payInfo.maintenance_amount !== undefined ? payInfo.maintenance_amount : (room.maintenance || 0));
+
+        const isZeroAmountUnpaid = !isPaid && rawRentAmt === 0 && rawMaintAmt === 0;
+        const isVacant = isExplicitVacant || isBeforeMoveIn || isPostpayMoveInVacant || isAfterMoveOut || isZeroAmountUnpaid;
+
+        const rentAmt = isVacant ? 0 : rawRentAmt;
+        const maintAmt = isVacant ? 0 : rawMaintAmt;
         const paidDate = payInfo.paid_date || (isPaid ? `${p.year}-${String(p.month).padStart(2, '0')}-05` : "-");
-        const rentAmt = Number(payInfo.rent_amount !== undefined ? payInfo.rent_amount : (room.rent || 0));
-        const maintAmt = Number(payInfo.maintenance_amount !== undefined ? payInfo.maintenance_amount : (room.maintenance || 0));
 
         // 부가세: 별도의 임차료를 납부한 경우 (VAT 별도)
         let vatAmt = 0;
         let vatDisplay = "-";
-        if (isVatSeparate && isVatTarget) {
+        if (isVacant) {
+          vatDisplay = "-";
+        } else if (isVatSeparate && isVatTarget) {
           vatAmt = Math.round(rentAmt * 0.1);
           vatDisplay = `${vatAmt.toLocaleString()}원`;
         } else if (!isVatTarget) {
@@ -1815,20 +1851,25 @@
           sumMaint += maintAmt;
           sumVat += vatAmt;
           sumTotal += monthTotal;
-        } else if (room.name) {
+        } else if (!isVacant && room.name) {
           totalUnpaidCount++;
         }
 
-        const badgeHtml = isPaid
-          ? `<span style="display:inline-block;padding:2px 6px;background:#000;color:#fff;border-radius:2px;font-size:11px;font-weight:700;">완납</span>`
-          : (room.name
-              ? `<span style="display:inline-block;padding:2px 6px;background:#fee2e2;color:#dc2626;border:1px solid #dc2626;border-radius:2px;font-size:11px;font-weight:700;">미납</span>`
-              : `<span style="display:inline-block;padding:2px 6px;background:#f1f5f9;color:#64748b;border-radius:2px;font-size:11px;">공실</span>`);
+        let badgeHtml = "";
+        if (isPaid) {
+          badgeHtml = `<span style="display:inline-block;padding:2px 6px;background:#000;color:#fff;border-radius:2px;font-size:11px;font-weight:700;">완납</span>`;
+        } else if (isVacant) {
+          badgeHtml = `<span style="display:inline-block;padding:2px 6px;background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:2px;font-size:11px;font-weight:600;">공실</span>`;
+        } else {
+          badgeHtml = `<span style="display:inline-block;padding:2px 6px;background:#fee2e2;color:#dc2626;border:1px solid #dc2626;border-radius:2px;font-size:11px;font-weight:700;">미납</span>`;
+        }
 
         const tr = document.createElement("tr");
         tr.style.borderBottom = "1px solid #e5e7eb";
-        if (!isPaid && room.name) {
+        if (!isPaid && !isVacant && room.name) {
           tr.style.background = "#fff8f8";
+        } else if (isVacant) {
+          tr.style.background = "#fafafa";
         }
 
         tr.innerHTML = `
