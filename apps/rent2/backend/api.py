@@ -208,11 +208,13 @@ def get_room(n: int, branch_id: str = "main", user: User = Depends(me)):
     return _unit(branch_id, n, user).room()
 
 
+@router.post("/rooms/{n}/contract")
+@router.put("/rooms/{n}/contract")
 @router.put("/rooms/{n}")
 def update_room(n: int, form: Dict[str, Any] = Body(...), branch_id: str = "main", user: User = Depends(me)):
     u = _unit(branch_id, n, user)
     u.update(form)
-    return u.room()
+    return {"success": True, "room": u.room(), "message": f"{n}호 계약 정보가 저장되었습니다."}
 
 
 @router.post("/rooms/batch-import")

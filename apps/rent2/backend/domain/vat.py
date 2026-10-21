@@ -18,12 +18,17 @@ def _display(curr: str, seen: set) -> str:
 
 
 def report(b: Building, start: int = 1, end: int = 6, year: Optional[int] = None,
-           rooms: Optional[List[int]] = None) -> Dict[str, Any]:
+           rooms: Optional[List[int]] = None, include_non_vat: bool = False) -> Dict[str, Any]:
     year, months, rows = year or today().year, list(range(start, end + 1)), []
     for u in b.view():
         if rooms and u.number not in rooms:
             continue
         c = u.latest()
+        is_vat_target = getattr(c, "vat_target", True) if c else True
+        # [비즈니스 규칙] 부가세 산출 제외 실은 부가가치세 신고 목록 및 집계에서 완전히 제외
+        if not is_vat_target and not include_non_vat:
+            continue
+
         ps = {m: u.period(year, m) for m in months}
         
         # [비즈니스 규칙] 임차인이 있는 경우 미납액도 부가세 포함됨 (공급시기 도래 원칙)
@@ -41,7 +46,6 @@ def report(b: Building, start: int = 1, end: int = 6, year: Optional[int] = None
                 else:
                     amounts[m] = 0
 
-        is_vat_target = getattr(c, "vat_target", True) if c else True
         is_vat_sep = getattr(c, "vat_separate", False) if c else False
         raw_sum = sum(amounts.values())
 
