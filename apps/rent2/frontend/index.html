@@ -394,6 +394,25 @@
       .container { max-width: 100%; padding: 0; }
       .room-card { break-inside: avoid; border: 1px solid #000; }
     }
+    /* 음성 입력 마이크 버튼 */
+    @keyframes micPulse {
+      0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); transform: scale(1); }
+      70% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); transform: scale(1.04); }
+      100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); transform: scale(1); }
+    }
+    .btn-mic {
+      padding: 8px 12px;
+      font-size: 15px;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+    .btn-mic.mic-active {
+      background: #fee2e2 !important;
+      border-color: #dc2626 !important;
+      color: #991b1b !important;
+      animation: micPulse 1.4s infinite;
+      font-weight: 700;
+    }
   </style>
 </head>
 <body>
@@ -576,7 +595,8 @@
     <div id="secAI" style="display:none;">
       <div class="tax-box">
         <div class="tax-title">AI 도구 비서 (자연어 질의)</div>
-        <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">
+          <button type="button" class="btn-outline btn-mic" id="btnMicAI" onclick="toggleVoiceAI()" title="음성으로 질문하기" aria-label="음성 질문 마이크">🎙️</button>
           <input type="text" id="aiInput" placeholder="예: 201호 정보 보여줘, 이번 달 미납 누구야?, 302호 만기 언제야?" style="flex:1;" onkeydown="if(event.key==='Enter')sendAI()">
           <button onclick="sendAI()">질문</button>
         </div>
@@ -2068,7 +2088,91 @@
       }
     }
 
-    // ── AI 질의 ──
+    // ── AI 질의 & 음성 입력 (Web Speech API) ──
+    let aiSpeechRecognition = null;
+    let isVoiceListening = false;
+
+    function toggleVoiceAI(targetId = "aiInput", btnId = "btnMicAI") {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        setAlert("현재 브라우저는 음성 인식을 지원하지 않습니다. Chrome, Edge 또는 Safari 최신 버전을 권장합니다.", "warning");
+        return;
+      }
+
+      const btn = document.getElementById(btnId);
+      const input = document.getElementById(targetId);
+
+      if (isVoiceListening) {
+        if (aiSpeechRecognition) {
+          try { aiSpeechRecognition.stop(); } catch (e) {}
+        }
+        return;
+      }
+
+      try {
+        aiSpeechRecognition = new SpeechRecognition();
+        aiSpeechRecognition.lang = "ko-KR";
+        aiSpeechRecognition.interimResults = true;
+        aiSpeechRecognition.continuous = false;
+
+        const origPlaceholder = input ? input.placeholder : "";
+
+        aiSpeechRecognition.onstart = function() {
+          isVoiceListening = true;
+          if (btn) {
+            btn.classList.add("mic-active");
+            btn.innerHTML = "🔴 듣는 중...";
+            btn.title = "음성 입력 중지하려면 클릭";
+          }
+          if (input) {
+            input.placeholder = "음성을 듣고 있습니다... 말씀해 주세요 🎙️";
+          }
+        };
+
+        aiSpeechRecognition.onresult = function(event) {
+          let text = "";
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            text += event.results[i][0].transcript;
+          }
+          if (input && text) {
+            input.value = text;
+          }
+        };
+
+        aiSpeechRecognition.onerror = function(event) {
+          console.warn("음성인식 오류:", event.error);
+          if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+            setAlert("마이크 권한이 차단되어 있습니다. 브라우저 주소창에서 마이크 권한을 허용해주세요.", "error");
+          } else if (event.error !== "no-speech") {
+            setAlert(`음성 인식 오류: ${event.error}`, "warning");
+          }
+        };
+
+        aiSpeechRecognition.onend = function() {
+          isVoiceListening = false;
+          if (btn) {
+            btn.classList.remove("mic-active");
+            btn.innerHTML = "🎙️";
+            btn.title = "음성으로 질문하기";
+          }
+          if (input) {
+            input.placeholder = origPlaceholder;
+            input.focus();
+          }
+        };
+
+        aiSpeechRecognition.start();
+      } catch (err) {
+        console.error("음성인식 시작 실패:", err);
+        isVoiceListening = false;
+        if (btn) {
+          btn.classList.remove("mic-active");
+          btn.innerHTML = "🎙️";
+        }
+        setAlert("음성 인식을 시작할 수 없습니다.", "error");
+      }
+    }
+
     async function sendAI() {
       const inp = document.getElementById("aiInput");
       const q = inp.value.trim();

@@ -263,7 +263,7 @@ def pay(n: int, p: Dict[str, Any] = Body(...), branch_id: str = "main", user: Us
             rent_amount=p.get("rent_amount"),
             maintenance_amount=p.get("maintenance_amount"),
             fallback_month=num(p.get("month")),
-            fallback_year=num(p.get("year")) if p.get("year") else None
+            fallback_year=num(p.get("year"))
         )
     res = u.room()
     res["applied_period"] = f"{app_y}-{app_m:02d}"
@@ -283,7 +283,7 @@ def cancel(n: int, p: Dict[str, Any] = Body(...), branch_id: str = "main", user:
         p_obj, c_y, c_m = u.cancel_lifo(
             note=p.get("note") or "납부 취소",
             fallback_month=num(p.get("month")),
-            fallback_year=num(p.get("year")) if p.get("year") else None
+            fallback_year=num(p.get("year"))
         )
     res = u.room()
     res["cancelled_period"] = f"{c_y}-{c_m:02d}"

@@ -238,6 +238,28 @@
       font-weight: 600;
       color: #93c5fd;
     }
+    /* 음성 마이크 버튼 */
+    @keyframes micPulse {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); transform: scale(1); }
+      70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); transform: scale(1.05); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); transform: scale(1); }
+    }
+    .btn-mic {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-size: 15px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .btn-mic.mic-active {
+      background: #ef4444 !important;
+      border-color: #dc2626 !important;
+      color: #fff !important;
+      animation: micPulse 1.4s infinite;
+      font-weight: 700;
+    }
   </style>
 </head>
 <body>
@@ -279,6 +301,7 @@
       </div>
 
       <div class="chat-input-area">
+        <button type="button" class="btn btn-secondary btn-mic" id="btnMicChat" onclick="toggleVoiceAI('chatInput', 'btnMicChat')" title="음성으로 질문하기" aria-label="음성 질문 마이크">🎙️</button>
         <input type="text" id="chatInput" class="chat-input" placeholder="AI에게 질문이나 업무를 요청하세요 (Enter로 전송)..." onkeydown="if(event.key==='Enter') doSend()">
         <button class="btn btn-primary" onclick="doSend()">전송</button>
       </div>
@@ -409,6 +432,88 @@
         `).join('');
       } catch (err) {
         list.innerHTML = `<div style="color:var(--muted); font-size:0.8rem;">타임라인 로드 실패</div>`;
+      }
+    }
+
+    // ── 음성 입력 (Web Speech API) ──
+    let voiceRecognition = null;
+    let isListening = false;
+
+    function toggleVoiceAI(targetId = 'chatInput', btnId = 'btnMicChat') {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert('현재 브라우저는 음성 인식을 지원하지 않습니다. Chrome, Edge 또는 Safari 최신 브라우저를 이용해주세요.');
+        return;
+      }
+
+      const btn = document.getElementById(btnId);
+      const input = document.getElementById(targetId);
+
+      if (isListening) {
+        if (voiceRecognition) {
+          try { voiceRecognition.stop(); } catch (e) {}
+        }
+        return;
+      }
+
+      try {
+        voiceRecognition = new SpeechRecognition();
+        voiceRecognition.lang = 'ko-KR';
+        voiceRecognition.interimResults = true;
+        voiceRecognition.continuous = false;
+
+        const origPlaceholder = input ? input.placeholder : '';
+
+        voiceRecognition.onstart = function() {
+          isListening = true;
+          if (btn) {
+            btn.classList.add('mic-active');
+            btn.innerHTML = '🔴 듣는 중...';
+            btn.title = '음성 입력 중지하려면 클릭';
+          }
+          if (input) {
+            input.placeholder = '음성을 듣고 있습니다... 말씀해 주세요 🎙️';
+          }
+        };
+
+        voiceRecognition.onresult = function(event) {
+          let text = '';
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            text += event.results[i][0].transcript;
+          }
+          if (input && text) {
+            input.value = text;
+          }
+        };
+
+        voiceRecognition.onerror = function(event) {
+          console.warn('음성 인식 오류:', event.error);
+          if (event.error === 'not-allowed') {
+            alert('마이크 사용 권한이 차단되어 있습니다. 브라우저 주소창 좌측 설정에서 마이크를 허용해주세요.');
+          }
+        };
+
+        voiceRecognition.onend = function() {
+          isListening = false;
+          if (btn) {
+            btn.classList.remove('mic-active');
+            btn.innerHTML = '🎙️';
+            btn.title = '음성으로 질문하기';
+          }
+          if (input) {
+            input.placeholder = origPlaceholder;
+            input.focus();
+          }
+        };
+
+        voiceRecognition.start();
+      } catch (err) {
+        console.error('음성 인식 시작 실패:', err);
+        isListening = false;
+        if (btn) {
+          btn.classList.remove('mic-active');
+          btn.innerHTML = '🎙️';
+        }
       }
     }
 

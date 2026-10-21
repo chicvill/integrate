@@ -51,7 +51,11 @@ def unit_card(building: str, unit: int) -> Dict[str, Any]:
 def vacancies(building: str = "") -> Dict[str, Any]:
     """공실(빈 호실) 목록."""
     b = Building.require(building)
-    empty = [u.number for u in b.view() if not u.active() or not u.active().tenant_name]
+    empty = []
+    for u in b.view():
+        act = u.active()
+        if not act or not act.tenant_name:
+            empty.append(u.number)
     return {"units": empty, "message": f"공실 {len(empty)}실: {', '.join(map(str, empty)) or '없음'}"}
 
 
@@ -160,6 +164,8 @@ def update_contract(building: str, unit: int, expiry: str = "", move_in: str = "
     if note:
         form["note"] = note
     updated = u.update(form)
+    if not updated:
+        return {"contract": None, "message": f"⚠️ {unit}호의 계약 정보를 수정할 수 없습니다."}
     changes = []
     if expiry: changes.append(f"만기일: {updated.expiry}")
     if move_in: changes.append(f"입주일: {updated.move_in}")
@@ -173,10 +179,13 @@ def new_contract(building: str, unit: int, tenant_name: str, deposit: int, rent:
                  move_in: str = "", expiry: str = "", phone: str = "", lease_type: str = "월세", pay_timing: str = "후불") -> Dict[str, Any]:
     """신규 계약: 호실에 새 임차인 계약서를 만든다 (기존 거주 계약이 있으면 거절)."""
     u = Building.require(building).unit(unit)
-    if u.active():
-        raise ValueError(f"{unit}호는 이미 {u.active().tenant_name}님이 거주 중입니다. 먼저 퇴실 처리해 주세요.")
+    act = u.active()
+    if act:
+        raise ValueError(f"{unit}호는 이미 {act.tenant_name}님이 거주 중입니다. 먼저 퇴실 처리해 주세요.")
     c = u.update({"name": tenant_name, "deposit": deposit, "rent": rent, "maintenance": maintenance, "move_in": move_in or today().isoformat(),
                   "expiry": expiry, "phone": phone, "lease_type": lease_type, "pay_timing": pay_timing})
+    if not c:
+        raise ValueError(f"{unit}호 신규 계약 생성에 실패했습니다.")
     return {"contract": c.id, "message": f"📑 {unit}호 {tenant_name}님 신규 계약 등록 ({c.move_in}~{c.expiry})"}
 
 
