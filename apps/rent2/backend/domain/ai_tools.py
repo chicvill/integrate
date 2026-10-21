@@ -41,10 +41,48 @@ def building_summary(building: str = "") -> Dict[str, Any]:
 
 @tool()
 def unit_card(building: str, unit: int) -> Dict[str, Any]:
-    """호실 카드: 현재 계약, 이번 달 납부 상태, 미납 월, 과거 임차인 이력을 한 번에 본다."""
-    card = Building.require(building).unit(unit).card()
+    """호실 카드: 현재 계약, 이번 달 납부 상태, 최근 완납 내역, 미납 월, 과거 임차인 이력을 한 번에 본다."""
+    b = Building.require(building)
+    if b.units and unit not in b.units:
+        floor = unit // 100
+        same_floor = [u for u in b.units if u // 100 == floor]
+        if same_floor:
+            floor_msg = f"{floor}층은 {', '.join(map(str, same_floor))}호만 운영 중입니다."
+        else:
+            floor_msg = f"운영 중인 호실: {', '.join(map(str, b.units[:8]))} ... (총 {len(b.units)}개실)"
+        return {
+            "building": b.name,
+            "unit": unit,
+            "exists": False,
+            "message": f"⚠️ {b.name}에는 {unit}호가 존재하지 않는 호실입니다.\n({floor_msg})\n101호 또는 201~205호 등의 다른 호실을 확인해 주세요."
+        }
+    u = b.unit(unit)
+    card = u.card()
     hist = " / ".join(card["history"]) or "없음"
-    return {**card, "message": f"🚪 {card['building']} {unit}호\n계약: {card['contract']}\n이번 달: {'납부' if card['this_month']['paid'] else '미납'} ({card['this_month']['note'] or '-'})\n미납 월: {', '.join(card['unpaid_months']) or '없음'}\n이력: {hist}"}
+    paids = u.paid_periods()
+    paid_details = []
+    if paids:
+        for py, pm in paids[:5]:
+            pinfo = u.period(py, pm)
+            p_date = pinfo.get("paid_date") or "-"
+            amt = (pinfo.get("rent_amount") or 0) + (pinfo.get("maintenance_amount") or 0)
+            paid_details.append(f"{py}-{pm:02d} ({p_date}, {amt:,}원)")
+        paid_str = " · ".join(paid_details)
+    else:
+        paid_str = "완납 내역 없음"
+
+    return {
+        **card,
+        "recent_payments": paid_details,
+        "message": (
+            f"🚪 {card['building']} {unit}호\n"
+            f"계약: {card['contract']}\n"
+            f"이번 달: {'납부' if card['this_month']['paid'] else '미납'} ({card['this_month']['note'] or '-'})\n"
+            f"최근 납부 내역: {paid_str}\n"
+            f"미납 월: {', '.join(card['unpaid_months']) or '없음'}\n"
+            f"이력: {hist}"
+        )
+    }
 
 
 @tool()
@@ -192,7 +230,7 @@ def new_contract(building: str, unit: int, tenant_name: str, deposit: int, rent:
 # ───────────── 오프라인 규칙 (API 키 없이도 동작 · 결정적 테스트용) ─────────────
 def _args(msg: str, ctx: dict, **extra: Any) -> dict:
     t, a = today(), dict(ctx)
-    if (m := re.search(r"(\d{3,4})\s*호?", msg)):
+    if (m := re.search(r"\b([1-9]\d{2,3})\s*(?:호)?\b", msg)) or (m := re.search(r"(\d{3,4})\s*호?", msg)):
         a["unit"] = int(m.group(1))
     if (m := re.search(r"(\d{4})\s*년", msg)):
         a["year"] = int(m.group(1))
@@ -270,7 +308,8 @@ agent.OFFLINE_RULES[:] = [(re.compile(p, re.I), fn) for p, fn in [
     (r"공실|빈\s*방|빈방", _plan("vacancies")),
     (r"요약|현황|통계|브리핑", _plan("building_summary")),
     (r"이력|타임라인|최근\s*(변경|기록)|로그", _plan("timeline")),
-    (r"\d{3}\s*호", _plan("unit_card")),
+    (r"(납부|수납|입금|월세)\s*(내역|기록|조회|목록|이력|확인해|보여)", _plan("unit_card")),
+    (r"\b[1-9]\d{2,3}(?:\s*호)?\b", _plan("unit_card")),
 ]]
 
 
