@@ -584,9 +584,12 @@
 
     <!-- [섹션 3] 지출 장부 -->
     <div id="secExpenses" style="display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
         <div style="font-weight:900;font-size:16px;">지출 전표 내역</div>
-        <button onclick="openModal('modalExpense')">+ 지출 직접 입력</button>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-primary" style="background:#000;color:#fff;" onclick="openReceiptScanModal()">📷 영수증 카메라 스캔</button>
+          <button class="btn-outline" onclick="openModal('modalExpense')">+ 지출 직접 입력</button>
+        </div>
       </div>
       <div class="table-scroll-container">
         <table class="data-table" id="expensesTable" style="min-width:540px;">
@@ -649,9 +652,9 @@
 
   <!-- ── 모바일 고정 하단 퀵 액션 바 (Zero-Typing) ── -->
   <div class="bottom-bar">
-    <button onclick="openModal('modalPaste')">📋 문자 붙여넣기</button>
-    <button onclick="openModal('modalScan')">📷 카메라/스캔</button>
-    <button class="btn-primary" onclick="setTab('tax')">📊 세무자료</button>
+    <button id="btnBottomPaste" onclick="openModal('modalPaste')">📋 문자 붙여넣기</button>
+    <button id="btnBottomScan" onclick="openModal('modalScan')">📷 카메라/스캔</button>
+    <button id="btnBottomTax" class="btn-primary" onclick="setTab('tax')">📊 세무자료</button>
   </div>
 
   <!-- ── 모달 0: 사용자 로그인 / 지점 격리 인증 ── -->
@@ -2079,6 +2082,12 @@
     }
 
     // ── [스마트 인제스트 2] 카메라 촬영 / OCR 스캔 ──
+    function openReceiptScanModal() {
+      const sk = document.getElementById("scanKind");
+      if (sk) sk.value = "receipt";
+      openModal("modalScan");
+    }
+
     function previewScanImage(event) {
       const file = event.target.files && event.target.files[0];
       if (!file) return;
