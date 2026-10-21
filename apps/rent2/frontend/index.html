@@ -492,7 +492,12 @@
       <div class="tax-box">
         <div class="tax-title">
           <span>부가가치세 신고 자료</span>
-          <div style="display:flex;gap:6px;">
+          <div style="display:flex;gap:6px;align-items:center;">
+            <select id="vatYear" onchange="loadVatReport()" style="padding:4px 6px;font-size:12px;font-weight:700;">
+              <option value="2025" selected>2025년</option>
+              <option value="2026">2026년</option>
+              <option value="2024">2024년</option>
+            </select>
             <select id="vatPeriod" onchange="loadVatReport()" style="padding:4px 6px;font-size:12px;">
               <option value="1">1기 (1~6월)</option>
               <option value="2">2기 (7~12월)</option>
@@ -945,6 +950,48 @@
           <button type="button" class="btn-outline" onclick="closeModal('modalBranchBilling')">취소</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ── 모달 8: 호실별 월별 수납 내역 (작년 1월 ~ 현재월) ── -->
+  <div class="modal-overlay" id="modalPaymentHistory">
+    <div class="modal-content" style="max-width:680px;width:95%;">
+      <div class="modal-header">
+        <h3 id="payHistTitle">💳 수납 내역</h3>
+        <button class="close-btn" onclick="closeModal('modalPaymentHistory')">×</button>
+      </div>
+
+      <!-- 상단 요약 정보 -->
+      <div id="payHistSummary" style="background:#f8fafc;border:1px solid #000;padding:10px 12px;margin-bottom:12px;font-size:12.5px;">
+        <!-- 동적으로 주입 -->
+      </div>
+
+      <!-- 내역 테이블 (모바일 가로 스크롤 대응) -->
+      <div style="overflow-x:auto;max-height:420px;overflow-y:auto;border:1px solid #000;margin-bottom:14px;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;text-align:center;">
+          <thead style="position:sticky;top:0;background:#f2f2f2;border-bottom:2px solid #000;font-weight:800;z-index:2;">
+            <tr>
+              <th style="padding:7px 4px;border-right:1px solid #ccc;min-width:65px;">납부월</th>
+              <th style="padding:7px 4px;border-right:1px solid #ccc;min-width:55px;">상태</th>
+              <th style="padding:7px 4px;border-right:1px solid #ccc;min-width:75px;">납부일자</th>
+              <th style="padding:7px 4px;border-right:1px solid #ccc;min-width:75px;">임차료</th>
+              <th style="padding:7px 4px;border-right:1px solid #ccc;min-width:65px;">관리비</th>
+              <th style="padding:7px 4px;border-right:1px solid #ccc;min-width:65px;">부가세</th>
+              <th style="padding:7px 4px;min-width:80px;background:#eef2ff;">합계금액</th>
+            </tr>
+          </thead>
+          <tbody id="payHistTableBody">
+            <!-- 동적으로 주입 -->
+          </tbody>
+          <tfoot id="payHistTableFoot" style="position:sticky;bottom:0;background:#f8f9fa;border-top:2px solid #000;font-weight:800;">
+            <!-- 합계행 -->
+          </tfoot>
+        </table>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:8px;">
+        <button type="button" class="btn-primary" style="padding:8px 24px;font-size:14px;font-weight:700;" onclick="closeModal('modalPaymentHistory')">확인</button>
+      </div>
     </div>
   </div>
 
@@ -1609,6 +1656,7 @@
           <div class="room-actions">
             ${!isVacant && !curPay.paid ? `<button class="btn-sm" style="background:#000;color:#fff;" onclick="quickPay(${r.room_number})">당월수납</button>` : ""}
             ${!isVacant && curPay.paid ? `<button class="btn-sm btn-outline" style="color:#c62828;border-color:#c62828;" onclick="quickCancelPay(${r.room_number})">수납취소</button>` : ""}
+            <button class="btn-sm btn-outline" onclick="openPaymentHistory(${r.room_number})">수납내역</button>
             <button class="btn-sm btn-outline" onclick="openRoomDetail(${r.room_number})">수정</button>
             ${!isVacant ? `<button class="btn-sm btn-outline" onclick="endContract(${r.room_number}, '${r.name}')">퇴실</button>` : `<button class="btn-sm btn-outline" onclick="openRoomDetail(${r.room_number})">+입주계약</button>`}
           </div>
@@ -1687,6 +1735,138 @@
       } catch (err) {
         setAlert("퇴실 처리에 실패했습니다.", "error");
       }
+    }
+
+    // ── 호실별 월별 수납 내역 모달 열기 (작년 1월 ~ 현재월) ──
+    function openPaymentHistory(roomNumber) {
+      const room = allRooms.find(x => x.room_number === roomNumber);
+      if (!room) {
+        setAlert(`${roomNumber}호 정보를 찾을 수 없습니다.`, "warning");
+        return;
+      }
+
+      const titleEl = document.getElementById("payHistTitle");
+      const summaryEl = document.getElementById("payHistSummary");
+      const tbody = document.getElementById("payHistTableBody");
+      const tfoot = document.getElementById("payHistTableFoot");
+
+      const tenantName = room.name || "(공실)";
+      titleEl.innerHTML = `💳 <b>${roomNumber}호</b> ${tenantName} 수납 내역`;
+
+      const now = new Date();
+      const curY = now.getFullYear();
+      const curM = now.getMonth() + 1;
+      const prevY = curY - 1;
+
+      // 부가세 설정 확인
+      const isVatSeparate = Boolean(room.vat_separate);
+      const isVatTarget = room.vat_target !== false;
+      let vatTypeDesc = "VAT 포함";
+      if (!isVatTarget) vatTypeDesc = "VAT 제외 (면세)";
+      else if (isVatSeparate) vatTypeDesc = "VAT 별도 (10% 별도 부과)";
+
+      const pays = room.payments || {};
+
+      // 기간: 작년 1월 ~ 현재년 현재월 (최신월 우선 내림차순)
+      const periods = [];
+      for (let y = curY; y >= prevY; y--) {
+        const startM = (y === curY) ? curM : 12;
+        const endM = (y === prevY) ? 1 : 1;
+        for (let m = startM; m >= endM; m--) {
+          periods.push({ year: y, month: m });
+        }
+      }
+
+      let totalPaidCount = 0;
+      let totalUnpaidCount = 0;
+      let sumRent = 0;
+      let sumMaint = 0;
+      let sumVat = 0;
+      let sumTotal = 0;
+
+      tbody.innerHTML = "";
+
+      periods.forEach(p => {
+        const key = `${p.year}-${p.month}`;
+        const payInfo = pays[key] || pays[p.month] || {};
+
+        const isPaid = Boolean(payInfo.paid);
+        const paidDate = payInfo.paid_date || (isPaid ? `${p.year}-${String(p.month).padStart(2, '0')}-05` : "-");
+        const rentAmt = Number(payInfo.rent_amount !== undefined ? payInfo.rent_amount : (room.rent || 0));
+        const maintAmt = Number(payInfo.maintenance_amount !== undefined ? payInfo.maintenance_amount : (room.maintenance || 0));
+
+        // 부가세: 별도의 임차료를 납부한 경우 (VAT 별도)
+        let vatAmt = 0;
+        let vatDisplay = "-";
+        if (isVatSeparate && isVatTarget) {
+          vatAmt = Math.round(rentAmt * 0.1);
+          vatDisplay = `${vatAmt.toLocaleString()}원`;
+        } else if (!isVatTarget) {
+          vatDisplay = `<span style="color:#64748b;font-size:11px;">면세</span>`;
+        } else {
+          vatDisplay = `<span style="color:#64748b;font-size:11px;">포함</span>`;
+        }
+
+        const monthTotal = rentAmt + maintAmt + vatAmt;
+
+        if (isPaid) {
+          totalPaidCount++;
+          sumRent += rentAmt;
+          sumMaint += maintAmt;
+          sumVat += vatAmt;
+          sumTotal += monthTotal;
+        } else if (room.name) {
+          totalUnpaidCount++;
+        }
+
+        const badgeHtml = isPaid
+          ? `<span style="display:inline-block;padding:2px 6px;background:#000;color:#fff;border-radius:2px;font-size:11px;font-weight:700;">완납</span>`
+          : (room.name
+              ? `<span style="display:inline-block;padding:2px 6px;background:#fee2e2;color:#dc2626;border:1px solid #dc2626;border-radius:2px;font-size:11px;font-weight:700;">미납</span>`
+              : `<span style="display:inline-block;padding:2px 6px;background:#f1f5f9;color:#64748b;border-radius:2px;font-size:11px;">공실</span>`);
+
+        const tr = document.createElement("tr");
+        tr.style.borderBottom = "1px solid #e5e7eb";
+        if (!isPaid && room.name) {
+          tr.style.background = "#fff8f8";
+        }
+
+        tr.innerHTML = `
+          <td style="padding:6px 4px;font-weight:800;border-right:1px solid #e5e7eb;">${p.year}-${String(p.month).padStart(2, '0')}</td>
+          <td style="padding:6px 4px;border-right:1px solid #e5e7eb;">${badgeHtml}</td>
+          <td style="padding:6px 4px;border-right:1px solid #e5e7eb;color:#555;">${isPaid ? paidDate : '-'}</td>
+          <td style="padding:6px 4px;text-align:right;border-right:1px solid #e5e7eb;">${rentAmt > 0 ? rentAmt.toLocaleString() + '원' : '-'}</td>
+          <td style="padding:6px 4px;text-align:right;border-right:1px solid #e5e7eb;">${maintAmt > 0 ? maintAmt.toLocaleString() + '원' : '-'}</td>
+          <td style="padding:6px 4px;text-align:right;border-right:1px solid #e5e7eb;">${vatDisplay}</td>
+          <td style="padding:6px 4px;text-align:right;font-weight:800;background:${isPaid ? '#f8fafc' : '#fff'};">${monthTotal > 0 ? monthTotal.toLocaleString() + '원' : '-'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // 요약 헤더 업데이트
+      summaryEl.innerHTML = `
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:4px;">
+          <div><b>임차인:</b> ${tenantName} ${room.phone ? `(${room.phone})` : ''}</div>
+          <div><b>과세유형:</b> ${vatTypeDesc}</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;color:#333;">
+          <div><b>조회기간:</b> ${prevY}년 01월 ~ ${curY}년 ${String(curM).padStart(2, '0')}월 (총 ${periods.length}개월)</div>
+          <div><b>수납현황:</b> <span style="color:#166534;font-weight:700;">완납 ${totalPaidCount}회</span> / <span style="color:#dc2626;font-weight:700;">미납 ${totalUnpaidCount}회</span></div>
+        </div>
+      `;
+
+      // 하단 합계행
+      tfoot.innerHTML = `
+        <tr style="background:#f1f5f9;">
+          <td colspan="3" style="padding:8px 4px;text-align:center;"><b>완납 합계 (${totalPaidCount}개월)</b></td>
+          <td style="padding:8px 4px;text-align:right;font-weight:800;">${sumRent.toLocaleString()}원</td>
+          <td style="padding:8px 4px;text-align:right;font-weight:800;">${sumMaint.toLocaleString()}원</td>
+          <td style="padding:8px 4px;text-align:right;font-weight:800;">${sumVat > 0 ? sumVat.toLocaleString() + '원' : (isVatSeparate ? '0원' : '-')}</td>
+          <td style="padding:8px 4px;text-align:right;font-weight:900;background:#e0e7ff;color:#1e1b4b;">${sumTotal.toLocaleString()}원</td>
+        </tr>
+      `;
+
+      openModal("modalPaymentHistory");
     }
 
     // ── 호실 상세 수정 모달 ──
@@ -1898,7 +2078,8 @@
       const p = document.getElementById("vatPeriod").value;
       const sm = p === "1" ? 1 : 7;
       const em = p === "1" ? 6 : 12;
-      const yr = new Date().getFullYear();
+      const yrEl = document.getElementById("vatYear");
+      const yr = yrEl ? parseInt(yrEl.value, 10) : (new Date().getFullYear() - 1);
 
       try {
         const res = await apiFetch(`${API_BASE}/vat-report?branch_id=${curBranch}&start_month=${sm}&end_month=${em}&year=${yr}`);
@@ -1913,8 +2094,8 @@
         const tbody = document.querySelector("#vatTable tbody");
         const tfoot = document.getElementById("vatTableFoot");
 
-        // 1. 헤더 월별 컬럼 동적 반영 (모든 제목 가운데 정렬)
-        const monthThs = months.map(m => `<th class="center" style="min-width:72px;">${m}월</th>`).join("");
+        // 1. 헤더 월별 컬럼 동적 반영 (연도.월 표기: 2025.07)
+        const monthThs = months.map(m => `<th class="center" style="min-width:78px;">${yr}.${String(m).padStart(2, '0')}</th>`).join("");
         thead.innerHTML = `
           <tr id="vatTableHeadRow">
             <th class="center" style="min-width:44px;">호실</th>
@@ -1994,9 +2175,11 @@
 
     function downloadVat(fmt) {
       const p = document.getElementById("vatPeriod").value;
+      const yrEl = document.getElementById("vatYear");
+      const yr = yrEl ? yrEl.value : (new Date().getFullYear() - 1);
       const sm = p === "1" ? 1 : 7, em = p === "1" ? 6 : 12;
       const token = getToken();
-      window.open(`${API_BASE}/vat-report/download?branch_id=${curBranch}&start_month=${sm}&end_month=${em}&format_type=${fmt}&token=${encodeURIComponent(token)}`);
+      window.open(`${API_BASE}/vat-report/download?branch_id=${curBranch}&start_month=${sm}&end_month=${em}&year=${yr}&format_type=${fmt}&token=${encodeURIComponent(token)}`);
     }
 
     async function loadIncomeTax() {

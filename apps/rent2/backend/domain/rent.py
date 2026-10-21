@@ -214,7 +214,7 @@ class Unit:
         past = i <= now_idx if ASSUME_PAID_THROUGH_NOW else i < now_idx
         d: Dict[str, Any] = dict(year=y, month=m, tenant_name="공실", tenant_id_number="", is_previous_tenant=False,
                                  paid=False, paid_date="", rent_amount=0, maintenance_amount=0, note="공실", contract_id=None,
-                                 is_future=is_future)
+                                 is_future=is_future, vacancy=True)
         if c:
             first = _month(c.move_in) == i
             if not c.active:
@@ -227,15 +227,21 @@ class Unit:
                 paid, note = past, "정상 입금" if past else ""
             d.update(tenant_name=c.tenant_name, tenant_id_number=c.id_number, is_previous_tenant=not c.active,
                      paid=paid, paid_date=f"{y}-{m:02d}-10" if paid else "", rent_amount=c.monthly_rent,
-                     maintenance_amount=c.maintenance, note=note, contract_id=c.id)
-        if p:   # 실제 기록이 있으면 계산값보다 우선
-            d.update(paid=p.paid, paid_date=p.paid_date, note=p.note,
-                     tenant_name=p.tenant_name or d["tenant_name"], tenant_id_number=p.tenant_id_number or d["tenant_id_number"])
-            if p.rent_amount is not None:
-                d["rent_amount"] = p.rent_amount
-            if p.maintenance_amount is not None:
-                d["maintenance_amount"] = p.maintenance_amount
-        d["vacancy"] = d["tenant_name"] == "공실"
+                     maintenance_amount=c.maintenance, note=note, contract_id=c.id, vacancy=False)
+            if p:   # 유효한 계약 기간 중 실제 수납 기록이 있으면 반영
+                d.update(paid=p.paid, paid_date=p.paid_date, note=p.note,
+                         tenant_name=p.tenant_name or d["tenant_name"], tenant_id_number=p.tenant_id_number or d["tenant_id_number"])
+                if p.rent_amount is not None:
+                    d["rent_amount"] = p.rent_amount
+                if p.maintenance_amount is not None:
+                    d["maintenance_amount"] = p.maintenance_amount
+        else:
+            # [비즈니스 규칙] 이전 세입자 전출일 ~ 현 세입자 입주일 사이 (계약 없는 기간):
+            # 과거 잔존 Payment 기록이 있더라도 무조건 "공실"로 확정!
+            # 공실은 부가세 면제 대상이며 임차료/관리비는 0원 처리.
+            d.update(tenant_name="공실", tenant_id_number="", is_previous_tenant=False,
+                     paid=False, paid_date="", rent_amount=0, maintenance_amount=0,
+                     note="공실", contract_id=None, vacancy=True)
         return d
 
     # ── [비즈니스 규칙 1] 호실별 미납 현황 판정 범위 ──

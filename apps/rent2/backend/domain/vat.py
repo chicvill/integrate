@@ -31,11 +31,12 @@ def report(b: Building, start: int = 1, end: int = 6, year: Optional[int] = None
 
         ps = {m: u.period(year, m) for m in months}
         
-        # [비즈니스 규칙] 임차인이 있는 경우 미납액도 부가세 포함됨 (공급시기 도래 원칙)
+        # [비즈니스 규칙] 공실 기간(이전 전출~현 입주 사이 등)은 부가세 완전 면제 (0원)
+        # 임차인이 있는 경우(유효한 계약 기간) 발생한 미납액은 법적 공급시기 도래로 부가세 과세 대상에 정상 포함
         amounts = {}
         for m in months:
             p = ps[m]
-            if p["vacancy"]:
+            if p.get("vacancy") or p.get("tenant_name") == "공실":
                 amounts[m] = 0
             else:
                 amt = p.get("rent_amount")
@@ -90,7 +91,8 @@ def report(b: Building, start: int = 1, end: int = 6, year: Optional[int] = None
 
 def _table(d: Dict[str, Any]) -> Tuple[list, list, list]:
     ms = d["months"]
-    head = ["호실", "임차인", "주민(사업자)번호", "임대유형", "부가세", "보증금", *[f"{m}월" for m in ms], "기간총합계(VAT포함)", "공급가액", "부가가치세(10%)"]
+    year = d.get("year") or today().year
+    head = ["호실", "임차인", "주민(사업자)번호", "임대유형", "부가세", "보증금", *[f"{year}.{m:02d}" for m in ms], "기간총합계(VAT포함)", "공급가액", "부가가치세(10%)"]
     body = [[r["room_number"], r["tenant_name"], r["id_number"] or "-", r["lease_type"], r.get("vat_label", "포함"), r["deposit"],
              *[r["monthly_amounts"][m] for m in ms], r["period_total"], r["supply_value"], r["vat_value"]] for r in d["rows"]]
     sums = [sum(r["monthly_amounts"][m] for r in d["rows"]) for m in ms]
@@ -101,7 +103,7 @@ def _table(d: Dict[str, Any]) -> Tuple[list, list, list]:
 
 def csv_bytes(d: Dict[str, Any]) -> bytes:
     head, body, foot = _table(d)
-    q = lambda v: f'"{str(v).replace(chr(34), chr(34) * 2)}"' if isinstance(v, str) else str(v)   # noqa: E731
+    q = lambda v: f'"{v.replace(chr(34), chr(34) * 2)}"' if isinstance(v, str) else str(v)   # noqa: E731
     lines = [",".join(q(h) for h in head)] + [",".join(q(v) for v in r) for r in (*body, foot)]
     lines += ["", f'"[과세표준]","공급대가: {d["total_collected"]}원 (공급가액: {d["total_supply"]}원 | 부가세: {d["total_vat"]}원)"',
               '"[산출기준]","순수 임차료(월세) 기준 산출 (실비 정산 관리비 및 전세 제외)"']
