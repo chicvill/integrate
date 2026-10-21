@@ -202,16 +202,21 @@ class Unit:
     # ── 핵심 규칙: (연, 월) → 그 달의 임차 상태 ──
     def period(self, y: int, m: int) -> Dict[str, Any]:
         now, i = today(), idx(y, m)
+        now_idx = idx(now.year, now.month)
+        is_future = i > now_idx
         c, p = self.covering(i), self.pays.get((y, m))
-        past = i <= idx(now.year, now.month) if ASSUME_PAID_THROUGH_NOW else i < idx(now.year, now.month)
+        past = i <= now_idx if ASSUME_PAID_THROUGH_NOW else i < now_idx
         d: Dict[str, Any] = dict(year=y, month=m, tenant_name="공실", tenant_id_number="", is_previous_tenant=False,
-                                 paid=False, paid_date="", rent_amount=0, maintenance_amount=0, note="공실", contract_id=None)
+                                 paid=False, paid_date="", rent_amount=0, maintenance_amount=0, note="공실", contract_id=None,
+                                 is_future=is_future)
         if c:
             first = _month(c.move_in) == i
             if not c.active:
                 paid, note = past, "이전 세입자 정상 입금 (전출)" if past else ""
             elif first:
                 paid, note = True, ("입주월 (후불 익월 청구/정상)" if c.lease_type == "월세" and c.pay_timing == "후불" else "입주월 선납 완납")
+            elif is_future:
+                paid, note = False, "청구 예정 (미도래)"
             else:
                 paid, note = past, "정상 입금" if past else ""
             d.update(tenant_name=c.tenant_name, tenant_id_number=c.id_number, is_previous_tenant=not c.active,
@@ -227,6 +232,96 @@ class Unit:
         d["vacancy"] = d["tenant_name"] == "공실"
         return d
 
+    # ── [비즈니스 규칙 1] 호실별 미납 현황 판정 범위 ──
+    # 입주월 이후 (후불인 경우 입주월 + 1)부터 전출월(정해진 경우) 또는 현재월(미정 시)까지로 한정
+    def billable_bounds(self) -> Tuple[Optional[int], Optional[int]]:
+        """
+        유효 청구 및 미납 판정 범위 (start_idx, end_idx).
+        - 시작월: 입주월 이후 (후불이면 입주월 + 1, 선불이면 입주월)
+        - 종료월: 전출월이 정해지지 않았다면 현재월까지로 엄격히 한정!
+                 전출월이 이미 정해졌다면 전출월까지 (단, 미래 날짜인 경우 현재월을 넘지 않음)
+        """
+        c = self.latest()
+        if not c or not c.move_in:
+            return (None, None)
+        in_idx = _month(c.move_in)
+        if in_idx is None:
+            return (None, None)
+
+        start_idx = (in_idx + 1) if getattr(c, "pay_timing", "후불") == "후불" else in_idx
+        now = today()
+        now_idx = idx(now.year, now.month)
+
+        # 전출월(move_out) 지정 여부 검사
+        move_out_str = (getattr(c, "move_out", "") or "").strip()
+        if move_out_str:
+            out_idx = _month(move_out_str)
+            # 전출월이 정해진 경우: 전출월까지 한정 (단, 미래 날짜이면 현재월까지만 판정)
+            end_idx = min(out_idx, now_idx) if out_idx is not None else now_idx
+        else:
+            # 전출월이 정해지지 않은 경우: 현재월까지로 엄격히 한정
+            end_idx = now_idx
+
+        if start_idx > end_idx:
+            return (None, None)
+        return (start_idx, end_idx)
+
+    def is_billable_period(self, y: int, m: int) -> bool:
+        """주어진 (연, 월)이 미납 판정 대상 범위에 포함되는지 확인"""
+        s_idx, e_idx = self.billable_bounds()
+        if s_idx is None or e_idx is None:
+            return False
+        return s_idx <= idx(y, m) <= e_idx
+
+    def unpaid_periods(self) -> List[Tuple[int, int]]:
+        """
+        미납월 목록을 가장 오래된 순(오름차순, FIFO 적용 대상)으로 반환.
+        범위: 입주월 이후(후불 입주월+1) ~ 전출월/당월
+        """
+        s_idx, e_idx = self.billable_bounds()
+        if s_idx is None or e_idx is None:
+            return []
+
+        res: List[Tuple[int, int]] = []
+        for i in range(s_idx, e_idx + 1):
+            y, m = i // 12, i % 12
+            if m == 0:
+                y -= 1
+                m = 12
+            info = self.period(y, m)
+            # 공실이 아니며, 미납(paid=False)이고, 청구액이 0보다 큰 경우만 미납
+            if not info.get("vacancy") and not info.get("paid"):
+                amt = (info.get("rent_amount") or 0) + (info.get("maintenance_amount") or 0)
+                if amt > 0:
+                    res.append((y, m))
+        return sorted(res, key=lambda ym: idx(ym[0], ym[1]))
+
+    def paid_periods(self) -> List[Tuple[int, int]]:
+        """
+        완납월 목록을 가장 최근 순(내림차순, LIFO 취소 대상)으로 반환.
+        """
+        s_idx, e_idx = self.billable_bounds()
+        now = today()
+        now_idx = idx(now.year, now.month)
+        s_limit = s_idx if s_idx is not None else idx(now.year - 1, 1)
+        e_limit = max(e_idx or now_idx, now_idx)
+
+        # pays 기록 및 범위 내 월들을 검사
+        candidates = set(range(s_limit, e_limit + 1))
+        for (py, pm) in self.pays.keys():
+            candidates.add(idx(py, pm))
+
+        res: List[Tuple[int, int]] = []
+        for i in sorted(candidates, reverse=True):
+            y, m = i // 12, i % 12
+            if m == 0:
+                y -= 1
+                m = 12
+            info = self.period(y, m)
+            if info.get("paid") and not info.get("vacancy"):
+                res.append((y, m))
+        return sorted(res, key=lambda ym: idx(ym[0], ym[1]), reverse=True)
+
     # ── 행동 ──
     def pay(self, month: int, year: Optional[int] = None, paid_date: Optional[str] = None, note: str = "정상 입금",
             tenant_name: Optional[str] = None, rent_amount: Optional[int] = None,
@@ -241,6 +336,34 @@ class Unit:
         self.pays[(y, month)] = p.save("paid", unit=self.number, period=f"{y}-{month:02d}", amount=(p.rent_amount or 0) + (p.maintenance_amount or 0))
         return p
 
+    # ── [비즈니스 규칙 2] 입금 적용: 미납월 중 가장 오래된 월부터 우선 적용 (FIFO) ──
+    def pay_fifo(self, paid_date: Optional[str] = None, note: str = "정상 입금",
+                 tenant_name: Optional[str] = None, rent_amount: Optional[int] = None,
+                 maintenance_amount: Optional[int] = None, fallback_month: int = 0,
+                 fallback_year: int = 0) -> Tuple[Payment, int, int, bool]:
+        """
+        입금 적용월: 호실의 미납월 중 가장 오래된 것부터 우선 충당 (FIFO).
+        미납월이 없으면 전달받은 fallback_month(또는 당월)에 적용.
+        반환값: (Payment객체, 적용연도, 적용월, 과거미납충당여부)
+        """
+        unpaids = self.unpaid_periods()
+        now = today()
+        if unpaids:
+            target_y, target_m = unpaids[0]  # 가장 오래된 미납월
+            was_oldest = True
+        else:
+            target_y = fallback_year or now.year
+            target_m = fallback_month or now.month
+            was_oldest = False
+
+        applied_note = note or "정상 입금"
+        if was_oldest and f"{target_m}월" not in applied_note:
+            applied_note = f"{applied_note} ({target_m}월 미납분 충당)"
+
+        p = self.pay(month=target_m, year=target_y, paid_date=paid_date, note=applied_note,
+                     tenant_name=tenant_name, rent_amount=rent_amount, maintenance_amount=maintenance_amount)
+        return (p, target_y, target_m, was_oldest)
+
     def cancel(self, month: int, year: Optional[int] = None, note: Optional[str] = "납부 취소") -> Payment:
         y, note = year or today().year, note or "납부 취소"
         vacant = "공실" in note
@@ -249,6 +372,26 @@ class Unit:
                     rent_amount=0 if vacant else None, maintenance_amount=0 if vacant else None)
         self.pays[(y, month)] = p.save("cancelled", unit=self.number, period=f"{y}-{month:02d}", note=note)
         return p
+
+    # ── [비즈니스 규칙 3] 취소 적용: 완납월 중 가장 최근월에 우선 적용 (LIFO) ──
+    def cancel_lifo(self, note: Optional[str] = "납부 취소", fallback_month: int = 0,
+                    fallback_year: int = 0) -> Tuple[Payment, int, int]:
+        """
+        취소 적용월: 호실의 완납월 중 가장 최근월부터 우선 취소 (LIFO).
+        완납월이 없으면 전달받은 fallback_month(또는 당월) 취소.
+        반환값: (Payment객체, 취소연도, 취소월)
+        """
+        paids = self.paid_periods()
+        now = today()
+        if paids:
+            target_y, target_m = paids[0]  # 가장 최근 완납월
+        else:
+            target_y = fallback_year or now.year
+            target_m = fallback_month or now.month
+
+        applied_note = note or "납부 취소"
+        p = self.cancel(month=target_m, year=target_y, note=applied_note)
+        return (p, target_y, target_m)
 
     def reset_ledger(self) -> int:
         self.pays.clear()
@@ -297,17 +440,18 @@ class Unit:
             pay[f"{py}-{pm}"] = row
             if year is None or py == year:
                 pay[pm] = row
+        unpaid_list = [f"{y}-{m:02d}" for (y, m) in self.unpaid_periods()]
         return {"room_number": self.number, "branch_id": self.b.id, "name": f.tenant_name, "id_number": f.id_number,
                 "phone": f.phone, "lease_type": f.lease_type, "pay_timing": f.pay_timing, "deposit": f.deposit,
                 "rent": f.rent, "maintenance": f.maintenance, "clean_fee": f.clean_fee, "move_in": f.move_in,
                 "expiry": f.expiry, "auto_renewed": renewed, "move_out": f.move_out, "payments": pay,
-                "tenant_histories": [h.history_row() for h in self.ended()]}
+                "unpaid_months": unpaid_list, "tenant_histories": [h.history_row() for h in self.ended()]}
 
     def card(self) -> Dict[str, Any]:
         """AI/사람이 한눈에 보는 호실 요약"""
         c, now = self.latest(), today()
         cur = self.period(now.year, now.month)
-        unpaid = sorted(f"{y}-{m:02d}" for (y, m), p in self.pays.items() if not p.paid and p.tenant_name != "공실")
+        unpaid = [f"{y}-{m:02d}" for (y, m) in self.unpaid_periods()]
         return {"building": self.b.name, "unit": self.number, "vacant": not self.active(),
                 "contract": c.summary() if c else "계약 없음", "this_month": {"paid": cur["paid"], "note": cur["note"]},
                 "unpaid_months": unpaid, "history": [h.summary() for h in self.ended()]}
@@ -420,9 +564,16 @@ class Building(Obj):
         return sorted(out, key=lambda r: r["diff_days"])
 
     def unpaid(self, year: int, month: int) -> List[Dict[str, Any]]:
-        rows = [(u.number, u.period(year, month)) for u in self.view()]
-        return [{"unit": n, "tenant": p["tenant_name"], "amount": p["rent_amount"] + p["maintenance_amount"], "note": p["note"]}
-                for n, p in rows if not p["paid"] and not p["vacancy"]]
+        out = []
+        for u in self.view():
+            if not u.is_billable_period(year, month):
+                continue
+            p = u.period(year, month)
+            if not p["paid"] and not p["vacancy"]:
+                amt = p["rent_amount"] + p["maintenance_amount"]
+                if amt > 0:
+                    out.append({"unit": u.number, "tenant": p["tenant_name"], "amount": amt, "note": p["note"]})
+        return out
 
     # ── 대량 작업 ──
     def collect(self, year: Optional[int] = None, start: int = 1, end: int = 10, mode: str = "contract",

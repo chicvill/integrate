@@ -92,18 +92,29 @@ def timeline(building: str = "", limit: int = 10) -> Dict[str, Any]:
 # ───────────── 쓰기 도구 (사용자 확인 후 실행) ─────────────
 @tool(write=True)
 def record_payment(building: str, unit: int, month: int = 0, year: int = 0, paid_date: str = "") -> Dict[str, Any]:
-    """납부 처리: 해당 호실의 월 임대료·관리비를 입금 완료로 기록한다 (기본 이번 달, 오늘 날짜)."""
-    y, m = _ym(year, month)
-    p = Building.require(building).unit(unit).pay(m, y, paid_date or None)
-    return {"payment": p.id, "message": f"✅ {unit}호 {y}-{m:02d} 납부 처리 완료 ({(p.rent_amount or 0) + (p.maintenance_amount or 0):,}원, {p.paid_date})"}
+    """납부 처리: 해당 호실의 월 임대료·관리비를 입금 완료로 기록한다 (기본: 가장 오래된 미납월부터 충당)."""
+    u = Building.require(building).unit(unit)
+    if month > 0:
+        y = year or today().year
+        p = u.pay(month, y, paid_date or None)
+        app_y, app_m, was_oldest = y, month, False
+    else:
+        p, app_y, app_m, was_oldest = u.pay_fifo(paid_date=paid_date or None)
+    old_str = " (오래된 미납분 우선 충당)" if was_oldest else ""
+    return {"payment": p.id, "message": f"✅ {unit}호 {app_y}-{app_m:02d} 납부 처리 완료{old_str} ({(p.rent_amount or 0) + (p.maintenance_amount or 0):,}원, {p.paid_date})"}
 
 
 @tool(write=True)
 def cancel_payment(building: str, unit: int, month: int = 0, year: int = 0, note: str = "납부 취소") -> Dict[str, Any]:
-    """납부 취소: 해당 월을 미납으로 되돌린다 (note에 '공실'을 넣으면 공실 처리)."""
-    y, m = _ym(year, month)
-    Building.require(building).unit(unit).cancel(m, y, note)
-    return {"message": f"↩️ {unit}호 {y}-{m:02d} 납부를 취소했습니다 ({note})."}
+    """납부 취소: 미납으로 되돌린다 (기본: 가장 최근 완납월에 취소 적용)."""
+    u = Building.require(building).unit(unit)
+    if month > 0:
+        y = year or today().year
+        u.cancel(month, y, note)
+        c_y, c_m = y, month
+    else:
+        _, c_y, c_m = u.cancel_lifo(note=note)
+    return {"message": f"↩️ {unit}호 {c_y}-{c_m:02d} (가장 최근월) 납부를 취소했습니다 ({note})."}
 
 
 @tool(write=True)

@@ -8,5 +8,6 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.insert(0, ROOT)
 
 if __name__ == "__main__":
+    reload_opt = os.getenv("RELOAD", "true").lower() in ("true", "1", "yes")
     uvicorn.run("apps.rent2.backend.main:create_app", factory=True, host=os.getenv("HOST", "0.0.0.0"),
-                port=int(os.getenv("PORT", "9016")), reload=False)
+                port=int(os.getenv("PORT", "9016")), reload=reload_opt)
