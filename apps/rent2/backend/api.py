@@ -2,6 +2,8 @@
 api.py — 기존 rent 프런트엔드와 100% 호환되는 REST 레이어 + 객체/AI 신규 엔드포인트.
 라우터는 HTTP ↔ 객체 호출 변환만 한다. 규칙은 전부 도메인 객체 안에 있다.
 """
+import os
+import re
 import urllib.parse
 from datetime import datetime
 from typing import Any, Dict, List, Optional
@@ -244,6 +246,19 @@ def fill_payments(p: Dict[str, Any] = Body_, branch_id: str = "main", user: User
     b, only = _b(branch_id, user), (num(p.get("room_number")) or None)
     done = [u.number for u in b.view() if u.active() and (only is None or u.number == only) and (u.reset_ledger() or True)]
     return {"success": True, "updated_rooms": done, "count": len(done), "message": f"{len(done)}개 호실의 전입일 기준 납부내역이 동기화되었습니다."}
+
+
+@router.post("/sync/google-sheet")
+def sync_google_sheet(p: Dict[str, Any] = Body_, branch_id: str = "main", user: User = Depends(me)):
+    """구글 스프레드시트 2025/2026년 장부 데이터를 실시간 동기화하여 계약 및 납부내역에 반영"""
+    from .domain import sheet_sync
+    url = (p.get("sheet_url") or "").strip() or sheet_sync.DEFAULT_SHEET_URL
+    bid = _resolve_bid(branch_id, user)
+    try:
+        res = sheet_sync.sync_sheet_data(url, bid)
+        return res
+    except Exception as e:
+        raise HTTPException(500, f"구글 스프레드시트 동기화 실패: {str(e)}")
 
 
 @router.post("/rooms/{n}/payment")
@@ -636,7 +651,152 @@ def ai_execute(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
     return {"success": True, "result": out, "message": agent.say(out)}
 
 
-# ── 스마트 인제스트 (카메라 / 클립보드 붙여넣기 자동화) ──
+# ── 스마트 인제스트 (카메라 / 클립보드 붙여넣기 / 구글시트 / 파일경로 자동화) ──
+@router.post("/smart/detect-input")
+def detect_input_type(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
+    """클립보드 입력 내용(문자, 구글시트 URL, 로컬 파일경로, 이미지)의 유형을 지능형 판별"""
+    text = (p.get("text") or "").strip()
+    img = (p.get("image_base64") or "").strip()
+    bid = Building.canon(user.branch or p.get("branch_id") or "main")
+
+    # 1. 이미지 데이터 (클립보드 사진 붙여넣기 등)
+    if img or text.startswith("data:image/"):
+        return {
+            "kind": "image",
+            "title": "📷 사진 / 이미지 감지됨",
+            "description": "클립보드 또는 파일로 붙여넣은 사진 데이터입니다.",
+            "action_label": "⚡ 사진 AI 분석 및 자동 등록",
+            "default_scan_kind": "receipt"
+        }
+
+    # 2. 구글 스프레드시트 URL
+    if "docs.google.com/spreadsheets" in text:
+        return {
+            "kind": "google_sheet",
+            "title": "📊 구글 스프레드시트 링크 감지됨",
+            "description": "시크빌 2025/2026년 장부 스프레드시트입니다.",
+            "action_label": "🔄 2025/2026 장부 실시간 동기화",
+            "url": text
+        }
+
+    # 3. 로컬 파일 경로 감지
+    clean_path = re.sub(r"^file:///?", "", text.strip('"\'; \t\r\n'))
+    looks_like_file = bool(re.search(r"\.(xlsx|xls|csv|tsv|png|jpg|jpeg|webp|pdf)$", clean_path, re.I) or re.match(r"^[a-zA-Z]:[\\/]", clean_path))
+    if looks_like_file:
+        if os.path.exists(clean_path):
+            ext = os.path.splitext(clean_path)[1].lower()
+            if ext in (".xlsx", ".xls", ".csv", ".tsv"):
+                return {
+                    "kind": "file_excel",
+                    "title": f"📁 장부 파일 감지됨 ({os.path.basename(clean_path)})",
+                    "description": f"로컬 파일 경로: {clean_path}",
+                    "action_label": "📋 장부 파일 동기화",
+                    "file_path": clean_path
+                }
+            elif ext in (".jpg", ".jpeg", ".png", ".webp", ".pdf"):
+                return {
+                    "kind": "file_image",
+                    "title": f"🖼️ 사진 파일 감지됨 ({os.path.basename(clean_path)})",
+                    "description": f"로컬 사진 경로: {clean_path}",
+                    "action_label": "🔍 사진 파일 AI OCR 분석",
+                    "file_path": clean_path,
+                    "default_scan_kind": "receipt"
+                }
+        else:
+            return {
+                "kind": "file_not_found",
+                "title": "⚠️ 파일 경로 확인 필요",
+                "description": f"파일을 찾을 수 없습니다: {clean_path}",
+                "action_label": "파일 경로 다시 확인",
+                "file_path": clean_path
+            }
+
+    # 4. 은행 입금 문자 / 카카오톡 알림
+    single = parser.parse_bank_message(text, bid)
+    has_bank_keywords = any(kw in text for kw in ("입금", "이체", "호", "원", "보냈습니다", "타행", "당행"))
+    if single.get("room_number") or has_bank_keywords:
+        room_desc = f"{single['room_number']}호" if single.get("room_number") else "호실 자동확인"
+        amt_desc = f"{single['amount']:,}원" if single.get("amount") else "계약금액 자동적용"
+        return {
+            "kind": "bank_text",
+            "title": "💬 은행 입금 알림 문자 / 카톡 감지됨",
+            "description": f"인식: {room_desc} | 금액: {amt_desc} | 입금일: {single.get('paid_date', '')}",
+            "action_label": "💳 입금 수납 처리 확정",
+            "parsed": single
+        }
+
+    # 5. 일반 텍스트
+    return {
+        "kind": "text",
+        "title": "📝 텍스트 입력",
+        "description": "입력된 내용을 분석하여 적절한 처리 방식을 안내합니다.",
+        "action_label": "입금 수납 또는 처리 시도"
+    }
+
+
+@router.post("/smart/universal-ingest")
+def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
+    """만능 스마트 붙여넣기 통합 처리:
+    - 은행 입금 문자 ➡️ FIFO 수납 처리
+    - 구글 스프레드시트 URL ➡️ 2025/2026 연도별 장부 동기화
+    - 로컬 엑셀/CSV 파일 ➡️ 장부 데이터 동기화
+    - 사진(클립보드 이미지/로컬 사진) ➡️ 영수증/계약서 AI OCR 스캔 및 등록
+    """
+    text = (p.get("text") or "").strip()
+    img = (p.get("image_base64") or "").strip()
+    bid = Building.canon(user.branch or p.get("branch_id") or "main")
+    scan_kind = p.get("scan_kind") or "receipt"
+
+    # A. 이미지 데이터 (base64 직접 전달 또는 text가 data:image)
+    if img or text.startswith("data:image/"):
+        target_img = img or text
+        if scan_kind == "contract":
+            return smart_ocr_contract({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
+        else:
+            return smart_ocr_receipt({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
+
+    # B. 구글 시트 URL
+    if "docs.google.com/spreadsheets" in text:
+        from .domain import sheet_sync
+        res = sheet_sync.sync_sheet_data(text, bid)
+        return {
+            "success": True,
+            "kind": "google_sheet",
+            "message": f"구글 스프레드시트 2025/2026년 장부 동기화가 완료되었습니다!\n- 동기화 호실: {res['total_rooms']}개실\n- 총 납부내역 반영: {res['total_payments_synced']}건",
+            "data": res
+        }
+
+    # C. 로컬 파일 경로
+    clean_path = re.sub(r"^file:///?", "", text.strip('"\'; \t\r\n'))
+    looks_like_file = bool(re.search(r"\.(xlsx|xls|csv|tsv|png|jpg|jpeg|webp|pdf)$", clean_path, re.I) or re.match(r"^[a-zA-Z]:[\\/]", clean_path))
+    if looks_like_file:
+        if not os.path.exists(clean_path):
+            raise HTTPException(400, f"지정된 로컬 파일을 찾을 수 없습니다: {clean_path}")
+        ext = os.path.splitext(clean_path)[1].lower()
+        if ext in (".jpg", ".jpeg", ".png", ".webp", ".pdf"):
+            import base64
+            with open(clean_path, "rb") as f:
+                b64 = "data:image/jpeg;base64," + base64.b64encode(f.read()).decode("utf-8")
+            if scan_kind == "contract":
+                return smart_ocr_contract({"image_base64": b64, "branch_id": bid, "auto_apply": True}, user)
+            else:
+                return smart_ocr_receipt({"image_base64": b64, "branch_id": bid, "auto_apply": True}, user)
+        elif ext in (".xlsx", ".xls", ".csv", ".tsv"):
+            from .domain import sheet_sync
+            res = sheet_sync.sync_file_data(clean_path, bid)
+            return {
+                "success": True,
+                "kind": "file_excel",
+                "message": f"로컬 장부 파일({os.path.basename(clean_path)}) 2025/2026년 동기화가 완료되었습니다!\n- 동기화 호실: {res['total_rooms']}개실\n- 총 납부내역 반영: {res['total_payments_synced']}건",
+                "data": res
+            }
+
+    # D. 은행 입금 문자 / 카카오톡 알림
+    res = smart_paste_payment({"text": text, "branch_id": bid, "auto_apply": True}, user)
+    res["kind"] = "bank_payment"
+    return res
+
+
 @router.post("/smart/paste-payment")
 def smart_paste_payment(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
     """은행 입금 알림 문자/카톡 텍스트 붙여넣기 ➡️ 호실·금액·일자 자동 파싱 및 수납 처리"""

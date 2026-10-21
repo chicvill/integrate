@@ -64,7 +64,12 @@ class Store:
 
     def get(self, key: str) -> Optional[Dict[str, Any]]:
         row = self.db.execute("SELECT data FROM objects WHERE key=?", (key,)).fetchone()
-        return json.loads(row["data"]) if row else None
+        if not row or not row["data"]:
+            return None
+        try:
+            return json.loads(row["data"])
+        except Exception:
+            return None
 
     def find(self, kind: str, scope: Optional[str] = None, **where: Any) -> List[Dict[str, Any]]:
         sql, args = "SELECT data FROM objects WHERE kind=?", [kind]
@@ -72,7 +77,14 @@ class Store:
             sql, args = sql + " AND scope=?", args + [scope]
         for field, val in where.items():
             sql, args = sql + f" AND json_extract(data,'$.{field}')=?", args + [val]
-        return [json.loads(r["data"]) for r in self.db.execute(sql + " ORDER BY created_at, key", args)]
+        res = []
+        for r in self.db.execute(sql + " ORDER BY created_at, key", args):
+            try:
+                if r["data"]:
+                    res.append(json.loads(r["data"]))
+            except Exception:
+                pass
+        return res
 
     def delete(self, key: str) -> None:
         with self.lock:
