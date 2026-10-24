@@ -5,6 +5,7 @@ kernel/store.py — 범용 객체 저장소 (모든 앱이 공유하는 '기억'
 상태 변화는 events 타임라인에 쌓는다. 검색(recall)과 감사 로그가 기본 내장.
 """
 import json
+import os
 import sqlite3
 import threading
 from contextlib import contextmanager
@@ -16,6 +17,8 @@ _J = lambda v: json.dumps(v, ensure_ascii=False, default=str)  # noqa: E731
 
 class Store:
     def __init__(self, path: str = ":memory:"):
+        if path and path != ":memory:":
+            os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
         self.db = sqlite3.connect(path, check_same_thread=False)
         self.db.row_factory = sqlite3.Row
         self.lock = threading.RLock()

@@ -1,12 +1,16 @@
 """
 domain/__init__.py — 스터디카페 도메인 패키지 초기화.
 """
+import os
 from typing import Any, Optional
 from ..kernel import agent, identity
 from ..kernel.base import store, use_store
 from ..kernel.identity import seed_users
 from . import ai_tools  # noqa: F401
 from .studycafe import Branch, Seat, Member, Ticket, StudySession, Payment
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+DEFAULT_DB_PATH = os.path.join(ROOT, "data", "studycafe2.db")
 
 DEFAULT_USERS = [
     ("admin", "본사 최고관리자", "superadmin", None),
@@ -16,11 +20,12 @@ DEFAULT_USERS = [
 
 _ready = False
 
-def bootstrap(db_path: str = "apps/studycafe2/data/studycafe2.db") -> None:
+def bootstrap(db_path: Optional[str] = None) -> None:
     global _ready
     if _ready:
         return
-    use_store(db_path)
+    resolved_path = db_path or os.getenv("STUDYCAFE2_DB") or DEFAULT_DB_PATH
+    use_store(resolved_path)
     seed_users(DEFAULT_USERS)
 
     b = Branch.require("studycafe-main")
