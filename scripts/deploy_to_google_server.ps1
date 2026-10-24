@@ -62,7 +62,8 @@ echo "결과 코드 -> 포털: $HTTP_PORTAL | rent2: $HTTP_RENT2 | rent(호환):
 '@
 
 $ScriptFile = "$ProjectRoot\remote_gcp_deploy.sh"
-[System.IO.File]::WriteAllText($ScriptFile, $RemoteScript, [System.Text.Encoding]::ASCII)
+$CleanScript = $RemoteScript.Replace("`r`n", "`n")
+[System.IO.File]::WriteAllText($ScriptFile, $CleanScript, [System.Text.Encoding]::ASCII)
 
 Write-Host "🚀 3. 원격 배포 및 헬스체크 실행..." -ForegroundColor Cyan
 gcloud compute scp $ScriptFile "integrated:remote_gcp_deploy.sh" --zone=us-central1-a
