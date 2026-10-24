@@ -64,7 +64,6 @@ from apps.face_analy.backend.routers import face_analy_router
 from apps.videoBooth.backend.routers import videobooth_router
 from apps.grammer.backend.routers.grammer_router import router as grammer_router
 from apps.files.backend.routers import files_router
-from apps.rent.backend.routers.main_router import router as rent_router
 from apps.rent2.backend.api import router as rent2_router
 from apps.rent2.backend.main import ROOT as RENT2_ROOT
 from apps.rent2.backend.kernel.base import use_store as rent2_use_store
@@ -236,9 +235,9 @@ app.include_router(grammer_router, prefix="/api/grammer", tags=["AI 영문법 �
 app.include_router(files_router, prefix="/api/files", tags=["파일 스토리지 허브"])
 app.include_router(files_router, prefix="/api/filebrowser", include_in_schema=False)
 
-# 12. 원룸 임차료 관리 시스템 (Rent Management 29-Rooms)
-app.include_router(rent_router, prefix="/api/rent", tags=["원룸 임차료 관리 (29개실)"])
+# 12. 원룸 임차관리 시스템 (rent2 객체 모델 및 하위 호환)
 app.include_router(rent2_router, prefix="/api/rent2", tags=["원룸 임차관리 rent2 (스마트 모바일)"])
+app.include_router(rent2_router, prefix="/api/rent", tags=["원룸 임차관리 rent (하위 호환)"])
 app.include_router(studycafe2_router, prefix="/api/studycafe2", tags=["스터디카페 studycafe2 (스마트 객체)"])
 app.include_router(selfstudy2_router, prefix="/api/selfstudy2", tags=["셀프스터디 selfstudy2 (스마트 객체)"])
 
@@ -404,17 +403,11 @@ if os.path.exists(ai_guide_dir):
     app.mount("/ai_guide", NoCacheStaticFiles(directory=ai_guide_dir, html=True), name="ai_guide_app")
     app.mount("/ai-guide", NoCacheStaticFiles(directory=ai_guide_dir, html=True), name="ai_guide_alias")
 
-# ── 29개실 원룸 임차료 관리 시스템 (Rent Management) ──
-rent_frontend = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "rent", "frontend"))
-if not os.path.exists(rent_frontend):
-    rent_frontend = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "rent"))
-if os.path.exists(rent_frontend):
-    app.mount("/rent", NoCacheStaticFiles(directory=rent_frontend, html=True), name="rent_app")
-
-# ── rent2 (스마트 모바일 신규 흑백 임차관리) ──
+# ── rent2 (원룸 임차관리 시스템 · 스마트 모바일) ──
 rent2_frontend = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "rent2", "frontend"))
 if os.path.exists(rent2_frontend):
     app.mount("/rent2", NoCacheStaticFiles(directory=rent2_frontend, html=True), name="rent2_app")
+    app.mount("/rent", NoCacheStaticFiles(directory=rent2_frontend, html=True), name="rent_alias")
 
 # ── 솔루션 분리 배포 & 패키징 센터 (Deployer & Distro Studio) ──
 deployer_frontend = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "deployer", "frontend"))

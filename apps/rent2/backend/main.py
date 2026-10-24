@@ -18,15 +18,16 @@ from .kernel.base import actor, use_store
 from .kernel.identity import User
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))          # apps/rent2
-LEGACY = os.path.join(ROOT, "..", "rent")                                      # apps/rent (화면·시드 재사용)
 
 
 class UI(StaticFiles):
-    """rent2/frontend 우선, 없으면 기존 rent/frontend 재사용. 구버전 스크립트 충돌 방지를 위해 캐시 무효화."""
+    """rent2/frontend 정적 파일 제공. 구버전 스크립트 충돌 방지를 위해 캐시 무효화."""
 
     def __init__(self, *dirs: str):
-        super().__init__(directory=dirs[0], html=True)
-        self.fallbacks = [StaticFiles(directory=d, html=True) for d in dirs[1:] if os.path.isdir(d)]
+        existing = [d for d in dirs if os.path.isdir(d)]
+        primary = existing[0] if existing else os.path.join(ROOT, "frontend")
+        super().__init__(directory=primary, html=True)
+        self.fallbacks = [StaticFiles(directory=d, html=True) for d in existing[1:]]
 
     async def get_response(self, path: str, scope: Any):
         try:
@@ -52,7 +53,10 @@ def create_app(db_path: str = "") -> FastAPI:
     if path != ":memory:":
         os.makedirs(os.path.dirname(path), exist_ok=True)
     use_store(path)
-    bootstrap(os.path.join(LEGACY, "backend", "seed_data.json"))
+
+    # rent2 로컬 시드 데이터 로드
+    local_seed = os.path.join(ROOT, "backend", "seed_data.json")
+    bootstrap(local_seed if os.path.exists(local_seed) else None)
 
     app = FastAPI(title="MQnet 원룸 임차관리 (rent2 · 객체 모델)", version="2.0.0")
     app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
@@ -66,6 +70,7 @@ def create_app(db_path: str = "") -> FastAPI:
     for exc, code in ((LookupError, 404), (PermissionError, 403), (ValueError, 400)):
         app.add_exception_handler(exc, lambda r, e, c=code: JSONResponse({"detail": str(e).strip("'\"")}, status_code=c))
 
+    app.include_router(router, prefix="/api/rent2")
     app.include_router(router, prefix="/api/rent")
     app.include_router(router, prefix="/api")
 
@@ -73,7 +78,9 @@ def create_app(db_path: str = "") -> FastAPI:
     def health():
         return {"status": "ok", "app": "rent2", "model": "object"}
 
-    ui = UI(os.path.join(ROOT, "frontend"), os.path.join(LEGACY, "frontend"))
-    app.mount("/rent", ui, name="ui_rent")      # 게이트웨이 경로(/rent/…) 호환
+    ui_dir = os.path.join(ROOT, "frontend")
+    ui = UI(ui_dir)
+    app.mount("/rent2", ui, name="ui_rent2")
+    app.mount("/rent", ui, name="ui_rent")      # 기존 /rent 경로 호환
     app.mount("/", ui, name="ui")
     return app
