@@ -257,8 +257,79 @@
       background: #ef4444 !important;
       border-color: #dc2626 !important;
       color: #fff !important;
-      animation: micPulse 1.4s infinite;
-      font-weight: 700;
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .modal-overlay.open {
+      display: flex;
+    }
+    .modal-content {
+      background: #1e293b;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px;
+      width: 92%;
+      max-width: 440px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+      color: var(--text);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    .modal-header h3 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 1.4rem;
+      cursor: pointer;
+    }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: var(--muted);
+    }
+    .form-group input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 9px 12px;
+      border-radius: 6px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: #fff;
+      font-size: 0.95rem;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.15s;
+    }
+    .btn-outline:hover {
+      background: var(--border);
     }
   </style>
 </head>
@@ -268,11 +339,51 @@
       <span>🤖</span>
       <span>MQnet 임차관리 AI 비서 (rent2 객체 모델)</span>
     </div>
-    <div class="header-links">
-      <a href="/index.html">🏠 전산 화면 바로가기</a>
-      <a href="/branches.html">🏢 본사 지점센터</a>
+    <div class="header-links" style="display:flex; align-items:center; gap:8px;">
+      <span id="userBadge" style="font-size:0.85rem; color:#93c5fd; background:rgba(59,130,246,0.15); padding:5px 10px; border-radius:6px; border:1px solid #3b82f6;">확인 중...</span>
+      <button id="btnAuthAction" class="btn btn-primary" style="padding:6px 12px; font-size:0.85rem;" onclick="handleAuthClick()">🔑 로그인</button>
+      <a href="./index.html">🏠 전산 화면 바로가기</a>
+      <a href="./manual.html" target="_blank">📖 매뉴얼</a>
     </div>
   </header>
+
+  <!-- ── 지점 관리자 로그인 모달 ── -->
+  <div class="modal-overlay" id="modalLogin">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🔐 RENT2 지점 관리자 로그인</h3>
+        <button class="close-btn" onclick="closeLoginModal()">×</button>
+      </div>
+      <div style="font-size:0.8rem; color:var(--muted); margin-bottom:12px; line-height:1.4;">
+        로그인 시 전산 타임라인 감사 로그와 지점 관리 AI 도구 권한이 활성화됩니다.
+      </div>
+
+      <!-- 모달 전용 인라인 안내 배너 -->
+      <div id="loginAlert" style="display:none; padding:10px 12px; margin-bottom:14px; border-radius:6px; font-size:0.85rem; font-weight:600; line-height:1.4;"></div>
+
+      <form onsubmit="handleLoginSubmit(event)">
+        <div class="form-group">
+          <label>아이디 (Username):</label>
+          <input type="text" id="loginUsername" placeholder="예: admin, sunho, chic, sinbi" autocomplete="username" required>
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label>비밀번호 (Password):</label>
+          <input type="password" id="loginPassword" placeholder="기본 비밀번호: 1212" value="1212" autocomplete="current-password" required>
+        </div>
+        <button type="submit" id="btnLoginSubmit" class="btn btn-primary" style="width:100%; padding:10px; font-size:0.95rem; font-weight:700;">로그인</button>
+      </form>
+
+      <div style="border-top:1px dashed var(--border); padding-top:12px; margin-top:14px;">
+        <div style="font-size:0.8rem; font-weight:700; color:var(--muted); margin-bottom:8px;">⚡ 빠른 테스트 원클릭 로그인:</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+          <button type="button" class="btn-outline" style="padding:7px 8px; font-size:0.8rem;" onclick="quickLogin('admin','1212')">👑 본사 총괄 (admin)</button>
+          <button type="button" class="btn-outline" style="padding:7px 8px; font-size:0.8rem;" onclick="quickLogin('sunho','1212')">🏢 선호빌 점주 (sunho)</button>
+          <button type="button" class="btn-outline" style="padding:7px 8px; font-size:0.8rem;" onclick="quickLogin('chic','1212')">🏢 시크빌 점주 (chic)</button>
+          <button type="button" class="btn-outline" style="padding:7px 8px; font-size:0.8rem;" onclick="quickLogin('sinbi','1212')">🏢 신비주택 점주 (sinbi)</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <main>
     <!-- AI 대화창 -->
@@ -320,12 +431,34 @@
   </main>
 
   <script>
-    const token = localStorage.getItem('mqnet_auth_token') || sessionStorage.getItem('mqnet_auth_token') || '';
-    const headers = {
-      'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : ''
-    };
+    const API_BASE = '/api/rent2';
+    let currentUser = null;
 
+    // ── 토큰 관리 (rent2_token & mqnet_auth_token 호환) ──
+    function getToken() {
+      return localStorage.getItem('rent2_token') || localStorage.getItem('mqnet_auth_token') || sessionStorage.getItem('mqnet_auth_token') || '';
+    }
+
+    function setToken(tok) {
+      if (tok) {
+        localStorage.setItem('rent2_token', tok);
+        localStorage.setItem('mqnet_auth_token', tok);
+      } else {
+        localStorage.removeItem('rent2_token');
+        localStorage.removeItem('mqnet_auth_token');
+        sessionStorage.removeItem('mqnet_auth_token');
+      }
+    }
+
+    function getHeaders() {
+      const tok = getToken();
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': tok ? `Bearer ${tok}` : ''
+      };
+    }
+
+    // ── 메시지 로그 출력 ──
     function appendMsg(text, type = 'ai') {
       const logs = document.getElementById('chatLogs');
       const div = document.createElement('div');
@@ -336,6 +469,216 @@
       return div;
     }
 
+    // ── 세션 복원 및 검증 ──
+    async function restoreSession() {
+      const tok = getToken();
+      const userBadge = document.getElementById('userBadge');
+      const btnAuth = document.getElementById('btnAuthAction');
+      const userStatus = document.getElementById('userStatus');
+      const buildingName = document.getElementById('buildingName');
+
+      if (!tok) {
+        currentUser = null;
+        if (userBadge) {
+          userBadge.textContent = '비로그인 상태';
+          userBadge.style.color = 'var(--muted)';
+          userBadge.style.borderColor = 'var(--border)';
+          userBadge.style.background = 'rgba(255,255,255,0.05)';
+        }
+        if (btnAuth) {
+          btnAuth.textContent = '🔑 로그인';
+          btnAuth.className = 'btn btn-primary';
+        }
+        if (userStatus) {
+          userStatus.textContent = '(비로그인 - 우측 상단 🔑 로그인 필요)';
+          userStatus.style.color = '#f59e0b';
+        }
+        loadTimeline();
+        return false;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/auth/me`, { headers: getHeaders() });
+        if (res.ok) {
+          const data = await res.json();
+          currentUser = data.user || data;
+          const icon = currentUser.role === 'superadmin' ? '👑' : '🏢';
+          const roleName = currentUser.role === 'superadmin' ? '본사총괄' : '지점관리자';
+
+          if (userBadge) {
+            userBadge.textContent = `${icon} ${currentUser.username} (${roleName})`;
+            userBadge.style.color = '#93c5fd';
+            userBadge.style.borderColor = '#3b82f6';
+            userBadge.style.background = 'rgba(59,130,246,0.15)';
+          }
+          if (btnAuth) {
+            btnAuth.textContent = '로그아웃';
+            btnAuth.className = 'btn btn-secondary';
+          }
+          if (userStatus) {
+            userStatus.textContent = `(접속자: ${currentUser.name || currentUser.username} · ${currentUser.branch_name || '본사'})`;
+            userStatus.style.color = 'var(--muted)';
+          }
+          if (buildingName && currentUser.branch_name) {
+            buildingName.textContent = currentUser.branch_name;
+          }
+          loadTimeline();
+          return true;
+        }
+      } catch (err) {
+        console.warn('세션 확인 실패:', err);
+      }
+
+      // 토큰 만료 처리
+      setToken(null);
+      currentUser = null;
+      if (userBadge) userBadge.textContent = '세션 만료';
+      if (btnAuth) btnAuth.textContent = '🔑 로그인';
+      if (userStatus) userStatus.textContent = '(세션 만료 - 재로그인 필요)';
+      loadTimeline();
+      return false;
+    }
+
+    // ── 로그인 모달 제어 ──
+    function openLoginModal() {
+      const modal = document.getElementById('modalLogin');
+      if (modal) modal.classList.add('open');
+      setLoginAlert('', 'info');
+      setTimeout(() => {
+        const u = document.getElementById('loginUsername');
+        if (u) { u.focus(); u.select(); }
+      }, 60);
+    }
+
+    function closeLoginModal() {
+      const modal = document.getElementById('modalLogin');
+      if (modal) modal.classList.remove('open');
+    }
+
+    function handleAuthClick() {
+      if (currentUser) {
+        setToken(null);
+        currentUser = null;
+        restoreSession();
+        appendMsg('로그아웃되었습니다. 다시 업무를 지시하려면 우측 상단의 [🔑 로그인] 버튼을 눌러주세요.', 'system');
+      } else {
+        openLoginModal();
+      }
+    }
+
+    // ── 모달 전용 인라인 배너 ──
+    function setLoginAlert(msg, type = 'info') {
+      const el = document.getElementById('loginAlert');
+      if (!el) return;
+      if (!msg) { el.style.display = 'none'; return; }
+      el.style.display = 'block';
+      el.textContent = msg;
+
+      if (type === 'error') {
+        el.style.background = 'rgba(239, 68, 68, 0.15)';
+        el.style.color = '#fca5a5';
+        el.style.border = '1px solid #ef4444';
+      } else if (type === 'success') {
+        el.style.background = 'rgba(16, 185, 129, 0.15)';
+        el.style.color = '#6ee7b7';
+        el.style.border = '1px solid #10b981';
+      } else if (type === 'warning') {
+        el.style.background = 'rgba(245, 158, 11, 0.15)';
+        el.style.color = '#fde68a';
+        el.style.border = '1px solid #f59e0b';
+      } else {
+        el.style.background = 'rgba(59, 130, 246, 0.15)';
+        el.style.color = '#93c5fd';
+        el.style.border = '1px solid #3b82f6';
+      }
+    }
+
+    // ── 로그인 제출 처리 ──
+    async function handleLoginSubmit(event) {
+      if (event) event.preventDefault();
+      const usernameInput = document.getElementById('loginUsername');
+      const passwordInput = document.getElementById('loginPassword');
+      const submitBtn = document.getElementById('btnLoginSubmit');
+      const quickBtns = document.querySelectorAll('#modalLogin .btn-outline');
+
+      const username = usernameInput ? usernameInput.value.trim() : '';
+      const password = passwordInput ? passwordInput.value.trim() : '';
+      if (!username) {
+        setLoginAlert('⚠️ 아이디를 입력해 주세요.', 'warning');
+        if (usernameInput) usernameInput.focus();
+        return;
+      }
+      if (!password) {
+        setLoginAlert('⚠️ 비밀번호를 입력해 주세요.', 'warning');
+        if (passwordInput) passwordInput.focus();
+        return;
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = '로그인 확인 중... ⏳';
+      }
+      quickBtns.forEach(b => { b.disabled = true; });
+      setLoginAlert('로그인 인증 확인 중입니다...', 'info');
+
+      try {
+        const res = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          const errMsg = err.detail || '아이디 또는 비밀번호가 올바르지 않습니다.';
+          setLoginAlert(`❌ 로그인 실패: ${errMsg}`, 'error');
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '로그인';
+          }
+          quickBtns.forEach(b => { b.disabled = false; });
+          return;
+        }
+
+        const data = await res.json();
+        setToken(data.access_token);
+        currentUser = data.user;
+        const displayName = currentUser.name || currentUser.username;
+        setLoginAlert(`✅ 로그인 성공: ${displayName}님 환영합니다!`, 'success');
+
+        setTimeout(async () => {
+          closeLoginModal();
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '로그인';
+          }
+          quickBtns.forEach(b => { b.disabled = false; });
+          await restoreSession();
+          appendMsg(`✅ ${displayName}님으로 로그인되었습니다. 무엇을 도와드릴까요?`, 'ai');
+        }, 350);
+
+      } catch (err) {
+        console.error('로그인 통신 오류:', err);
+        setLoginAlert('❌ 서버 통신 오류: 네트워크 연결을 확인해 주세요.', 'error');
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = '로그인';
+        }
+        quickBtns.forEach(b => { b.disabled = false; });
+      }
+    }
+
+    // ── 원클릭 빠른 로그인 ──
+    async function quickLogin(user, pass) {
+      const u = document.getElementById('loginUsername');
+      const p = document.getElementById('loginPassword');
+      if (u) u.value = user;
+      if (p) p.value = pass;
+      setLoginAlert(`⚡ ${user} 계정으로 원클릭 로그인 진행 중...`, 'info');
+      await handleLoginSubmit();
+    }
+
+    // ── AI 메시지 전송 ──
     async function doSend() {
       const input = document.getElementById('chatInput');
       const text = input.value.trim();
@@ -344,12 +687,40 @@
 
       appendMsg(text, 'user');
 
+      // 로그인 관련 질문 감지 및 즉시 안내
+      const lower = text.toLowerCase();
+      if (lower.includes('login') || lower.includes('로그인') || lower.includes('접속')) {
+        if (!currentUser) {
+          appendMsg('🔐 로그인 안내: 우측 상단의 [🔑 로그인] 버튼을 클릭하거나, 지금 열리는 로그인 창에서 admin / 1212 로 바로 로그인하실 수 있습니다.', 'ai');
+          openLoginModal();
+          return;
+        } else {
+          appendMsg(`현재 [${currentUser.name || currentUser.username} / ${currentUser.role === 'superadmin' ? '본사 총괄' : '지점 관리자'}] 계정으로 정상 로그인되어 있습니다. 다른 계정으로 변경하시려면 상단의 [로그아웃]을 눌러주세요.`, 'ai');
+          return;
+        }
+      }
+
+      // 비로그인 상태 경고
+      if (!currentUser && !getToken()) {
+        appendMsg('⚠️ 로그인이 필요합니다. 우측 상단의 [🔑 로그인] 버튼을 눌러 지점 관리자 계정으로 로그인해주세요.', 'ai');
+        openLoginModal();
+        return;
+      }
+
       try {
-        const res = await fetch('/api/ai/chat', {
+        const building = (currentUser && currentUser.branch) ? currentUser.branch : 'main';
+        const res = await fetch(`${API_BASE}/ai/chat`, {
           method: 'POST',
-          headers,
-          body: JSON.stringify({ message: text, building: 'main', mode: 'confirm' })
+          headers: getHeaders(),
+          body: JSON.stringify({ message: text, building: building, mode: 'confirm' })
         });
+
+        if (res.status === 401) {
+          appendMsg('🔐 세션이 만료되었습니다. 다시 로그인해 주세요.', 'ai');
+          openLoginModal();
+          return;
+        }
+
         const data = await res.json();
         if (!res.ok) {
           appendMsg(`⚠️ 오류: ${data.detail || '응답을 받지 못했습니다.'}`, 'ai');
@@ -374,20 +745,20 @@
           });
         }
 
-        // 타임라인 즉시 새로고침
         loadTimeline();
       } catch (err) {
         appendMsg(`⚠️ 네트워크 오류: ${err.message}`, 'ai');
       }
     }
 
+    // ── 승인 대기 실행 ──
     async function executePending(pid, btn) {
       btn.disabled = true;
       btn.innerText = '실행 중... ⏳';
       try {
-        const res = await fetch('/api/ai/execute', {
+        const res = await fetch(`${API_BASE}/ai/execute`, {
           method: 'POST',
-          headers,
+          headers: getHeaders(),
           body: JSON.stringify({ pending_id: pid })
         });
         const data = await res.json();
@@ -411,27 +782,43 @@
       doSend();
     }
 
+    // ── 실시간 감사 로그 타임라인 로드 ──
     async function loadTimeline() {
       const list = document.getElementById('timelineList');
+      if (!list) return;
+
+      if (!getToken()) {
+        list.innerHTML = `
+          <div style="color:var(--muted); font-size:0.85rem; text-align:center; padding-top:24px;">
+            로그인 후 타임라인이 표시됩니다.<br>
+            <button class="btn btn-primary" style="margin-top:10px; padding:6px 14px; font-size:0.8rem;" onclick="openLoginModal()">🔑 로그인하기</button>
+          </div>`;
+        return;
+      }
+
       try {
-        const res = await fetch('/api/objects/timeline?limit=25', { headers });
+        const res = await fetch(`${API_BASE}/objects/timeline?limit=25`, { headers: getHeaders() });
         if (!res.ok) {
-          list.innerHTML = `<div style="color:var(--muted); font-size:0.8rem; text-align:center;">로그인 후 타임라인이 표시됩니다.</div>`;
+          list.innerHTML = `
+            <div style="color:var(--muted); font-size:0.85rem; text-align:center; padding-top:24px;">
+              인증 세션이 필요합니다.<br>
+              <button class="btn btn-primary" style="margin-top:10px; padding:6px 14px; font-size:0.8rem;" onclick="openLoginModal()">🔑 로그인하기</button>
+            </div>`;
           return;
         }
         const data = await res.json();
         if (!data.events || data.events.length === 0) {
-          list.innerHTML = `<div style="color:var(--muted); font-size:0.8rem; text-align:center;">아직 기록된 이벤트가 없습니다.</div>`;
+          list.innerHTML = `<div style="color:var(--muted); font-size:0.85rem; text-align:center; padding-top:20px;">아직 기록된 감사 이벤트가 없습니다.</div>`;
           return;
         }
         list.innerHTML = data.events.map(e => `
           <div class="timeline-item">
-            <div class="timeline-time">${e.at.replace('T', ' ')} · <strong>${e.actor}</strong></div>
-            <div><span class="timeline-action">${e.kind}.${e.action}</span>: ${e.detail?.summary || JSON.stringify(e.detail)}</div>
+            <div class="timeline-time">${(e.at || '').replace('T', ' ')} · <strong>${e.actor || 'system'}</strong></div>
+            <div><span class="timeline-action">${e.kind || ''}.${e.action || ''}</span>: ${e.detail?.summary || JSON.stringify(e.detail || {})}</div>
           </div>
         `).join('');
       } catch (err) {
-        list.innerHTML = `<div style="color:var(--muted); font-size:0.8rem;">타임라인 로드 실패</div>`;
+        list.innerHTML = `<div style="color:var(--muted); font-size:0.85rem; text-align:center;">타임라인 로드 실패</div>`;
       }
     }
 
@@ -517,15 +904,16 @@
       }
     }
 
-    // 초기화
+    // ── 페이지 초기화 ──
     (async function init() {
+      await restoreSession();
       try {
-        const toolUrl = '/api/rent2/ai/tools';
-        const res = await fetch(toolUrl, { headers });
-        const data = await res.json();
-        document.getElementById('engineInfo').innerText = `엔진: ${data.engine} (${data.tools?.length || 0}개 도구)`;
+        const res = await fetch(`${API_BASE}/ai/tools`, { headers: getHeaders() });
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('engineInfo').innerText = `엔진: ${data.engine || 'gemini'} (${data.tools?.length || 0}개 도구)`;
+        }
       } catch (_) {}
-      loadTimeline();
     })();
   </script>
 </body>
