@@ -520,7 +520,8 @@
     // 초기화
     (async function init() {
       try {
-        const res = await fetch('/api/ai/tools', { headers });
+        const toolUrl = '/api/rent2/ai/tools';
+        const res = await fetch(toolUrl, { headers });
         const data = await res.json();
         document.getElementById('engineInfo').innerText = `엔진: ${data.engine} (${data.tools?.length || 0}개 도구)`;
       } catch (_) {}

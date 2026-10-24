@@ -251,32 +251,37 @@
 
   <!-- ── 모달 0: 사용자 로그인 / 지점 격리 인증 ── -->
   <div class="modal-overlay" id="modalLogin">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width:440px;width:95%;">
       <div class="modal-header">
         <h3>🔐 RENT2 지점 관리자 로그인</h3>
         <button class="close-btn" onclick="closeModal('modalLogin')">×</button>
       </div>
-      <div style="font-size:12px;color:#555;margin-bottom:12px;">
+      <div style="font-size:12px;color:#64748b;margin-bottom:12px;line-height:1.4;">
         계정 권한에 따라 소속 건물의 정보만 안전하게 격리되어 표시됩니다.
       </div>
+
+      <!-- 모달 전용 인라인 실시간 안내 배너 -->
+      <div id="loginAlert" style="display:none;padding:10px 12px;margin-bottom:14px;border-radius:6px;font-size:12.5px;font-weight:600;line-height:1.4;"></div>
+
       <form onsubmit="handleLoginSubmit(event)">
-        <div class="form-group">
-          <label>아이디 (Username):</label>
-          <input type="text" id="loginUsername" placeholder="예: admin, sunho, chic, sinbi" required>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label style="font-size:12.5px;font-weight:700;display:block;margin-bottom:4px;">아이디 (Username):</label>
+          <input type="text" id="loginUsername" placeholder="예: admin, sunho, chic, sinbi" autocomplete="username" required style="width:100%;box-sizing:border-box;padding:9px 10px;font-size:14px;">
         </div>
-        <div class="form-group">
-          <label>비밀번호 (Password):</label>
-          <input type="password" id="loginPassword" placeholder="기본 비밀번호: 1212" value="1212" required>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label style="font-size:12.5px;font-weight:700;display:block;margin-bottom:4px;">비밀번호 (Password):</label>
+          <input type="password" id="loginPassword" placeholder="기본 비밀번호: 1212" value="1212" autocomplete="current-password" required style="width:100%;box-sizing:border-box;padding:9px 10px;font-size:14px;">
         </div>
-        <button type="submit" style="width:100%;margin-bottom:12px;padding:10px;">로그인</button>
+        <button type="submit" id="btnLoginSubmit" class="btn-primary" style="width:100%;margin-bottom:14px;padding:12px;font-size:14px;font-weight:800;letter-spacing:0.5px;cursor:pointer;border-radius:6px;">로그인</button>
       </form>
-      <div style="border-top:1px dashed #ccc;padding-top:10px;">
-        <div style="font-size:11px;font-weight:800;margin-bottom:6px;">⚡ 빠른 테스트 원클릭 로그인:</div>
+
+      <div style="border-top:1px dashed #cbd5e1;padding-top:12px;">
+        <div style="font-size:11.5px;font-weight:800;color:#334155;margin-bottom:8px;">⚡ 빠른 테스트 원클릭 로그인:</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-          <button type="button" class="btn-outline btn-sm" onclick="quickLogin('admin','1212')">👑 본사 총괄 (admin)</button>
-          <button type="button" class="btn-outline btn-sm" onclick="quickLogin('sunho','1212')">🏢 선호빌 점주 (sunho)</button>
-          <button type="button" class="btn-outline btn-sm" onclick="quickLogin('chic','1212')">🏢 시크빌 점주 (chic)</button>
-          <button type="button" class="btn-outline btn-sm" onclick="quickLogin('sinbi','1212')">🏢 신비주택 점주 (sinbi)</button>
+          <button type="button" class="btn-outline btn-sm" style="padding:7px 8px;font-size:11.5px;cursor:pointer;text-align:center;" onclick="quickLogin('admin','1212')">👑 본사 총괄 (admin)</button>
+          <button type="button" class="btn-outline btn-sm" style="padding:7px 8px;font-size:11.5px;cursor:pointer;text-align:center;" onclick="quickLogin('sunho','1212')">🏢 선호빌 점주 (sunho)</button>
+          <button type="button" class="btn-outline btn-sm" style="padding:7px 8px;font-size:11.5px;cursor:pointer;text-align:center;" onclick="quickLogin('chic','1212')">🏢 시크빌 점주 (chic)</button>
+          <button type="button" class="btn-outline btn-sm" style="padding:7px 8px;font-size:11.5px;cursor:pointer;text-align:center;" onclick="quickLogin('sinbi','1212')">🏢 신비주택 점주 (sinbi)</button>
         </div>
       </div>
     </div>
@@ -664,17 +669,21 @@
 
   <!-- ── 🤖 제미나이 스타일 [+] 만능 스마트 입력바 마운트 ── -->
   <script type="module">
-    import { mountSmartInputBar } from "/shared/ui/smart_input_bar.js?v=2.0";
-    mountSmartInputBar("#geminiSmartInputBar", {
-      apiBase: API_BASE,
-      placeholder: "질문을 입력하거나, [+] 버튼으로 영수증/장부/문자를 첨부하세요...",
-      branchId: () => curBranch,
-      onSuccess: async (data) => {
-        const el = document.getElementById("aiResponse");
-        if (el) el.textContent = data.message || data.answer || JSON.stringify(data, null, 2);
-        await reloadRooms();
-      }
-    });
+    try {
+      const { mountSmartInputBar } = await import("/shared/ui/smart_input_bar.js?v=2.0");
+      mountSmartInputBar("#geminiSmartInputBar", {
+        apiBase: API_BASE,
+        placeholder: "질문을 입력하거나, [+] 버튼으로 영수증/장부/문자를 첨부하세요...",
+        branchId: () => curBranch,
+        onSuccess: async (data) => {
+          const el = document.getElementById("aiResponse");
+          if (el) el.textContent = data.message || data.answer || JSON.stringify(data, null, 2);
+          await reloadRooms();
+        }
+      });
+    } catch (err) {
+      console.info("스마트 입력바 기본 모드 활성화:", err.message || err);
+    }
   </script>
 </body>
 </html>

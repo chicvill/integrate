@@ -10,7 +10,7 @@ let curFilter = "all";
 let scanBase64 = "";
 let currentUser = null;
 
-const API_BASE = (location.pathname.startsWith("/rent2") || location.pathname.includes("/rent2")) ? "/api/rent2" : "/api";
+const API_BASE = "/api/rent2";
 
 // ── 토큰 관리 ──
 function getToken() {
@@ -35,6 +35,33 @@ function setAlert(msg, type = "info") {
   el.style.background = type === "error" ? "#000" : (type === "success" ? "#fff" : (type === "warning" ? "#fff8e1" : "#f4f4f4"));
   el.style.color = type === "error" ? "#fff" : "#000";
   el.style.borderColor = "#000";
+}
+
+// ── 모달 전용 인라인 배너 ──
+function setLoginAlert(msg, type = "info") {
+  const el = document.getElementById("loginAlert");
+  if (!el) return;
+  if (!msg) { el.style.display = "none"; return; }
+  el.style.display = "block";
+  el.textContent = msg;
+  
+  if (type === "error") {
+    el.style.background = "#fef2f2";
+    el.style.color = "#991b1b";
+    el.style.border = "1px solid #f87171";
+  } else if (type === "success") {
+    el.style.background = "#f0fdf4";
+    el.style.color = "#166534";
+    el.style.border = "1px solid #4ade80";
+  } else if (type === "warning") {
+    el.style.background = "#fffbeb";
+    el.style.color = "#92400e";
+    el.style.border = "1px solid #fcd34d";
+  } else {
+    el.style.background = "#eff6ff";
+    el.style.color = "#1e40af";
+    el.style.border = "1px solid #93c5fd";
+  }
 }
 
 // ── 통합 API 클라이언트 (JWT 헤더 자동 주입 & 401/403 차단 안내) ──
@@ -151,14 +178,32 @@ async function restoreSession() {
 // ── 로그인 제출 처리 ──
 async function handleLoginSubmit(event) {
   if (event) event.preventDefault();
-  const username = document.getElementById("loginUsername").value.trim();
-  const password = document.getElementById("loginPassword").value.trim();
+  const usernameInput = document.getElementById("loginUsername");
+  const passwordInput = document.getElementById("loginPassword");
+  const submitBtn = document.getElementById("btnLoginSubmit");
+  const quickBtns = document.querySelectorAll("#modalLogin .btn-outline");
+
+  const username = usernameInput ? usernameInput.value.trim() : "";
+  const password = passwordInput ? passwordInput.value.trim() : "";
   if (!username) {
-    setAlert("아이디를 입력해 주세요.", "warning");
+    setLoginAlert("⚠️ 아이디를 입력해 주세요.", "warning");
+    if (usernameInput) usernameInput.focus();
+    return;
+  }
+  if (!password) {
+    setLoginAlert("⚠️ 비밀번호를 입력해 주세요.", "warning");
+    if (passwordInput) passwordInput.focus();
     return;
   }
 
-  setAlert("로그인 인증 확인 중...", "info");
+  // 중복 클릭 방지 (Debounce) 및 로딩 상태 부여
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = "로그인 확인 중... ⏳";
+  }
+  quickBtns.forEach(b => { b.disabled = true; });
+  setLoginAlert("로그인 인증 확인 중입니다...", "info");
+
   try {
     const res = await fetch(`${API_BASE}/auth/login`, {
       method: "POST",
@@ -168,7 +213,13 @@ async function handleLoginSubmit(event) {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      setAlert(err.detail || "로그인 실패: 아이디 또는 비밀번호가 올바르지 않습니다.", "error");
+      const errMsg = err.detail || "아이디 또는 비밀번호가 올바르지 않습니다.";
+      setLoginAlert(`❌ 로그인 실패: ${errMsg}`, "error");
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "로그인";
+      }
+      quickBtns.forEach(b => { b.disabled = false; });
       return;
     }
 
@@ -176,20 +227,46 @@ async function handleLoginSubmit(event) {
     setToken(data.access_token);
     currentUser = data.user;
     updateAuthUI(currentUser);
-    closeModal("modalLogin");
-    setAlert(`✅ 로그인 성공: ${currentUser.username}님 환영합니다. (소속: ${currentUser.branch || "본사"})`, "success");
 
-    await loadBranches();
-    await reloadRooms();
+    const displayName = currentUser.name || currentUser.username;
+    const branchName = currentUser.branch_name || currentUser.branch || "본사";
+    setLoginAlert(`✅ 로그인 성공: ${displayName}님 환영합니다!`, "success");
+
+    setTimeout(async () => {
+      closeModal("modalLogin");
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "로그인";
+      }
+      quickBtns.forEach(b => { b.disabled = false; });
+      setAlert(`✅ 로그인 성공: ${displayName}님 환영합니다. (소속: ${branchName})`, "success");
+
+      try {
+        await loadBranches();
+        await reloadRooms();
+      } catch (err) {
+        console.error("로그인 후 데이터 로드 오류:", err);
+      }
+    }, 350);
+
   } catch (err) {
-    setAlert("로그인 요청 실패: " + (err.message || ""), "error");
+    console.error("로그인 네트워크 오류:", err);
+    setLoginAlert("❌ 서버 통신 오류: 네트워크 연결 상태를 확인해 주세요.", "error");
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "로그인";
+    }
+    quickBtns.forEach(b => { b.disabled = false; });
   }
 }
 
 // ── 빠른 테스트 계정 원클릭 로그인 ──
 async function quickLogin(user, pass) {
-  document.getElementById("loginUsername").value = user;
-  document.getElementById("loginPassword").value = pass;
+  const u = document.getElementById("loginUsername");
+  const p = document.getElementById("loginPassword");
+  if (u) u.value = user;
+  if (p) p.value = pass;
+  setLoginAlert(`⚡ ${user} 계정으로 원클릭 로그인 진행 중...`, "info");
   await handleLoginSubmit();
 }
 
@@ -287,7 +364,19 @@ function setTab(name) {
 // ── 모달 유틸 ──
 function openModal(id) {
   const el = document.getElementById(id);
-  if (el) el.classList.add("open");
+  if (el) {
+    el.classList.add("open");
+    if (id === "modalLogin") {
+      setLoginAlert("", "info");
+      setTimeout(() => {
+        const u = document.getElementById("loginUsername");
+        if (u) {
+          u.focus();
+          u.select();
+        }
+      }, 60);
+    }
+  }
 }
 
 function closeModal(id) {
