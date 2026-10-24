@@ -8,7 +8,7 @@ $TarFile = "$ProjectRoot\gcp_update.tar.gz"
 if (Test-Path $TarFile) {
     Remove-Item $TarFile -Force
 }
-tar -czf $TarFile -C $ProjectRoot apps/rent2 apps/studycafe2 apps/selfstudy2 shared templates/saas-template gateway
+tar -czf $TarFile -C $ProjectRoot apps/rent apps/rent2 apps/studycafe2 apps/selfstudy2 shared templates/saas-template gateway
 
 Write-Host "☁️ 2. 구글 클라우드 서버(integrated: us-central1-a)로 패치 전송 중..." -ForegroundColor Cyan
 gcloud compute scp $TarFile "integrated:gcp_update.tar.gz" --zone=us-central1-a
@@ -27,12 +27,10 @@ mkdir -p /tmp/gcp_patch
 tar -xzf gcp_update.tar.gz -C /tmp/gcp_patch
 
 # 컨테이너 내부 데이터 디렉터리 보장
-sudo docker exec $CID mkdir -p /app/apps/rent2/data /app/apps/studycafe2/data /app/apps/selfstudy2/data
-
-# 구버전 rent 디렉터리 완전 제거 (rent2 단독화 보장)
-sudo docker exec $CID rm -rf /app/apps/rent || true
+sudo docker exec $CID mkdir -p /app/apps/rent/data /app/apps/rent2/data /app/apps/studycafe2/data /app/apps/selfstudy2/data
 
 # 최신 모듈 컨테이너 내부로 복사
+sudo docker cp /tmp/gcp_patch/apps/rent $CID:/app/apps/
 sudo docker cp /tmp/gcp_patch/apps/rent2 $CID:/app/apps/
 sudo docker cp /tmp/gcp_patch/apps/studycafe2 $CID:/app/apps/
 sudo docker cp /tmp/gcp_patch/apps/selfstudy2 $CID:/app/apps/
