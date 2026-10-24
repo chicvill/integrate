@@ -349,12 +349,31 @@ function setTab(name) {
     window.event.target.classList.add("active");
   }
 
+  // AI 탭을 벗어날 때 브리핑 카드와 탭 네비게이션 복구
+  if (name !== "ai") {
+    const stats = document.querySelector(".stats-grid");
+    const navTabs = document.querySelector(".nav-tabs");
+    if (stats) stats.style.display = "grid";
+    if (navTabs) navTabs.style.display = "flex";
+  }
+
   document.getElementById("secRooms").style.display = name === "rooms" ? "block" : "none";
   document.getElementById("secTax").style.display = name === "tax" ? "block" : "none";
   document.getElementById("secExpenses").style.display = name === "expenses" ? "block" : "none";
   document.getElementById("secAI").style.display = name === "ai" ? "block" : "none";
   const secBr = document.getElementById("secBranches");
   if (secBr) secBr.style.display = name === "branches" ? "block" : "none";
+
+  if (name === "ai") {
+    const branchSel = document.getElementById("branchSelect");
+    const badge = document.getElementById("aiBranchBadge");
+    if (badge && branchSel && branchSel.selectedIndex >= 0) {
+      badge.textContent = branchSel.options[branchSel.selectedIndex].text;
+    }
+    if (typeof scrollAIChatToBottom === "function") {
+      setTimeout(scrollAIChatToBottom, 50);
+    }
+  }
 
   if (name === "tax") { loadVatReport(); loadIncomeTax(); }
   if (name === "expenses") { loadExpenses(); }

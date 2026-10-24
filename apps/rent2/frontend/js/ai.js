@@ -103,11 +103,179 @@ async function sendAI() {
     if (!res.ok) return;
     const data = await res.json();
     if (out) out.textContent = data.reply || JSON.stringify(data, null, 2);
-    // 쓰기 도구(수정, 납부, 퇴실 등)가 실행되었으면 호실 카드 즉시 자동 동기화
     if (data.reply && (data.reply.includes("완료") || data.reply.includes("수정") || data.reply.includes("납부") || data.reply.includes("등록"))) {
       if (typeof reloadRooms === "function") reloadRooms();
     }
   } catch (err) {
     if (out) out.textContent = "질의 응답 실패 (서버 연결 확인)";
+  }
+}
+
+// ── 📱 스마트폰 최적화 모바일 AI 비서 컨트롤러 ──
+
+function openAIAssistant() {
+  // 상단 브리핑 카드 및 탭 메뉴를 숨겨 스마트폰 화면 공간을 최대로 확보
+  const stats = document.querySelector(".stats-grid");
+  const navTabs = document.querySelector(".nav-tabs");
+  if (stats) stats.style.display = "none";
+  if (navTabs) navTabs.style.display = "none";
+
+  // 지점명 배지 동기화
+  const branchSel = document.getElementById("branchSelect");
+  const badge = document.getElementById("aiBranchBadge");
+  if (badge && branchSel && branchSel.selectedIndex >= 0) {
+    badge.textContent = branchSel.options[branchSel.selectedIndex].text;
+  }
+
+  // AI 섹션 활성화
+  setTab("ai");
+
+  // 모바일 입력창 포커스 및 스크롤
+  setTimeout(() => {
+    const inp = document.getElementById("aiInputMobile");
+    if (inp) {
+      inp.focus();
+    }
+    scrollAIChatToBottom();
+  }, 100);
+}
+
+function closeAIAssistant() {
+  // 브리핑 카드와 탭 복구
+  const stats = document.querySelector(".stats-grid");
+  const navTabs = document.querySelector(".nav-tabs");
+  if (stats) stats.style.display = "grid";
+  if (navTabs) navTabs.style.display = "flex";
+
+  // 호실 관제 탭으로 복귀
+  setTab("rooms");
+}
+
+function scrollAIChatToBottom() {
+  const box = document.getElementById("aiChatBox");
+  if (box) {
+    box.scrollTop = box.scrollHeight;
+  }
+}
+
+function askQuickPrompt(text) {
+  const inp = document.getElementById("aiInputMobile");
+  if (inp) {
+    inp.value = text;
+  }
+  submitMobileAI();
+}
+
+function handleAiInputKey(event) {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    submitMobileAI();
+  }
+}
+
+function clearAIChat() {
+  const box = document.getElementById("aiChatBox");
+  if (!box) return;
+  box.innerHTML = `
+    <div class="ai-bubble ai-msg" style="align-self:flex-start;max-width:90%;background:#ffffff;border:1px solid #cbd5e1;padding:10px 12px;border-radius:8px 8px 8px 2px;box-shadow:0 1px 2px rgba(0,0,0,0.05);font-size:13px;line-height:1.5;color:#0f172a;">
+      <div style="font-weight:800;margin-bottom:4px;color:#2563eb;display:flex;align-items:center;gap:4px;">
+        <span>🤖 RENT2 AI 현장 비서</span>
+      </div>
+      대화가 초기화되었습니다. 🎙️<br>
+      상단의 <b>[⚡ 퀵 버튼]</b>을 누르시거나 궁금하신 내용을 자유롭게 말씀해 주세요!
+    </div>
+  `;
+}
+
+function formatAiReply(text) {
+  if (!text) return "";
+  // 간이 마크다운 포맷팅 (개행, 굵은 글씨, 코드)
+  let html = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  // **볼드**
+  html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+  
+  // 개행
+  html = html.replace(/\n/g, "<br>");
+
+  return html;
+}
+
+async function submitMobileAI() {
+  const inp = document.getElementById("aiInputMobile");
+  const sendBtn = document.getElementById("btnAiSend");
+  const chatBox = document.getElementById("aiChatBox");
+  if (!inp || !chatBox) return;
+
+  const query = inp.value.trim();
+  if (!query) return;
+
+  // 1. 사용자 질문 말풍선 렌더링
+  const userDiv = document.createElement("div");
+  userDiv.className = "ai-bubble user-msg";
+  userDiv.textContent = query;
+  chatBox.appendChild(userDiv);
+
+  // 입력창 초기화 및 스크롤
+  inp.value = "";
+  if (sendBtn) {
+    sendBtn.disabled = true;
+    sendBtn.textContent = "분석중...";
+  }
+
+  // 2. AI 로딩 말풍선 렌더링
+  const loadingDiv = document.createElement("div");
+  loadingDiv.className = "ai-bubble ai-msg";
+  loadingDiv.id = "aiLoadingMsg";
+  loadingDiv.innerHTML = `<span style="color:#64748b;">AI 비서가 실시간 장부를 분석 중입니다... ⏳</span>`;
+  chatBox.appendChild(loadingDiv);
+  scrollAIChatToBottom();
+
+  try {
+    const res = await apiFetch(`${API_BASE}/ai/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: query, building: curBranch, mode: "auto" })
+    });
+
+    const aiMsgEl = document.getElementById("aiLoadingMsg");
+    if (!res.ok) {
+      if (aiMsgEl) {
+        aiMsgEl.removeAttribute("id");
+        aiMsgEl.innerHTML = `<span style="color:#dc2626;font-weight:700;">⚠️ 오류: 서버와의 통신에 실패했습니다. (HTTP ${res.status})</span>`;
+      }
+      return;
+    }
+
+    const data = await res.json();
+    const replyText = data.reply || (typeof data === "string" ? data : JSON.stringify(data, null, 2));
+
+    if (aiMsgEl) {
+      aiMsgEl.removeAttribute("id");
+      aiMsgEl.innerHTML = formatAiReply(replyText);
+    }
+
+    // 변경 작업 실행 시 호실 카드 실시간 갱신
+    if (replyText && (replyText.includes("완료") || replyText.includes("수정") || replyText.includes("납부") || replyText.includes("등록"))) {
+      if (typeof reloadRooms === "function") {
+        reloadRooms();
+      }
+    }
+  } catch (err) {
+    console.error("모바일 AI 질의 실패:", err);
+    const aiMsgEl = document.getElementById("aiLoadingMsg");
+    if (aiMsgEl) {
+      aiMsgEl.removeAttribute("id");
+      aiMsgEl.innerHTML = `<span style="color:#dc2626;">⚠️ 서버 연결 오류: AI 비서 응답을 불러올 수 없습니다.</span>`;
+    }
+  } finally {
+    if (sendBtn) {
+      sendBtn.disabled = false;
+      sendBtn.textContent = "전송";
+    }
+    scrollAIChatToBottom();
   }
 }

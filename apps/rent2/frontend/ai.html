@@ -75,6 +75,34 @@
         display: none;
       }
     }
+    @media (max-width: 600px) {
+      header {
+        padding: 8px 10px;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .header-title {
+        font-size: 0.95rem;
+      }
+      .header-links {
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .header-links a, .header-links button, #userBadge {
+        padding: 4px 6px !important;
+        font-size: 0.78rem !important;
+      }
+      main {
+        padding: 6px;
+        gap: 8px;
+      }
+      .chat-logs {
+        padding: 10px;
+      }
+      .chat-input-area {
+        padding: 8px 10px;
+      }
+    }
     /* AI Chat Panel */
     .chat-panel {
       background: var(--card-bg);

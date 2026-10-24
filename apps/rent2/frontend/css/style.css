@@ -164,14 +164,31 @@ select:focus {
   box-shadow: 0 1px 2px rgba(22, 101, 52, 0.2);
 }
 
-/* ── 호실 필터 바 ── */
+/* ── 호실 필터 바 (스마트폰 반응형 최적화) ── */
 .filter-bar {
   display: flex;
-  gap: 4px;
+  gap: 6px;
   margin-bottom: 8px;
   align-items: center;
+  flex-wrap: wrap;
 }
-.filter-bar input, .filter-bar select { padding: 4px 6px; font-size: 12px; height: 30px; }
+.filter-bar input {
+  padding: 5px 8px;
+  font-size: 13px;
+  height: 32px;
+  flex: 1;
+  min-width: 130px;
+}
+.filter-bar select {
+  padding: 4px 6px;
+  font-size: 12.5px;
+  height: 32px;
+  white-space: nowrap;
+}
+.filter-bar button {
+  height: 32px;
+  white-space: nowrap;
+}
 .room-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -406,4 +423,71 @@ table.data-table tr:hover td { background: #fcfcfc; }
   color: #991b1b !important;
   animation: micPulse 1.4s infinite;
   font-weight: 700;
+}
+
+/* ── 모바일 AI 비서 전용 칩 및 말풍선 스타일 ── */
+.ai-chip {
+  padding: 6px 11px;
+  font-size: 11.5px;
+  font-weight: 700;
+  border-radius: 16px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #1e293b;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.ai-chip:hover, .ai-chip:active {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+  transform: translateY(-1px);
+}
+.ai-bubble {
+  word-break: break-word;
+  animation: fadeInMsg 0.2s ease;
+}
+@keyframes fadeInMsg {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.ai-bubble.user-msg {
+  align-self: flex-end;
+  max-width: 85%;
+  background: #1e293b;
+  color: #ffffff;
+  padding: 9px 13px;
+  border-radius: 10px 10px 2px 10px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.ai-bubble.ai-msg {
+  align-self: flex-start;
+  max-width: 90%;
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
+  padding: 10px 13px;
+  border-radius: 10px 10px 10px 2px;
+  font-size: 13px;
+  line-height: 1.5;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.ai-bubble.ai-msg table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 6px 0;
+  font-size: 11.5px;
+}
+.ai-bubble.ai-msg table th, .ai-bubble.ai-msg table td {
+  border: 1px solid #cbd5e1;
+  padding: 4px 6px;
+  text-align: left;
+}
+.ai-bubble.ai-msg table th {
+  background: #f1f5f9;
 }
