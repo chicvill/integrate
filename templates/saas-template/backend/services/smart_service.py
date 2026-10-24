@@ -109,8 +109,9 @@ class SmartService:
     def process_camera_ocr(image_base64: str, prompt: Optional[str] = None) -> Dict[str, Any]:
         """Gemini Vision AI를 활용한 카메라/사진 OCR 스마트 분석"""
         try:
+            import os
             from shared.ai.gemini_client import GeminiClient
-            client = GeminiClient()
+            client = GeminiClient(api_key=os.getenv("GEMINI_API_KEY", ""))
             default_prompt = (
                 "이 이미지는 영수증, 계약서, 신청서, 장부 또는 명부 사진입니다. "
                 "일자(date), 주요 항목/상호(item), 금액(amount), 관련자 이름(name), 비고(note)를 "

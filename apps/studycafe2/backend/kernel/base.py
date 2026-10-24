@@ -30,6 +30,8 @@ def store() -> Store:
 
 def use_store(path: str = ":memory:") -> Store:
     global _store
+    if _store is not None:
+        _store.close()
     _store = Store(path)
     return _store
 

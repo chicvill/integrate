@@ -9,7 +9,7 @@ import sqlite3
 import threading
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, Generator, Iterator, List, Optional
 
 _J = lambda v: json.dumps(v, ensure_ascii=False, default=str)  # noqa: E731
 
@@ -32,7 +32,7 @@ class Store:
 
     # ── 트랜잭션: 대량 작업은 한 번에 커밋(quiet=True면 타임라인 생략) ──
     @contextmanager
-    def tx(self, quiet: bool = False) -> Iterator[None]:
+    def tx(self, quiet: bool = False) -> Generator[None, None, None]:
         with self.lock:
             self._depth += 1
             prev, self.quiet = self.quiet, self.quiet or quiet
@@ -134,3 +134,12 @@ class Store:
         """한 소속(예: 건물)의 모든 객체를 이식 가능한 목록으로 내보내기"""
         return [{"key": r["key"], "kind": r["kind"], "scope": r["scope"], "data": json.loads(r["data"])}
                 for r in self.db.execute("SELECT * FROM objects WHERE scope=? ORDER BY created_at, key", (scope,))]
+
+    def close(self) -> None:
+        """데이터베이스 연결 명시적 해제"""
+        with self.lock:
+            try:
+                self.db.close()
+            except Exception:
+                pass
+

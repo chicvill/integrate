@@ -112,7 +112,7 @@ def parse_bank_message(text: str, default_building: str = "main") -> Dict[str, A
     target_month = p_dt.month
     target_year = p_dt.year
 
-    success_flag = bool(room_number > 0 and amount > 0)
+    success_flag = room_number > 0 and amount > 0
     msg = ""
     if success_flag:
         fallback_str = " (계약금액 자동적용)" if is_fallback else ""
@@ -132,7 +132,7 @@ def parse_bank_message(text: str, default_building: str = "main") -> Dict[str, A
         "detected_tenant": tenant_candidate,
         "expected_tenant": expected_tenant,
         "expected_total": expected_total,
-        "matched": bool(matched_unit is not None),
+        "matched": matched_unit is not None,
         "message": msg
     }
 

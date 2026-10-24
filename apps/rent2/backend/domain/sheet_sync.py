@@ -99,9 +99,11 @@ def sync_file_data(file_path: str, building_id: str = "main") -> Dict[str, Any]:
     ext = os.path.splitext(file_path)[1].lower()
     if ext == ".xlsx" or ext == ".xls":
         try:
-            import openpyxl
+            import openpyxl  # type: ignore[import-untyped]
             wb = openpyxl.load_workbook(file_path, data_only=True)
-            ws = wb.active
+            ws = wb.active if wb.active is not None else (wb.worksheets[0] if wb.worksheets else None)
+            if ws is None:
+                raise ValueError("유효한 워크시트가 존재하지 않습니다.")
             rows = [[str(cell.value or "") if cell.value is not None else "" for cell in row] for row in ws.iter_rows()]
         except Exception as e:
             raise ValueError(f"엑셀 파일 읽기 실패 ({os.path.basename(file_path)}): {str(e)}")

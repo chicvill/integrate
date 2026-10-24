@@ -75,7 +75,7 @@ class GeminiClient(BaseAIClient):
     각 앱은 이 클래스를 상속하여 앱별 AI 로직을 구현합니다.
     """
 
-    def __init__(self, api_key: str, model: str = "gemini-3.5-flash", system_prompt: str = ""):
+    def __init__(self, api_key: str = "", model: str = "gemini-3.5-flash", system_prompt: str = ""):
         self.api_key = api_key or os.getenv("GEMINI_API_KEY", "")
         self.model = os.getenv("GEMINI_MODEL", model) or "gemini-3.5-flash"
         self.system_prompt = system_prompt
@@ -200,6 +200,37 @@ class GeminiClient(BaseAIClient):
             if fallback_data:
                 return fallback_data
             return {"raw": raw_text, "parse_error": True}
+
+    def generate_with_image_sync(
+        self,
+        prompt: str,
+        image_base64: str,
+        mime_type: str = "image/jpeg",
+        fallback_data: Optional[Dict[str, Any]] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """동기 컨텍스트에서 안전하게 이미지 구조화 분석을 수행하는 헬퍼"""
+        import asyncio
+        import concurrent.futures
+        try:
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = None
+
+            if loop and loop.is_running():
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                    future = executor.submit(
+                        asyncio.run,
+                        self.generate_structured_with_image(prompt, image_base64, mime_type=mime_type, fallback_data=fallback_data)
+                    )
+                    return future.result()
+            else:
+                return asyncio.run(
+                    self.generate_structured_with_image(prompt, image_base64, mime_type=mime_type, fallback_data=fallback_data)
+                )
+        except Exception as e:
+            logger.warning(f"generate_with_image_sync 실행 오류: {e}")
+            return fallback_data
 
     # ─── Mock 응답 (API Key 없을 때) ──────────────────────────
     def _mock_text_response(self, prompt: str) -> str:
