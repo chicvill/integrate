@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  rent-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.standalone
+    image: mqnet-rent-standalone:latest
+    container_name: mqnet-rent
+    restart: always
+    ports:
+      - "${HOST_PORT:-80}:8000"
+    environment:
+      - RUN_MODE=standalone
+      - APP_NAME=부동산 원룸 임차료 관리 시스템
+      - PORT=8000
+      - DB_URL=sqlite:////app/data/rent.db
+    volumes:
+      - ./data:/app/data
+      - ./media:/app/media
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
