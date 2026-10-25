@@ -219,6 +219,20 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
                 "data": res
             }
 
+    # 2.5 엑셀 복사-붙여넣기(Tab 구분자) 또는 여러 호실 계약 대장 텍스트인 경우:
+    has_tab = "\t" in text
+    has_multi_rooms = len(re.findall(r"\b\d{3,4}\s*호?\b", text)) >= 2
+    if has_tab or has_multi_rooms:
+        from ..domain import ai_tools
+        roster_res = ai_tools.import_contract_roster(bid, text)
+        return {
+            "success": True,
+            "kind": "contract_roster",
+            "message": roster_res["message"],
+            "count": roster_res["count"],
+            "data": roster_res
+        }
+
     res = smart_paste_payment({"text": text, "branch_id": bid, "auto_apply": True}, user)
     res["kind"] = "bank_payment"
     return res
@@ -298,6 +312,13 @@ def smart_ocr_contract(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
     b = get_building(bid)
     auto_apply = bool(p.get("auto_apply", False))
     saved_contracts = []
+
+    # 신규 등록 매장(활성 계약이 없는 상태)인 경우 더미 호실 대신 실제 추출된 호실로 자동 재정렬
+    has_active = any((act := u.active()) is not None and bool(act.tenant_name) for u in b.view())
+    extracted_rooms = sorted(set(num(r.get("호실") or r.get("room_number") or r.get("room")) for r in res.get("rows", []) if num(r.get("호실") or r.get("room_number") or r.get("room")) > 0))
+    if not has_active and extracted_rooms and auto_apply:
+        b.units = extracted_rooms
+        b.save("units_realigned_from_ocr")
 
     for row in res.get("rows", []):
         room_n = num(row.get("호실") or row.get("room_number") or row.get("room"))

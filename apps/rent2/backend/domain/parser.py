@@ -219,6 +219,52 @@ def parse_contract_roster(text: str) -> List[Dict[str, Any]]:
 
         # 6. 지불 타이밍
         pay_timing = "선불" if "선불" in line else "후불"
+        id_number = ""
+        expiry = ""
+
+        # 만약 엑셀 복사-붙여넣기(Tab 구분) 형태인 경우 각 열 위치 기반 정밀 추출
+        if "\t" in line:
+            parts = [p.strip() for p in line.split("\t")]
+            # parts[0]: 호실 (예: 204)
+            # parts[1]: 세입자 성명 (예: 주예란)
+            if len(parts) >= 2 and parts[1]:
+                cand_name = re.sub(r"[^\w가-힣]", "", parts[1])
+                if cand_name and cand_name not in ("공실", "입주자", "성명", "세입자"):
+                    tenant_name = cand_name
+            # parts[2]: 주민등록번호 (예: 770925-2189614)
+            if len(parts) >= 3 and re.search(r"\d{6}[-\s]?\d{7}", parts[2]):
+                id_number = parts[2]
+            # parts[3]: 전화번호 (예: 010-8962-8148)
+            if len(parts) >= 4 and not phone:
+                ph_m = re.search(r"01[016789]-?\d{3,4}-?\d{4}", parts[3])
+                if ph_m:
+                    phone = ph_m.group(0)
+            # parts[4]: 전입일 (예: 2021.6.5)
+            if len(parts) >= 5 and not move_in:
+                d_in = pdate(parts[4])
+                if d_in:
+                    move_in = d_in.isoformat()
+            # parts[5]: 만기일 (예: 2022.6.4)
+            if len(parts) >= 6:
+                d_exp = pdate(parts[5])
+                if d_exp:
+                    expiry = d_exp.isoformat()
+            # parts[7]: 선후 (예: 선불 / 후불)
+            if len(parts) >= 8 and parts[7] in ("선불", "후불"):
+                pay_timing = parts[7]
+            # parts[8]: 보증금 (예: 5,000,000)
+            if len(parts) >= 9:
+                dep_val = num(parts[8])
+                if dep_val > 0:
+                    deposit = dep_val
+            # 시크빌/일반 표준 엑셀: 10열=임대료(290,000), 11열=관리비(150,000)
+            if len(parts) >= 12:
+                r_val = num(parts[10])
+                m_val = num(parts[11])
+                if r_val > 0 and rent == 0:
+                    rent = r_val
+                if m_val > 0 and maintenance == 0:
+                    maintenance = m_val
 
         # 7. 메모 (특이사항, 키 번호 등)
         notes = []
@@ -231,7 +277,9 @@ def parse_contract_roster(text: str) -> List[Dict[str, Any]]:
         results.append({
             "room_number": room_num,
             "tenant_name": tenant_name,
+            "id_number": id_number,
             "move_in": move_in,
+            "expiry": expiry,
             "deposit": deposit,
             "rent": rent,
             "maintenance": maintenance,

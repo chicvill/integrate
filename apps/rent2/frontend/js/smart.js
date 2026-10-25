@@ -385,9 +385,9 @@ async function submitUniversalIngest() {
         alertMsg = `✅ <b>장부 동기화 완료</b>: 2025/2026년 전체 데이터가 성공적으로 반영되었습니다.`;
       } else if (data.ocr_kind === "receipt" || data.expense) {
         alertMsg = `✅ <b>[사진 분석 완료]</b> 지출 영수증 전표가 정상 등록되었습니다! (${data.message || ''})`;
-      } else if (data.ocr_kind === "contract" || data.applied_count !== undefined) {
-        const count = data.applied_count || data.total_extracted || 0;
-        alertMsg = `✅ <b>[사진 분석 완료]</b> 총 <b>${count}개 호실</b>의 임대차 계약 및 세입자 정보가 DB에 정상 등록되었습니다!`;
+      } else if (data.kind === "contract_roster" || data.ocr_kind === "contract" || data.applied_count !== undefined) {
+        const count = data.count || data.applied_count || data.total_extracted || 0;
+        alertMsg = `✅ <b>[계약 대장 등록 완료]</b> 총 <b>${count}개 호실</b>의 임대차 계약 및 세입자 정보가 DB에 정상 등록되었습니다!`;
       }
 
       if (isPhoto && btn) {

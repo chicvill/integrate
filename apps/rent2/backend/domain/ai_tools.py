@@ -244,8 +244,10 @@ def import_contract_roster(building: str, text: str) -> Dict[str, Any]:
         form_dict = {
             "name": it["tenant_name"],
             "tenant_name": it["tenant_name"],
+            "id_number": it.get("id_number", ""),
             "phone": it.get("phone", ""),
             "move_in": it.get("move_in", ""),
+            "expiry": it.get("expiry", ""),
             "deposit": it.get("deposit", 0),
             "rent": it.get("rent", 0),
             "maintenance": it.get("maintenance", 0),
@@ -256,12 +258,13 @@ def import_contract_roster(building: str, text: str) -> Dict[str, Any]:
         u.update(form_dict)
         applied.append(rn)
 
+    b.sync_all_rooms()
     Building.invalidate_cache()
     return {
         "success": True,
         "count": len(applied),
         "building": b.name,
-        "message": f"🎉 {b.name} 매장에 총 {len(applied)}개 호실의 세입자 계약 정보가 성공적으로 일괄 등록되었습니다!"
+        "message": f"🎉 {b.name} 매장에 총 {len(applied)}개 호실의 세입자 계약 정보가 성공적으로 일괄 등록·동기화되었습니다!"
     }
 
 
@@ -408,7 +411,7 @@ def read_contract_image(image_base64: str) -> Dict[str, Any]:
         return {"success": bool(rows), "rows": rows, "source": "gemini_vision"}
     except Exception as e:
         return {"success": False, "has_api_key": True, "rows": [], "source": "ocr_failed",
-                "message": f"계약서 AI 분석 실패 ({e}). 사진이 흐리거나 일시적 API 지연입니다. 다시 촬영하거나 직접 입력해 주세요."}
+                "message": f"AI 사진 분석 지연({e}). 구글 AI API 사용량 한도 초과 또는 일시적 지연입니다. 💡 엑셀 화면에서 셀을 복사(Ctrl+C)하여 만능 입력창에 붙여넣기(Ctrl+V)하시면 AI 제한 없이 0.1초 만에 100% 즉시 등록됩니다."}
 
 
 RECEIPT_OCR_PROMPT = ("이 이미지는 영수증, 간이영수증, 세금계산서, 이체증, 신용카드 영수증 캡처입니다. "
