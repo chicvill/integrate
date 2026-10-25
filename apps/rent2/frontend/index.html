@@ -344,7 +344,8 @@
       </div>
 
       <!-- 퀵 질문 프롬프트 칩 (원클릭 입력 후 텍스트 수정 가능) -->
-      <div style="display:flex;gap:4px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;-webkit-overflow-scrolling:touch;">
+      <div style="display:flex;gap:4px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;-webkit-overflow-scrolling:touch;align-items:center;">
+        <button type="button" id="btnMicPaste" class="btn-sm btn-outline" style="padding:4px 10px;font-size:12px;font-weight:800;white-space:nowrap;border-radius:12px;background:#eff6ff;border-color:#2563eb;color:#1d4ed8;" onclick="toggleVoiceAI('pasteText', 'btnMicPaste')" title="마이크 음성 입력 🎙️">🎙️ 음성</button>
         <button type="button" class="btn-sm btn-outline" style="padding:4px 8px;font-size:11.5px;font-weight:700;white-space:nowrap;border-radius:12px;background:#f0fdf4;border-color:#16a34a;color:#15803d;" onclick="pasteQuickQuery('엑셀 동기화')">🔄 엑셀/시트 동기화</button>
         <button type="button" class="btn-sm btn-outline" style="padding:4px 8px;font-size:11.5px;font-weight:700;white-space:nowrap;border-radius:12px;" onclick="pasteQuickQuery('이번달 미납 호실과 미납액 알려줘')">⚡ 미납 호실</button>
         <button type="button" class="btn-sm btn-outline" style="padding:4px 8px;font-size:11.5px;font-weight:700;white-space:nowrap;border-radius:12px;" onclick="pasteQuickQuery('만기 65일 이내 임박 호실 목록 보여줘')">📅 만기 임박</button>
@@ -354,10 +355,12 @@
       </div>
 
       <div class="form-group" style="margin-bottom:6px;">
-        <textarea id="pasteText" rows="4" placeholder="질문을 입력하거나 스마트폰 자판의 마이크(🎙️), 또는 문자/데이터를 붙여넣으세요..." oninput="previewUniversalPaste()" onpaste="handleClipboardPaste(event)" onkeydown="handlePasteKeyDown(event)" style="font-size:13.5px;line-height:1.45;padding:10px;"></textarea>
+        <textarea id="pasteText" rows="4" placeholder="질문을 입력하거나 상단 [🎙️ 음성] 버튼/스마트폰 자판 마이크, 또는 데이터를 붙여넣으세요..." oninput="previewUniversalPaste()" onpaste="handleClipboardPaste(event)" onkeydown="handlePasteKeyDown(event)" style="font-size:13.5px;line-height:1.45;padding:10px;"></textarea>
       </div>
+      <!-- 실시간 음성 상태 안내 배너 -->
+      <div id="pasteVoiceStatus" style="display:none;padding:8px 10px;border-radius:4px;font-size:12px;margin-bottom:8px;line-height:1.45;"></div>
       <div style="font-size:11px;color:#64748b;margin-bottom:8px;display:flex;align-items:center;gap:4px;padding-left:2px;">
-        <span>💡 팁: 스마트폰 자판(키보드)의 <b>마이크 버튼(🎙️)</b>을 터치하시면 언제든 100% 음성 입력이 가능합니다.</span>
+        <span>💡 팁: [🎙️ 음성] 버튼을 누르시거나 스마트폰 자판의 <b>마이크(🎙️)</b>를 누르시면 음성이 텍스트로 자동 입력됩니다.</span>
       </div>
 
       <!-- 클립보드 사진 붙여넣기 미리보기 영역 -->

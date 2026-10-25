@@ -77,7 +77,8 @@ from apps.selfstudy2.backend.api import router as selfstudy2_router
 
 rent2_db_path = os.getenv("RENT2_DB") or os.path.join(RENT2_ROOT, "data", "rent2.db")
 rent2_use_store(rent2_db_path)
-rent2_bootstrap()
+rent2_seed = os.path.join(RENT2_ROOT, "backend", "seed_data.json")
+rent2_bootstrap(rent2_seed if os.path.exists(rent2_seed) else None)
 from apps.deployer.backend.routers.distro_router import router as deployer_router, get_one_click_install_script, download_package
 from shared.core.base_database import Base, get_database_service
 from apps.YTDownloader.backend.db import models as yt_models

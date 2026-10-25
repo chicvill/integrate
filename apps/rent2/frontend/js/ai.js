@@ -48,17 +48,29 @@ function toggleVoiceAI(targetId = "pasteText", btnId = "btnMicPaste") {
   const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   const isHttpInsecure = location.protocol !== "https:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1";
 
-  // 모바일이거나 비보안 HTTP 환경에서는 스마트폰 키보드 마이크를 최우선으로 유도
-  if (isMobile || isHttpInsecure || !SpeechRecognition) {
-    if (input) {
-      input.focus();
-    }
+  // 비보안 HTTP 환경에서는 HTTPS 도메인 연결 링크 안내
+  if (isHttpInsecure) {
+    const secureDomain = (location.hostname === "34.31.10.12" || location.hostname === "localhost") ? "34.31.10.12.nip.io" : location.hostname;
+    const httpsUrl = `https://${secureDomain}${location.pathname}${location.search}`;
+    if (input) input.focus();
     setPasteVoiceStatus(
-      `🎙️ <b>스마트폰 자판(키보드)의 마이크 버튼(🎙️)을 누르고 말씀하세요!</b><br>` +
-      `<small style="color:#475569;">브라우저 보안(HTTP) 정책 환경에서는 <b>자판(키보드) 스페이스바 옆의 🎙️ 마이크</b>를 터치하시면 100% 즉시 텍스트로 입력됩니다.</small>`,
+      `🔒 <b>브라우저 마이크는 HTTPS 보안 연결이 필요합니다.</b><br>` +
+      `<a href="${httpsUrl}" style="display:inline-block;margin-top:4px;padding:4px 10px;background:#2563eb;color:#fff;border-radius:4px;text-decoration:none;font-weight:700;">👉 🔒 HTTPS 보안 연결로 이동 (마이크 100% 활성화)</a><br>` +
+      `<small style="color:#64748b;margin-top:3px;display:inline-block;">* 현재 페이지에서는 자판(키보드) 스페이스바 옆의 🎙️ 마이크를 누르셔도 바로 음성 입력됩니다.</small>`,
       "warning"
     );
     if (!SpeechRecognition) return;
+  }
+
+  // 브라우저 자체가 SpeechRecognition을 미지원하는 경우 키보드 마이크 안내
+  if (!SpeechRecognition) {
+    if (input) input.focus();
+    setPasteVoiceStatus(
+      `🎙️ <b>스마트폰 자판(키보드)의 마이크 버튼(🎙️)을 누르고 말씀하세요!</b><br>` +
+      `<small style="color:#475569;">현재 브라우저는 웹 음성 API를 지원하지 않으나, <b>자판(키보드) 스페이스바 옆의 🎙️ 마이크</b>를 누르시면 100% 즉시 텍스트로 입력됩니다.</small>`,
+      "warning"
+    );
+    return;
   }
 
   if (isVoiceListening) {

@@ -7,7 +7,7 @@ from ..kernel import agent, identity
 from ..kernel.base import store
 from ..kernel.identity import seed_users
 from . import ai_tools  # noqa: F401  (도구 등록)
-from .rent import ROOM_NUMBERS, Building
+from .rent import ROOM_NUMBERS, Building, Contract
 
 # 건물 별칭은 코드가 아니라 '데이터'(Building.aliases)다. 신규 건물 생성 시 알려진 별칭을 붙인다.
 ALIASES = {
@@ -26,19 +26,39 @@ _ready_store: Optional[Any] = None      # 이 저장소 인스턴스로 이미 �
 
 
 def bootstrap(seed_json: Optional[str] = None) -> None:
-    """기동 1회: 별칭 해석기 연결 → 기본 계정 → (건물이 하나도 없을 때만) 기본 건물 시드"""
+    """기동 1회: 별칭 해석기 연결 → 기본 계정 → 기본 건물 시드 및 세입자 복원 (자가치유)"""
     global _ready_store
     s = store()
     identity.scope_resolver = Building.canon
     if _ready_store is s:
         return
     seed_users(DEFAULT_USERS)
-    if not Building.all():
+
+    target_seed = seed_json
+    if not target_seed or not os.path.exists(target_seed):
+        def_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "seed_data.json")
+        if os.path.exists(def_path):
+            target_seed = def_path
+
+    # 건물이 없으면 기본 생성
+    buildings = Building.all()
+    if not buildings:
         b = Building(id="main", name="시크빌 1호점 (본점, 29개실)", units=ROOM_NUMBERS, aliases=ALIASES["main"],
                      contact_phone="010-2345-6789", address="서울특별시 강남구 테헤란로 123").save("seeded")
-        if seed_json and os.path.exists(seed_json):
-            with open(seed_json, encoding="utf-8") as f:
-                b.restore({"rooms": json.load(f)["rooms"]})
+    else:
+        b = buildings[0]
+
+    # 세입자(계약) 정보가 0건인 경우 시드 데이터로부터 29개실 자동 복원
+    if not Contract.all() and target_seed and os.path.exists(target_seed):
+        try:
+            with open(target_seed, encoding="utf-8") as f:
+                seed_data = json.load(f)
+                rooms_data = seed_data.get("rooms", {})
+                if rooms_data:
+                    b.restore({"rooms": rooms_data})
+        except Exception as _seed_err:
+            print(f"[bootstrap] 시드 세입자 데이터 복원 경고: {_seed_err}")
+
     _ready_store = s
 
 

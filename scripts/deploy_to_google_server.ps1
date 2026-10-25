@@ -8,7 +8,7 @@ $TarFile = "$ProjectRoot\gcp_update.tar.gz"
 if (Test-Path $TarFile) {
     Remove-Item $TarFile -Force
 }
-tar -czf $TarFile -C $ProjectRoot apps/rent apps/rent2 apps/studycafe2 apps/selfstudy2 shared templates/saas-template gateway
+tar -czf $TarFile --exclude="*.db" --exclude="*.pyc" --exclude="__pycache__" -C $ProjectRoot apps/rent apps/rent2 apps/studycafe2 apps/selfstudy2 shared templates/saas-template gateway
 
 Write-Host "☁️ 2. 구글 클라우드 서버(integrated: us-central1-a)로 패치 전송 중..." -ForegroundColor Cyan
 gcloud compute scp $TarFile "integrated:gcp_update.tar.gz" --zone=us-central1-a
@@ -25,6 +25,9 @@ echo "🎯 대상 게이트웨이 컨테이너: $CID"
 rm -rf /tmp/gcp_patch
 mkdir -p /tmp/gcp_patch
 tar -xzf gcp_update.tar.gz -C /tmp/gcp_patch
+
+# 운영 DB 보호: 패치 디렉터리에 혹시 남아있는 .db 파일 강제 제거
+find /tmp/gcp_patch -name "*.db" -type f -delete 2>/dev/null || true
 
 # 컨테이너 내부 데이터 디렉터리 보장
 sudo docker exec $CID mkdir -p /app/apps/rent/data /app/apps/rent2/data /app/apps/studycafe2/data /app/apps/selfstudy2/data
