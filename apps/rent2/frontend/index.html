@@ -17,7 +17,6 @@
       </select>
       <span id="userBadge" style="font-size:11px;font-weight:800;border:1px solid #000;padding:3px 5px;background:#f5f5f5;">-</span>
       <button id="btnAuthAction" class="btn-sm btn-outline" style="padding:3px 6px;font-size:11px;" onclick="handleAuthButtonClick()">로그인</button>
-      <button type="button" id="btnHeaderAI" class="btn-sm" style="font-size:11px;font-weight:800;border:1.5px solid #2563eb;background:#eff6ff;color:#1d4ed8;padding:3px 8px;border-radius:4px;cursor:pointer;" onclick="openAIPasteModal()">🤖 AI 비서</button>
       <a href="manual.html" target="_blank" style="font-size:11px;font-weight:700;border:1px solid #000;padding:3px 5px;text-decoration:none;">📖 매뉴얼</a>
     </div>
   </header>
@@ -338,25 +337,28 @@
         </div>
       </div>
 
-      <!-- 동그라미 ? 클릭 시 토글되는 미니 사용법 안내 (기본 숨김으로 화면 단순화) -->
-      <div id="pasteHelpBox" style="display:none;font-size:12px;color:#334155;margin-bottom:10px;line-height:1.45;background:#f1f5f9;padding:9px 12px;border-radius:6px;border:1px solid #cbd5e1;">
-        💡 <strong>자유롭게 입력하거나 붙여넣으세요!</strong><br>
-        • <b>음성 / 텍스트 질문</b>: "미납 호실은?", "302호 월세 수납"<br>
-        • <b>붙여넣기</b>: 은행 입금문자 · 구글시트 URL · 영수증 사진(Ctrl+V) 자동 감지
+      <!-- 동그라미 ? 클릭 시 토글되는 도움말 팝업 박스 (화면 단순화) -->
+      <div id="pasteHelpBox" style="display:none;font-size:12px;color:#334155;margin-bottom:10px;line-height:1.55;background:#f8fafc;padding:12px 14px;border-radius:6px;border:1.5px solid #cbd5e1;">
+        <div style="font-weight:800;color:#0f172a;margin-bottom:6px;font-size:12.5px;">💡 AI 비서 입력 안내 (선호하는 방식으로 사용)</div>
+        • <b>음성 마이크</b>: 상단 [🎙️ 음성] 버튼을 누르고 말씀하시면 내용이 텍스트로 자동 입력됩니다.<br>
+        • <b>직접 타이핑 질문</b>: "이번달 미납 호실은?", "302호 월세 수납 완료" 등 작업 지시<br>
+        • <b>은행 입금문자</b>: 복사한 입금 문자(호실·금액 자동 인식)를 붙여넣기<br>
+        • <b>사진 첨부 (Ctrl+V)</b>: 계약서나 영수증 캡처 사진 붙여넣기<br>
+        • <b>구글 시트 연동</b>: 구글 스프레드시트 링크 입력 또는 
+          <button type="button" class="btn-sm btn-outline" style="font-size:11px;font-weight:800;background:#f0fdf4;border-color:#16a34a;color:#15803d;padding:2px 7px;margin-left:4px;" onclick="closeModal('modalPaste');openGoogleSheetSyncModal();">구글 시트 동기화 창 열기 🔄</button>
       </div>
 
-      <!-- 퀵 질문 프롬프트 칩 (원클릭 입력) -->
+      <!-- 퀵 질문 프롬프트 칩 (원클릭 입력 후 텍스트 수정 가능) -->
       <div style="display:flex;gap:4px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;-webkit-overflow-scrolling:touch;">
-        <button type="button" class="btn-sm btn-outline" style="padding:3px 7px;font-size:11px;font-weight:700;white-space:nowrap;border-radius:12px;" onclick="pasteQuickQuery('이번달 미납 호실과 미납액 알려줘')">⚡ 미납 호실</button>
-        <button type="button" class="btn-sm btn-outline" style="padding:3px 7px;font-size:11px;font-weight:700;white-space:nowrap;border-radius:12px;" onclick="pasteQuickQuery('만기 65일 이내 임박 호실 목록 보여줘')">📅 만기 임박</button>
-        <button type="button" class="btn-sm btn-outline" style="padding:3px 7px;font-size:11px;font-weight:700;white-space:nowrap;border-radius:12px;" onclick="pasteQuickQuery('이번달 수납 현황과 총 수납액 요약해줘')">💰 수납 현황</button>
-        <button type="button" class="btn-sm btn-outline" style="padding:3px 7px;font-size:11px;font-weight:700;white-space:nowrap;border-radius:12px;" onclick="pasteQuickQuery('현재 비어있는 공실 알려줘')">🏢 공실 확인</button>
-        <button type="button" class="btn-sm btn-outline" style="padding:3px 7px;font-size:11px;font-weight:700;white-space:nowrap;border-radius:12px;" onclick="clearPasteArea()">비우기 🧹</button>
+        <button type="button" class="btn-sm btn-outline" style="padding:4px 8px;font-size:11.5px;font-weight:700;white-space:nowrap;border-radius:12px;" onclick="pasteQuickQuery('이번달 미납 호실과 미납액 알려줘')">⚡ 미납 호실</button>
+        <button type="button" class="btn-sm btn-outline" style="padding:4px 8px;font-size:11.5px;font-weight:700;white-space:nowrap;border-radius:12px;" onclick="pasteQuickQuery('만기 65일 이내 임박 호실 목록 보여줘')">📅 만기 임박</button>
+        <button type="button" class="btn-sm btn-outline" style="padding:4px 8px;font-size:11.5px;font-weight:700;white-space:nowrap;border-radius:12px;" onclick="pasteQuickQuery('이번달 수납 현황과 총 수납액 요약해줘')">💰 수납 현황</button>
+        <button type="button" class="btn-sm btn-outline" style="padding:4px 8px;font-size:11.5px;font-weight:700;white-space:nowrap;border-radius:12px;" onclick="pasteQuickQuery('현재 비어있는 공실 알려줘')">🏢 공실 확인</button>
+        <button type="button" class="btn-sm btn-outline" style="padding:4px 8px;font-size:11.5px;font-weight:700;white-space:nowrap;border-radius:12px;" onclick="clearPasteArea()">비우기 🧹</button>
       </div>
 
       <div class="form-group" style="margin-bottom:8px;">
-        <label style="font-weight:700;font-size:12px;">질문 입력 또는 복사한 내용 붙여넣기 (직접 입력 / 음성 / Ctrl+V):</label>
-        <textarea id="pasteText" rows="4" placeholder="• 마이크로 말하거나 직접 타이핑: '이번달 미납 호실 알려줘', '302호 월세 50만원 수납 완료'&#10;• 입금 문자: [KB] 05/10 201호 홍길동 500,000원 입금&#10;• 구글시트 URL: https://docs.google.com/spreadsheets/d/...&#10;• 사진: 캡처 후 커서를 두고 Ctrl+V" oninput="previewUniversalPaste()" onpaste="handleClipboardPaste(event)" onkeydown="handlePasteKeyDown(event)"></textarea>
+        <textarea id="pasteText" rows="4" placeholder="질문을 입력하거나 마이크 음성, 또는 문자/데이터를 붙여넣으세요..." oninput="previewUniversalPaste()" onpaste="handleClipboardPaste(event)" onkeydown="handlePasteKeyDown(event)" style="font-size:13.5px;line-height:1.45;padding:10px;"></textarea>
       </div>
 
       <!-- 클립보드 사진 붙여넣기 미리보기 영역 -->
@@ -388,22 +390,16 @@
       </div>
 
       <!-- AI 답변 및 처리 결과 출력 카드 -->
-      <div id="pasteAiResultBox" style="display:none;border:1.5px solid #2563eb;padding:10px 12px;margin-bottom:10px;font-size:13px;background:#eff6ff;border-radius:6px;line-height:1.5;color:#0f172a;max-height:200px;overflow-y:auto;white-space:pre-wrap;">
+      <div id="pasteAiResultBox" style="display:none;border:1.5px solid #2563eb;padding:10px 12px;margin-bottom:10px;font-size:13px;background:#eff6ff;border-radius:6px;line-height:1.5;color:#0f172a;max-height:220px;overflow-y:auto;white-space:pre-wrap;">
         <div style="font-weight:800;color:#1d4ed8;margin-bottom:4px;display:flex;align-items:center;gap:4px;">
           <span>🤖 AI 비서 답변:</span>
         </div>
         <div id="pasteAiResultContent"></div>
       </div>
 
-      <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <div style="display:flex;gap:8px;">
         <button id="btnUniversalSubmit" class="btn-primary" style="flex:1;padding:11px;font-size:13.5px;font-weight:800;" onclick="submitUniversalIngest()">스마트 실행</button>
         <button type="button" class="btn-outline" onclick="closeModal('modalPaste')">닫기</button>
-      </div>
-
-      <!-- 구글 시트 장부 바로가기 안내 -->
-      <div style="padding-top:10px;border-top:1px dashed #cbd5e1;display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:8px 10px;border-radius:4px;border:1px solid #e2e8f0;">
-        <div style="font-size:12px;font-weight:700;color:#0f172a;">📊 구글 시트 장부 2025/2026 실시간 동기화</div>
-        <button type="button" class="btn-sm btn-outline" style="font-size:11.5px;font-weight:800;background:#f0fdf4;border-color:#16a34a;color:#15803d;padding:5px 9px;" onclick="closeModal('modalPaste');openGoogleSheetSyncModal();">동기화 창 열기 🔄</button>
       </div>
     </div>
   </div>

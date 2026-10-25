@@ -228,9 +228,15 @@ function pasteQuickQuery(queryText) {
   const pt = document.getElementById("pasteText");
   if (pt) {
     pt.value = queryText;
+    // input 이벤트 강제 발화로 실시간 동기화
+    pt.dispatchEvent(new Event("input", { bubbles: true }));
     previewUniversalPaste();
     pt.focus();
+    // 커서를 텍스트 맨 뒤로 이동시켜 즉시 추가/수정 가능하게 대기
+    pt.setSelectionRange(pt.value.length, pt.value.length);
   }
+  const resBox = document.getElementById("pasteAiResultBox");
+  if (resBox) resBox.style.display = "none";
 }
 
 function clearPasteArea() {

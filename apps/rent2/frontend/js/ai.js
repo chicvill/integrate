@@ -40,24 +40,31 @@ function toggleVoiceAI(targetId = "aiInput", btnId = "btnMicAI") {
         btn.title = "음성 입력 중지하려면 클릭";
       }
       if (input) {
-        input.placeholder = "음성을 듣고 있습니다... 말씀해 주세요 🎙️";
+        input.placeholder = "음성을 듣고 있습니다... 편하게 말씀해 주세요 🎙️";
+        input.focus();
       }
+      setAlert("🎙️ 음성 인식이 시작되었습니다. 말씀해 주세요...", "info");
     };
 
     aiSpeechRecognition.onresult = function(event) {
-      let text = "";
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        text += event.results[i][0].transcript;
+      let fullTranscript = "";
+      for (let i = 0; i < event.results.length; ++i) {
+        fullTranscript += event.results[i][0].transcript;
       }
-      if (input && text) {
-        input.value = text;
+      if (input && fullTranscript) {
+        input.value = fullTranscript;
+        // input 이벤트 강제 발화로 실시간 렌더링 동기화
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        if (typeof previewUniversalPaste === "function") {
+          previewUniversalPaste();
+        }
       }
     };
 
     aiSpeechRecognition.onerror = function(event) {
       console.warn("음성인식 오류:", event.error);
       if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-        setAlert("마이크 권한이 차단되어 있습니다. 브라우저 주소창에서 마이크 권한을 허용해주세요.", "error");
+        setAlert("⚠️ 마이크 권한이 차단되어 있습니다. 브라우저 주소창 설정에서 마이크를 '허용'해 주세요.", "error");
       } else if (event.error !== "no-speech") {
         setAlert(`음성 인식 오류: ${event.error}`, "warning");
       }
@@ -67,12 +74,16 @@ function toggleVoiceAI(targetId = "aiInput", btnId = "btnMicAI") {
       isVoiceListening = false;
       if (btn) {
         btn.classList.remove("mic-active");
-        btn.innerHTML = "🎙️";
+        btn.innerHTML = "🎙️ 음성";
         btn.title = "음성으로 질문하기";
       }
       if (input) {
         input.placeholder = origPlaceholder;
         input.focus();
+        // 인식된 텍스트가 있으면 미리보기 한 번 더 갱신
+        if (input.value && typeof previewUniversalPaste === "function") {
+          previewUniversalPaste();
+        }
       }
     };
 
