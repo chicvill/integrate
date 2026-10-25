@@ -810,7 +810,49 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
                 "data": res
             }
 
-    # D. 은행 입금 문자 / 카카오톡 알림
+    # D. 임대차 계약 대장 / 세입자 명부 텍스트 (보증금, 월세, 전입일 등 포함)
+    roster_items = parser.parse_contract_roster(text)
+    if roster_items and any(item.get("tenant_name") or item.get("deposit") or item.get("rent") for item in roster_items):
+        b = _b(bid, user)
+        # 만약 기존 건물이 신규 개설 직후이거나 전체 공실인 경우, 붙여넣은 실제 호실 번호 목록으로 깔끔하게 교체
+        has_active_contracts = any(u.active() and u.active().tenant_name for u in b.view())
+        new_roster_units = sorted(set(item["room_number"] for item in roster_items))
+        if not has_active_contracts:
+            b.units = new_roster_units
+            b.save("units_realigned_from_roster")
+
+        applied = []
+        for item in roster_items:
+            rn = item["room_number"]
+            # 건물의 units에 호실이 없으면 자동 등록 (호실 번호 확장)
+            if rn not in b.units:
+                b.add_unit(rn)
+            u = b.unit(rn)
+            form_dict = {
+                "name": item["tenant_name"],
+                "tenant_name": item["tenant_name"],
+                "phone": item.get("phone", ""),
+                "move_in": item.get("move_in", ""),
+                "deposit": item.get("deposit", 0),
+                "rent": item.get("rent", 0),
+                "maintenance": item.get("maintenance", 0),
+                "pay_timing": item.get("pay_timing", "후불"),
+                "clean_fee": item.get("clean_fee", 80000),
+                "memo": item.get("memo", {})
+            }
+            u.update(form_dict)
+            applied.append(rn)
+        
+        Building.invalidate_cache()
+        return {
+            "success": True,
+            "kind": "contract_roster",
+            "applied_count": len(applied),
+            "message": f"총 {len(applied)}개 호실의 임대차 계약 정보가 성공적으로 일괄 등록되었습니다!",
+            "rooms": applied
+        }
+
+    # E. 은행 입금 문자 / 카카오톡 알림
     res = smart_paste_payment({"text": text, "branch_id": bid, "auto_apply": True}, user)
     res["kind"] = "bank_payment"
     return res

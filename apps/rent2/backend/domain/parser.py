@@ -153,3 +153,93 @@ def parse_batch_bank_messages(text: str, default_building: str = "main") -> List
         if r["success"]:
             results.append(r)
     return results
+
+
+def parse_contract_roster(text: str) -> List[Dict[str, Any]]:
+    """
+    임대차 계약 명부/장부 텍스트(한 줄 또는 여러 줄)를 파싱하여 호실 계약서 입력용 딕셔너리 목록으로 변환.
+    예: 101호 고종훈 2026-05-24 보증금 200만 월세 25만 관리비 8만 후불 010-4281-6453 납부일 24일 키 1907
+    """
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    results = []
+
+    for line in lines:
+        # 1. 호실 번호 탐색 (필수)
+        room_match = _ROOM_RE.search(line)
+        if not room_match:
+            continue
+        room_num = int(room_match.group(1))
+
+        # 2. 전입일자 탐색
+        move_in = ""
+        date_m = re.search(r"\b(20\d{2}[-./년]\s*\d{1,2}[-./월]\s*\d{1,2}[일]?)\b", line)
+        if date_m:
+            d_obj = pdate(date_m.group(1))
+            if d_obj:
+                move_in = d_obj.isoformat()
+
+        # 3. 전화번호 탐색
+        phone = ""
+        phone_m = re.search(r"\b(01[016789]-?\d{3,4}-?\d{4})\b", line)
+        if phone_m:
+            phone = phone_m.group(1)
+
+        # 4. 금액들 탐색 (보증금, 월세, 관리비)
+        deposit = 0
+        rent = 0
+        maintenance = 0
+
+        # 보증금
+        dep_m = re.search(r"(?:보증금|보증|보)\s*[:=]?\s*(\d+(?:\.\d+)?\s*만?원?|\d{1,3}(?:,\d{3})+원?)", line)
+        if dep_m:
+            deposit = num(dep_m.group(1))
+
+        # 월세
+        rent_m = re.search(r"(?:월세|임대료|월)\s*[:=]?\s*(\d+(?:\.\d+)?\s*만?원?|\d{1,3}(?:,\d{3})+원?)", line)
+        if rent_m:
+            rent = num(rent_m.group(1))
+
+        # 관리비
+        maint_m = re.search(r"(?:관리비|관)\s*[:=]?\s*(\d+(?:\.\d+)?\s*만?원?|\d{1,3}(?:,\d{3})+원?)", line)
+        if maint_m:
+            maintenance = num(maint_m.group(1))
+
+        # 5. 세입자 이름 탐색 (호실 바로 뒤 또는 줄 첫머리의 2~4글자 한글)
+        tenant_name = ""
+        # 호실 뒤의 첫 번째 한글 단어
+        after_room = line[room_match.end():]
+        name_tokens = after_room.split()
+        for tok in name_tokens:
+            tok_clean = re.sub(r"[^\w가-힣]", "", tok)
+            if re.match(r"^[가-힣]{2,4}$", tok_clean) and tok_clean not in (
+                "보증금", "월세", "관리비", "후불", "선불", "납부일", "입금", "퇴실", "공실", "계약", "키", "미수"
+            ):
+                tenant_name = tok_clean
+                break
+
+        # 6. 지불 타이밍
+        pay_timing = "선불" if "선불" in line else "후불"
+
+        # 7. 메모 (특이사항, 키 번호 등)
+        notes = []
+        for kw in ("납부일", "키", "미수", "동생", "부친", "모친", "자녀", "친구"):
+            m = re.search(rf"({kw}\s*[:=]?\s*[^\s,]+(?:\s+[^\s,]+)?)", line)
+            if m:
+                notes.append(m.group(1))
+        memo_str = " / ".join(notes) if notes else ""
+
+        results.append({
+            "room_number": room_num,
+            "tenant_name": tenant_name,
+            "move_in": move_in,
+            "deposit": deposit,
+            "rent": rent,
+            "maintenance": maintenance,
+            "pay_timing": pay_timing,
+            "phone": phone,
+            "clean_fee": 80000,
+            "memo": {"note": memo_str} if memo_str else {}
+        })
+
+    return results
+

@@ -287,7 +287,11 @@ async function submitUniversalIngest() {
   }
 
   // 1. AI 질문 / 지시문인 경우 -> /api/rent2/ai/chat 직결 처리
-  const isQuestionOrInstruction = (
+  // 단, 여러 줄의 호실 데이터(2개 이상의 호실 번호 포함)인 경우 무조건 만능 인제스트(일괄 계약 등록)로 직행
+  const linesWithRooms = text.split("\n").filter(l => l.match(/\b\d{3,4}\s*호?/));
+  const isMultiRoomData = linesWithRooms.length >= 2;
+
+  const isQuestionOrInstruction = !isMultiRoomData && (
     !img && !text.includes("docs.google.com/spreadsheets") &&
     (text.includes("?") || text.includes("알려줘") || text.includes("조회") || text.includes("요약") ||
      text.includes("목록") || text.includes("누구") || text.includes("확인해") || text.includes("얼마") ||
