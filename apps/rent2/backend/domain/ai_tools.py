@@ -220,6 +220,52 @@ def new_contract(building: str, unit: int, tenant_name: str, deposit: int, rent:
 
 
 @tool(write=True)
+def import_contract_roster(building: str, text: str) -> Dict[str, Any]:
+    """임대차 계약 명부/장부 텍스트 일괄 등록: 여러 줄의 호실 세입자 계약 정보를 한 번에 DB에 등록하고 건물의 호실 번호 목록을 자동 정렬한다."""
+    from . import parser
+    b = Building.require(building)
+    items = parser.parse_contract_roster(text)
+    if not items:
+        raise ValueError("텍스트에서 호실별 임대차 계약 정보를 파싱하지 못했습니다.")
+
+    # 전체 공실이거나 신규 개설 상태인 경우, 실제 입력된 호실 번호로 교체
+    has_active = any(u.active() and u.active().tenant_name for u in b.view())
+    new_units = sorted(set(it["room_number"] for it in items))
+    if not has_active:
+        b.units = new_units
+        b.save("units_realigned_from_roster")
+
+    applied = []
+    for it in items:
+        rn = it["room_number"]
+        if rn not in b.units:
+            b.add_unit(rn)
+        u = b.unit(rn)
+        form_dict = {
+            "name": it["tenant_name"],
+            "tenant_name": it["tenant_name"],
+            "phone": it.get("phone", ""),
+            "move_in": it.get("move_in", ""),
+            "deposit": it.get("deposit", 0),
+            "rent": it.get("rent", 0),
+            "maintenance": it.get("maintenance", 0),
+            "pay_timing": it.get("pay_timing", "후불"),
+            "clean_fee": it.get("clean_fee", 80000),
+            "memo": it.get("memo", {})
+        }
+        u.update(form_dict)
+        applied.append(rn)
+
+    Building.invalidate_cache()
+    return {
+        "success": True,
+        "count": len(applied),
+        "building": b.name,
+        "message": f"🎉 {b.name} 매장에 총 {len(applied)}개 호실의 세입자 계약 정보가 성공적으로 일괄 등록되었습니다!"
+    }
+
+
+@tool(write=True)
 def sync_sheet(building: str = "main", url: str = "") -> Dict[str, Any]:
     """구글 시트/엑셀 장부 실시간 동기화: 2025년 및 2026년 계약 및 월별 수납 내역을 DB에 원자적으로 반영한다."""
     from . import sheet_sync
@@ -302,7 +348,12 @@ def _vat(m: re.Match, ctx: dict) -> List[Tuple[str, dict]]:
     return [("vat_summary", _args(m.string, ctx, start_month=s, end_month=e))]
 
 
+def _batch_roster_rule(m: re.Match, ctx: dict) -> List[Tuple[str, dict]]:
+    return [("import_contract_roster", _args(m.string, ctx, text=m.string))]
+
+
 agent.OFFLINE_RULES[:] = [(re.compile(p, re.I), fn) for p, fn in [
+    (r"일괄|등록.*(?:호실|세입자|계약)|(?:호실|세입자|계약).*일괄|(?:\d{3,4}\s*호?.*){2,}", _batch_roster_rule),
     (r"동기화|엑셀.*(반영|동기화)|시트.*(반영|동기화)|구글\s*시트|장부.*(동기화|반영|가져와)", _plan("sync_sheet")),
     (r"수정|변경|바꿔|연장|\b(?:만기|입주).*(?:\d{4}[-./년\s]\d{1,2}|\d{8})", _modify_contract_rule),
     (r"납부\s*취소|수납\s*취소|입금\s*취소", _plan("cancel_payment")),
