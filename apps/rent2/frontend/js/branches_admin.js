@@ -212,6 +212,7 @@ async function handleCreateBranchSubmit(e) {
     document.getElementById("nbAddress").value = "";
     await loadBranches();
     await loadAdminBranches();
+    switchBranchAndGo(bid);
   } catch (err) {
     setAlert(`매장 개설 실패: ${err.message}`, "error");
   }
