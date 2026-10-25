@@ -46,12 +46,25 @@ def get_unit(branch_id: Optional[str], n: int, user: Optional[User] = None) -> U
     return get_building(branch_id, user).unit(n)
 
 
+def get_room(branch_id: Optional[str], n: int, user: Optional[User] = None):
+    """O(1) 단건 핀셋 점조회 헬퍼"""
+    return get_building(branch_id, user).room(n)
+
+
 def serialize_branch(b: Building) -> Dict[str, Any]:
     d = b.model_dump()
     res = {**{k: d[k] for k in ("id", "name", "contact_phone", "address", "fee_plan", "monthly_fee", "billing_status",
                                  "billing_due_day", "last_paid_at", "is_active")}, "branch_id": b.id}
+    rids = b.room_ids or [f"{b.id}:{u}" for u in b.units]
     res["total_rooms"] = len(b.units)
     res["rooms_count"] = len(b.units)
+    res["room_ids"] = rids
+    if b.id == "main":
+        res["chicvill_room_ids"] = rids
+    elif b.id == "sunho":
+        res["sunho_room_ids"] = rids
+    elif b.id == "sinbi":
+        res["sinbi_room_ids"] = rids
     return res
 
 

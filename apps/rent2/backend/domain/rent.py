@@ -202,6 +202,87 @@ class Expense(Obj):
         return f"지출 {self.date} {self.item} {self.amount:,}원 {self.note}"
 
 
+# ───────────────────────────── Room (일급 독립 객체) ─────────────────────────────
+class Room(Obj):
+    """
+    호실(Room) 일급 독립 객체 (애그리게이트 루트).
+    - id: 고유 결정적 키 (예: 'main:101', 'sunho:201', 'sinbi:101')
+    - building_id: 소속 매장 ID
+    - room_number: 호실 번호 (int)
+    - contract: 현재 계약 상세 정보 (임차인, 보증금, 월세, 관리비 등)
+    - payments: 연도-월별 수납 상태 딕셔너리 (키: '2026-01')
+    - history: 전출자 및 과거 계약 이력
+    """
+    scope_field = "building_id"
+    building_id: str
+    room_number: int
+    contract: Dict[str, Any] = Field(default_factory=dict)
+    payments: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+    history: List[Dict[str, Any]] = Field(default_factory=list)
+    metadata_json: Dict[str, Any] = Field(default_factory=dict)
+
+    @classmethod
+    def rid(cls, bid: str, unit: int) -> str:
+        canon_bid = Building.canon(bid) if "Building" in globals() else str(bid or "main")
+        return f"{canon_bid}:{unit}"
+
+    @classmethod
+    def get_room(cls, bid: str, unit: int) -> Optional["Room"]:
+        """O(1) 단건 핀셋 점조회"""
+        return cls.get(cls.rid(bid, unit))
+
+    @classmethod
+    def get_or_create(cls, bid: str, unit: int) -> "Room":
+        target_id = cls.rid(bid, unit)
+        r = cls.get(target_id)
+        if not r:
+            canon_bid = Building.canon(bid) if "Building" in globals() else str(bid or "main")
+            r = cls(id=target_id, building_id=canon_bid, room_number=unit).save("room_created")
+        return r
+
+    def sync_from_domain(self, u: "Unit") -> "Room":
+        """Unit(도메인 뷰)의 최신 상태를 Room 객체로 즉시 직렬화 및 보존"""
+        act = u.active()
+        self.contract = act.model_dump() if act else {}
+        self.payments = {
+            f"{y}-{m:02d}": p.model_dump()
+            for (y, m), p in u.pays.items()
+        }
+        self.history = [h.history_row() for h in u.ended()]
+        return self.save("room_synced")
+
+    def pay_direct(self, month: int, year: Optional[int] = None, paid_date: Optional[str] = None,
+                   note: str = "정상 입금", tenant_name: Optional[str] = None,
+                   rent_amount: Optional[int] = None, maintenance_amount: Optional[int] = None) -> Dict[str, Any]:
+        """O(1) 단건 수납 즉각 처리"""
+        y = year or today().year
+        key = f"{y}-{month:02d}"
+        c = self.contract or {}
+        rent = rent_amount if rent_amount is not None else c.get("rent", 0)
+        maint = maintenance_amount if maintenance_amount is not None else c.get("maintenance", 0)
+        p_record = {
+            "id": f"pay_{self.building_id}_{self.room_number}_{y}_{month}",
+            "building_id": self.building_id,
+            "unit": self.room_number,
+            "year": y,
+            "month": month,
+            "paid": True,
+            "paid_date": paid_date or today().isoformat(),
+            "rent_amount": rent,
+            "maintenance_amount": maint,
+            "note": note or "정상 입금",
+            "tenant_name": tenant_name or c.get("tenant_name", "")
+        }
+        self.payments[key] = p_record
+        self.save("room_paid", period=key, amount=rent + maint)
+        return p_record
+
+    def summary(self) -> str:
+        c = self.contract or {}
+        tenant = c.get("tenant_name") or "(공실)"
+        return f"[{self.building_id}] {self.room_number}호 {tenant} (월세: {c.get('rent', 0):,}원)"
+
+
 # ───────────────────────────── 호실 (뷰) ─────────────────────────────
 FORM = {"name": "tenant_name", "id_number": "id_number", "phone": "phone", "lease_type": "lease_type",
         "pay_timing": "pay_timing", "vat_target": "vat_target", "vat_separate": "vat_separate", "vat_included": "vat_included",
@@ -394,6 +475,9 @@ class Unit:
                     rent_amount=base["rent_amount"] if rent_amount is None else rent_amount,
                     maintenance_amount=base["maintenance_amount"] if maintenance_amount is None else maintenance_amount)
         self.pays[(y, month)] = p.save("paid", unit=self.number, period=f"{y}-{month:02d}", amount=(p.rent_amount or 0) + (p.maintenance_amount or 0))
+        r = Room.get_room(self.b.id, self.number)
+        if r:
+            r.sync_from_domain(self)
         return p
 
     # ── [비즈니스 규칙 2] 입금 적용: 미납월 중 가장 오래된 월부터 우선 적용 (FIFO) ──
@@ -431,6 +515,9 @@ class Unit:
                     year=y, month=month, paid=False, note=note, tenant_name="공실" if vacant else "",
                     rent_amount=0 if vacant else None, maintenance_amount=0 if vacant else None)
         self.pays[(y, month)] = p.save("cancelled", unit=self.number, period=f"{y}-{month:02d}", note=note)
+        r = Room.get_room(self.b.id, self.number)
+        if r:
+            r.sync_from_domain(self)
         return p
 
     # ── [비즈니스 규칙 3] 취소 적용: 완납월 중 가장 최근월에 우선 적용 (LIFO) ──
@@ -492,6 +579,10 @@ class Unit:
         self.b.add_unit(self.number)
         c.save("moved_out" if leaving else ("moved_in" if fresh else "updated"), unit=self.number, tenant=c.tenant_name)
         self.contracts = sorted({x.id: x for x in [*self.contracts, c]}.values(), key=lambda x: (pdate(x.move_in) or date.min, pdate(x.move_out) or date.max))
+        r = Room.get_room(self.b.id, self.number)
+        if not r:
+            r = Room.get_or_create(self.b.id, self.number)
+        r.sync_from_domain(self)
         return c
 
     def room(self, year: Optional[int] = None) -> Dict[str, Any]:
@@ -540,12 +631,28 @@ class Building(Obj):
     last_paid_at: Optional[str] = None
     is_active: bool = True
     units: List[int] = Field(default_factory=list)
+    room_ids: List[str] = Field(default_factory=list)      # 매장별 호실 ID 리스트 (독립 캡슐화)
     aliases: List[str] = Field(default_factory=list)       # 별칭(chicvill01, 시크빌 …) → 단일 진입점 resolve()
     vat_target_rooms: Optional[List[int]] = None
 
     DEFAULT_UNITS: ClassVar[List[int]] = []
     CANON_ALIASES: ClassVar[List[str]] = []
     BUILDING_TYPE: ClassVar[str] = "base"
+
+    @property
+    def chicvill_room_ids(self) -> List[str]:
+        """시크빌 전용 호실 ID 목록 (서버/DB 분리용)"""
+        return [f"main:{u}" for u in self.units] if self.id == "main" else []
+
+    @property
+    def sunho_room_ids(self) -> List[str]:
+        """선호아트빌 전용 호실 ID 목록 (서버/DB 분리용)"""
+        return [f"sunho:{u}" for u in self.units] if self.id == "sunho" else []
+
+    @property
+    def sinbi_room_ids(self) -> List[str]:
+        """신비주택 전용 호실 ID 목록 (서버/DB 분리용)"""
+        return [f"sinbi:{u}" for u in self.units] if self.id == "sinbi" else []
 
     _cache: ClassVar[Dict[str, "Building"]] = {}
     _cache_time: ClassVar[float] = 0.0
@@ -655,12 +762,43 @@ class Building(Obj):
         Building.invalidate_cache()
 
     def add_unit(self, n: int) -> None:
+        rid = Room.rid(self.id, n)
+        changed = False
         if n not in self.units:
             self.units = sorted([*self.units, n])
+            changed = True
+        if rid not in self.room_ids:
+            self.room_ids = sorted([*self.room_ids, rid])
+            changed = True
+        if changed:
             self.save("unit_added", unit=n)
 
     def unit(self, n: int) -> Unit:
         return Unit(self, n)
+
+    def room(self, n: int) -> Room:
+        """O(1) 단건 핀셋 점조회: 해당 호실의 Room 객체를 직접 읽어들임 (초고속 성능)"""
+        r = Room.get_room(self.id, n)
+        if not r:
+            u = self.unit(n)
+            r = Room.get_or_create(self.id, n)
+            r.sync_from_domain(u)
+        return r
+
+    def sync_all_rooms(self) -> List[Room]:
+        """매장 산하의 모든 호실을 Room 객체로 즉시 동기화하고 room_ids를 갱신"""
+        us = self.view()
+        out = []
+        new_rids = []
+        for u in us:
+            rid = Room.rid(self.id, u.number)
+            new_rids.append(rid)
+            r = Room.get_or_create(self.id, u.number)
+            r.sync_from_domain(u)
+            out.append(r)
+        self.room_ids = sorted(new_rids)
+        self.save("rooms_synced")
+        return out
 
     def view(self) -> List[Unit]:
         cs: Dict[int, List[Contract]] = {}
