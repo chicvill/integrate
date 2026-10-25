@@ -563,25 +563,29 @@ class Building(Obj):
         return list(cls._cache.values())
 
     @classmethod
-    def resolve(cls, ref: Optional[str]) -> Optional["Building"]:
-        ref = (ref or "main").strip()
+    def resolve(cls, ref: Optional[str], default_to_first: bool = False) -> Optional["Building"]:
+        ref = (ref or "").strip()
         all_b = cls.cached_all()
+        if not ref:
+            return all_b[0] if (default_to_first and all_b) else None
         if ref in cls._cache:
             return cls._cache[ref]
         low = ref.lower()
         matched = next((b for b in all_b if low in (b.id.lower(), b.name.lower()) or low in {a.lower() for a in b.aliases}), None)
-        return matched or (all_b[0] if all_b else None)
+        if matched:
+            return matched
+        return all_b[0] if (default_to_first and all_b) else None
 
     @classmethod
     def canon(cls, ref: Optional[str]) -> str:
-        b = cls.resolve(ref)
+        b = cls.resolve(ref, default_to_first=True)
         return b.id if b else (ref or "main")
 
     @classmethod
     def require(cls, ref: Optional[str]) -> "Building":
-        b = cls.resolve(ref)
+        b = cls.resolve(ref, default_to_first=False)
         if not b:
-            raise LookupError("해당 건물을 찾을 수 없습니다.")
+            raise LookupError(f"해당 건물을 찾을 수 없습니다: {ref}")
         return b
 
     def save(self, action: str = "saved", **kwargs: Any) -> "Building":

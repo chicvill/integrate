@@ -373,43 +373,47 @@
   <div class="modal-overlay" id="modalRoom">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 id="modalRoomTitle">호실 상세 정보</h3>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <h3 id="modalRoomTitle" style="margin:0;">호실 상세 정보</h3>
+          <span id="rfAutoSaveBadge" style="display:none;font-size:11px;font-weight:800;color:#16a34a;background:#f0fdf4;border:1px solid #16a34a;padding:2px 7px;border-radius:4px;">⚡ 실시간 자동 저장됨 ✅</span>
+        </div>
         <button class="close-btn" onclick="closeModal('modalRoom')">×</button>
       </div>
-      <form id="roomForm" onsubmit="saveRoomForm(event)">
+      <div style="font-size:11.5px;color:#64748b;margin-bottom:8px;">💡 모든 변경사항은 입력 즉시 DB에 <b>실시간 자동 저장</b>됩니다. 별도로 저장 버튼을 누르지 않으셔도 안전합니다.</div>
+      <form id="roomForm" onsubmit="saveRoomForm(event)" onchange="triggerAutoSaveRoom()">
         <input type="hidden" id="rfRoomNumber">
         <div class="form-group">
           <label>세입자명 (공란 저장 시 퇴실/공실 처리):</label>
-          <input type="text" id="rfName">
+          <input type="text" id="rfName" onblur="triggerAutoSaveRoom()">
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
           <div class="form-group">
             <label>연락처:</label>
-            <input type="text" id="rfPhone">
+            <input type="text" id="rfPhone" onblur="triggerAutoSaveRoom()">
           </div>
           <div class="form-group">
             <label>주민번호:</label>
-            <input type="text" id="rfIdNumber">
+            <input type="text" id="rfIdNumber" onblur="triggerAutoSaveRoom()">
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
           <div class="form-group">
             <label>보증금(원):</label>
-            <input type="number" id="rfDeposit">
+            <input type="number" id="rfDeposit" onblur="triggerAutoSaveRoom()">
           </div>
           <div class="form-group">
             <label>월세(원):</label>
-            <input type="number" id="rfRent">
+            <input type="number" id="rfRent" onblur="triggerAutoSaveRoom()">
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
           <div class="form-group">
             <label>관리비(원):</label>
-            <input type="number" id="rfMaintenance">
+            <input type="number" id="rfMaintenance" onblur="triggerAutoSaveRoom()">
           </div>
           <div class="form-group">
             <label>선/후불:</label>
-            <select id="rfPayTiming">
+            <select id="rfPayTiming" onchange="triggerAutoSaveRoom()">
               <option value="후불">후불</option>
               <option value="선불">선불</option>
             </select>
@@ -421,11 +425,11 @@
           <div style="font-size:12px;font-weight:800;margin-bottom:8px;color:#166534;">부가세(VAT) 산출 및 수납 구분 (체크 버튼)</div>
           <div style="display:grid;grid-template-columns:1fr;gap:8px;">
             <label for="rfVatTarget" style="display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;cursor:pointer;padding:6px 10px;border-radius:4px;background:#ffffff;border:1px solid #cbd5e1;">
-              <input type="checkbox" id="rfVatTarget" checked>
+              <input type="checkbox" id="rfVatTarget" checked onchange="triggerAutoSaveRoom()">
               <span>부가세 산출에 포함 (신고 대상 실)</span>
             </label>
             <label for="rfVatSeparate" style="display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;cursor:pointer;padding:6px 10px;border-radius:4px;background:#ffffff;border:1px solid #cbd5e1;">
-              <input type="checkbox" id="rfVatSeparate">
+              <input type="checkbox" id="rfVatSeparate" onchange="triggerAutoSaveRoom()">
               <span>부가세 별도 수납 (세금영수증/계산서 별도 발행)</span>
             </label>
           </div>
@@ -435,20 +439,20 @@
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
           <div class="form-group">
             <label>입주일:</label>
-            <input type="date" id="rfMoveIn">
+            <input type="date" id="rfMoveIn" onchange="triggerAutoSaveRoom()">
           </div>
           <div class="form-group">
             <label>만기일:</label>
-            <input type="date" id="rfExpiry">
+            <input type="date" id="rfExpiry" onchange="triggerAutoSaveRoom()">
           </div>
           <div class="form-group">
             <label>퇴거일 (전출):</label>
-            <input type="date" id="rfMoveOut">
+            <input type="date" id="rfMoveOut" onchange="triggerAutoSaveRoom()">
           </div>
         </div>
         <div style="display:flex;gap:8px;margin-top:14px;">
-          <button type="submit" id="btnSaveRoom" style="flex:1;">계약 정보 저장</button>
-          <button type="button" class="btn-outline" onclick="closeModal('modalRoom')">취소</button>
+          <button type="submit" id="btnSaveRoom" class="btn-primary" style="flex:1;">완료 (자동 저장됨)</button>
+          <button type="button" class="btn-outline" onclick="closeModal('modalRoom')">닫기</button>
         </div>
       </form>
     </div>

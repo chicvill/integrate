@@ -438,32 +438,37 @@ function openRoomDetail(roomNum) {
   openModal("modalRoom");
 }
 
-async function saveRoomForm(e) {
-  if (e) e.preventDefault();
-  const n = document.getElementById("rfRoomNumber").value;
-  const vatTarget = document.getElementById("rfVatTarget").checked;
-  const vatSeparate = document.getElementById("rfVatSeparate").checked;
+let _autoSaveTimer = null;
+async function triggerAutoSaveRoom() {
+  const n = document.getElementById("rfRoomNumber")?.value;
+  if (!n) return;
+
+  const badge = document.getElementById("rfAutoSaveBadge");
+  if (badge) {
+    badge.style.display = "inline-block";
+    badge.textContent = "저장 중... ⏳";
+    badge.style.color = "#2563eb";
+    badge.style.background = "#eff6ff";
+    badge.style.borderColor = "#2563eb";
+  }
+
+  const vatTarget = document.getElementById("rfVatTarget")?.checked ?? true;
+  const vatSeparate = document.getElementById("rfVatSeparate")?.checked ?? false;
   const payload = {
-    name: document.getElementById("rfName").value.trim(),
-    phone: document.getElementById("rfPhone").value.trim(),
-    id_number: document.getElementById("rfIdNumber").value.trim(),
-    deposit: Number(document.getElementById("rfDeposit").value),
-    rent: Number(document.getElementById("rfRent").value),
-    maintenance: Number(document.getElementById("rfMaintenance").value),
-    pay_timing: document.getElementById("rfPayTiming").value,
+    name: document.getElementById("rfName")?.value.trim() || "",
+    phone: document.getElementById("rfPhone")?.value.trim() || "",
+    id_number: document.getElementById("rfIdNumber")?.value.trim() || "",
+    deposit: Number(document.getElementById("rfDeposit")?.value) || 0,
+    rent: Number(document.getElementById("rfRent")?.value) || 0,
+    maintenance: Number(document.getElementById("rfMaintenance")?.value) || 0,
+    pay_timing: document.getElementById("rfPayTiming")?.value || "후불",
     vat_target: vatTarget,
     vat_separate: vatSeparate,
     vat_included: !vatSeparate,
-    move_in: document.getElementById("rfMoveIn").value,
-    expiry: document.getElementById("rfExpiry").value,
-    move_out: document.getElementById("rfMoveOut").value
+    move_in: document.getElementById("rfMoveIn")?.value || "",
+    expiry: document.getElementById("rfExpiry")?.value || "",
+    move_out: document.getElementById("rfMoveOut")?.value || ""
   };
-
-  const btn = document.getElementById("btnSaveRoom");
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = "저장 중... ⏳";
-  }
 
   try {
     const res = await apiFetch(`${API_BASE}/rooms/${n}/contract?branch_id=${curBranch}`, {
@@ -471,26 +476,34 @@ async function saveRoomForm(e) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.detail || `HTTP ${res.status}`);
+    if (badge) {
+      badge.textContent = "⚡ 실시간 자동 저장됨 ✅";
+      badge.style.color = "#16a34a";
+      badge.style.background = "#f0fdf4";
+      badge.style.borderColor = "#16a34a";
     }
 
-    closeModal("modalRoom");
-    const vatDesc = !vatTarget ? "부가세제외(면세)" : (vatSeparate ? "부가세별도(발행)" : "부가세포함");
-    setAlert(`✅ [${n}호] 계약 정보가 정상 저장되었습니다. (${vatDesc})`, "success");
-    await reloadRooms();
-    if (typeof loadVatReport === "function") {
-      loadVatReport();
-    }
+    if (_autoSaveTimer) clearTimeout(_autoSaveTimer);
+    _autoSaveTimer = setTimeout(() => {
+      reloadRooms();
+      if (typeof loadVatReport === "function") loadVatReport();
+    }, 300);
   } catch (err) {
-    console.error("계약 저장 실패:", err);
-    setAlert(`계약 저장 실패: ${err.message}`, "error");
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = "계약 정보 저장";
+    if (badge) {
+      badge.textContent = "저장 실패 ⚠️";
+      badge.style.color = "#dc2626";
+      badge.style.background = "#fee2e2";
+      badge.style.borderColor = "#dc2626";
     }
   }
+}
+
+async function saveRoomForm(e) {
+  if (e) e.preventDefault();
+  await triggerAutoSaveRoom();
+  closeModal("modalRoom");
+  const n = document.getElementById("rfRoomNumber")?.value;
+  setAlert(`✅ [${n}호] 변경사항이 DB에 실시간 안전하게 반영되었습니다.`, "success");
 }

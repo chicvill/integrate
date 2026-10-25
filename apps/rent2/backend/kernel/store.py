@@ -21,6 +21,12 @@ class Store:
             os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
         self.db = sqlite3.connect(path, check_same_thread=False)
         self.db.row_factory = sqlite3.Row
+        if path and path != ":memory:":
+            try:
+                self.db.execute("PRAGMA journal_mode=WAL;")
+                self.db.execute("PRAGMA synchronous=NORMAL;")
+            except Exception:
+                pass
         self.lock = threading.RLock()
         self._depth, self.quiet = 0, False
         self.db.executescript("""

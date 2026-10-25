@@ -75,7 +75,15 @@ from apps.rent2.backend.domain import bootstrap as rent2_bootstrap
 from apps.studycafe2.backend.api import router as studycafe2_router
 from apps.selfstudy2.backend.api import router as selfstudy2_router
 
-rent2_db_path = os.getenv("RENT2_DB") or os.path.join(RENT2_ROOT, "data", "rent2.db")
+persistent_media_db = os.path.join("/media", "rent2.db")
+legacy_app_db = os.path.join(RENT2_ROOT, "data", "rent2.db")
+if os.path.exists("/media"):
+    if not os.path.exists(persistent_media_db) and os.path.exists(legacy_app_db):
+        import shutil
+        shutil.copy2(legacy_app_db, persistent_media_db)
+    rent2_db_path = os.getenv("RENT2_DB") or persistent_media_db
+else:
+    rent2_db_path = os.getenv("RENT2_DB") or legacy_app_db
 rent2_use_store(rent2_db_path)
 rent2_seed = os.path.join(RENT2_ROOT, "backend", "seed_data.json")
 rent2_bootstrap(rent2_seed if os.path.exists(rent2_seed) else None)
