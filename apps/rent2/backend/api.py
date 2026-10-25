@@ -827,6 +827,12 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
             b.units = new_roster_units
             b.save("units_realigned_from_roster")
 
+        if clear_before_import:
+            Payment.purge(b.id)
+            Contract.purge(b.id)
+            from .kernel.base import store
+            store().cur().execute("DELETE FROM objects WHERE kind='room' AND json_extract(data, '$.building_id') = ?", (b.id,))
+
         applied = []
         for item in roster_items:
             rn = item["room_number"]
@@ -849,6 +855,7 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
             u.update(form_dict)
             applied.append(rn)
         
+        b.sync_all_rooms()
         Building.invalidate_cache()
         return {
             "success": True,

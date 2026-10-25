@@ -899,7 +899,9 @@ class Building(Obj):
             if clear:
                 Payment.purge(self.id)
                 Contract.purge(self.id)
+                store().cur().execute("DELETE FROM objects WHERE kind='room' AND json_extract(data, '$.building_id') = ?", (self.id,))
                 self.units = []
+                self.room_ids = []
                 self.save("rooms_cleared")
             added = changed = 0
             for r in rows:
@@ -914,6 +916,7 @@ class Building(Obj):
                 u.update({**form, "note": r.get("note") or ""})
                 self.add_unit(n)
                 added, changed = (added, changed + 1) if known else (added + 1, changed)
+            self.sync_all_rooms()
         return {"success": True, "branch_id": self.id, "imported_count": added, "updated_count": changed,
                 "total_count": added + changed, "rooms": self.rooms()}
 
@@ -939,6 +942,7 @@ class Building(Obj):
                             tenant_name=item.get("name") or (c.tenant_name if c else ""),
                             rent_amount=split[0] if paid else None, maintenance_amount=split[1] if paid else None).save()
                     records += 1
+            self.sync_all_rooms()
         return {"success": True, "branch_id": self.id, "total_rooms": len(rows), "updated_records": records, "rooms": self.rooms()}
 
     # ── 백업 / 복원 (레거시 백업 JSON과 동일한 모양 → 양방향 호환) ──
@@ -1018,11 +1022,13 @@ class Building(Obj):
             if clear_existing:
                 Payment.purge(self.id)
                 Contract.purge(self.id)
+                store().cur().execute("DELETE FROM objects WHERE kind='room' AND json_extract(data, '$.building_id') = ?", (self.id,))
                 # 호실 목록을 매장 표준 기본 규격으로 리셋
                 if self.DEFAULT_UNITS:
                     self.units = list(self.DEFAULT_UNITS)
                 else:
                     self.units = []
+                self.room_ids = [f"{self.id}:{u}" for u in self.units]
                 self.save("reset_before_import")
 
             added, changed, skipped = 0, 0, 0
@@ -1052,6 +1058,8 @@ class Building(Obj):
                         self.add_unit(du)
                 self.units = sorted(self.units)
                 self.save("units_standardized")
+
+            self.sync_all_rooms()
 
             return {
                 "success": True,
