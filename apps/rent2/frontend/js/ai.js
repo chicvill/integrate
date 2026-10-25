@@ -120,11 +120,13 @@ function openAIAssistant() {
   if (stats) stats.style.display = "none";
   if (navTabs) navTabs.style.display = "none";
 
-  // 지점명 배지 동기화
+  // 지점명 배지 동기화 (예: "시크빌 1호점 (본점)" -> "시크빌")
   const branchSel = document.getElementById("branchSelect");
   const badge = document.getElementById("aiBranchBadge");
   if (badge && branchSel && branchSel.selectedIndex >= 0) {
-    badge.textContent = branchSel.options[branchSel.selectedIndex].text;
+    const rawText = branchSel.options[branchSel.selectedIndex].text || "";
+    const shortName = rawText.split(" ")[0].replace(/[0-9호점\(\),]/g, "").trim() || "시크빌";
+    badge.textContent = shortName;
   }
 
   // AI 섹션 활성화

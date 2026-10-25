@@ -193,16 +193,16 @@
 
     <!-- [섹션 4] 스마트폰 최적화 AI 질의 비서 -->
     <div id="secAI" style="display:none;">
-      <!-- AI 전용 상단 툴바 (스마트폰 즉시 복귀 & 지점 표시) -->
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid #000;">
-        <button type="button" class="btn-primary" style="padding:5px 10px;font-size:12px;background:#000;color:#fff;border-radius:4px;" onclick="closeAIAssistant()">
-          ← 호실 관제로 복귀
+      <!-- AI 전용 상단 툴바 (스마트폰 즉시 복귀 & 지점 표시 - 1줄 고정) -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:4px 0 6px 0;border-bottom:2px solid #000;white-space:nowrap;gap:4px;">
+        <button type="button" class="btn-primary" style="padding:4px 8px;font-size:11.5px;font-weight:800;background:#000;color:#fff;border-radius:4px;white-space:nowrap;height:30px;line-height:1;" onclick="closeAIAssistant()">
+          ← 이전으로
         </button>
-        <div style="font-weight:900;font-size:14px;display:flex;align-items:center;gap:6px;">
-          <span>🤖 AI 현장 비서</span>
-          <span id="aiBranchBadge" style="font-size:11px;font-weight:700;background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:3px;">본점</span>
+        <div style="font-weight:900;font-size:13px;display:flex;align-items:center;gap:4px;white-space:nowrap;">
+          <span>🤖 AI비서</span>
+          <span id="aiBranchBadge" style="font-size:11px;font-weight:800;background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:3px;border:1px solid #bae6fd;white-space:nowrap;">시크빌</span>
         </div>
-        <button type="button" class="btn-outline btn-sm" style="font-size:11px;padding:4px 8px;border-radius:4px;" onclick="clearAIChat()">대화 비우기 🧹</button>
+        <button type="button" class="btn-outline btn-sm" style="font-size:11.5px;font-weight:700;padding:4px 8px;border-radius:4px;white-space:nowrap;height:30px;line-height:1;" onclick="clearAIChat()">대화 삭제</button>
       </div>
 
       <!-- 추천 퀵 질문 칩 바 (터치 한 번으로 즉시 질의) -->
