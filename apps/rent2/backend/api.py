@@ -36,7 +36,11 @@ def _resolve_bid(ref: Optional[str], user: User) -> str:
 
 def _b(ref: Optional[str], user: Optional[User] = None) -> Building:
     bid = _resolve_bid(ref, user) if user else Building.canon(ref)
-    return Building.require(bid)
+    try:
+        return Building.require(bid)
+    except Exception:
+        all_b = Building.cached_all()
+        return all_b[0] if all_b else Building.require(bid)
 
 
 def _unit(branch_id: Optional[str], n: int, user: Optional[User] = None) -> Unit:

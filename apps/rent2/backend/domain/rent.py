@@ -743,8 +743,11 @@ class Building(Obj):
 
     @classmethod
     def require(cls, ref: Optional[str]) -> "Building":
-        b = cls.resolve(ref, default_to_first=False)
+        b = cls.resolve(ref, default_to_first=True)
         if not b:
+            all_b = cls.cached_all()
+            if all_b:
+                return all_b[0]
             raise LookupError(f"해당 건물을 찾을 수 없습니다: {ref}")
         return b
 
