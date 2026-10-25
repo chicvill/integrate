@@ -216,6 +216,7 @@ function openAIPasteModal() {
   if (resBox) resBox.style.display = "none";
   const helpBox = document.getElementById("pasteHelpBox");
   if (helpBox) helpBox.style.display = "none";
+  if (typeof setPasteVoiceStatus === "function") setPasteVoiceStatus("");
   setTimeout(() => {
     const pt = document.getElementById("pasteText");
     if (pt) {
@@ -237,6 +238,7 @@ function pasteQuickQuery(queryText) {
   }
   const resBox = document.getElementById("pasteAiResultBox");
   if (resBox) resBox.style.display = "none";
+  if (typeof setPasteVoiceStatus === "function") setPasteVoiceStatus("");
 }
 
 function clearPasteArea() {
@@ -245,6 +247,7 @@ function clearPasteArea() {
   clearPasteImage();
   const resBox = document.getElementById("pasteAiResultBox");
   if (resBox) resBox.style.display = "none";
+  if (typeof setPasteVoiceStatus === "function") setPasteVoiceStatus("");
   previewUniversalPaste();
 }
 

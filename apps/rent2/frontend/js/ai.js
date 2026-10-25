@@ -7,15 +7,54 @@
 let aiSpeechRecognition = null;
 let isVoiceListening = false;
 
-function toggleVoiceAI(targetId = "aiInput", btnId = "btnMicAI") {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    setAlert("현재 브라우저는 음성 인식을 지원하지 않습니다. Chrome, Edge 또는 Safari 최신 버전을 권장합니다.", "warning");
+// 모달 내부 전용 실시간 음성 상태 배너 업데이트 헬퍼
+function setPasteVoiceStatus(htmlMsg, type = "info") {
+  const el = document.getElementById("pasteVoiceStatus");
+  if (!el) {
+    if (typeof setAlert === "function") setAlert(htmlMsg.replace(/<[^>]+>/g, ""), type);
+    return;
+  }
+  if (!htmlMsg) {
+    el.style.display = "none";
+    el.innerHTML = "";
     return;
   }
 
+  el.style.display = "block";
+  if (type === "listening") {
+    el.style.border = "1.5px solid #ef4444";
+    el.style.background = "#fef2f2";
+    el.style.color = "#991b1b";
+  } else if (type === "success") {
+    el.style.border = "1.5px solid #16a34a";
+    el.style.background = "#f0fdf4";
+    el.style.color = "#166534";
+  } else if (type === "warning" || type === "error") {
+    el.style.border = "1.5px solid #ea580c";
+    el.style.background = "#fff7ed";
+    el.style.color = "#9a3412";
+  } else {
+    el.style.border = "1.5px solid #2563eb";
+    el.style.background = "#eff6ff";
+    el.style.color = "#1e40af";
+  }
+  el.innerHTML = htmlMsg;
+}
+
+function toggleVoiceAI(targetId = "pasteText", btnId = "btnMicPaste") {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   const btn = document.getElementById(btnId);
   const input = document.getElementById(targetId);
+
+  // 음성 인식을 지원하지 않는 브라우저 또는 iOS 환경 대응
+  if (!SpeechRecognition) {
+    setPasteVoiceStatus(
+      `💡 <b>안내:</b> 현재 브라우저는 마이크 API를 직접 지원하지 않습니다.<br>👉 <b>입력창을 터치한 후 스마트폰 자판(키보드)의 마이크(🎙️)</b>를 누르시면 100% 즉시 음성 입력이 가능합니다!`,
+      "warning"
+    );
+    if (input) input.focus();
+    return;
+  }
 
   if (isVoiceListening) {
     if (aiSpeechRecognition) {
@@ -28,8 +67,10 @@ function toggleVoiceAI(targetId = "aiInput", btnId = "btnMicAI") {
     aiSpeechRecognition = new SpeechRecognition();
     aiSpeechRecognition.lang = "ko-KR";
     aiSpeechRecognition.interimResults = true;
-    aiSpeechRecognition.continuous = false;
+    aiSpeechRecognition.continuous = true; // 모바일에서 중간 끊김 방지
+    aiSpeechRecognition.maxAlternatives = 1;
 
+    const baseText = input ? input.value : "";
     const origPlaceholder = input ? input.placeholder : "";
 
     aiSpeechRecognition.onstart = function() {
@@ -37,36 +78,66 @@ function toggleVoiceAI(targetId = "aiInput", btnId = "btnMicAI") {
       if (btn) {
         btn.classList.add("mic-active");
         btn.innerHTML = "🔴 듣는 중...";
-        btn.title = "음성 입력 중지하려면 클릭";
+        btn.style.background = "#fee2e2";
+        btn.style.borderColor = "#ef4444";
+        btn.style.color = "#b91c1c";
+        btn.title = "음성 입력 완료하려면 클릭";
       }
       if (input) {
         input.placeholder = "음성을 듣고 있습니다... 편하게 말씀해 주세요 🎙️";
         input.focus();
       }
-      setAlert("🎙️ 음성 인식이 시작되었습니다. 말씀해 주세요...", "info");
+      setPasteVoiceStatus(
+        `🔴 <b>음성을 듣고 있습니다...</b> 말씀해 주세요 🎙️<br><small style="font-weight:normal;color:#475569;">말씀을 마치시면 [🔴 듣는 중] 버튼을 다시 누르시거나 잠시 기다리세요. (스마트폰 키보드의 🎙️도 사용 가능)</small>`,
+        "listening"
+      );
     };
 
     aiSpeechRecognition.onresult = function(event) {
-      let fullTranscript = "";
+      let interimTranscript = "";
+      let finalTranscript = "";
+
       for (let i = 0; i < event.results.length; ++i) {
-        fullTranscript += event.results[i][0].transcript;
+        const item = event.results[i];
+        if (item.isFinal) {
+          finalTranscript += item[0].transcript;
+        } else {
+          interimTranscript += item[0].transcript;
+        }
       }
-      if (input && fullTranscript) {
-        input.value = fullTranscript;
-        // input 이벤트 강제 발화로 실시간 렌더링 동기화
+
+      const spoken = (finalTranscript + interimTranscript).trim();
+      if (input && spoken) {
+        input.value = (baseText ? baseText.trim() + " " : "") + spoken;
+        // input 이벤트 강제 발화로 실시간 분석/미리보기 즉각 동기화
         input.dispatchEvent(new Event("input", { bubbles: true }));
         if (typeof previewUniversalPaste === "function") {
           previewUniversalPaste();
         }
+      }
+
+      if (spoken) {
+        setPasteVoiceStatus(
+          `💬 <b>인식 중:</b> "${spoken}"`,
+          "listening"
+        );
       }
     };
 
     aiSpeechRecognition.onerror = function(event) {
       console.warn("음성인식 오류:", event.error);
       if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-        setAlert("⚠️ 마이크 권한이 차단되어 있습니다. 브라우저 주소창 설정에서 마이크를 '허용'해 주세요.", "error");
-      } else if (event.error !== "no-speech") {
-        setAlert(`음성 인식 오류: ${event.error}`, "warning");
+        setPasteVoiceStatus(
+          `⚠️ <b>마이크 사용이 차단되었거나 비보안(HTTP) 연결입니다.</b><br>👉 <b>입력창을 터치한 후 스마트폰 자판(키보드)의 마이크 버튼(🎙️)</b>을 누르시면 100% 즉시 입력됩니다!`,
+          "warning"
+        );
+      } else if (event.error === "no-speech") {
+        setPasteVoiceStatus(
+          `⚠️ 음성이 감지되지 않았습니다. 다시 말씀하시거나 <b>스마트폰 키보드의 마이크(🎙️)</b>를 이용해 보세요.`,
+          "warning"
+        );
+      } else {
+        setPasteVoiceStatus(`⚠️ 음성 인식 알림: ${event.error}`, "warning");
       }
     };
 
@@ -75,14 +146,24 @@ function toggleVoiceAI(targetId = "aiInput", btnId = "btnMicAI") {
       if (btn) {
         btn.classList.remove("mic-active");
         btn.innerHTML = "🎙️ 음성";
-        btn.title = "음성으로 질문하기";
+        btn.style.background = "#ffffff";
+        btn.style.borderColor = "#2563eb";
+        btn.style.color = "#1d4ed8";
+        btn.title = "마이크 음성 입력 🎙️";
       }
       if (input) {
         input.placeholder = origPlaceholder;
         input.focus();
-        // 인식된 텍스트가 있으면 미리보기 한 번 더 갱신
-        if (input.value && typeof previewUniversalPaste === "function") {
-          previewUniversalPaste();
+        // 최종 텍스트가 있을 경우 완료 상태 표시
+        const finalVal = input.value.trim();
+        if (finalVal) {
+          setPasteVoiceStatus(
+            `✅ <b>음성 입력 완료:</b> "${finalVal}"<br><small style="font-weight:normal;color:#475569;">텍스트를 수정한 뒤 아래 <b>[스마트 실행]</b>을 누르시거나 바로 작업 지시를 완료하세요.</small>`,
+            "success"
+          );
+          if (typeof previewUniversalPaste === "function") {
+            previewUniversalPaste();
+          }
         }
       }
     };
@@ -93,9 +174,15 @@ function toggleVoiceAI(targetId = "aiInput", btnId = "btnMicAI") {
     isVoiceListening = false;
     if (btn) {
       btn.classList.remove("mic-active");
-      btn.innerHTML = "🎙️";
+      btn.innerHTML = "🎙️ 음성";
+      btn.style.background = "#ffffff";
+      btn.style.borderColor = "#2563eb";
+      btn.style.color = "#1d4ed8";
     }
-    setAlert("음성 인식을 시작할 수 없습니다.", "error");
+    setPasteVoiceStatus(
+      `⚠️ 음성 인식을 시작할 수 없습니다.<br>👉 <b>입력창 터치 후 스마트폰 자판(키보드)의 마이크(🎙️)</b>를 누르시면 편리하게 음성 입력하실 수 있습니다!`,
+      "warning"
+    );
   }
 }
 

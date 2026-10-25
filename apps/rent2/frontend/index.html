@@ -357,8 +357,14 @@
         <button type="button" class="btn-sm btn-outline" style="padding:4px 8px;font-size:11.5px;font-weight:700;white-space:nowrap;border-radius:12px;" onclick="clearPasteArea()">비우기 🧹</button>
       </div>
 
-      <div class="form-group" style="margin-bottom:8px;">
-        <textarea id="pasteText" rows="4" placeholder="질문을 입력하거나 마이크 음성, 또는 문자/데이터를 붙여넣으세요..." oninput="previewUniversalPaste()" onpaste="handleClipboardPaste(event)" onkeydown="handlePasteKeyDown(event)" style="font-size:13.5px;line-height:1.45;padding:10px;"></textarea>
+      <!-- 실시간 음성 인식 상태 안내 인라인 배너 -->
+      <div id="pasteVoiceStatus" style="display:none;padding:9px 12px;margin-bottom:8px;border-radius:6px;font-size:12px;font-weight:700;line-height:1.45;"></div>
+
+      <div class="form-group" style="margin-bottom:6px;">
+        <textarea id="pasteText" rows="4" placeholder="질문을 입력하거나 상단 [🎙️ 음성], 자판 마이크(🎙️), 또는 문자/데이터를 붙여넣으세요..." oninput="previewUniversalPaste()" onpaste="handleClipboardPaste(event)" onkeydown="handlePasteKeyDown(event)" style="font-size:13.5px;line-height:1.45;padding:10px;"></textarea>
+      </div>
+      <div style="font-size:11px;color:#64748b;margin-bottom:8px;display:flex;align-items:center;gap:4px;padding-left:2px;">
+        <span>💡 팁: 스마트폰 자판(키보드)의 <b>마이크 버튼(🎙️)</b>을 터치하시면 언제든 100% 음성 입력이 가능합니다.</span>
       </div>
 
       <!-- 클립보드 사진 붙여넣기 미리보기 영역 -->
