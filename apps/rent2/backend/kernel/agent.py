@@ -22,7 +22,7 @@ from .identity import User
 TOOLS: Dict[str, "Tool"] = {}
 current_user: ContextVar[Optional[User]] = ContextVar("current_user", default=None)
 _TYPES = {int: "INTEGER", float: "NUMBER", bool: "BOOLEAN", str: "STRING"}
-MODELS = ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.6-flash"]
+MODELS = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-2.0-flash"]
 
 
 @dataclass
@@ -130,7 +130,7 @@ def api_key() -> Optional[str]:
     return key
 
 
-def gemini(contents: list, system: str = "", tools: Optional[list] = None, json_mode: bool = False) -> dict:
+def gemini(contents: list, system: str = "", tools: Optional[list] = None, json_mode: bool = False, timeout: int = 30) -> dict:
     """여러 모델을 순차 폴백하며 generateContent 호출 → 첫 성공 응답(dict)"""
     body: Dict[str, Any] = {"contents": contents}
     if system:
@@ -145,19 +145,20 @@ def gemini(contents: list, system: str = "", tools: Optional[list] = None, json_
             req = urllib.request.Request(
                 f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key()}",
                 data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(req, timeout=5) as r:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
                 return json.loads(r.read())
         except Exception as e:   # 모델/쿼터 오류 → 다음 모델
             last = e
     raise RuntimeError(f"Gemini 호출 실패: {last}")
 
 
-def gemini_json(prompt: str, image_b64: str = "", mime: str = "image/png") -> Any:
+def gemini_json(prompt: str, image_b64: str = "", mime: str = "image/png", timeout: int = 40) -> Any:
     """프롬프트(+이미지) → 순수 JSON 파싱 결과 (계약서 OCR 등 비전 추출용)"""
     parts: list = [{"text": prompt}]
     if image_b64:
         parts.append({"inline_data": {"mime_type": mime, "data": image_b64}})
-    text = gemini([{"parts": parts}], json_mode=True)["candidates"][0]["content"]["parts"][0]["text"].strip()
+    res = gemini([{"parts": parts}], json_mode=True, timeout=timeout)
+    text = res["candidates"][0]["content"]["parts"][0]["text"].strip()
     return json.loads(re.sub(r"^```(?:json)?\s*|\s*```$", "", text))
 
 

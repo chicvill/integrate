@@ -25,16 +25,38 @@ function setToken(tok) {
   }
 }
 
-// ── 안내 배너 (Banner Alert UX) ──
+// ── 안내 배너 (Banner Alert UX - AGENTS.md Rule 5 표준) ──
 function setAlert(msg, type = "info") {
   const el = document.getElementById("appAlert");
   if (!el) return;
   if (!msg) { el.style.display = "none"; return; }
   el.style.display = "block";
-  el.textContent = msg;
-  el.style.background = type === "error" ? "#000" : (type === "success" ? "#fff" : (type === "warning" ? "#fff8e1" : "#f4f4f4"));
-  el.style.color = type === "error" ? "#fff" : "#000";
-  el.style.borderColor = "#000";
+  el.innerHTML = msg;
+  el.style.borderRadius = "6px";
+  el.style.padding = "9px 12px";
+  el.style.fontSize = "12.5px";
+  el.style.lineHeight = "1.5";
+  el.style.fontWeight = "700";
+  el.style.boxShadow = "0 1px 3px rgba(0,0,0,0.06)";
+  el.style.wordBreak = "break-all";
+
+  if (type === "success") {
+    el.style.background = "#ecfdf5";
+    el.style.color = "#065f46";
+    el.style.border = "1.5px solid #10b981";
+  } else if (type === "error") {
+    el.style.background = "#fef2f2";
+    el.style.color = "#991b1b";
+    el.style.border = "1.5px solid #ef4444";
+  } else if (type === "warning" || type === "diff") {
+    el.style.background = "#fffbeb";
+    el.style.color = "#92400e";
+    el.style.border = "1.5px solid #f59e0b";
+  } else {
+    el.style.background = "#eff6ff";
+    el.style.color = "#1e40af";
+    el.style.border = "1.5px solid #3b82f6";
+  }
 }
 
 // ── 모달 전용 인라인 배너 ──

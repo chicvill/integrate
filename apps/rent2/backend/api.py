@@ -752,7 +752,7 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
     """
     text = (p.get("text") or "").strip()
     img = (p.get("image_base64") or "").strip()
-    bid = Building.canon(user.branch or p.get("branch_id") or "main")
+    bid = Building.canon(p.get("branch_id") or user.branch or "main")
     scan_kind = p.get("scan_kind") or "receipt"
 
     # A. 이미지 데이터 (base64 직접 전달 또는 text가 data:image)
@@ -935,12 +935,21 @@ def _normalize_contract_row(row: Dict[str, Any]) -> Dict[str, Any]:
 
     id_number = str(row.get("주민등록번호") or row.get("주민번호") or row.get("id_number") or "").strip()
     deposit = num(row.get("보증금") or row.get("전세금") or row.get("deposit"))
+    if 0 < deposit < 10000:   # 500 -> 5,000,000원 (만원 단위 표기 보정)
+        deposit = deposit * 10000
     rent = num(row.get("월세") or row.get("차임") or row.get("임대료") or row.get("월차임") or row.get("rent"))
+    if 0 < rent < 10000:      # 35 -> 350,000원 (만원 단위 표기 보정)
+        rent = rent * 10000
     maintenance = num(row.get("관리비") or row.get("maintenance"))
+    if 0 < maintenance < 1000:
+        maintenance = maintenance * 10000
     clean_fee = num(row.get("청소비") or row.get("clean_fee"))
 
     move_in = str(row.get("전입일") or row.get("입주일") or row.get("계약시작일") or row.get("시작일") or row.get("move_in") or "").strip()
     expiry = str(row.get("만기일") or row.get("계약종료일") or row.get("만료일") or row.get("종료일") or row.get("expiry") or "").strip()
+
+    if not name and (deposit > 0 or rent > 0):
+        name = "입주자"
 
     return {
         "room_number": room_n,
@@ -966,7 +975,7 @@ def smart_ocr_contract(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
     if not res.get("success"):
         return res
     
-    bid = Building.canon(user.branch or p.get("branch_id") or "main")
+    bid = Building.canon(p.get("branch_id") or user.branch or "main")
     b = _b(bid)
     auto_apply = bool(p.get("auto_apply", True))
     saved_contracts = []

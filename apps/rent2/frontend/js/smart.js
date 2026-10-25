@@ -229,11 +229,12 @@ async function submitUniversalIngest() {
     return;
   }
 
+  const isPhoto = Boolean(img || (text && text.startsWith("data:image/")));
   const btn = document.getElementById("btnUniversalSubmit");
   const origText = btn ? (btn.innerHTML.includes("확인") ? btn.innerHTML : "확인") : "확인";
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = "확인 중... ⏳";
+    btn.innerHTML = isPhoto ? "📸 사진 AI 분석 중... ⏳" : "확인 중... ⏳";
   }
 
   // 0. 엑셀/구글 시트 장부 동기화 명령 직접 실행 (즉각 DB 반영 및 화면 갱신)
@@ -343,7 +344,7 @@ async function submitUniversalIngest() {
   }
 
   // 2. 은행 입금문자 / 구글시트 / 파일 / 사진 인제스트 처리
-  setAlert("만능 인제스트 분석 및 처리 진행 중...", "info");
+  setAlert(isPhoto ? "📸 사진(임대차 대장/영수증)을 AI가 정밀 분석 중입니다. 잠시만 기다려주세요..." : "만능 인제스트 분석 및 처리 진행 중...", "info");
 
   try {
     const res = await apiFetch(`${API_BASE}/smart/universal-ingest`, {
@@ -368,33 +369,69 @@ async function submitUniversalIngest() {
         const first = data.items?.[0];
         const amtStr = first ? ` (${first.room_number}호 ${((first.applied_amount || first.amount) || 0).toLocaleString()}원)` : "";
         const periodInfo = (first && first.applied_year && first.applied_month) ? ` · ${first.applied_year}-${first.applied_month < 10 ? '0' : ''}${first.applied_month}분` : "";
-        alertMsg = `✅ 입금 수납 완료: ${data.applied_count}건 수납 처리되었습니다!${amtStr}${periodInfo}`;
+        alertMsg = `✅ <b>입금 수납 완료</b>: ${data.applied_count}건 수납 처리되었습니다!${amtStr}${periodInfo}`;
       } else if (data.kind === "google_sheet" || data.kind === "file_excel") {
-        alertMsg = `✅ 장부 동기화 완료: 2025/2026년 전체 데이터가 성공적으로 반영되었습니다.`;
+        alertMsg = `✅ <b>장부 동기화 완료</b>: 2025/2026년 전체 데이터가 성공적으로 반영되었습니다.`;
       } else if (data.ocr_kind === "receipt" || data.expense) {
-        alertMsg = `✅ 영수증 지출 전표 등록 완료! (${data.message || ''})`;
+        alertMsg = `✅ <b>[사진 분석 완료]</b> 지출 영수증 전표가 정상 등록되었습니다! (${data.message || ''})`;
       } else if (data.ocr_kind === "contract" || data.applied_count !== undefined) {
         const count = data.applied_count || data.total_extracted || 0;
-        alertMsg = `✅ 임대차 대장/계약서 분석 완료: 총 ${count}개 호실의 세입자 정보가 DB에 정상 등록되었습니다!`;
+        alertMsg = `✅ <b>[사진 분석 완료]</b> 총 <b>${count}개 호실</b>의 임대차 계약 및 세입자 정보가 DB에 정상 등록되었습니다!`;
       }
 
-      setAlert(alertMsg, "success");
-      closeModal("modalPaste");
-      const pt = document.getElementById("pasteText");
-      if (pt) pt.value = "";
-      clearPasteImage();
+      if (isPhoto && btn) {
+        btn.innerHTML = "✅ 분석 완료! (닫는 중...)";
+        btn.style.background = "#16a34a";
+      }
+
+      setTimeout(() => {
+        closeModal("modalPaste");
+        const pt = document.getElementById("pasteText");
+        if (pt) pt.value = "";
+        clearPasteImage();
+        setAlert(alertMsg, "success");
+      }, isPhoto ? 350 : 0);
+
       await reloadRooms();
       if (typeof loadVatReport === "function") loadVatReport();
     } else {
-      setAlert(data.message || "내용을 분석하지 못했습니다. 형식을 확인해 주세요.", "error");
+      const failMsg = data.message || "사진에서 유효한 계약/세입자 정보를 인식하지 못했습니다. 글자가 선명하도록 다시 촬영해 주세요.";
+      if (isPhoto) {
+        if (btn) {
+          btn.innerHTML = "⚠️ 분석 완료 (0건)";
+          btn.style.background = "#d97706";
+        }
+        setTimeout(() => {
+          closeModal("modalPaste");
+          clearPasteImage();
+          setAlert(`⚠️ <b>[사진 분석 완료]</b> ${failMsg}`, "warning");
+        }, 450);
+      } else {
+        setAlert(failMsg, "warning");
+      }
     }
   } catch (err) {
     console.error("Universal Ingest 실패:", err);
-    setAlert(`처리 중 오류 발생: ${err.message || '네트워크 오류'}`, "error");
+    if (isPhoto) {
+      if (btn) {
+        btn.innerHTML = "❌ 분석 실패";
+        btn.style.background = "#dc2626";
+      }
+      setTimeout(() => {
+        closeModal("modalPaste");
+        clearPasteImage();
+        setAlert(`❌ <b>[사진 분석 오류]</b> ${err.message || '네트워크 연결 오류'}`, "error");
+      }, 450);
+    } else {
+      setAlert(`처리 중 오류 발생: ${err.message || '네트워크 오류'}`, "error");
+    }
   } finally {
     if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = origText;
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.innerHTML = origText;
+        btn.style.background = "";
+      }, isPhoto ? 600 : 0);
     }
   }
 }

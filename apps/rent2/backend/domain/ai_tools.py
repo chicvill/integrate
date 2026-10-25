@@ -386,9 +386,20 @@ def read_contract_image(image_base64: str) -> Dict[str, Any]:
                 "message": "서버에 GEMINI_API_KEY가 설정되어 있지 않아 이미지 AI 스캔이 제한됩니다. 직접 입력해 주세요."}
     head, _, body = image_base64.rpartition(",")
     mime = "image/jpeg" if "jpeg" in head or "jpg" in head else "image/webp" if "webp" in head else "image/png"
+    clean_body = body.strip().replace(" ", "+")
     try:
-        parsed = agent.gemini_json(OCR_PROMPT, body, mime)
-        rows = parsed if isinstance(parsed, list) else next((v for v in parsed.values() if isinstance(v, list) and v and isinstance(v[0], dict)), [parsed])
+        parsed = agent.gemini_json(OCR_PROMPT, clean_body, mime, timeout=40)
+        rows = []
+        if isinstance(parsed, list):
+            rows = parsed
+        elif isinstance(parsed, dict):
+            for v in parsed.values():
+                if isinstance(v, list) and v and isinstance(v[0], dict):
+                    rows = v
+                    break
+            if not rows:
+                if any(k in parsed for k in ("호실", "호수", "세입자", "성명", "room_number", "name")):
+                    rows = [parsed]
         return {"success": bool(rows), "rows": rows, "source": "gemini_vision"}
     except Exception as e:
         return {"success": False, "has_api_key": True, "rows": [], "source": "ocr_failed",
