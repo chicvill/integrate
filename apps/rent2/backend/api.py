@@ -980,9 +980,9 @@ def smart_ocr_contract(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
     auto_apply = bool(p.get("auto_apply", True))
     saved_contracts = []
 
-    # 신규 건물인지 판별: 기존 계약이 0건이면 개설 시 들어간 임시 가상 호실들을 실제 장부 호실들로 교체
+    # 신규 건물이거나 실제 유효 계약이 없는 상태면 개설 시 들어간 임시 가상 호실들을 실제 장부 호실들로 교체
     existing_contracts = Contract.find(bid)
-    is_fresh_building = (len(existing_contracts) == 0)
+    has_active_contracts = any(c.active and c.tenant_name and c.tenant_name not in ("공실", "현재 공실") for c in existing_contracts)
     parsed_valid_units = set()
 
     for raw_row in res.get("rows", []):
@@ -991,8 +991,8 @@ def smart_ocr_contract(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
         if room_n:
             parsed_valid_units.add(room_n)
 
-    # 신규 건물이면서 실제 장부에서 호실들이 인식되었으면 임시 가상 호실 리셋
-    if is_fresh_building and parsed_valid_units:
+    # 실제 장부에서 호실들이 인식되었으면 장부 호실 목록으로 리셋
+    if not has_active_contracts and parsed_valid_units:
         b.units = sorted(parsed_valid_units)
         b.save("units_synced_from_ledger")
 
