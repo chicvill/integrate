@@ -568,12 +568,25 @@ class Building(Obj):
         all_b = cls.cached_all()
         if not ref:
             return all_b[0] if (default_to_first and all_b) else None
+        # 1. ID 완전 일치 (대소문자 구분 및 캐시)
         if ref in cls._cache:
             return cls._cache[ref]
         low = ref.lower()
-        matched = next((b for b in all_b if low in (b.id.lower(), b.name.lower()) or low in {a.lower() for a in b.aliases}), None)
-        if matched:
-            return matched
+        for b in all_b:
+            if b.id.lower() == low:
+                return b
+        # 2. 건물명 완전 일치
+        for b in all_b:
+            if b.name.lower() == low:
+                return b
+        # 3. 별칭(Aliases) 완전 일치
+        for b in all_b:
+            if any(a.lower() == low for a in b.aliases):
+                return b
+        # 4. 건물명 부분 일치
+        for b in all_b:
+            if low in b.name.lower():
+                return b
         return all_b[0] if (default_to_first and all_b) else None
 
     @classmethod

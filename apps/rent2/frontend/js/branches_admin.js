@@ -94,7 +94,7 @@ function renderAdminBranches() {
         <button class="btn-sm" style="background:#000;color:#fff;" onclick="switchBranchAndGo('${b.branch_id}')">🚀 관제 이동</button>
         <button class="btn-sm" style="background:#2e7d32;color:#fff;border-color:#2e7d32;" onclick="quickPayBranchFee('${b.branch_id}', '${b.name}')">💵 사용료 수납</button>
         <button class="btn-sm btn-outline" onclick="openBranchBillingModal('${b.branch_id}')">⚙️ 설정</button>
-        ${b.branch_id !== 'main' ? `<button class="btn-sm btn-outline" style="color:#c62828;border-color:#c62828;" onclick="deleteAdminBranch('${b.branch_id}', '${b.name}')">삭제</button>` : ''}
+        ${b.branch_id !== 'main' ? `<button id="btnDelBranch_${b.branch_id}" class="btn-sm btn-outline" style="color:#c62828;border-color:#c62828;" onclick="deleteAdminBranch('${b.branch_id}', '${b.name}')">삭제</button>` : ''}
       </div>
     `;
     grid.appendChild(card);
@@ -220,17 +220,40 @@ async function handleCreateBranchSubmit(e) {
 
 // ── 매장 삭제 ──
 async function deleteAdminBranch(bid, name) {
-  if (!confirm(`⚠️ 정말로 '${name}' (${bid}) 매장을 삭제하시겠습니까?\n모든 호실, 계약, 수납 데이터가 함께 삭제됩니다.`)) return;
+  if (bid === "main") {
+    setAlert("기본 본사 부동산(시크빌 1호점)은 삭제할 수 없습니다.", "warning");
+    return;
+  }
+  if (!confirm(`⚠️ 정말로 '${name}' (${bid}) 매장을 삭제하시겠습니까?\n모든 호실, 계약, 수납 데이터가 영구 삭제됩니다.`)) return;
+
+  const btn = document.getElementById(`btnDelBranch_${bid}`) || (event && event.target);
+  const origText = btn ? btn.textContent : "삭제";
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "삭제 중... ⏳";
+  }
+  setAlert(`'${name}' 매장 및 데이터 삭제 진행 중... ⏳`, "info");
+
   try {
-    const res = await apiFetch(`${API_BASE}/branches/${bid}`, { method: "DELETE" });
+    const res = await apiFetch(`${API_BASE}/branches/${encodeURIComponent(bid)}`, { method: "DELETE" });
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
       throw new Error(errData.detail || `HTTP ${res.status}`);
     }
-    setAlert(`'${name}' 매장이 삭제되었습니다.`, "info");
+    const data = await res.json().catch(() => ({}));
+    setAlert(data.message || `'${name}' 매장이 성공적으로 삭제되었습니다.`, "success");
+
+    if (curBranch === bid) {
+      curBranch = "main";
+    }
+
     await loadBranches();
     await loadAdminBranches();
   } catch (err) {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = origText;
+    }
     setAlert(`매장 삭제 실패: ${err.message}`, "error");
   }
 }

@@ -164,11 +164,16 @@ def pay_branch_fee(bid: str, p: Dict[str, Any] = Body_, user: User = Depends(me)
 def delete_branch(bid: str, user: User = Depends(me)):
     if user.role != "superadmin":
         raise HTTPException(403, "본사 최고관리자만 건물을 삭제할 수 있습니다.")
-    b = _b(bid, user)
+    # 정확한 ID로 매장 검색 (alias 오인으로 인한 타 매장 오삭제 원천 방지)
+    b = Building.get(bid) or Building.resolve(bid)
+    if not b:
+        raise HTTPException(404, f"해당 매장({bid})을 찾을 수 없습니다.")
     if b.id == "main":
         raise HTTPException(400, "기본 본사 부동산(시크빌)은 삭제할 수 없습니다.")
+    target_name, target_id = b.name, b.id
     b.destroy()
-    return {"success": True, "branch_id": b.id, "message": f"'{b.name}' 부동산과 관련 데이터가 성공적으로 삭제되었습니다."}
+    Building.invalidate_cache()
+    return {"success": True, "branch_id": target_id, "message": f"'{target_name}' 부동산과 관련 데이터가 성공적으로 삭제되었습니다."}
 
 
 @router.post("/branches/{bid}/reset")
