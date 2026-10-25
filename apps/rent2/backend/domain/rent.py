@@ -223,7 +223,7 @@ class Room(Obj):
 
     @classmethod
     def rid(cls, bid: str, unit: int) -> str:
-        canon_bid = Building.canon(bid) if "Building" in globals() else str(bid or "main")
+        canon_bid = Building.canon(bid) if "Building" in globals() else (bid or "main")
         return f"{canon_bid}:{unit}"
 
     @classmethod
@@ -236,7 +236,7 @@ class Room(Obj):
         target_id = cls.rid(bid, unit)
         r = cls.get(target_id)
         if not r:
-            canon_bid = Building.canon(bid) if "Building" in globals() else str(bid or "main")
+            canon_bid = Building.canon(bid) if "Building" in globals() else (bid or "main")
             r = cls(id=target_id, building_id=canon_bid, room_number=unit).save("room_created")
         return r
 

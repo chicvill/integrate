@@ -817,7 +817,7 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
     if roster_items and any(item.get("tenant_name") or item.get("deposit") or item.get("rent") for item in roster_items):
         b = _b(bid, user)
         # 만약 기존 건물이 신규 개설 직후이거나 전체 공실인 경우, 붙여넣은 실제 호실 번호 목록으로 깔끔하게 교체
-        has_active_contracts = any(u.active() and u.active().tenant_name for u in b.view())
+        has_active_contracts = any((act := u.active()) is not None and bool(act.tenant_name) for u in b.view())
         new_roster_units = sorted(set(item["room_number"] for item in roster_items))
         if not has_active_contracts:
             b.units = new_roster_units
@@ -993,7 +993,7 @@ def smart_ocr_contract(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
     if auto_apply and normalized_rows:
         # 건물 서브클래스(SunhoBuilding / SinbiBuilding / ChicvillBuilding)의 전용 reset_and_import 실행
         import_res = b.reset_and_import(normalized_rows, clear_existing=clear_before_import)
-        saved_contracts = [u.active().model_dump() for u in b.view() if u.active()]
+        saved_contracts = [act.model_dump() for u in b.view() if (act := u.active()) is not None]
     elif auto_apply:
         for raw_row in res.get("rows", []):
             norm = _normalize_contract_row(raw_row)

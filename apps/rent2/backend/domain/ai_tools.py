@@ -229,7 +229,7 @@ def import_contract_roster(building: str, text: str) -> Dict[str, Any]:
         raise ValueError("텍스트에서 호실별 임대차 계약 정보를 파싱하지 못했습니다.")
 
     # 전체 공실이거나 신규 개설 상태인 경우, 실제 입력된 호실 번호로 교체
-    has_active = any(u.active() and u.active().tenant_name for u in b.view())
+    has_active = any((act := u.active()) is not None and bool(act.tenant_name) for u in b.view())
     new_units = sorted(set(it["room_number"] for it in items))
     if not has_active:
         b.units = new_units
