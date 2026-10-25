@@ -14,12 +14,12 @@ ALIASES = {
     "main": ["chicvill01", "chicvill1", "chicvill", "시크빌", "시크빌1호점", "시크빌 1호점"],
     "branch_9027": ["chicvill02", "chicvill2", "시크빌2호점", "시크빌 2호점"],
 }
-DEFAULT_USERS = [("admin", "본사 총괄 최고관리자", "superadmin", None), ("chic", "시크빌 점주", "branch_admin", "main"),
-                 ("sunho", "선호빌 점주", "branch_admin", "sunho"), ("sinbi", "신비주택 점주", "branch_admin", "branch_9348"),
-                 ("chicvill", "시크빌 1호점 점주실장", "branch_admin", "main"), ("chickvill", "시크빌 1호점 점주실장", "branch_admin", "main"),
-                 ("chicvill01", "시크빌 1호점 점주실장", "branch_admin", "main"), ("admin01", "시크빌 1호점 실장", "branch_admin", "main"),
-                 ("chicvill2", "시크빌 2호점 점주실장", "branch_admin", "branch_9027"), ("chicvill02", "시크빌 2호점 점주실장", "branch_admin", "branch_9027"),
-                 ("admin02", "시크빌 2호점 실장", "branch_admin", "branch_9027")]
+DEFAULT_USERS = [
+    ("admin", "본사 총괄 최고관리자", "superadmin", None),
+    ("admin01", "1호점(본점) 관리실장", "branch_admin", "main"),
+    ("admin02", "2호점 관리실장", "branch_admin", "branch_9027"),
+    ("user", "일반 회원/세입자", "user", None),
+]
 _ready_store: Optional[Any] = None      # 이 저장소 인스턴스로 이미 초기화했는가 (캐시)
 
 

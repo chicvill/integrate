@@ -218,17 +218,43 @@ async function handleCreateBranchSubmit(e) {
   }
 }
 
-// ── 매장 삭제 ──
+// ── 매장 삭제 (2단계 인라인 안전 확인: 브라우저 팝업 블록 원천 방지) ──
 async function deleteAdminBranch(bid, name) {
   if (bid === "main") {
     setAlert("기본 본사 부동산(시크빌 1호점)은 삭제할 수 없습니다.", "warning");
     return;
   }
-  if (!confirm(`⚠️ 정말로 '${name}' (${bid}) 매장을 삭제하시겠습니까?\n모든 호실, 계약, 수납 데이터가 영구 삭제됩니다.`)) return;
 
   const btn = document.getElementById(`btnDelBranch_${bid}`) || (event && event.target);
-  const origText = btn ? btn.textContent : "삭제";
+
+  // 1차 클릭: 확인 모드로 전환 (4초 대기)
+  if (btn && btn.dataset.confirming !== "true") {
+    btn.dataset.confirming = "true";
+    btn.dataset.origText = btn.textContent;
+    btn.textContent = "⚠️ 확인 시 영구삭제";
+    btn.style.background = "#c62828";
+    btn.style.color = "#ffffff";
+    btn.style.borderColor = "#b71c1c";
+    btn.style.fontWeight = "800";
+    setAlert(`⚠️ '${name}' 매장의 모든 호실·계약·수납 데이터가 함께 삭제됩니다. 정말 삭제하려면 빨간색 버튼을 한 번 더 누르세요.`, "warning");
+
+    // 4초 후 원래 버튼 상태로 안전 복원
+    setTimeout(() => {
+      if (btn && btn.dataset.confirming === "true") {
+        delete btn.dataset.confirming;
+        btn.textContent = btn.dataset.origText || "삭제";
+        btn.style.background = "";
+        btn.style.color = "#c62828";
+        btn.style.borderColor = "#c62828";
+        btn.style.fontWeight = "";
+      }
+    }, 4000);
+    return;
+  }
+
+  // 2차 클릭: 실제 영구 삭제 실행
   if (btn) {
+    delete btn.dataset.confirming;
     btn.disabled = true;
     btn.textContent = "삭제 중... ⏳";
   }
@@ -252,7 +278,10 @@ async function deleteAdminBranch(bid, name) {
   } catch (err) {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = origText;
+      btn.textContent = "삭제";
+      btn.style.background = "";
+      btn.style.color = "#c62828";
+      btn.style.borderColor = "#c62828";
     }
     setAlert(`매장 삭제 실패: ${err.message}`, "error");
   }

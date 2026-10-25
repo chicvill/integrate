@@ -394,7 +394,7 @@
       <form onsubmit="handleLoginSubmit(event)">
         <div class="form-group">
           <label>아이디 (Username):</label>
-          <input type="text" id="loginUsername" placeholder="예: admin, sunho, chic, sinbi" autocomplete="username" required>
+          <input type="text" id="loginUsername" placeholder="예: admin, admin01, admin02, user" autocomplete="username" required>
         </div>
         <div class="form-group" style="margin-bottom:16px;">
           <label>비밀번호 (Password):</label>
@@ -407,9 +407,9 @@
         <div style="font-size:0.8rem; font-weight:700; color:var(--muted); margin-bottom:8px;">⚡ 빠른 테스트 원클릭 로그인:</div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
           <button type="button" class="btn-outline" style="padding:7px 8px; font-size:0.8rem;" onclick="quickLogin('admin','1212')">👑 본사 총괄 (admin)</button>
-          <button type="button" class="btn-outline" style="padding:7px 8px; font-size:0.8rem;" onclick="quickLogin('sunho','1212')">🏢 선호빌 점주 (sunho)</button>
-          <button type="button" class="btn-outline" style="padding:7px 8px; font-size:0.8rem;" onclick="quickLogin('chic','1212')">🏢 시크빌 점주 (chic)</button>
-          <button type="button" class="btn-outline" style="padding:7px 8px; font-size:0.8rem;" onclick="quickLogin('sinbi','1212')">🏢 신비주택 점주 (sinbi)</button>
+          <button type="button" class="btn-outline" style="padding:7px 8px; font-size:0.8rem;" onclick="quickLogin('admin01','1212')">🏢 1호점 실장 (admin01)</button>
+          <button type="button" class="btn-outline" style="padding:7px 8px; font-size:0.8rem;" onclick="quickLogin('admin02','1212')">🏢 2호점 실장 (admin02)</button>
+          <button type="button" class="btn-outline" style="padding:7px 8px; font-size:0.8rem;" onclick="quickLogin('user','1212')">👤 일반 회원 (user)</button>
         </div>
       </div>
     </div>
@@ -535,14 +535,7 @@
           const data = await res.json();
           currentUser = data.user || data;
 
-          let bName = currentUser.branch_name || '';
-          if (!bName) {
-            if (currentUser.branch === 'chic') bName = '시크빌';
-            else if (currentUser.branch === 'sunho') bName = '선호빌';
-            else if (currentUser.branch === 'sinbi') bName = '신비주택';
-            else if (currentUser.role === 'superadmin') bName = '시크빌';
-            else bName = '시크빌';
-          }
+          let bName = currentUser.branch_name || currentUser.branch || '시크빌 1호점 (본점)';
 
           if (branchBadge) {
             branchBadge.textContent = bName;

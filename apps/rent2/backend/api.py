@@ -98,9 +98,11 @@ def create_branch(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
     bid = (p.get("branch_id") or "").strip()
     if not bid or Building.get(bid):
         raise HTTPException(400, "이미 존재하는 건물/지점 ID이거나 ID가 비어 있습니다.")
-    b = Building(id=bid, name=p.get("name") or bid, contact_phone=p.get("contact_phone") or "", address=p.get("address") or "",
+    b_name = (p.get("name") or bid).strip()
+    b_aliases = list(set([bid, b_name]))
+    b = Building(id=bid, name=b_name, contact_phone=p.get("contact_phone") or "", address=p.get("address") or "",
                  fee_plan=p.get("fee_plan") or "원룸 프리미엄 29실형", monthly_fee=num(p.get("monthly_fee") or 150000),
-                 billing_due_day=num(p.get("billing_due_day") or 25), aliases=ALIASES.get(bid, [])).save("created")
+                 billing_due_day=num(p.get("billing_due_day") or 25), aliases=b_aliases).save("created")
     
     # 초기 호실 자동 생성 (호실 수 또는 호실 번호 목록)
     init_rooms = p.get("rooms") or p.get("initial_rooms") or p.get("room_count")
@@ -114,6 +116,7 @@ def create_branch(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
             b.units = sorted(set(int(x.strip()) for x in init_rooms.split(",") if x.strip().isdigit()))
         b.save("units_initialized")
 
+    Building.invalidate_cache()
     return _branch(b)
 
 
