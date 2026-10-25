@@ -364,15 +364,16 @@
 </head>
 <body>
   <header>
-    <div class="header-title">
-      <span>🤖</span>
-      <span>MQnet 임차관리 AI 비서 (rent2 객체 모델)</span>
+    <div class="header-title" style="display:flex; align-items:center; gap:6px;">
+      <span style="font-size:1.15rem;">🤖</span>
+      <span style="font-weight:800; font-size:1.05rem; letter-spacing:-0.5px;">Ai비서</span>
     </div>
-    <div class="header-links" style="display:flex; align-items:center; gap:8px;">
-      <span id="userBadge" style="font-size:0.85rem; color:#93c5fd; background:rgba(59,130,246,0.15); padding:5px 10px; border-radius:6px; border:1px solid #3b82f6;">확인 중...</span>
-      <button id="btnAuthAction" class="btn btn-primary" style="padding:6px 12px; font-size:0.85rem;" onclick="handleAuthClick()">🔑 로그인</button>
-      <a href="./index.html">🏠 전산 화면 바로가기</a>
-      <a href="./manual.html" target="_blank">📖 매뉴얼</a>
+    <div class="header-links" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+      <span id="branchBadge" style="font-size:0.85rem; font-weight:700; color:#38bdf8; background:rgba(56,189,248,0.12); padding:5px 9px; border-radius:6px; border:1px solid #0284c7; white-space:nowrap;">시크빌</span>
+      <span id="userBadge" style="font-size:0.85rem; font-weight:700; color:#93c5fd; background:rgba(59,130,246,0.15); padding:5px 9px; border-radius:6px; border:1px solid #3b82f6; white-space:nowrap;">chic</span>
+      <button id="btnAuthAction" class="btn btn-secondary" style="padding:5px 10px; font-size:0.85rem; font-weight:700; white-space:nowrap;" onclick="handleAuthClick()">로그아웃</button>
+      <a href="./index.html" class="btn-link" style="font-size:0.85rem; font-weight:700; color:#f8fafc; text-decoration:none; padding:5px 10px; border-radius:6px; border:1px solid var(--border); background:rgba(255,255,255,0.05); white-space:nowrap;">호실관제</a>
+      <a href="./manual.html" target="_blank" class="btn-link" style="font-size:0.85rem; font-weight:700; color:#cbd5e1; text-decoration:none; padding:5px 10px; border-radius:6px; border:1px solid var(--border); background:rgba(255,255,255,0.05); white-space:nowrap;">메뉴얼</a>
     </div>
   </header>
 
@@ -501,6 +502,7 @@
     // ── 세션 복원 및 검증 ──
     async function restoreSession() {
       const tok = getToken();
+      const branchBadge = document.getElementById('branchBadge');
       const userBadge = document.getElementById('userBadge');
       const btnAuth = document.getElementById('btnAuthAction');
       const userStatus = document.getElementById('userStatus');
@@ -508,14 +510,15 @@
 
       if (!tok) {
         currentUser = null;
+        if (branchBadge) branchBadge.style.display = 'none';
         if (userBadge) {
-          userBadge.textContent = '비로그인 상태';
+          userBadge.textContent = '로그인';
           userBadge.style.color = 'var(--muted)';
           userBadge.style.borderColor = 'var(--border)';
           userBadge.style.background = 'rgba(255,255,255,0.05)';
         }
         if (btnAuth) {
-          btnAuth.textContent = '🔑 로그인';
+          btnAuth.textContent = '로그인';
           btnAuth.className = 'btn btn-primary';
         }
         if (userStatus) {
@@ -531,11 +534,22 @@
         if (res.ok) {
           const data = await res.json();
           currentUser = data.user || data;
-          const icon = currentUser.role === 'superadmin' ? '👑' : '🏢';
-          const roleName = currentUser.role === 'superadmin' ? '본사총괄' : '지점관리자';
 
+          let bName = currentUser.branch_name || '';
+          if (!bName) {
+            if (currentUser.branch === 'chic') bName = '시크빌';
+            else if (currentUser.branch === 'sunho') bName = '선호빌';
+            else if (currentUser.branch === 'sinbi') bName = '신비주택';
+            else if (currentUser.role === 'superadmin') bName = '시크빌';
+            else bName = '시크빌';
+          }
+
+          if (branchBadge) {
+            branchBadge.textContent = bName;
+            branchBadge.style.display = 'inline-block';
+          }
           if (userBadge) {
-            userBadge.textContent = `${icon} ${currentUser.username} (${roleName})`;
+            userBadge.textContent = currentUser.username || 'chic';
             userBadge.style.color = '#93c5fd';
             userBadge.style.borderColor = '#3b82f6';
             userBadge.style.background = 'rgba(59,130,246,0.15)';
@@ -545,11 +559,11 @@
             btnAuth.className = 'btn btn-secondary';
           }
           if (userStatus) {
-            userStatus.textContent = `(접속자: ${currentUser.name || currentUser.username} · ${currentUser.branch_name || '본사'})`;
+            userStatus.textContent = `(접속자: ${currentUser.name || currentUser.username} · ${bName})`;
             userStatus.style.color = 'var(--muted)';
           }
-          if (buildingName && currentUser.branch_name) {
-            buildingName.textContent = currentUser.branch_name;
+          if (buildingName) {
+            buildingName.textContent = bName;
           }
           loadTimeline();
           return true;
@@ -561,8 +575,9 @@
       // 토큰 만료 처리
       setToken(null);
       currentUser = null;
-      if (userBadge) userBadge.textContent = '세션 만료';
-      if (btnAuth) btnAuth.textContent = '🔑 로그인';
+      if (branchBadge) branchBadge.style.display = 'none';
+      if (userBadge) userBadge.textContent = '로그인';
+      if (btnAuth) btnAuth.textContent = '로그인';
       if (userStatus) userStatus.textContent = '(세션 만료 - 재로그인 필요)';
       loadTimeline();
       return false;
