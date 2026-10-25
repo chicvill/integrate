@@ -755,11 +755,13 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
     bid = Building.canon(p.get("branch_id") or user.branch or "main")
     scan_kind = p.get("scan_kind") or "receipt"
 
+    clear_before_import = bool(p.get("clear_before_import", True))
+
     # A. 이미지 데이터 (base64 직접 전달 또는 text가 data:image)
     if img or text.startswith("data:image/"):
         target_img = img or text
         if scan_kind == "contract":
-            con_res = smart_ocr_contract({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
+            con_res = smart_ocr_contract({"image_base64": target_img, "branch_id": bid, "auto_apply": True, "clear_before_import": clear_before_import}, user)
             if con_res.get("success") and con_res.get("applied_count", 0) > 0:
                 return con_res
             rec_res = smart_ocr_receipt({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
@@ -769,7 +771,7 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
             rec_res = smart_ocr_receipt({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
             if rec_res.get("success") and (rec_res.get("expense") or (rec_res.get("data") and rec_res["data"].get("amount"))):
                 return rec_res
-            con_res = smart_ocr_contract({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
+            con_res = smart_ocr_contract({"image_base64": target_img, "branch_id": bid, "auto_apply": True, "clear_before_import": clear_before_import}, user)
             if con_res.get("success") and con_res.get("applied_count", 0) > 0:
                 return con_res
             return con_res if con_res.get("success") else rec_res
@@ -797,7 +799,7 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
             with open(clean_path, "rb") as f:
                 b64 = "data:image/jpeg;base64," + base64.b64encode(f.read()).decode("utf-8")
             if scan_kind == "contract":
-                return smart_ocr_contract({"image_base64": b64, "branch_id": bid, "auto_apply": True}, user)
+                return smart_ocr_contract({"image_base64": b64, "branch_id": bid, "auto_apply": True, "clear_before_import": clear_before_import}, user)
             else:
                 return smart_ocr_receipt({"image_base64": b64, "branch_id": bid, "auto_apply": True}, user)
         elif ext in (".xlsx", ".xls", ".csv", ".tsv"):
@@ -978,30 +980,26 @@ def smart_ocr_contract(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
     bid = Building.canon(p.get("branch_id") or user.branch or "main")
     b = _b(bid)
     auto_apply = bool(p.get("auto_apply", True))
+    clear_before_import = bool(p.get("clear_before_import", True))
     saved_contracts = []
 
-    # 신규 건물이거나 실제 유효 계약이 없는 상태면 개설 시 들어간 임시 가상 호실들을 실제 장부 호실들로 교체
-    existing_contracts = Contract.find(bid)
-    has_active_contracts = any(c.active and c.tenant_name and c.tenant_name not in ("공실", "현재 공실") for c in existing_contracts)
-    parsed_valid_units = set()
-
+    # 정규화된 계약 행 준비
+    normalized_rows = []
     for raw_row in res.get("rows", []):
         norm = _normalize_contract_row(raw_row)
-        room_n = norm["room_number"]
-        if room_n:
-            parsed_valid_units.add(room_n)
+        if norm.get("room_number") and b.valid_room(norm["room_number"]):
+            normalized_rows.append(norm)
 
-    # 실제 장부에서 호실들이 인식되었으면 장부 호실 목록으로 리셋
-    if not has_active_contracts and parsed_valid_units:
-        b.units = sorted(parsed_valid_units)
-        b.save("units_synced_from_ledger")
-
-    for raw_row in res.get("rows", []):
-        norm = _normalize_contract_row(raw_row)
-        room_n = norm["room_number"]
-        if room_n:
-            b.add_unit(room_n)  # 건물에 호실 자동 등록!
-            if auto_apply:
+    if auto_apply and normalized_rows:
+        # 건물 서브클래스(SunhoBuilding / SinbiBuilding / ChicvillBuilding)의 전용 reset_and_import 실행
+        import_res = b.reset_and_import(normalized_rows, clear_existing=clear_before_import)
+        saved_contracts = [u.active().model_dump() for u in b.view() if u.active()]
+    elif auto_apply:
+        for raw_row in res.get("rows", []):
+            norm = _normalize_contract_row(raw_row)
+            room_n = norm["room_number"]
+            if room_n and b.valid_room(room_n):
+                b.add_unit(room_n)
                 u = b.unit(room_n)
                 c = u.update({
                     "name": norm["name"],
@@ -1022,11 +1020,12 @@ def smart_ocr_contract(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
         "success": True,
         "ocr_kind": "contract",
         "branch_id": bid,
+        "building_type": getattr(b, "BUILDING_TYPE", "base"),
         "total_extracted": len(res.get("rows", [])),
         "applied_count": len(saved_contracts),
         "extracted_rows": res.get("rows", []),
         "applied_contracts": saved_contracts,
-        "message": f"총 {len(saved_contracts)}개 호실의 임대차 계약 정보가 성공적으로 등록되었습니다!" if ok else f"{len(res.get('rows', []))}건의 항목이 분석되었으나 세입자 정보가 누락되었습니다."
+        "message": f"[{b.name}] 총 {len(saved_contracts)}개 호실의 임대차 계약 정보가 성공적으로 등록(기존 데이터 정화 및 교체 완료)되었습니다!" if ok else f"{len(res.get('rows', []))}건의 항목이 분석되었으나 유효한 세입자 정보가 없습니다."
     }
 
 

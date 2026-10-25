@@ -543,6 +543,10 @@ class Building(Obj):
     aliases: List[str] = Field(default_factory=list)       # 별칭(chicvill01, 시크빌 …) → 단일 진입점 resolve()
     vat_target_rooms: Optional[List[int]] = None
 
+    DEFAULT_UNITS: ClassVar[List[int]] = []
+    CANON_ALIASES: ClassVar[List[str]] = []
+    BUILDING_TYPE: ClassVar[str] = "base"
+
     _cache: ClassVar[Dict[str, "Building"]] = {}
     _cache_time: ClassVar[float] = 0.0
     _CACHE_TTL: ClassVar[float] = 3.0  # 3초 인메모리 캐시 (초고속 응답 & 실시간 반영)
@@ -563,34 +567,70 @@ class Building(Obj):
         return list(cls._cache.values())
 
     @classmethod
+    def _wrap_subclass(cls, b: Optional["Building"]) -> Optional["Building"]:
+        if not b:
+            return None
+        bid = b.id.lower()
+        bname = (b.name or "").lower()
+        if bid in ("sunho", "branch_5611") or "선호" in bname:
+            return SunhoBuilding.model_validate(b.model_dump())
+        elif bid in ("sinbi", "branch_9348") or "신비" in bname:
+            return SinbiBuilding.model_validate(b.model_dump())
+        elif bid in ("main", "chic", "chicvill", "chicvill01") or "시크빌" in bname:
+            return ChicvillBuilding.model_validate(b.model_dump())
+        return b
+
+    @classmethod
     def resolve(cls, ref: Optional[str], default_to_first: bool = False) -> Optional["Building"]:
         ref = (ref or "").strip()
         all_b = cls.cached_all()
         if not ref:
-            return all_b[0] if (default_to_first and all_b) else None
-        # 1. ID 완전 일치 (대소문자 구분 및 캐시)
-        if ref in cls._cache:
-            return cls._cache[ref]
+            return cls._wrap_subclass(all_b[0]) if (default_to_first and all_b) else None
+
         low = ref.lower()
+
+        # 1. 전용 서브클래스 별칭(CANON_ALIASES) 우선 매칭
+        for sub in (ChicvillBuilding, SinbiBuilding, SunhoBuilding):
+            if any(a.lower() == low for a in sub.CANON_ALIASES):
+                target_id = "main" if sub is ChicvillBuilding else ("sinbi" if sub is SinbiBuilding else "sunho")
+                for b in all_b:
+                    if b.id.lower() == target_id:
+                        return cls._wrap_subclass(b)
+
+        # 2. ID 완전 일치
+        if ref in cls._cache:
+            return cls._wrap_subclass(cls._cache[ref])
         for b in all_b:
             if b.id.lower() == low:
-                return b
-        # 2. 건물명 완전 일치
+                return cls._wrap_subclass(b)
+
+        # 3. 건물명 완전 일치
         for b in all_b:
             if b.name.lower() == low:
-                return b
-        # 3. 별칭(Aliases) 완전 일치
+                return cls._wrap_subclass(b)
+
+        # 4. 별칭(Aliases) 완전 일치
         for b in all_b:
             if any(a.lower() == low for a in b.aliases):
-                return b
-        # 4. 건물명 부분 일치
+                return cls._wrap_subclass(b)
+
+        # 5. 건물명 부분 일치
         for b in all_b:
             if low in b.name.lower():
-                return b
-        return all_b[0] if (default_to_first and all_b) else None
+                return cls._wrap_subclass(b)
+
+        return cls._wrap_subclass(all_b[0]) if (default_to_first and all_b) else None
 
     @classmethod
     def canon(cls, ref: Optional[str]) -> str:
+        s = (ref or "").strip()
+        if not s:
+            return "main"
+        low = s.lower()
+        # 서브클래스 별칭 즉각 정규화
+        for sub in (ChicvillBuilding, SinbiBuilding, SunhoBuilding):
+            if any(a.lower() == low for a in sub.CANON_ALIASES):
+                return "main" if sub is ChicvillBuilding else ("sinbi" if sub is SinbiBuilding else "sunho")
         b = cls.resolve(ref, default_to_first=True)
         return b.id if b else (ref or "main")
 
@@ -600,6 +640,10 @@ class Building(Obj):
         if not b:
             raise LookupError(f"해당 건물을 찾을 수 없습니다: {ref}")
         return b
+
+    def valid_room(self, unit_number: int) -> bool:
+        """호실 번호 유효성 검사 (서브클래스에서 고유 규칙 오버라이드)"""
+        return not self.DEFAULT_UNITS or unit_number in self.DEFAULT_UNITS
 
     def save(self, action: str = "saved", **kwargs: Any) -> "Building":
         res = super().save(action, **kwargs)
@@ -826,6 +870,108 @@ class Building(Obj):
         f.update(tenant_name=str(r.get("name") or ""), move_out=str(r.get("move_out") or ""))
         f["lease_type"], f["pay_timing"] = f["lease_type"] or "월세", f["pay_timing"] or "후불"
         return f
+
+    def reset_and_import(self, rows: List[Dict[str, Any]], clear_existing: bool = True) -> Dict[str, Any]:
+        """일괄 입력 시 기존 가짜/더미 호실 및 이전 데이터를 초기화하고, 본 매장 전용 규격에 맞춰 깨끗하게 적재"""
+        with store().tx():
+            if clear_existing:
+                Payment.purge(self.id)
+                Contract.purge(self.id)
+                # 호실 목록을 매장 표준 기본 규격으로 리셋
+                if self.DEFAULT_UNITS:
+                    self.units = list(self.DEFAULT_UNITS)
+                else:
+                    self.units = []
+                self.save("reset_before_import")
+
+            added, changed, skipped = 0, 0, 0
+            for r in rows:
+                raw_room = r.get("room_number") or r.get("unit")
+                n = num(raw_room)
+                if not n:
+                    continue
+                # 매장 고유 호실 유효성 검사 (타 매장 유령 호실 유입 원천 차단)
+                if not self.valid_room(n):
+                    skipped += 1
+                    continue
+
+                self.add_unit(n)
+                u = self.unit(n)
+                known = u.latest() is not None
+                form = {k: v for k, v in r.items() if k in FORM and v is not None}
+                if known and not str(form.get("name") or "").strip():
+                    form.pop("name", None)
+                u.update({**form, "note": r.get("note") or ""})
+                added, changed = (added, changed + 1) if known else (added + 1, changed)
+
+            # 표준 호실 목록이 있으면 빠진 호실도 기본 등록
+            if self.DEFAULT_UNITS:
+                for du in self.DEFAULT_UNITS:
+                    if du not in self.units:
+                        self.add_unit(du)
+                self.units = sorted(self.units)
+                self.save("units_standardized")
+
+            return {
+                "success": True,
+                "branch_id": self.id,
+                "imported_count": added,
+                "updated_count": changed,
+                "skipped_count": skipped,
+                "total_rooms": len(self.units),
+                "rooms": self.rooms()
+            }
+
+
+# ───────────────────────────── 지점별 특화 서브클래스 (상속) ─────────────────────────────
+class ChicvillBuilding(Building):
+    """시크빌 1호점 (본점) 객체 모델 — 29개실 표준"""
+    DEFAULT_UNITS: ClassVar[List[int]] = [
+        101, 201, 202, 203, 204, 205, 301, 302, 303, 304, 305, 401, 402, 403, 404, 405,
+        501, 502, 503, 504, 505, 601, 602, 603, 604, 605, 701, 702, 703
+    ]
+    CANON_ALIASES: ClassVar[List[str]] = [
+        "main", "chic", "chicvill", "chicvill01", "chickvill", "시크빌", "시크빌 1호점", "시크빌 본점", "시크빌1호점", "시크빌본점"
+    ]
+    BUILDING_TYPE: ClassVar[str] = "chicvill"
+
+    def valid_room(self, unit_number: int) -> bool:
+        return unit_number in self.DEFAULT_UNITS
+
+
+class SinbiBuilding(Building):
+    """신비주택 객체 모델 — 20개실 표준 (101~105, 201~205, 301~305, 401~405)"""
+    DEFAULT_UNITS: ClassVar[List[int]] = [
+        101, 102, 103, 104, 105,
+        201, 202, 203, 204, 205,
+        301, 302, 303, 304, 305,
+        401, 402, 403, 404, 405
+    ]
+    CANON_ALIASES: ClassVar[List[str]] = [
+        "sinbi", "branch_9348", "신비", "신비주택", "신비원룸"
+    ]
+    BUILDING_TYPE: ClassVar[str] = "sinbi"
+
+    def valid_room(self, unit_number: int) -> bool:
+        # 신비주택은 1~4층 1~5호실만 허용 (206~215호 차단)
+        return unit_number in self.DEFAULT_UNITS
+
+
+class SunhoBuilding(Building):
+    """선호아트빌 객체 모델 — 15개실 표준 (201~206, 301~306, 402~404)"""
+    DEFAULT_UNITS: ClassVar[List[int]] = [
+        201, 202, 203, 204, 205, 206,
+        301, 302, 303, 304, 305, 306,
+        402, 403, 404
+    ]
+    CANON_ALIASES: ClassVar[List[str]] = [
+        "sunho", "branch_5611", "선호", "선호아트빌", "선호빌", "선호원룸"
+    ]
+    BUILDING_TYPE: ClassVar[str] = "sunho"
+
+    def valid_room(self, unit_number: int) -> bool:
+        # 선호아트빌은 2~3층 1~6호, 4층 2~4호만 허용
+        return unit_number in self.DEFAULT_UNITS
 
 
 def _differs(base: Dict[str, Any], p: Dict[str, Any]) -> bool:

@@ -175,6 +175,15 @@ function openAIPasteModal() {
   const helpBox = document.getElementById("pasteHelpBox");
   if (helpBox) helpBox.style.display = "none";
   if (typeof setPasteVoiceStatus === "function") setPasteVoiceStatus("");
+
+  // 현재 대상 매장명 배지 즉시 갱신
+  const sel = document.getElementById("branchSelect");
+  const branchName = sel ? (sel.options[sel.selectedIndex]?.text || curBranch) : curBranch;
+  const badge = document.getElementById("pasteTargetBranchBadge");
+  if (badge) {
+    badge.textContent = `📍 ${branchName}`;
+  }
+
   setTimeout(() => {
     const pt = document.getElementById("pasteText");
     if (pt) {
@@ -347,6 +356,7 @@ async function submitUniversalIngest() {
   setAlert(isPhoto ? "📸 사진(임대차 대장/영수증)을 AI가 정밀 분석 중입니다. 잠시만 기다려주세요..." : "만능 인제스트 분석 및 처리 진행 중...", "info");
 
   try {
+    const clearBeforeImport = document.getElementById("chkClearBeforeImport") ? document.getElementById("chkClearBeforeImport").checked : true;
     const res = await apiFetch(`${API_BASE}/smart/universal-ingest`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -354,7 +364,8 @@ async function submitUniversalIngest() {
         text,
         image_base64: img,
         scan_kind: scanKind,
-        branch_id: curBranch
+        branch_id: curBranch,
+        clear_before_import: clearBeforeImport
       })
     });
 
