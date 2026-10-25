@@ -329,19 +329,14 @@
           <!-- 동그라미 ? 도움말 아이콘 -->
           <button type="button" class="btn-help-circle" onclick="togglePasteHelp()" title="사용 안내 보기">?</button>
         </div>
-        <div style="display:flex;align-items:center;gap:6px;">
-          <button type="button" id="btnMicPaste" class="btn-mic" style="border-radius:6px;padding:5px 9px;font-size:13px;white-space:nowrap;background:#ffffff;border:1.5px solid #2563eb;color:#1d4ed8;font-weight:800;display:flex;align-items:center;gap:4px;cursor:pointer;" onclick="toggleVoiceAI('pasteText', 'btnMicPaste')" title="마이크 음성 입력 🎙️">
-            🎙️ 음성
-          </button>
-          <button class="close-btn" onclick="closeModal('modalPaste')">×</button>
-        </div>
+        <button class="close-btn" onclick="closeModal('modalPaste')">×</button>
       </div>
 
       <!-- 동그라미 ? 클릭 시 토글되는 도움말 팝업 박스 (화면 단순화) -->
       <div id="pasteHelpBox" style="display:none;font-size:12px;color:#334155;margin-bottom:10px;line-height:1.55;background:#f8fafc;padding:12px 14px;border-radius:6px;border:1.5px solid #cbd5e1;">
-        <div style="font-weight:800;color:#0f172a;margin-bottom:6px;font-size:12.5px;">💡 AI 비서 입력 안내 (선호하는 방식으로 사용)</div>
-        • <b>음성 마이크</b>: 상단 [🎙️ 음성] 버튼을 누르고 말씀하시면 내용이 텍스트로 자동 입력됩니다.<br>
-        • <b>직접 타이핑 질문</b>: "이번달 미납 호실은?", "302호 월세 수납 완료" 등 작업 지시<br>
+        <div style="font-weight:800;color:#0f172a;margin-bottom:6px;font-size:12.5px;">💡 AI 비서 입력 안내</div>
+        • <b>음성 입력</b>: 스마트폰에서는 자판(키보드)의 <b>마이크(🎙️)</b>를 누르고 말씀하시면 즉시 텍스트로 입력됩니다.<br>
+        • <b>직접 타이핑 질문</b>: "이번달 미납 호실은?", "현재 공실 알려줘" 등 질문 및 작업 지시<br>
         • <b>은행 입금문자</b>: 복사한 입금 문자(호실·금액 자동 인식)를 붙여넣기<br>
         • <b>사진 첨부 (Ctrl+V)</b>: 계약서나 영수증 캡처 사진 붙여넣기<br>
         • <b>구글 시트 연동</b>: 구글 스프레드시트 링크 입력 또는 
@@ -358,11 +353,8 @@
         <button type="button" class="btn-sm btn-outline" style="padding:4px 8px;font-size:11.5px;font-weight:700;white-space:nowrap;border-radius:12px;" onclick="clearPasteArea()">비우기 🧹</button>
       </div>
 
-      <!-- 실시간 음성 인식 상태 안내 인라인 배너 -->
-      <div id="pasteVoiceStatus" style="display:none;padding:9px 12px;margin-bottom:8px;border-radius:6px;font-size:12px;font-weight:700;line-height:1.45;"></div>
-
       <div class="form-group" style="margin-bottom:6px;">
-        <textarea id="pasteText" rows="4" placeholder="질문을 입력하거나 상단 [🎙️ 음성], 자판 마이크(🎙️), 또는 문자/데이터를 붙여넣으세요..." oninput="previewUniversalPaste()" onpaste="handleClipboardPaste(event)" onkeydown="handlePasteKeyDown(event)" style="font-size:13.5px;line-height:1.45;padding:10px;"></textarea>
+        <textarea id="pasteText" rows="4" placeholder="질문을 입력하거나 스마트폰 자판의 마이크(🎙️), 또는 문자/데이터를 붙여넣으세요..." oninput="previewUniversalPaste()" onpaste="handleClipboardPaste(event)" onkeydown="handlePasteKeyDown(event)" style="font-size:13.5px;line-height:1.45;padding:10px;"></textarea>
       </div>
       <div style="font-size:11px;color:#64748b;margin-bottom:8px;display:flex;align-items:center;gap:4px;padding-left:2px;">
         <span>💡 팁: 스마트폰 자판(키보드)의 <b>마이크 버튼(🎙️)</b>을 터치하시면 언제든 100% 음성 입력이 가능합니다.</span>
