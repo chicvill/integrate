@@ -751,9 +751,20 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
     if img or text.startswith("data:image/"):
         target_img = img or text
         if scan_kind == "contract":
-            return smart_ocr_contract({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
+            con_res = smart_ocr_contract({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
+            if con_res.get("success") and con_res.get("applied_count", 0) > 0:
+                return con_res
+            rec_res = smart_ocr_receipt({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
+            return rec_res if (rec_res.get("success") and rec_res.get("expense")) else con_res
         else:
-            return smart_ocr_receipt({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
+            # 영수증 스캔을 먼저 시도하되, 지출 금액이 없거나 인식 실패 시 자동으로 계약서/장부 스캔으로 fallback
+            rec_res = smart_ocr_receipt({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
+            if rec_res.get("success") and (rec_res.get("expense") or (rec_res.get("data") and rec_res["data"].get("amount"))):
+                return rec_res
+            con_res = smart_ocr_contract({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
+            if con_res.get("success") and con_res.get("applied_count", 0) > 0:
+                return con_res
+            return con_res if con_res.get("success") else rec_res
 
     # B. 구글 시트 URL
     if "docs.google.com/spreadsheets" in text:
@@ -860,9 +871,44 @@ def smart_paste_payment(p: Dict[str, Any] = Body(...), user: User = Depends(me))
     }
 
 
+def _normalize_contract_row(row: Dict[str, Any]) -> Dict[str, Any]:
+    """임대차 대장/계약서 OCR 결과의 다양한 한글/영문 필드명을 안전하게 정규화"""
+    room_raw = (row.get("호실") or row.get("호수") or row.get("방번호") or row.get("room_number") or 
+                row.get("room") or row.get("unit") or row.get("호") or "")
+    room_n = num(room_raw)
+
+    name = str(row.get("세입자") or row.get("성명") or row.get("이름") or row.get("임차인") or 
+               row.get("입주자") or row.get("입주인") or row.get("name") or row.get("tenant") or "").strip()
+    
+    phone = str(row.get("연락처") or row.get("전화번호") or row.get("휴대폰") or row.get("핸드폰") or 
+                row.get("phone") or row.get("tel") or "").strip()
+
+    id_number = str(row.get("주민등록번호") or row.get("주민번호") or row.get("id_number") or "").strip()
+    deposit = num(row.get("보증금") or row.get("전세금") or row.get("deposit"))
+    rent = num(row.get("월세") or row.get("차임") or row.get("임대료") or row.get("월차임") or row.get("rent"))
+    maintenance = num(row.get("관리비") or row.get("maintenance"))
+    clean_fee = num(row.get("청소비") or row.get("clean_fee"))
+
+    move_in = str(row.get("전입일") or row.get("입주일") or row.get("계약시작일") or row.get("시작일") or row.get("move_in") or "").strip()
+    expiry = str(row.get("만기일") or row.get("계약종료일") or row.get("만료일") or row.get("종료일") or row.get("expiry") or "").strip()
+
+    return {
+        "room_number": room_n,
+        "name": name,
+        "phone": phone,
+        "id_number": id_number,
+        "deposit": deposit,
+        "rent": rent,
+        "maintenance": maintenance,
+        "clean_fee": clean_fee,
+        "move_in": move_in or today().isoformat(),
+        "expiry": expiry
+    }
+
+
 @router.post("/smart/ocr-contract")
 def smart_ocr_contract(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
-    """계약서 카메라 사진 ➡️ OCR 텍스트 추출 및 계약 등록"""
+    """계약서/임대차 대장 카메라 사진 ➡️ OCR 텍스트 추출 및 계약 등록"""
     img = p.get("image_base64") or ""
     if not img:
         raise HTTPException(400, "분석할 이미지 데이터(base64)가 필요합니다.")
@@ -872,31 +918,40 @@ def smart_ocr_contract(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
     
     bid = Building.canon(user.branch or p.get("branch_id") or "main")
     b = _b(bid)
-    auto_apply = bool(p.get("auto_apply", False))
+    auto_apply = bool(p.get("auto_apply", True))
     saved_contracts = []
 
-    for row in res.get("rows", []):
-        room_n = num(row.get("호실") or row.get("room_number") or row.get("room"))
-        if room_n and auto_apply:
-            u = b.unit(room_n)
-            c = u.update({
-                "name": row.get("세입자") or row.get("name") or "",
-                "phone": row.get("연락처") or row.get("phone") or "",
-                "id_number": row.get("주민등록번호") or row.get("id_number") or "",
-                "deposit": num(row.get("보증금") or row.get("deposit")),
-                "rent": num(row.get("월세") or row.get("rent")),
-                "maintenance": num(row.get("관리비") or row.get("maintenance")),
-                "move_in": row.get("전입일") or row.get("move_in") or today().isoformat(),
-                "expiry": row.get("만기일") or row.get("expiry") or ""
-            })
-            if c:
-                saved_contracts.append(c.model_dump())
+    for raw_row in res.get("rows", []):
+        norm = _normalize_contract_row(raw_row)
+        room_n = norm["room_number"]
+        if room_n:
+            b.add_unit(room_n)  # 건물에 호실 자동 등록!
+            if auto_apply:
+                u = b.unit(room_n)
+                c = u.update({
+                    "name": norm["name"],
+                    "phone": norm["phone"],
+                    "id_number": norm["id_number"],
+                    "deposit": norm["deposit"],
+                    "rent": norm["rent"],
+                    "maintenance": norm["maintenance"],
+                    "clean_fee": norm["clean_fee"],
+                    "move_in": norm["move_in"],
+                    "expiry": norm["expiry"]
+                })
+                if c:
+                    saved_contracts.append(c.model_dump())
 
+    ok = len(saved_contracts) > 0
     return {
         "success": True,
+        "ocr_kind": "contract",
+        "branch_id": bid,
+        "total_extracted": len(res.get("rows", [])),
+        "applied_count": len(saved_contracts),
         "extracted_rows": res.get("rows", []),
         "applied_contracts": saved_contracts,
-        "message": f"{len(res.get('rows', []))}건의 계약서 항목이 인식되었습니다."
+        "message": f"총 {len(saved_contracts)}개 호실의 임대차 계약 정보가 성공적으로 등록되었습니다!" if ok else f"{len(res.get('rows', []))}건의 항목이 분석되었으나 세입자 정보가 누락되었습니다."
     }
 
 

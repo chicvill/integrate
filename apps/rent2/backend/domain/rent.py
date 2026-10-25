@@ -47,9 +47,23 @@ def _month(v: Any) -> Optional[int]:
 
 
 def num(v: Any) -> int:
+    if v is None:
+        return 0
+    s = str(v).replace(",", "").strip()
+    if not s:
+        return 0
     try:
-        return int(float(str(v).replace(",", "").strip() or 0))
-    except ValueError:
+        if "만" in s:
+            m = re.search(r"(\d+(?:\.\d+)?)\s*만", s)
+            if m:
+                base = float(m.group(1)) * 10000
+                rem = re.search(r"만\s*(\d+)", s)
+                if rem:
+                    base += float(rem.group(1))
+                return int(base)
+        m = re.search(r"-?\d+", s)
+        return int(m.group(0)) if m else 0
+    except (ValueError, TypeError):
         return 0
 
 

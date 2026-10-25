@@ -372,13 +372,14 @@
         <div style="display:flex;gap:12px;align-items:center;">
           <img id="pasteImgPreview" src="" alt="클립보드 사진" style="width:72px;height:72px;object-fit:cover;border:1px solid #000;border-radius:3px;">
           <div style="flex:1;font-size:12px;">
-            <div style="font-weight:700;margin-bottom:4px;">스캔 대상 선택:</div>
-            <label style="margin-right:12px;cursor:pointer;">
-              <input type="radio" name="pasteScanKind" value="receipt" checked onchange="previewUniversalPaste()"> 지출 영수증
+            <div style="font-weight:700;margin-bottom:6px;color:#0f172a;">스캔 대상 선택:</div>
+            <label style="margin-right:14px;cursor:pointer;font-weight:700;color:#1e40af;">
+              <input type="radio" name="pasteScanKind" value="contract" checked onchange="previewUniversalPaste()"> 📋 임대차 대장 / 계약서 (호실·세입자 일괄 등록)
             </label>
-            <label style="cursor:pointer;">
-              <input type="radio" name="pasteScanKind" value="contract" onchange="previewUniversalPaste()"> 임대차 계약서
+            <label style="cursor:pointer;color:#475569;">
+              <input type="radio" name="pasteScanKind" value="receipt" onchange="previewUniversalPaste()"> 🧾 지출 영수증 (비용 전표)
             </label>
+            <div style="font-size:11px;color:#64748b;margin-top:4px;">💡 호실별 표(장부) 사진을 붙여넣으시면 <b>모든 호실의 세입자 정보가 일괄 자동 등록</b>됩니다.</div>
           </div>
         </div>
       </div>

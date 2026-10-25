@@ -369,8 +369,9 @@ async function submitUniversalIngest() {
         alertMsg = `✅ 장부 동기화 완료: 2025/2026년 전체 데이터가 성공적으로 반영되었습니다.`;
       } else if (data.ocr_kind === "receipt" || data.expense) {
         alertMsg = `✅ 영수증 지출 전표 등록 완료! (${data.message || ''})`;
-      } else if (data.ocr_kind === "contract") {
-        alertMsg = `✅ 계약서 인식 및 호실 정보 갱신 완료!`;
+      } else if (data.ocr_kind === "contract" || data.applied_count !== undefined) {
+        const count = data.applied_count || data.total_extracted || 0;
+        alertMsg = `✅ 임대차 대장/계약서 분석 완료: 총 ${count}개 호실의 세입자 정보가 DB에 정상 등록되었습니다!`;
       }
 
       setAlert(alertMsg, "success");

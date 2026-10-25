@@ -403,6 +403,9 @@ function openModal(id) {
 function closeModal(id) {
   const el = document.getElementById(id);
   if (el) el.classList.remove("open");
+  if (id === "modalPaste" && typeof reloadRooms === "function") {
+    reloadRooms();
+  }
 }
 
 // ── 초기 기동 ──
