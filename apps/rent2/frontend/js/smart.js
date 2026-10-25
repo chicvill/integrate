@@ -138,11 +138,35 @@ function previewUniversalPaste() {
     return;
   }
 
-  // 4. 은행 입금 문자 / 카카오톡 알림
+  // 4. 은행 입금 문자 / 카카오톡 알림 또는 5. 자연어 AI 질문/지시 판별
+  const isQuestionOrInstruction = (
+    txt.includes("?") || txt.includes("알려줘") || txt.includes("조회") || txt.includes("요약") ||
+    txt.includes("목록") || txt.includes("누구") || txt.includes("확인해") || txt.includes("얼마") ||
+    txt.includes("공실") || txt.includes("도와줘") || txt.includes("정리해") || txt.includes("현황") ||
+    txt.includes("만기") || txt.includes("장부") || txt.includes("보고서")
+  );
+
   const roomM = txt.match(/(\d{3,4})\s*호?/);
   let moneyM = txt.match(/(\d{1,3}(?:,\d{3})+|\d{4,9})\s*원?/) || txt.match(/(\d+(?:\.\d+)?)\s*만\s*원?/);
   const roomNum = roomM ? parseInt(roomM[1], 10) : null;
   let estAmount = moneyM ? moneyM[0] : null;
+
+  // 질문형 어미가 있거나 은행 입금 패턴이 아니면 AI 비서 질의로 감지
+  if (isQuestionOrInstruction || (!roomNum && !estAmount)) {
+    if (badge) {
+      badge.innerHTML = "🤖 AI 비서 질문 / 작업 지시 감지됨";
+      badge.style.background = "#2563eb";
+    }
+    if (body) {
+      body.innerHTML = `입력 내용: <b>"${txt.length > 50 ? txt.slice(0, 50) + '...' : txt}"</b><br>AI 비서가 29개실 실시간 장부를 분석하여 즉시 답변하고 전산 작업을 처리합니다.`;
+    }
+    if (btn) {
+      btn.innerHTML = "🚀 AI 비서에게 질문 / 지시 실행";
+      btn.className = "btn-primary";
+      btn.style.background = "#2563eb";
+    }
+    return;
+  }
 
   if (!estAmount && roomNum) {
     const withoutRoom = txt.replace(roomM[0], "");
@@ -179,14 +203,54 @@ function previewUniversalPaste() {
   }
 }
 
-// 만능 인제스트 통합 실행
+// ── 만능 스마트 모달 제어 헬퍼 ──
+function openAIPasteModal() {
+  openModal("modalPaste");
+  const resBox = document.getElementById("pasteAiResultBox");
+  if (resBox) resBox.style.display = "none";
+  setTimeout(() => {
+    const pt = document.getElementById("pasteText");
+    if (pt) {
+      pt.focus();
+    }
+  }, 80);
+}
+
+function pasteQuickQuery(queryText) {
+  const pt = document.getElementById("pasteText");
+  if (pt) {
+    pt.value = queryText;
+    previewUniversalPaste();
+    pt.focus();
+  }
+}
+
+function clearPasteArea() {
+  const pt = document.getElementById("pasteText");
+  if (pt) pt.value = "";
+  clearPasteImage();
+  const resBox = document.getElementById("pasteAiResultBox");
+  if (resBox) resBox.style.display = "none";
+  previewUniversalPaste();
+}
+
+function handlePasteKeyDown(event) {
+  if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+    event.preventDefault();
+    submitUniversalIngest();
+  }
+}
+
+// 만능 인제스트 & AI 비서 질의 통합 실행
 async function submitUniversalIngest() {
   const text = (document.getElementById("pasteText")?.value || "").trim();
   const img = currentPasteImageBase64;
   const scanKind = getSelectedPasteScanKind();
+  const resBox = document.getElementById("pasteAiResultBox");
+  const resContent = document.getElementById("pasteAiResultContent");
 
   if (!text && !img) {
-    setAlert("붙여넣을 내용이나 사진(Ctrl+V)을 입력해 주세요.", "warning");
+    setAlert("질문 내용이나 붙여넣을 데이터/사진(Ctrl+V)을 입력해 주세요.", "warning");
     return;
   }
 
@@ -194,9 +258,62 @@ async function submitUniversalIngest() {
   const origText = btn ? btn.innerHTML : "실행";
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = "스마트 분석 및 처리 중... ⏳";
+    btn.innerHTML = "AI 비서 분석 및 처리 중... ⏳";
   }
 
+  // 1. AI 질문 / 지시문인 경우 -> /api/rent2/ai/chat 직결 처리
+  const isQuestionOrInstruction = (
+    !img && !text.includes("docs.google.com/spreadsheets") &&
+    (text.includes("?") || text.includes("알려줘") || text.includes("조회") || text.includes("요약") ||
+     text.includes("목록") || text.includes("누구") || text.includes("확인해") || text.includes("얼마") ||
+     text.includes("공실") || text.includes("도와줘") || text.includes("정리해") || text.includes("현황") ||
+     text.includes("만기") || text.includes("장부") || text.includes("보고서") ||
+     (!text.match(/(\d{3,4})\s*호?/) && !text.match(/(\d{1,3}(?:,\d{3})+|\d{4,9})\s*원?/)))
+  );
+
+  if (isQuestionOrInstruction) {
+    try {
+      const res = await apiFetch(`${API_BASE}/ai/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, building: curBranch, mode: "auto" })
+      });
+
+      if (!res.ok) {
+        throw new Error(`AI 서버 오류 (HTTP ${res.status})`);
+      }
+
+      const data = await res.json();
+      const reply = data.reply || (typeof data === "string" ? data : JSON.stringify(data, null, 2));
+
+      if (resBox && resContent) {
+        resBox.style.display = "block";
+        resContent.innerHTML = typeof formatAiReply === "function" ? formatAiReply(reply) : reply.replace(/\n/g, "<br>");
+      }
+
+      setAlert("🤖 AI 비서 답변이 완료되었습니다. 창에서 결과를 확인하세요.", "success");
+
+      // 쓰기 작업 실행 시 호실 데이터 동기화
+      if (reply && (reply.includes("완료") || reply.includes("수정") || reply.includes("납부") || reply.includes("등록"))) {
+        await reloadRooms();
+      }
+    } catch (err) {
+      console.error("AI 질의 실패:", err);
+      if (resBox && resContent) {
+        resBox.style.display = "block";
+        resContent.innerHTML = `<span style="color:#dc2626;">⚠️ AI 비서 오류: ${err.message || '네트워크 연결 오류'}</span>`;
+      }
+      setAlert(`AI 비서 질의 실패: ${err.message}`, "error");
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = origText;
+      }
+    }
+    return;
+  }
+
+  // 2. 은행 입금문자 / 구글시트 / 파일 / 사진 인제스트 처리
   setAlert("만능 인제스트 분석 및 처리 진행 중...", "info");
 
   try {
