@@ -22,7 +22,7 @@ from .identity import User
 TOOLS: Dict[str, "Tool"] = {}
 current_user: ContextVar[Optional[User]] = ContextVar("current_user", default=None)
 _TYPES = {int: "INTEGER", float: "NUMBER", bool: "BOOLEAN", str: "STRING"}
-MODELS = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-2.0-flash"]
+MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
 
 
 @dataclass

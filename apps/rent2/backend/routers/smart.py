@@ -302,6 +302,7 @@ def smart_ocr_contract(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
     for row in res.get("rows", []):
         room_n = num(row.get("호실") or row.get("room_number") or row.get("room"))
         if room_n and auto_apply:
+            b.add_unit(room_n)
             u = b.unit(room_n)
             c = u.update({
                 "name": row.get("세입자") or row.get("name") or "",
@@ -316,11 +317,15 @@ def smart_ocr_contract(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
             if c:
                 saved_contracts.append(c.model_dump())
 
+    if auto_apply and saved_contracts:
+        b.sync_all_rooms()
+        Building.invalidate_cache()
+
     return {
         "success": True,
         "extracted_rows": res.get("rows", []),
         "applied_contracts": saved_contracts,
-        "message": f"{len(res.get('rows', []))}건의 계약서 항목이 인식되었습니다."
+        "message": f"총 {len(res.get('rows', []))}건 중 {len(saved_contracts)}개 호실 계약이 자동 등록·동기화되었습니다."
     }
 
 
