@@ -87,6 +87,14 @@ function filterRooms(status) {
   renderRooms();
 }
 
+let _renderTimer = null;
+function debouncedRenderRooms(delay = 120) {
+  if (_renderTimer) clearTimeout(_renderTimer);
+  _renderTimer = setTimeout(() => {
+    renderRooms();
+  }, delay);
+}
+
 function renderRooms() {
   const roomSearchInput = document.getElementById("roomSearch");
   const q = (roomSearchInput?.value || "").trim().toLowerCase();
@@ -94,7 +102,6 @@ function renderRooms() {
   const st = filterSelect ? filterSelect.value : "all";
   const grid = document.getElementById("roomGrid");
   if (!grid) return;
-  grid.innerHTML = "";
 
   const now = new Date();
   const curY = now.getFullYear(), curM = now.getMonth() + 1;
@@ -124,6 +131,8 @@ function renderRooms() {
     grid.innerHTML = `<div style="grid-column:1/-1;padding:30px;text-align:center;border:1px dashed #000;">조건에 해당하는 호실이 없습니다.</div>`;
     return;
   }
+
+  const fragment = document.createDocumentFragment();
 
   filtered.forEach(r => {
     const pays = r.payments || {};
@@ -165,8 +174,11 @@ function renderRooms() {
         ${!isVacant ? `<button class="btn-sm btn-outline" onclick="endContract(${r.room_number}, '${r.name}')">퇴실</button>` : `<button class="btn-sm btn-outline" onclick="openRoomDetail(${r.room_number})">+입주계약</button>`}
       </div>
     `;
-    grid.appendChild(card);
+    fragment.appendChild(card);
   });
+
+  grid.innerHTML = "";
+  grid.appendChild(fragment);
 }
 
 // ── 원클릭 빠른 수납 (미납월 중 오래된 것부터 FIFO 적용) ──

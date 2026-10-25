@@ -60,7 +60,7 @@
     <!-- [섹션 1] 호실 관제 -->
     <div id="secRooms">
       <div class="filter-bar">
-        <input type="text" id="roomSearch" placeholder="호실/세입자 검색..." oninput="renderRooms()" style="flex:1;min-width:140px;">
+        <input type="text" id="roomSearch" placeholder="호실/세입자 검색..." oninput="debouncedRenderRooms()" style="flex:1;min-width:140px;">
         <select id="filterStatus" onchange="renderRooms()">
           <option value="all">전체 상태</option>
           <option value="unpaid">미납만</option>

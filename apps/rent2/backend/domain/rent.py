@@ -8,7 +8,7 @@ domain/rent.py — 임차관리 도메인 객체.
 """
 import re
 from datetime import date, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, ClassVar, Dict, List, Optional, Tuple
 
 from pydantic import Field
 
@@ -28,13 +28,33 @@ def today() -> date:
 
 
 def pdate(v: Any) -> Optional[date]:
-    """'2025-6-4' · '2025. 6. 4' · '2025/06/04' · '20250604' 등 현실의 날짜 표기를 안전하게 해석"""
-    s = str(v or "")
-    m = _DATE.search(s) or re.search(r"(\d{4})(\d{2})(\d{2})", s)
-    try:
-        return date(*map(int, m.groups())) if m else None
-    except ValueError:
+    """'2025-6-4' · '2025. 6. 4' · '25.3.1' · '2025.03' · '20250604' 등 현실의 날짜 표기를 스스로 안전하게 해석"""
+    s = str(v or "").strip()
+    if not s:
         return None
+    m = _DATE.search(s) or re.search(r"(\d{4})(\d{2})(\d{2})", s)
+    if m:
+        try:
+            return date(*map(int, m.groups()))
+        except ValueError:
+            pass
+    # 2자리 연도 YY.MM.DD (예: 25.03.01)
+    m2 = re.search(r"(?:^|[^\d])(\d{2})[-./년\s]\s*(\d{1,2})[-./월\s]\s*(\d{1,2})", s)
+    if m2:
+        try:
+            yy, mm, dd = map(int, m2.groups())
+            return date(2000 + yy if yy < 100 else yy, mm, dd)
+        except ValueError:
+            pass
+    # YYYY-MM (일자 생략 월 표기 -> 1일로 자가 보정)
+    m_ym = re.search(r"(\d{4})[-./년\s]\s*(\d{1,2})", s)
+    if m_ym:
+        try:
+            yy, mm = map(int, m_ym.groups())
+            return date(yy, mm, 1)
+        except ValueError:
+            pass
+    return None
 
 
 def idx(y: int, m: int) -> int:
@@ -523,15 +543,34 @@ class Building(Obj):
     aliases: List[str] = Field(default_factory=list)       # 별칭(chicvill01, 시크빌 …) → 단일 진입점 resolve()
     vat_target_rooms: Optional[List[int]] = None
 
+    _cache: ClassVar[Dict[str, "Building"]] = {}
+    _cache_time: ClassVar[float] = 0.0
+    _CACHE_TTL: ClassVar[float] = 3.0  # 3초 인메모리 캐시 (초고속 응답 & 실시간 반영)
+
+    @classmethod
+    def invalidate_cache(cls) -> None:
+        cls._cache.clear()
+        cls._cache_time = 0.0
+
+    @classmethod
+    def cached_all(cls) -> List["Building"]:
+        import time
+        now = time.time()
+        if not cls._cache or (now - cls._cache_time) > cls._CACHE_TTL:
+            all_b = cls.all()
+            cls._cache = {b.id: b for b in all_b}
+            cls._cache_time = now
+        return list(cls._cache.values())
+
     @classmethod
     def resolve(cls, ref: Optional[str]) -> Optional["Building"]:
         ref = (ref or "main").strip()
-        found = cls.get(ref)
-        if found:
-            return found
+        all_b = cls.cached_all()
+        if ref in cls._cache:
+            return cls._cache[ref]
         low = ref.lower()
-        matched = next((b for b in cls.all() if low in (b.id.lower(), b.name.lower()) or low in {a.lower() for a in b.aliases}), None)
-        return matched or (cls.all()[0] if cls.all() else None)
+        matched = next((b for b in all_b if low in (b.id.lower(), b.name.lower()) or low in {a.lower() for a in b.aliases}), None)
+        return matched or (all_b[0] if all_b else None)
 
     @classmethod
     def canon(cls, ref: Optional[str]) -> str:
@@ -544,6 +583,15 @@ class Building(Obj):
         if not b:
             raise LookupError("해당 건물을 찾을 수 없습니다.")
         return b
+
+    def save(self, action: str = "saved", **kwargs: Any) -> "Building":
+        res = super().save(action, **kwargs)
+        Building.invalidate_cache()
+        return res
+
+    def delete(self, action: str = "deleted", **kwargs: Any) -> None:
+        super().delete(action, **kwargs)
+        Building.invalidate_cache()
 
     def add_unit(self, n: int) -> None:
         if n not in self.units:
