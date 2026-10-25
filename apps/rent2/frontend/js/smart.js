@@ -406,43 +406,46 @@ async function submitUniversalIngest() {
       await reloadRooms();
       if (typeof loadVatReport === "function") loadVatReport();
     } else {
-      const failMsg = data.message || "사진에서 유효한 계약/세입자 정보를 인식하지 못했습니다. 글자가 선명하도록 다시 촬영해 주세요.";
-      if (isPhoto) {
-        if (btn) {
-          btn.innerHTML = "⚠️ 분석 완료 (0건)";
-          btn.style.background = "#d97706";
-        }
+      const failMsg = data.message || "유효한 계약/세입자 정보를 인식하지 못했습니다. 글자가 선명하도록 다시 촬영해 주시거나 엑셀 텍스트를 붙여넣어 주세요.";
+      if (resBox && resContent) {
+        resBox.style.display = "block";
+        resBox.style.borderColor = "#d97706";
+        resBox.style.background = "#fffbeb";
+        resContent.innerHTML = `<span style="color:#b45309;font-weight:800;font-size:13.5px;">⚠️ 분석 결과 안내 (반영 0건):</span><br><br>${failMsg.replace(/\n/g, '<br>')}<br><br><span style="font-size:11.5px;color:#64748b;">💡 조치 팁: 엑셀이나 스프레드시트의 셀을 복사(Ctrl+C)하여 만능 입력창에 붙여넣으시면 즉시 일괄 등록됩니다.</span>`;
         setTimeout(() => {
-          closeModal("modalPaste");
-          clearPasteImage();
-          setAlert(`⚠️ <b>[사진 분석 완료]</b> ${failMsg}`, "warning");
-        }, 450);
-      } else {
-        setAlert(failMsg, "warning");
+          resBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }, 50);
+      }
+      setAlert(`⚠️ [분석 결과 안내] ${failMsg}`, "warning");
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = "다시 확인 / 시도 🔄";
+        btn.style.background = "#d97706";
       }
     }
   } catch (err) {
     console.error("Universal Ingest 실패:", err);
-    if (isPhoto) {
-      if (btn) {
-        btn.innerHTML = "❌ 분석 실패";
-        btn.style.background = "#dc2626";
-      }
+    const errMsg = err.message || "네트워크 연결 오류 또는 서버 응답 실패";
+    if (resBox && resContent) {
+      resBox.style.display = "block";
+      resBox.style.borderColor = "#dc2626";
+      resBox.style.background = "#fef2f2";
+      resContent.innerHTML = `<span style="color:#dc2626;font-weight:800;font-size:13.5px;">❌ 분석 중 오류 발생:</span><br><br>${errMsg.replace(/\n/g, '<br>')}<br><br><span style="font-size:11.5px;color:#64748b;">💡 조치 요령: 이미지 해상도를 확인하시거나, 엑셀 표를 복사(Ctrl+C)하여 텍스트로 붙여넣으시면 안정적으로 일괄 등록됩니다.</span>`;
       setTimeout(() => {
-        closeModal("modalPaste");
-        clearPasteImage();
-        setAlert(`❌ <b>[사진 분석 오류]</b> ${err.message || '네트워크 연결 오류'}`, "error");
-      }, 450);
-    } else {
-      setAlert(`처리 중 오류 발생: ${err.message || '네트워크 오류'}`, "error");
+        resBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }, 50);
+    }
+    setAlert(`❌ [분석 오류] ${errMsg}`, "error");
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = "다시 확인 / 시도 🔄";
+      btn.style.background = "#dc2626";
     }
   } finally {
-    if (btn) {
-      setTimeout(() => {
-        btn.disabled = false;
-        btn.innerHTML = origText;
-        btn.style.background = "";
-      }, isPhoto ? 600 : 0);
+    if (btn && btn.disabled) {
+      btn.disabled = false;
+      btn.innerHTML = origText;
+      btn.style.background = "";
     }
   }
 }
