@@ -395,79 +395,32 @@ async function submitUniversalIngest() {
   }
 }
 
-// ── 카메라 촬영 / OCR 스캔 ──
-function openReceiptScanModal() {
-  const sk = document.getElementById("scanKind");
-  if (sk) sk.value = "receipt";
-  openModal("modalScan");
-}
-
-function previewScanImage(event) {
+// ── 카메라 촬영 및 앨범 사진 선택 핸들러 (AI 비서 원스톱 연동) ──
+function handlePasteFileInput(event) {
   const file = event.target.files && event.target.files[0];
   if (!file) return;
-  const fnEl = document.getElementById("scanFileName");
-  if (fnEl) {
-    fnEl.textContent = `✅ 선택된 사진: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-    fnEl.style.color = "#166534";
-    fnEl.style.borderColor = "#166534";
-    fnEl.style.background = "#f0fdf4";
-    fnEl.style.fontWeight = "700";
-  }
   const reader = new FileReader();
-  reader.onload = e => {
-    scanBase64 = e.target.result;
-    const sip = document.getElementById("scanImagePreview");
-    const sipb = document.getElementById("scanImagePreviewBox");
-    if (sip) sip.src = scanBase64;
-    if (sipb) sipb.style.display = "block";
+  reader.onload = function(e) {
+    currentPasteImageBase64 = e.target.result;
+    const imgEl = document.getElementById("pasteImgPreview");
+    const secEl = document.getElementById("pasteImageSection");
+    if (imgEl && secEl) {
+      imgEl.src = currentPasteImageBase64;
+      secEl.style.display = "block";
+    }
+    previewUniversalPaste();
   };
   reader.readAsDataURL(file);
+  event.target.value = "";
 }
 
-async function runScanOCR() {
-  if (!scanBase64) { alert("촬영하거나 업로드할 사진을 선택하세요."); return; }
-  const kindEl = document.getElementById("scanKind");
-  const kind = kindEl ? kindEl.value : "receipt";
-  const endpoint = kind === "contract" ? `${API_BASE}/smart/ocr-contract` : `${API_BASE}/smart/ocr-receipt`;
-  const btn = document.getElementById("btnScanRun");
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = "AI 분석 중... ⏳";
-  }
-  setAlert("이미지 AI OCR 분석 진행 중...", "info");
-
-  try {
-    const res = await apiFetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ image_base64: scanBase64, branch_id: curBranch, auto_apply: true })
-    });
-    if (!res.ok) return;
-    const data = await res.json();
-    const resBox = document.getElementById("scanResultBox");
-    if (resBox) {
-      resBox.style.display = "block";
-      resBox.textContent = JSON.stringify(data.extracted || data.extracted_rows || data, null, 2);
-    }
-
-    if (data.success) {
-      setAlert(data.message || "성공적으로 반영되었습니다.", "success");
-      await reloadRooms();
-      if (kind === "receipt") {
-        if (typeof loadExpenses === "function") loadExpenses();
-        if (typeof loadIncomeTax === "function") loadIncomeTax();
-      }
-    } else {
-      setAlert(data.message || "OCR 분석 실패", "error");
-    }
-  } catch (err) {
-    setAlert("OCR 요청 중 통신 오류", "error");
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = "AI 스캔 및 자동 등록";
-    }
-  }
+// 기존 호출 호환: 영수증 스캔 요청 시 AI 비서 사진 선택으로 직접 연결
+function openReceiptScanModal() {
+  openAIPasteModal();
+  const r = document.querySelector("input[name='pasteScanKind'][value='receipt']");
+  if (r) r.checked = true;
+  const gal = document.getElementById("pasteFileGallery");
+  if (gal) gal.click();
 }
 
 // ── 구글 스프레드시트 2025/2026 실시간 동기화 ──

@@ -349,33 +349,15 @@ function setTab(name) {
     window.event.target.classList.add("active");
   }
 
-  // AI 탭을 벗어날 때 브리핑 카드와 탭 네비게이션 복구
-  if (name !== "ai") {
-    const stats = document.querySelector(".stats-grid");
-    const navTabs = document.querySelector(".nav-tabs");
-    if (stats) stats.style.display = "grid";
-    if (navTabs) navTabs.style.display = "flex";
-  }
+  const secRooms = document.getElementById("secRooms");
+  const secTax = document.getElementById("secTax");
+  const secExpenses = document.getElementById("secExpenses");
+  const secBranches = document.getElementById("secBranches");
 
-  document.getElementById("secRooms").style.display = name === "rooms" ? "block" : "none";
-  document.getElementById("secTax").style.display = name === "tax" ? "block" : "none";
-  document.getElementById("secExpenses").style.display = name === "expenses" ? "block" : "none";
-  document.getElementById("secAI").style.display = name === "ai" ? "block" : "none";
-  const secBr = document.getElementById("secBranches");
-  if (secBr) secBr.style.display = name === "branches" ? "block" : "none";
-
-  if (name === "ai") {
-    const branchSel = document.getElementById("branchSelect");
-    const badge = document.getElementById("aiBranchBadge");
-    if (badge && branchSel && branchSel.selectedIndex >= 0) {
-      const rawText = branchSel.options[branchSel.selectedIndex].text || "";
-      const shortName = rawText.split(" ")[0].replace(/[0-9호점\(\),]/g, "").trim() || "시크빌";
-      badge.textContent = shortName;
-    }
-    if (typeof scrollAIChatToBottom === "function") {
-      setTimeout(scrollAIChatToBottom, 50);
-    }
-  }
+  if (secRooms) secRooms.style.display = name === "rooms" ? "block" : "none";
+  if (secTax) secTax.style.display = name === "tax" ? "block" : "none";
+  if (secExpenses) secExpenses.style.display = name === "expenses" ? "block" : "none";
+  if (secBranches) secBranches.style.display = name === "branches" ? "block" : "none";
 
   if (name === "tax") { loadVatReport(); loadIncomeTax(); }
   if (name === "expenses") { loadExpenses(); }

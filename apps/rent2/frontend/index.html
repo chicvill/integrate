@@ -54,7 +54,6 @@
       <button class="nav-tab active" id="tabRooms" onclick="setTab('rooms')">호실 관제</button>
       <button class="nav-tab" id="tabTax" onclick="setTab('tax')">세무 자료 (부가세/종소세)</button>
       <button class="nav-tab" id="tabExpenses" onclick="setTab('expenses')">지출 장부</button>
-      <button class="nav-tab" id="tabAI" onclick="setTab('ai')">AI 도구 비서</button>
       <button class="nav-tab" id="tabBranches" onclick="setTab('branches')" style="display:none;background:#f5f5f5;font-weight:800;">🏢 본사 매장 관리</button>
     </div>
 
@@ -190,51 +189,7 @@
       </div>
     </div>
 
-    <!-- [섹션 4] 스마트폰 최적화 AI 질의 비서 -->
-    <div id="secAI" style="display:none;">
-      <!-- AI 전용 상단 툴바 (스마트폰 즉시 복귀 & 지점 표시 - 1줄 고정) -->
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:4px 0 6px 0;border-bottom:2px solid #000;white-space:nowrap;gap:4px;">
-        <button type="button" class="btn-primary" style="padding:4px 8px;font-size:11.5px;font-weight:800;background:#000;color:#fff;border-radius:4px;white-space:nowrap;height:30px;line-height:1;" onclick="closeAIAssistant()">
-          ← 이전으로
-        </button>
-        <div style="font-weight:900;font-size:13px;display:flex;align-items:center;gap:4px;white-space:nowrap;">
-          <span>🤖 AI비서</span>
-          <span id="aiBranchBadge" style="font-size:11px;font-weight:800;background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:3px;border:1px solid #bae6fd;white-space:nowrap;">시크빌</span>
-        </div>
-        <button type="button" class="btn-outline btn-sm" style="font-size:11.5px;font-weight:700;padding:4px 8px;border-radius:4px;white-space:nowrap;height:30px;line-height:1;" onclick="clearAIChat()">대화 삭제</button>
-      </div>
 
-      <!-- 추천 퀵 질문 칩 바 (터치 한 번으로 즉시 질의) -->
-      <div class="ai-chips-scroll" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:8px;-webkit-overflow-scrolling:touch;">
-        <button type="button" class="ai-chip" onclick="askQuickPrompt('이번달 미납 호실과 미납액 알려줘')">⚡ 이번달 미납 호실</button>
-        <button type="button" class="ai-chip" onclick="askQuickPrompt('만기 65일 이내 임박 호실 목록 보여줘')">📅 만기 임박 호실</button>
-        <button type="button" class="ai-chip" onclick="askQuickPrompt('이번달 수납 현황과 총 수납액 요약해줘')">💰 이번달 수납 현황</button>
-        <button type="button" class="ai-chip" onclick="askQuickPrompt('현재 비어있는 공실과 계약 가능한 방 알려줘')">🏢 현재 공실 확인</button>
-        <button type="button" class="ai-chip" onclick="askQuickPrompt('최근 등록된 지출 전표 내역 요약해줘')">📋 최근 지출 장부</button>
-        <button type="button" class="ai-chip" onclick="askQuickPrompt('구글 시트 연동 및 동기화 방법 알려줘')">📊 시트 동기화 안내</button>
-      </div>
-
-      <!-- AI 실시간 대화창 (말풍선 로그) -->
-      <div id="aiChatBox" style="border:1.5px solid #000;border-radius:6px;background:#f8fafc;padding:12px;height:calc(100vh - 280px);min-height:360px;max-height:560px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:8px;">
-        <!-- AI 초기 웰컴 메시지 -->
-        <div class="ai-bubble ai-msg" style="align-self:flex-start;max-width:90%;background:#ffffff;border:1px solid #cbd5e1;padding:10px 12px;border-radius:8px 8px 8px 2px;box-shadow:0 1px 2px rgba(0,0,0,0.05);font-size:13px;line-height:1.5;color:#0f172a;">
-          <div style="font-weight:800;margin-bottom:4px;color:#2563eb;display:flex;align-items:center;gap:4px;">
-            <span>🤖 RENT2 AI 현장 비서</span>
-          </div>
-          안녕하세요! 임대관리 AI 비서입니다. 🎙️<br>
-          호실 수납 상태, 만기 임박 세입자, 지출 내역을 음성이나 텍스트로 자유롭게 물어보세요.<br>
-          상단의 <b>[⚡ 퀵 버튼]</b>을 누르시거나 아래 마이크를 켜고 말씀하셔도 바로 안내해 드립니다.
-        </div>
-      </div>
-
-      <!-- 모바일 고정 입력 컨트롤 바 -->
-      <div style="display:flex;gap:6px;align-items:center;background:#fff;border:1.5px solid #000;border-radius:6px;padding:4px 6px;">
-        <button type="button" id="btnMicMobileAI" class="btn-mic" style="border-radius:4px;padding:8px 10px;font-size:15px;" onclick="toggleVoiceAI('aiInputMobile', 'btnMicMobileAI')" title="음성 질문 🎙️">🎙️</button>
-        <button type="button" class="btn-outline btn-sm" style="border-radius:4px;padding:7px 9px;font-size:13px;white-space:nowrap;" onclick="openModal('modalPaste')" title="만능 붙여넣기 / 파일 첨부">📎 첨부</button>
-        <input type="text" id="aiInputMobile" placeholder="질문이나 작업 지시를 입력하세요..." style="flex:1;border:none;outline:none;padding:8px 6px;font-size:13.5px;" onkeydown="handleAiInputKey(event)">
-        <button type="button" id="btnAiSend" class="btn-primary" style="padding:8px 14px;font-size:13px;border-radius:4px;white-space:nowrap;" onclick="submitMobileAI()">전송</button>
-      </div>
-    </div>
 
     <!-- [섹션 5] 본사 매장 총괄 관리 (admin 전용) -->
     <div id="secBranches" style="display:none;">
@@ -276,9 +231,9 @@
 
   <!-- ── 모바일 고정 하단 퀵 액션 바 (Zero-Typing) ── -->
   <div class="bottom-bar">
-    <button id="btnBottomPaste" class="btn-primary" style="font-weight:900;" onclick="openAIPasteModal()">🤖 AI 비서</button>
-    <button id="btnBottomScan" onclick="openModal('modalScan')">📷 카메라/스캔</button>
+    <button id="btnBottomPaste" class="btn-primary" style="font-weight:900;" onclick="openAIPasteModal()">🤖 AI 비서 (촬영·음성·질문)</button>
     <button id="btnBottomTax" onclick="setTab('tax')">📊 세무자료</button>
+    <button id="btnBottomReload" onclick="reloadRooms()">🔄 새로고침</button>
   </div>
 
   <!-- ── 모달 0: 사용자 로그인 / 지점 격리 인증 ── -->
@@ -304,7 +259,7 @@
           <label style="font-size:12.5px;font-weight:700;display:block;margin-bottom:4px;">비밀번호 (Password):</label>
           <input type="password" id="loginPassword" placeholder="기본 비밀번호: 1212" value="1212" autocomplete="current-password" required style="width:100%;box-sizing:border-box;padding:9px 10px;font-size:14px;">
         </div>
-        <button type="submit" id="btnLoginSubmit" class="btn-primary" style="width:100%;margin-bottom:14px;padding:12px;font-size:14px;font-weight:800;letter-spacing:0.5px;cursor:pointer;border-radius:6px;">로그인</button>
+        <button type="submit" id="btnLoginSubmit" class="btn-primary" style="width:100%;margin-bottom:14px;padding:12px;font-size:14px;font-weight:800;letter-spacing:0.5px;cursor:border-radius:6px;">로그인</button>
       </form>
 
       <div style="border-top:1px dashed #cbd5e1;padding-top:12px;">
@@ -319,7 +274,7 @@
     </div>
   </div>
 
-  <!-- ── 모달 1: AI 비서 & 만능 스마트 입력 (음성 · 문자입력 · 붙여넣기 통합) ── -->
+  <!-- ── 모달 1: AI 비서 & 만능 스마트 입력 (음성 · 문자입력 · 붙여넣기 · 카메라 통합) ── -->
   <div class="modal-overlay" id="modalPaste">
     <div class="modal-content" style="max-width:580px;width:95%;">
       <div class="modal-header" style="padding-bottom:8px;margin-bottom:10px;">
@@ -335,17 +290,23 @@
       <!-- 동그라미 ? 클릭 시 토글되는 도움말 팝업 박스 (화면 단순화) -->
       <div id="pasteHelpBox" style="display:none;font-size:12px;color:#334155;margin-bottom:10px;line-height:1.55;background:#f8fafc;padding:12px 14px;border-radius:6px;border:1.5px solid #cbd5e1;">
         <div style="font-weight:800;color:#0f172a;margin-bottom:6px;font-size:12.5px;">💡 AI 비서 입력 안내</div>
-        • <b>음성 입력</b>: 스마트폰에서는 자판(키보드)의 <b>마이크(🎙️)</b>를 누르고 말씀하시면 즉시 텍스트로 입력됩니다.<br>
+        • <b>음성 입력</b>: 상단 [🎙️ 음성] 또는 스마트폰 자판의 마이크(🎙️)를 누르면 바로 텍스트로 입력됩니다.<br>
+        • <b>사진 촬영 / 선택</b>: 상단 [📷 촬영] 또는 [📁 사진선택] 버튼으로 계약서나 표를 등록하세요.<br>
         • <b>직접 타이핑 질문</b>: "이번달 미납 호실은?", "현재 공실 알려줘" 등 질문 및 작업 지시<br>
         • <b>은행 입금문자</b>: 복사한 입금 문자(호실·금액 자동 인식)를 붙여넣기<br>
-        • <b>사진 첨부 (Ctrl+V)</b>: 계약서나 영수증 캡처 사진 붙여넣기<br>
         • <b>구글 시트 연동</b>: 구글 스프레드시트 링크 입력 또는 
           <button type="button" class="btn-sm btn-outline" style="font-size:11px;font-weight:800;background:#f0fdf4;border-color:#16a34a;color:#15803d;padding:2px 7px;margin-left:4px;" onclick="closeModal('modalPaste');openGoogleSheetSyncModal();">구글 시트 동기화 창 열기 🔄</button>
       </div>
 
+      <!-- 숨겨진 파일 선택/카메라 인풋 (AI 비서 원스톱 연동) -->
+      <input type="file" id="pasteFileCamera" accept="image/*" capture="environment" style="display:none;" onchange="handlePasteFileInput(event)">
+      <input type="file" id="pasteFileGallery" accept="image/*" style="display:none;" onchange="handlePasteFileInput(event)">
+
       <!-- 퀵 질문 프롬프트 칩 (원클릭 입력 후 텍스트 수정 가능) -->
       <div style="display:flex;gap:4px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;-webkit-overflow-scrolling:touch;align-items:center;">
         <button type="button" id="btnMicPaste" class="btn-sm btn-outline" style="padding:4px 10px;font-size:12px;font-weight:800;white-space:nowrap;border-radius:12px;background:#eff6ff;border-color:#2563eb;color:#1d4ed8;" onclick="toggleVoiceAI('pasteText', 'btnMicPaste')" title="마이크 음성 입력 🎙️">🎙️ 음성</button>
+        <button type="button" class="btn-sm btn-outline" style="padding:4px 9px;font-size:12px;font-weight:800;white-space:nowrap;border-radius:12px;background:#0f172a;border-color:#0f172a;color:#ffffff;" onclick="document.getElementById('pasteFileCamera').click()" title="모바일 카메라 촬영">📷 촬영</button>
+        <button type="button" class="btn-sm btn-outline" style="padding:4px 9px;font-size:12px;font-weight:700;white-space:nowrap;border-radius:12px;background:#f8fafc;border-color:#64748b;color:#334155;" onclick="document.getElementById('pasteFileGallery').click()" title="앨범/사진 파일 선택">📁 사진</button>
         <button type="button" class="btn-sm btn-outline" style="padding:4px 8px;font-size:11.5px;font-weight:700;white-space:nowrap;border-radius:12px;background:#f0fdf4;border-color:#16a34a;color:#15803d;" onclick="pasteQuickQuery('엑셀 동기화')">🔄 엑셀/시트 동기화</button>
         <button type="button" class="btn-sm btn-outline" style="padding:4px 8px;font-size:11.5px;font-weight:700;white-space:nowrap;border-radius:12px;" onclick="pasteQuickQuery('이번달 미납 호실과 미납액 알려줘')">⚡ 미납 호실</button>
         <button type="button" class="btn-sm btn-outline" style="padding:4px 8px;font-size:11.5px;font-weight:700;white-space:nowrap;border-radius:12px;" onclick="pasteQuickQuery('만기 65일 이내 임박 호실 목록 보여줘')">📅 만기 임박</button>
@@ -355,7 +316,7 @@
       </div>
 
       <div class="form-group" style="margin-bottom:6px;">
-        <textarea id="pasteText" rows="4" placeholder="질문을 입력하거나 상단 [🎙️ 음성] 버튼/스마트폰 자판 마이크, 또는 데이터를 붙여넣으세요..." oninput="previewUniversalPaste()" onpaste="handleClipboardPaste(event)" onkeydown="handlePasteKeyDown(event)" style="font-size:13.5px;line-height:1.45;padding:10px;"></textarea>
+        <textarea id="pasteText" rows="4" placeholder="질문을 입력하거나 상단 [🎙️ 음성] 또는 [📷 촬영/📁 사진], 데이터를 붙여넣으세요..." oninput="previewUniversalPaste()" onpaste="handleClipboardPaste(event)" onkeydown="handlePasteKeyDown(event)" style="font-size:13.5px;line-height:1.45;padding:10px;"></textarea>
       </div>
       <!-- 실시간 음성 상태 안내 배너 -->
       <div id="pasteVoiceStatus" style="display:none;padding:8px 10px;border-radius:4px;font-size:12px;margin-bottom:8px;line-height:1.45;"></div>
@@ -363,14 +324,14 @@
         <span>💡 팁: [🎙️ 음성] 버튼을 누르시거나 스마트폰 자판의 <b>마이크(🎙️)</b>를 누르시면 음성이 텍스트로 자동 입력됩니다.</span>
       </div>
 
-      <!-- 클립보드 사진 붙여넣기 미리보기 영역 -->
+      <!-- 사진 첨부 미리보기 영역 (클립보드 / 카메라 / 파일선택 공용) -->
       <div id="pasteImageSection" style="display:none;border:1.5px solid #000;padding:10px;margin-bottom:10px;background:#f8fafc;border-radius:4px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <span style="font-size:12px;font-weight:800;color:#0f172a;">📷 붙여넣은 사진 (클립보드 감지)</span>
+          <span style="font-size:12px;font-weight:800;color:#0f172a;">📷 첨부된 사진</span>
           <button type="button" class="btn-sm btn-outline" style="padding:2px 6px;font-size:11px;" onclick="clearPasteImage()">사진 삭제</button>
         </div>
         <div style="display:flex;gap:12px;align-items:center;">
-          <img id="pasteImgPreview" src="" alt="클립보드 사진" style="width:72px;height:72px;object-fit:cover;border:1px solid #000;border-radius:3px;">
+          <img id="pasteImgPreview" src="" alt="첨부 사진" style="width:72px;height:72px;object-fit:cover;border:1px solid #000;border-radius:3px;">
           <div style="flex:1;font-size:12px;">
             <div style="font-weight:700;margin-bottom:6px;color:#0f172a;">스캔 대상 선택:</div>
             <label style="margin-right:14px;cursor:pointer;font-weight:700;color:#1e40af;">
@@ -379,7 +340,7 @@
             <label style="cursor:pointer;color:#475569;">
               <input type="radio" name="pasteScanKind" value="receipt" onchange="previewUniversalPaste()"> 🧾 지출 영수증 (비용 전표)
             </label>
-            <div style="font-size:11px;color:#64748b;margin-top:4px;">💡 호실별 표(장부) 사진을 붙여넣으시면 <b>모든 호실의 세입자 정보가 일괄 자동 등록</b>됩니다.</div>
+            <div style="font-size:11px;color:#64748b;margin-top:4px;">💡 호실별 표(장부) 사진을 올리시면 <b>모든 호실의 세입자 정보가 일괄 자동 등록</b>됩니다.</div>
           </div>
         </div>
       </div>
@@ -392,7 +353,7 @@
         <div id="pastePreviewBody" style="line-height:1.45;color:#1e293b;"></div>
       </div>
 
-      <!-- AI 답변 및 처리 결과 출력 카드 (모달 창 내에서 마법처럼 결과 확인 후 바로 닫기) -->
+      <!-- AI 답변 및 처리 결과 출력 카드 -->
       <div id="pasteAiResultBox" style="display:none;border:1.5px solid #2563eb;padding:12px 14px;margin-bottom:10px;font-size:13px;background:#f8fafc;border-radius:8px;line-height:1.55;color:#0f172a;max-height:260px;overflow-y:auto;white-space:pre-wrap;">
         <div style="font-weight:800;color:#1d4ed8;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
           <span style="font-size:13.5px;">🤖 실행 결과</span>
@@ -404,47 +365,6 @@
       <div style="display:flex;gap:8px;">
         <button id="btnUniversalSubmit" class="btn-primary" style="flex:1;padding:11px;font-size:14px;font-weight:800;background:#2563eb;" onclick="submitUniversalIngest()">확인</button>
         <button type="button" class="btn-outline" style="padding:11px 18px;font-size:13px;font-weight:700;" onclick="closeModal('modalPaste')">닫기</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── 모달 2: 카메라 촬영 / OCR 스캔 (계약서 / 영수증) ── -->
-  <div class="modal-overlay" id="modalScan">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>📷 계약서 & 영수증 카메라 스캔</h3>
-        <button class="close-btn" onclick="closeModal('modalScan')">×</button>
-      </div>
-      <div class="form-group">
-        <label>스캔 대상 선택:</label>
-        <select id="scanKind">
-          <option value="contract">임대차 계약서 (호실·세입자·금액 자동 갱신)</option>
-          <option value="receipt">지출 영수증 (일자·금액·증빙 자동 전표등록)</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label style="font-weight:700;margin-bottom:8px;display:block;">카메라 촬영 또는 사진 선택:</label>
-        <input type="file" id="scanFileCamera" accept="image/*" capture="environment" style="display:none;" onchange="previewScanImage(event)">
-        <input type="file" id="scanFileGallery" accept="image/*" style="display:none;" onchange="previewScanImage(event)">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <button type="button" class="btn-primary" style="padding:14px 10px;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:6px;background:#000;color:#fff;" onclick="document.getElementById('scanFileCamera').click()">
-            <span style="font-size:18px;">📷</span> 카메라로 즉시 촬영
-          </button>
-          <button type="button" class="btn-outline" style="padding:14px 10px;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:6px;background:#fff;color:#000;border:2px solid #000;" onclick="document.getElementById('scanFileGallery').click()">
-            <span style="font-size:18px;">📁</span> 앨범 / 사진 선택
-          </button>
-        </div>
-        <div id="scanFileName" style="margin-top:8px;font-size:12px;color:#666;text-align:center;background:#f8fafc;padding:8px;border:1px dashed #cbd5e1;border-radius:4px;">
-          선택된 사진이 없습니다. 위 버튼을 눌러 촬영하거나 선택하세요.
-        </div>
-      </div>
-      <div id="scanImagePreviewBox" style="display:none;margin-bottom:12px;text-align:center;">
-        <img id="scanImagePreview" src="" style="max-width:100%;max-height:200px;border:1px solid #000;">
-      </div>
-      <div id="scanResultBox" style="display:none;border:1px solid #000;padding:10px;font-size:12px;margin-bottom:12px;background:#fafafa;"></div>
-      <div style="display:flex;gap:8px;">
-        <button style="flex:1;" id="btnScanRun" onclick="runScanOCR()">AI 스캔 및 자동 등록</button>
-        <button class="btn-outline" onclick="closeModal('modalScan')">닫기</button>
       </div>
     </div>
   </div>
