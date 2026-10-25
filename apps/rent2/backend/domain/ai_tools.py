@@ -227,6 +227,20 @@ def new_contract(building: str, unit: int, tenant_name: str, deposit: int, rent:
     return {"contract": c.id, "message": f"📑 {unit}호 {tenant_name}님 신규 계약 등록 ({c.move_in}~{c.expiry})"}
 
 
+@tool(write=True)
+def sync_sheet(building: str = "main", url: str = "") -> Dict[str, Any]:
+    """구글 시트/엑셀 장부 실시간 동기화: 2025년 및 2026년 계약 및 월별 수납 내역을 DB에 원자적으로 반영한다."""
+    from . import sheet_sync
+    target_url = url.strip() or sheet_sync.DEFAULT_SHEET_URL
+    res = sheet_sync.sync_sheet_data(target_url, Building.canon(building or "main"))
+    return {
+        "success": True,
+        "total_rooms": res["total_rooms"],
+        "total_payments_synced": res["total_payments_synced"],
+        "message": f"📊 엑셀/구글 시트 2025/2026 장부 동기화 완료! ({res['total_rooms']}개 호실, 총 {res['total_payments_synced']}건 수납내역 DB 반영됨)"
+    }
+
+
 # ───────────── 오프라인 규칙 (API 키 없이도 동작 · 결정적 테스트용) ─────────────
 def _args(msg: str, ctx: dict, **extra: Any) -> dict:
     t, a = today(), dict(ctx)
@@ -297,6 +311,7 @@ def _vat(m: re.Match, ctx: dict) -> List[Tuple[str, dict]]:
 
 
 agent.OFFLINE_RULES[:] = [(re.compile(p, re.I), fn) for p, fn in [
+    (r"동기화|엑셀.*(반영|동기화)|시트.*(반영|동기화)|구글\s*시트|장부.*(동기화|반영|가져와)", _plan("sync_sheet")),
     (r"수정|변경|바꿔|연장|\b(?:만기|입주).*(?:\d{4}[-./년\s]\d{1,2}|\d{8})", _modify_contract_rule),
     (r"납부\s*취소|수납\s*취소|입금\s*취소", _plan("cancel_payment")),
     (r"(납부|수납|입금|납입)\s*(처리|완료|했|확인)", _plan("record_payment")),

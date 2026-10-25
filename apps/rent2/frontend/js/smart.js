@@ -236,6 +236,56 @@ async function submitUniversalIngest() {
     btn.innerHTML = "확인 중... ⏳";
   }
 
+  // 0. 엑셀/구글 시트 장부 동기화 명령 직접 실행 (즉각 DB 반영 및 화면 갱신)
+  const isSyncCommand = (
+    !img && (
+      text.includes("시트 동기화") || text.includes("엑셀 동기화") || text.includes("구글 시트") ||
+      text.includes("장부 동기화") || text.includes("시트 연동") || text.includes("장부 반영") ||
+      text === "동기화" || text === "시트동기화" || text === "엑셀동기화" || text.includes("엑셀 동기화")
+    )
+  );
+
+  if (isSyncCommand) {
+    try {
+      const res = await apiFetch(`${API_BASE}/sync/google-sheet`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sheet_url: "", branch_id: curBranch })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.detail || data.message || "동기화 실패");
+      }
+
+      if (resBox && resContent) {
+        resBox.style.display = "block";
+        resContent.innerHTML = `✅ <b>엑셀 / 구글 시트 2025·2026 장부 DB 동기화 완료!</b><br>` +
+          `• <b>동기화 호실</b>: <b>${data.total_rooms}개실</b> (101호~703호 전체)<br>` +
+          `• <b>DB 반영 내역</b>: <b>총 ${data.total_payments_synced}건</b> 수납/계약 데이터 원자적 적재 완료<br>` +
+          `<small style="color:#64748b;">(기본 호실 화면과 수납 현황에 즉시 반영되었습니다)</small>`;
+        setTimeout(() => {
+          resBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }, 50);
+      }
+
+      await reloadRooms();
+      if (typeof loadVatReport === "function") loadVatReport();
+      return;
+    } catch (err) {
+      console.error("동기화 오류:", err);
+      if (resBox && resContent) {
+        resBox.style.display = "block";
+        resContent.innerHTML = `<span style="color:#dc2626;">⚠️ 엑셀/시트 동기화 실패: ${err.message || '네트워크 오류'}</span>`;
+      }
+      return;
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = "확인";
+      }
+    }
+  }
+
   // 1. AI 질문 / 지시문인 경우 -> /api/rent2/ai/chat 직결 처리
   const isQuestionOrInstruction = (
     !img && !text.includes("docs.google.com/spreadsheets") &&

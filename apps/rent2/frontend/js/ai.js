@@ -45,15 +45,20 @@ function toggleVoiceAI(targetId = "pasteText", btnId = "btnMicPaste") {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   const btn = document.getElementById(btnId);
   const input = document.getElementById(targetId);
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isHttpInsecure = location.protocol !== "https:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1";
 
-  // 음성 인식을 지원하지 않는 브라우저 또는 iOS 환경 대응
-  if (!SpeechRecognition) {
+  // 모바일이거나 비보안 HTTP 환경에서는 스마트폰 키보드 마이크를 최우선으로 유도
+  if (isMobile || isHttpInsecure || !SpeechRecognition) {
+    if (input) {
+      input.focus();
+    }
     setPasteVoiceStatus(
-      `💡 <b>안내:</b> 현재 브라우저는 마이크 API를 직접 지원하지 않습니다.<br>👉 <b>입력창을 터치한 후 스마트폰 자판(키보드)의 마이크(🎙️)</b>를 누르시면 100% 즉시 음성 입력이 가능합니다!`,
+      `🎙️ <b>스마트폰 자판(키보드)의 마이크 버튼(🎙️)을 누르고 말씀하세요!</b><br>` +
+      `<small style="color:#475569;">브라우저 보안(HTTP) 정책 환경에서는 <b>자판(키보드) 스페이스바 옆의 🎙️ 마이크</b>를 터치하시면 100% 즉시 텍스트로 입력됩니다.</small>`,
       "warning"
     );
-    if (input) input.focus();
-    return;
+    if (!SpeechRecognition) return;
   }
 
   if (isVoiceListening) {
@@ -67,7 +72,7 @@ function toggleVoiceAI(targetId = "pasteText", btnId = "btnMicPaste") {
     aiSpeechRecognition = new SpeechRecognition();
     aiSpeechRecognition.lang = "ko-KR";
     aiSpeechRecognition.interimResults = true;
-    aiSpeechRecognition.continuous = true; // 모바일에서 중간 끊김 방지
+    aiSpeechRecognition.continuous = true; // 중간 끊김 방지
     aiSpeechRecognition.maxAlternatives = 1;
 
     const baseText = input ? input.value : "";
@@ -88,7 +93,7 @@ function toggleVoiceAI(targetId = "pasteText", btnId = "btnMicPaste") {
         input.focus();
       }
       setPasteVoiceStatus(
-        `🔴 <b>음성을 듣고 있습니다...</b> 말씀해 주세요 🎙️<br><small style="font-weight:normal;color:#475569;">말씀을 마치시면 [🔴 듣는 중] 버튼을 다시 누르시거나 잠시 기다리세요. (스마트폰 키보드의 🎙️도 사용 가능)</small>`,
+        `🔴 <b>음성을 듣고 있습니다...</b> 말씀해 주세요 🎙️<br><small style="font-weight:normal;color:#475569;">말씀을 마치시면 [🔴 듣는 중]을 다시 누르세요. (스마트폰 키보드의 🎙️도 바로 입력됩니다)</small>`,
         "listening"
       );
     };
@@ -126,9 +131,10 @@ function toggleVoiceAI(targetId = "pasteText", btnId = "btnMicPaste") {
 
     aiSpeechRecognition.onerror = function(event) {
       console.warn("음성인식 오류:", event.error);
+      if (input) input.focus();
       if (event.error === "not-allowed" || event.error === "service-not-allowed") {
         setPasteVoiceStatus(
-          `⚠️ <b>마이크 사용이 차단되었거나 비보안(HTTP) 연결입니다.</b><br>👉 <b>입력창을 터치한 후 스마트폰 자판(키보드)의 마이크 버튼(🎙️)</b>을 누르시면 100% 즉시 입력됩니다!`,
+          `⚠️ <b>브라우저 마이크 보안(HTTP) 차단됨</b><br>👉 <b>입력창 터치 후 스마트폰 자판(키보드)의 마이크 버튼(🎙️)</b>을 누르시면 100% 즉시 입력됩니다!`,
           "warning"
         );
       } else if (event.error === "no-speech") {
@@ -137,7 +143,7 @@ function toggleVoiceAI(targetId = "pasteText", btnId = "btnMicPaste") {
           "warning"
         );
       } else {
-        setPasteVoiceStatus(`⚠️ 음성 인식 알림: ${event.error}`, "warning");
+        setPasteVoiceStatus(`⚠️ 음성 알림: ${event.error}<br>👉 <b>스마트폰 자판(키보드)의 마이크(🎙️)</b>로 직접 말씀하셔도 바로 입력됩니다.`, "warning");
       }
     };
 
@@ -154,11 +160,10 @@ function toggleVoiceAI(targetId = "pasteText", btnId = "btnMicPaste") {
       if (input) {
         input.placeholder = origPlaceholder;
         input.focus();
-        // 최종 텍스트가 있을 경우 완료 상태 표시
         const finalVal = input.value.trim();
         if (finalVal) {
           setPasteVoiceStatus(
-            `✅ <b>음성 입력 완료:</b> "${finalVal}"<br><small style="font-weight:normal;color:#475569;">텍스트를 수정한 뒤 아래 <b>[스마트 실행]</b>을 누르시거나 바로 작업 지시를 완료하세요.</small>`,
+            `✅ <b>음성 입력 완료:</b> "${finalVal}"<br><small style="font-weight:normal;color:#475569;">내용 수정 후 아래 <b>[확인]</b>을 누르세요.</small>`,
             "success"
           );
           if (typeof previewUniversalPaste === "function") {
@@ -179,8 +184,9 @@ function toggleVoiceAI(targetId = "pasteText", btnId = "btnMicPaste") {
       btn.style.borderColor = "#2563eb";
       btn.style.color = "#1d4ed8";
     }
+    if (input) input.focus();
     setPasteVoiceStatus(
-      `⚠️ 음성 인식을 시작할 수 없습니다.<br>👉 <b>입력창 터치 후 스마트폰 자판(키보드)의 마이크(🎙️)</b>를 누르시면 편리하게 음성 입력하실 수 있습니다!`,
+      `👉 <b>입력창을 터치한 후 스마트폰 자판(키보드)의 마이크(🎙️)</b>를 누르시면 100% 즉시 음성 입력됩니다!`,
       "warning"
     );
   }
