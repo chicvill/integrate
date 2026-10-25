@@ -204,10 +204,18 @@ function previewUniversalPaste() {
 }
 
 // ── 만능 스마트 모달 제어 헬퍼 ──
+function togglePasteHelp() {
+  const box = document.getElementById("pasteHelpBox");
+  if (!box) return;
+  box.style.display = box.style.display === "none" ? "block" : "none";
+}
+
 function openAIPasteModal() {
   openModal("modalPaste");
   const resBox = document.getElementById("pasteAiResultBox");
   if (resBox) resBox.style.display = "none";
+  const helpBox = document.getElementById("pasteHelpBox");
+  if (helpBox) helpBox.style.display = "none";
   setTimeout(() => {
     const pt = document.getElementById("pasteText");
     if (pt) {

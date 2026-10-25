@@ -323,23 +323,26 @@
   <!-- ── 모달 1: AI 비서 & 만능 스마트 입력 (음성 · 문자입력 · 붙여넣기 통합) ── -->
   <div class="modal-overlay" id="modalPaste">
     <div class="modal-content" style="max-width:580px;width:95%;">
-      <div class="modal-header">
-        <div style="display:flex;align-items:center;gap:6px;">
+      <div class="modal-header" style="padding-bottom:8px;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:8px;">
           <span style="font-size:18px;">🤖</span>
-          <h3 style="margin:0;">AI 비서 & 만능 스마트 입력</h3>
+          <h3 style="margin:0;font-size:16px;">AI 비서</h3>
+          <!-- 동그라미 ? 도움말 아이콘 -->
+          <button type="button" class="btn-help-circle" onclick="togglePasteHelp()" title="사용 안내 보기">?</button>
         </div>
-        <button class="close-btn" onclick="closeModal('modalPaste')">×</button>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <button type="button" id="btnMicPaste" class="btn-mic" style="border-radius:6px;padding:5px 9px;font-size:13px;white-space:nowrap;background:#ffffff;border:1.5px solid #2563eb;color:#1d4ed8;font-weight:800;display:flex;align-items:center;gap:4px;cursor:pointer;" onclick="toggleVoiceAI('pasteText', 'btnMicPaste')" title="마이크 음성 입력 🎙️">
+            🎙️ 음성
+          </button>
+          <button class="close-btn" onclick="closeModal('modalPaste')">×</button>
+        </div>
       </div>
 
-      <!-- 상단 사용법 설명 및 음성 마이크 버튼 -->
-      <div style="font-size:12px;color:#334155;margin-bottom:10px;line-height:1.45;background:#f1f5f9;padding:9px 12px;border-radius:6px;border:1px solid #cbd5e1;display:flex;justify-content:space-between;align-items:center;gap:10px;">
-        <div style="flex:1;">
-          💡 <strong>어떤 형식이든 자유롭게 입력·붙여넣으세요!</strong><br>
-          AI 질문("미납 호실은?") · 은행 입금문자 · 구글시트 URL · 영수증 사진(Ctrl+V)을 자동 감지합니다.
-        </div>
-        <button type="button" id="btnMicPaste" class="btn-mic" style="border-radius:6px;padding:7px 11px;font-size:13.5px;white-space:nowrap;background:#ffffff;border:1.5px solid #2563eb;color:#1d4ed8;font-weight:800;display:flex;align-items:center;gap:4px;cursor:pointer;" onclick="toggleVoiceAI('pasteText', 'btnMicPaste')" title="마이크 음성 입력 🎙️">
-          🎙️ 음성
-        </button>
+      <!-- 동그라미 ? 클릭 시 토글되는 미니 사용법 안내 (기본 숨김으로 화면 단순화) -->
+      <div id="pasteHelpBox" style="display:none;font-size:12px;color:#334155;margin-bottom:10px;line-height:1.45;background:#f1f5f9;padding:9px 12px;border-radius:6px;border:1px solid #cbd5e1;">
+        💡 <strong>자유롭게 입력하거나 붙여넣으세요!</strong><br>
+        • <b>음성 / 텍스트 질문</b>: "미납 호실은?", "302호 월세 수납"<br>
+        • <b>붙여넣기</b>: 은행 입금문자 · 구글시트 URL · 영수증 사진(Ctrl+V) 자동 감지
       </div>
 
       <!-- 퀵 질문 프롬프트 칩 (원클릭 입력) -->

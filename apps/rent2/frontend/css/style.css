@@ -491,3 +491,29 @@ table.data-table tr:hover td { background: #fcfcfc; }
 .ai-bubble.ai-msg table th {
   background: #f1f5f9;
 }
+
+/* ── 동그라미 ? 도움말 아이콘 버튼 ── */
+.btn-help-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid #64748b;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.btn-help-circle:hover, .btn-help-circle:active {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+  transform: scale(1.08);
+}
