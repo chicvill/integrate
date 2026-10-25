@@ -622,9 +622,9 @@ def objects_search(q: str, kind: str = "", building: str = "", limit: int = 10, 
 
 @router.get("/objects/timeline")
 def objects_timeline(building: str = "", limit: int = 30, user: User = Depends(me)):
+    if user.role != "superadmin":
+        raise HTTPException(403, "타임라인 감사 로그는 본사 최고관리자만 조회할 수 있습니다.")
     scope = Building.canon(user.branch or building) if (user.branch or building) else None
-    if scope and not user.can("read", scope):
-        raise HTTPException(403, "조회 권한이 없습니다.")
     return {"events": store().timeline(scope, limit=limit)}
 
 

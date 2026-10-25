@@ -123,14 +123,6 @@ def vat_summary(building: str = "", start_month: int = 1, end_month: int = 6, ye
         "message": f"🧾 {y}년 {start_month}~{end_month}월 월세 합계 {r['total_collected']:,}원 → 공급가액 {r['total_supply']:,}원 + 부가세 {r['total_vat']:,}원"}
 
 
-@tool()
-def timeline(building: str = "", limit: int = 10) -> Dict[str, Any]:
-    """최근 변경 타임라인: 누가(사람/AI) 언제 무엇을 바꿨는지."""
-    ev = store().timeline(Building.canon(building) if building else None, limit=limit)
-    lines = [f"· {e['at'][5:16].replace('T', ' ')} {e['actor']} {e['kind']}.{e['action']} {e['detail'].get('summary', '')}" for e in ev]
-    return {"events": ev, "message": "최근 변경 기록\n" + "\n".join(lines) if ev else "기록이 없습니다."}
-
-
 # ───────────── 쓰기 도구 (사용자 확인 후 실행) ─────────────
 @tool(write=True)
 def record_payment(building: str, unit: int, month: int = 0, year: int = 0, paid_date: str = "") -> Dict[str, Any]:
@@ -322,7 +314,6 @@ agent.OFFLINE_RULES[:] = [(re.compile(p, re.I), fn) for p, fn in [
     (r"부가세|vat|세금계산", _vat),
     (r"공실|빈\s*방|빈방", _plan("vacancies")),
     (r"요약|현황|통계|브리핑", _plan("building_summary")),
-    (r"이력|타임라인|최근\s*(변경|기록)|로그", _plan("timeline")),
     (r"(납부|수납|입금|월세)\s*(내역|기록|조회|목록|이력|확인해|보여)", _plan("unit_card")),
     (r"\b[1-9]\d{2,3}(?:\s*호)?\b", _plan("unit_card")),
 ]]
