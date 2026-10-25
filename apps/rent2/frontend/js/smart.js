@@ -57,45 +57,29 @@ function previewUniversalPaste() {
   if (!txt && !currentPasteImageBase64) {
     if (box) box.style.display = "none";
     if (btn) {
-      btn.innerHTML = "스마트 실행";
+      btn.innerHTML = "확인";
       btn.className = "btn-primary";
-      btn.style.background = "#000";
+      btn.style.background = "#2563eb";
     }
     return;
   }
 
-  if (box) box.style.display = "block";
-
-  // 1. 사진 / 이미지 데이터 감지
+  // 1. 사진 / 이미지 데이터 감지 (필요 시에만 간결 표시)
   if (currentPasteImageBase64 || txt.startsWith("data:image/")) {
-    const kind = getSelectedPasteScanKind();
-    const kindDesc = kind === "receipt" ? "지출 영수증 (일자·금액 자동 전표 등록)" : "임대차 계약서 (호실·세입자 자동 갱신)";
-    if (badge) {
-      badge.innerHTML = "📷 클립보드 사진 감지됨";
-      badge.style.background = "#0284c7";
-    }
-    if (body) {
-      body.innerHTML = `붙여넣은 사진이 감지되었습니다.<br>선택된 분석: <b>${kindDesc}</b>`;
-    }
+    if (box) box.style.display = "none";
     if (btn) {
-      btn.innerHTML = `⚡ 사진 AI 분석 및 등록 (${kind === 'receipt' ? '영수증' : '계약서'})`;
+      btn.innerHTML = "확인 (사진 분석)";
       btn.className = "btn-primary";
-      btn.style.background = "#0284c7";
+      btn.style.background = "#2563eb";
     }
     return;
   }
 
   // 2. 구글 스프레드시트 URL 감지
   if (txt.includes("docs.google.com/spreadsheets")) {
-    if (badge) {
-      badge.innerHTML = "📊 구글 스프레드시트 링크 감지됨";
-      badge.style.background = "#16a34a";
-    }
-    if (body) {
-      body.innerHTML = `<b>시크빌 2025년 및 2026년 장부 링크</b>입니다.<br>실행 시 29개 호실의 연도별 계약 및 월별 납부내역이 실시간 동기화됩니다.`;
-    }
+    if (box) box.style.display = "none";
     if (btn) {
-      btn.innerHTML = "🔄 2025/2026 장부 실시간 동기화";
+      btn.innerHTML = "확인 (시트 동기화)";
       btn.className = "btn-primary";
       btn.style.background = "#16a34a";
     }
@@ -105,35 +89,13 @@ function previewUniversalPaste() {
   // 3. 로컬 파일 경로 감지
   const cleanPath = txt.replace(/["';]/g, "").trim();
   const lower = cleanPath.toLowerCase();
-  if (lower.endsWith(".xlsx") || lower.endsWith(".xls") || lower.endsWith(".csv") || lower.endsWith(".tsv")) {
-    const fname = cleanPath.split(/[\\/]/).pop();
-    if (badge) {
-      badge.innerHTML = "📁 엑셀/CSV 장부 파일 경로 감지됨";
-      badge.style.background = "#0d9488";
-    }
-    if (body) {
-      body.innerHTML = `장부 파일: <b>${fname}</b><br>경로: <code>${cleanPath}</code>`;
-    }
+  if (lower.endsWith(".xlsx") || lower.endsWith(".xls") || lower.endsWith(".csv") || lower.endsWith(".tsv") ||
+      lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".webp") || lower.endsWith(".pdf")) {
+    if (box) box.style.display = "none";
     if (btn) {
-      btn.innerHTML = "📋 장부 파일 동기화 실행";
+      btn.innerHTML = "확인 (파일 반영)";
       btn.className = "btn-primary";
       btn.style.background = "#0d9488";
-    }
-    return;
-  } else if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".webp") || lower.endsWith(".pdf")) {
-    const fname = cleanPath.split(/[\\/]/).pop();
-    const kind = getSelectedPasteScanKind();
-    if (badge) {
-      badge.innerHTML = "🖼️ 사진/영수증 파일 경로 감지됨";
-      badge.style.background = "#8b5cf6";
-    }
-    if (body) {
-      body.innerHTML = `이미지 파일: <b>${fname}</b><br>경로: <code>${cleanPath}</code>`;
-    }
-    if (btn) {
-      btn.innerHTML = "🔍 사진 파일 AI OCR 분석";
-      btn.className = "btn-primary";
-      btn.style.background = "#8b5cf6";
     }
     return;
   }
@@ -151,30 +113,25 @@ function previewUniversalPaste() {
   const roomNum = roomM ? parseInt(roomM[1], 10) : null;
   let estAmount = moneyM ? moneyM[0] : null;
 
-  // 질문형 어미가 있거나 은행 입금 패턴이 아니면 AI 비서 질의로 감지
+  // AI 질문/작업 지시일 때는 중간 감지 과정 박스를 완전히 감추고 깔끔하게 '확인' 버튼만 유지
   if (isQuestionOrInstruction || (!roomNum && !estAmount)) {
-    if (badge) {
-      badge.innerHTML = "🤖 AI 비서 질문 / 작업 지시 감지됨";
-      badge.style.background = "#2563eb";
-    }
-    if (body) {
-      body.innerHTML = `입력 내용: <b>"${txt.length > 50 ? txt.slice(0, 50) + '...' : txt}"</b><br>AI 비서가 29개실 실시간 장부를 분석하여 즉시 답변하고 전산 작업을 처리합니다.`;
-    }
+    if (box) box.style.display = "none";
     if (btn) {
-      btn.innerHTML = "🚀 AI 비서에게 질문 / 지시 실행";
+      btn.innerHTML = "확인";
       btn.className = "btn-primary";
       btn.style.background = "#2563eb";
     }
     return;
   }
 
+  // 은행 입금 문자인 경우에만 간단한 1줄 확인 정보만 노출
   if (!estAmount && roomNum) {
     const withoutRoom = txt.replace(roomM[0], "");
     const shortNum = withoutRoom.match(/\b(\d{2,3})\b/);
     if (shortNum) {
       const val = parseInt(shortNum[1], 10);
       if (val >= 10 && val <= 900) {
-        estAmount = `${(val * 10000).toLocaleString()}원 (약식 ${val}만)`;
+        estAmount = `${(val * 10000).toLocaleString()}원`;
       }
     }
   }
@@ -184,22 +141,23 @@ function previewUniversalPaste() {
     if (found) {
       const total = (found.rent || 0) + (found.maintenance || 0);
       if (total > 0) {
-        estAmount = `${total.toLocaleString()}원 <span style="color:#0277bd;font-weight:normal;">(계약기준 자동적용)</span>`;
+        estAmount = `${total.toLocaleString()}원`;
       }
     }
   }
 
+  if (box) box.style.display = "block";
   if (badge) {
-    badge.innerHTML = "💬 은행 입금 알림 문자 / 카톡 감지됨";
-    badge.style.background = "#000";
+    badge.innerHTML = "💬 입금 감지";
+    badge.style.background = "#0f172a";
   }
   if (body) {
-    body.innerHTML = `인식 호실: <b>${roomNum ? roomNum + "호" : "<span style='color:#c62828;'>미인식 (호실 번호 필요)</span>"}</b> | 금액: <b>${estAmount || "<span style='color:#666;'>확정 시 계약금액 적용</span>"}</b>`;
+    body.innerHTML = `호실: <b>${roomNum ? roomNum + "호" : "호실 미인식"}</b> | 금액: <b>${estAmount || "계약금액 적용"}</b>`;
   }
   if (btn) {
-    btn.innerHTML = "💳 입금 수납 처리 확정";
+    btn.innerHTML = "확인 (수납)";
     btn.className = "btn-primary";
-    btn.style.background = "#000";
+    btn.style.background = "#0f172a";
   }
 }
 
@@ -272,10 +230,10 @@ async function submitUniversalIngest() {
   }
 
   const btn = document.getElementById("btnUniversalSubmit");
-  const origText = btn ? btn.innerHTML : "실행";
+  const origText = btn ? (btn.innerHTML.includes("확인") ? btn.innerHTML : "확인") : "확인";
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = "AI 비서 분석 및 처리 중... ⏳";
+    btn.innerHTML = "확인 중... ⏳";
   }
 
   // 1. AI 질문 / 지시문인 경우 -> /api/rent2/ai/chat 직결 처리
@@ -306,11 +264,12 @@ async function submitUniversalIngest() {
       if (resBox && resContent) {
         resBox.style.display = "block";
         resContent.innerHTML = typeof formatAiReply === "function" ? formatAiReply(reply) : reply.replace(/\n/g, "<br>");
+        setTimeout(() => {
+          resBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }, 50);
       }
 
-      setAlert("🤖 AI 비서 답변이 완료되었습니다. 창에서 결과를 확인하세요.", "success");
-
-      // 쓰기 작업 실행 시 호실 데이터 동기화
+      // 쓰기 작업 실행 시 호실 데이터 조용히 백그라운드 동기화 (모달 유지)
       if (reply && (reply.includes("완료") || reply.includes("수정") || reply.includes("납부") || reply.includes("등록"))) {
         await reloadRooms();
       }
@@ -320,11 +279,10 @@ async function submitUniversalIngest() {
         resBox.style.display = "block";
         resContent.innerHTML = `<span style="color:#dc2626;">⚠️ AI 비서 오류: ${err.message || '네트워크 연결 오류'}</span>`;
       }
-      setAlert(`AI 비서 질의 실패: ${err.message}`, "error");
     } finally {
       if (btn) {
         btn.disabled = false;
-        btn.innerHTML = origText;
+        btn.innerHTML = "확인";
       }
     }
     return;
@@ -531,3 +489,28 @@ async function executeGoogleSheetSync() {
     }
   }
 }
+
+// AI 실행 결과 클립보드 복사 헬퍼
+function copyPasteResult() {
+  const content = document.getElementById("pasteAiResultContent");
+  if (!content) return;
+  const text = (content.innerText || content.textContent || "").trim();
+  if (!text) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      if (typeof setAlert === "function") setAlert("📋 실행 결과가 클립보드에 복사되었습니다.", "success");
+    }).catch(() => {
+      if (typeof setAlert === "function") setAlert("결과 복사에 실패했습니다.", "warning");
+    });
+  } else {
+    // 대체 복사
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    if (typeof setAlert === "function") setAlert("📋 실행 결과가 클립보드에 복사되었습니다.", "success");
+  }
+}
+

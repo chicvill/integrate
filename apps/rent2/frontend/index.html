@@ -395,17 +395,18 @@
         <div id="pastePreviewBody" style="line-height:1.45;color:#1e293b;"></div>
       </div>
 
-      <!-- AI 답변 및 처리 결과 출력 카드 -->
-      <div id="pasteAiResultBox" style="display:none;border:1.5px solid #2563eb;padding:10px 12px;margin-bottom:10px;font-size:13px;background:#eff6ff;border-radius:6px;line-height:1.5;color:#0f172a;max-height:220px;overflow-y:auto;white-space:pre-wrap;">
-        <div style="font-weight:800;color:#1d4ed8;margin-bottom:4px;display:flex;align-items:center;gap:4px;">
-          <span>🤖 AI 비서 답변:</span>
+      <!-- AI 답변 및 처리 결과 출력 카드 (모달 창 내에서 마법처럼 결과 확인 후 바로 닫기) -->
+      <div id="pasteAiResultBox" style="display:none;border:1.5px solid #2563eb;padding:12px 14px;margin-bottom:10px;font-size:13px;background:#f8fafc;border-radius:8px;line-height:1.55;color:#0f172a;max-height:260px;overflow-y:auto;white-space:pre-wrap;">
+        <div style="font-weight:800;color:#1d4ed8;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:13.5px;">🤖 실행 결과</span>
+          <button type="button" class="btn-outline btn-sm" style="font-size:11px;padding:2px 7px;background:#ffffff;" onclick="copyPasteResult()">결과 복사 📋</button>
         </div>
-        <div id="pasteAiResultContent"></div>
+        <div id="pasteAiResultContent" style="color:#1e293b;word-break:break-all;"></div>
       </div>
 
       <div style="display:flex;gap:8px;">
-        <button id="btnUniversalSubmit" class="btn-primary" style="flex:1;padding:11px;font-size:13.5px;font-weight:800;" onclick="submitUniversalIngest()">스마트 실행</button>
-        <button type="button" class="btn-outline" onclick="closeModal('modalPaste')">닫기</button>
+        <button id="btnUniversalSubmit" class="btn-primary" style="flex:1;padding:11px;font-size:14px;font-weight:800;background:#2563eb;" onclick="submitUniversalIngest()">확인</button>
+        <button type="button" class="btn-outline" style="padding:11px 18px;font-size:13px;font-weight:700;" onclick="closeModal('modalPaste')">닫기</button>
       </div>
     </div>
   </div>
