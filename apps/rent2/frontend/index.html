@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>MQnet 임차관리 rent2 (스마트 모바일)</title>
-  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/style.css?v=20261026_omni">
 </head>
 <body>
 
@@ -303,13 +303,13 @@
       <input type="file" id="pasteFileExcel" accept=".xlsx,.xls,.csv,.tsv" style="display:none;" onchange="handlePasteFileInput(event)">
 
       <!-- 상단 원클릭 제로-타이핑 퀵 칩 바 -->
-      <div style="display:flex;gap:5px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;-webkit-overflow-scrolling:touch;align-items:center;">
+      <div class="omni-chips-bar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;overflow-x:hidden;">
         <button type="button" class="ai-chip" onclick="pasteQuickQuery('이번달 미납 호실과 미납액 알려줘')">⚡ 이번달 미납</button>
         <button type="button" class="ai-chip" onclick="pasteQuickQuery('만기 65일 이내 임박 호실 목록 보여줘')">📅 만기 임박</button>
         <button type="button" class="ai-chip" onclick="pasteQuickQuery('이번달 수납 현황과 총 수납액 요약해줘')">💰 당월 수납</button>
         <button type="button" class="ai-chip" onclick="pasteQuickQuery('현재 비어있는 공실 알려줘')">🏢 공실 확인</button>
-        <button type="button" class="ai-chip" style="background:#f0fdf4;border-color:#16a34a;color:#15803d;" onclick="pasteQuickQuery('엑셀 동기화')">🔄 장부 동기화</button>
-        <button type="button" class="ai-chip" style="color:#64748b;" onclick="clearPasteArea()">비우기 🧹</button>
+        <button type="button" class="ai-chip" style="background:#f0fdf4;border-color:#bbf7d0;color:#15803d;" onclick="pasteQuickQuery('엑셀 동기화')">🔄 장부 동기화</button>
+        <button type="button" class="ai-chip" style="color:#64748b;background:#f8fafc;" onclick="clearPasteArea()">비우기 🧹</button>
       </div>
 
       <!-- ── 올인원 만능 스마트 프롬프트 바 (Omni-Input Card) ── -->
@@ -320,8 +320,12 @@
           <div style="flex:1;min-width:140px;">
             <div id="omniFileName" style="font-weight:800;color:#0f172a;margin-bottom:3px;font-size:12px;">첨부 이미지</div>
             <div style="display:flex;gap:4px;flex-wrap:wrap;">
+              <label class="omni-kind-tag active" id="tagKindAuto">
+                <input type="radio" name="pasteScanKind" value="auto" checked onchange="handleScanKindChange(this.value)">
+                <span>⚡ AI 자동 판별</span>
+              </label>
               <label class="omni-kind-tag" id="tagKindBank">
-                <input type="radio" name="pasteScanKind" value="bank_sms" checked onchange="handleScanKindChange(this.value)">
+                <input type="radio" name="pasteScanKind" value="bank_sms" onchange="handleScanKindChange(this.value)">
                 <span>💬 입금알림 (수납)</span>
               </label>
               <label class="omni-kind-tag" id="tagKindContract">

@@ -164,7 +164,7 @@ function clearPasteImage() {
 
 function getSelectedPasteScanKind() {
   const r = document.querySelector("input[name='pasteScanKind']:checked");
-  return r ? r.value : "bank_sms";
+  return r ? r.value : "auto";
 }
 
 // 외부 클릭 시 첨부 메뉴 닫기
@@ -212,8 +212,10 @@ function previewUniversalPaste() {
         helpEl.innerHTML = "💡 스마트폰 입금 알림 문자나 계좌이체 캡처를 올리시면 <b>1초 만에 세입자 호실로 자동 수납</b>됩니다.";
       } else if (scanKind === "contract") {
         helpEl.innerHTML = "💡 호실별 표(장부) 사진을 올리시면 <b>모든 호실의 세입자 정보가 일괄 자동 등록</b>됩니다.";
-      } else {
+      } else if (scanKind === "receipt") {
         helpEl.innerHTML = "💡 영수증이나 지출 전표 사진을 올리시면 <b>지출 장부에 자동 등록</b>됩니다.";
+      } else {
+        helpEl.innerHTML = "💡 AI가 사진을 자동 분석하여 <b>입금 알림, 계약 대장, 영수증 중 최적의 방식으로 자동 등록</b>합니다.";
       }
     }
     if (box) box.style.display = "none";
@@ -224,8 +226,11 @@ function previewUniversalPaste() {
       } else if (scanKind === "contract") {
         btn.innerHTML = "확인 (계약 대장 등록)";
         btn.style.background = "#1e40af";
-      } else {
+      } else if (scanKind === "receipt") {
         btn.innerHTML = "확인 (영수증 전표 등록)";
+        btn.style.background = "#2563eb";
+      } else {
+        btn.innerHTML = "확인 (⚡ AI 스마트 자동 분석)";
         btn.style.background = "#2563eb";
       }
       btn.className = "btn-primary";
@@ -578,7 +583,7 @@ async function submitUniversalIngest() {
   }
 
   // 2. 은행 입금문자 / 구글시트 / 파일 / 사진 인제스트 처리
-  setAlert(isPhoto ? (scanKind === "bank_sms" ? "⚡ 입금 알림 사진을 AI가 초고속 분석 중입니다..." : "📸 사진을 AI가 분석 중입니다...") : "만능 인제스트 분석 및 처리 진행 중...", "info");
+  setAlert(isPhoto ? (scanKind === "bank_sms" ? "⚡ 입금 알림 사진을 AI가 초고속 분석 중입니다..." : scanKind === "contract" ? "📋 계약 대장 사진을 AI가 분석 중입니다..." : scanKind === "receipt" ? "🧾 영수증 사진을 AI가 분석 중입니다..." : "⚡ AI가 사진 유형을 자동 판별하여 분석 중입니다...") : "만능 인제스트 분석 및 처리 진행 중...", "info");
 
   try {
     const clearBeforeImport = document.getElementById("chkClearBeforeImport") ? document.getElementById("chkClearBeforeImport").checked : true;

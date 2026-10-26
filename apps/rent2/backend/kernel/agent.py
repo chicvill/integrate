@@ -22,7 +22,7 @@ from .identity import User
 TOOLS: Dict[str, "Tool"] = {}
 current_user: ContextVar[Optional[User]] = ContextVar("current_user", default=None)
 _TYPES = {int: "INTEGER", float: "NUMBER", bool: "BOOLEAN", str: "STRING"}
-MODELS = ["gemini-3.1-flash-lite", "gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-3.8-flash"]
+MODELS = ["gemini-3.1-flash-lite", "gemini-3.6-flash"]
 
 
 @dataclass
@@ -130,7 +130,7 @@ def api_key() -> Optional[str]:
     return key
 
 
-def gemini(contents: list, system: str = "", tools: Optional[list] = None, json_mode: bool = False, timeout: int = 15) -> dict:
+def gemini(contents: list, system: str = "", tools: Optional[list] = None, json_mode: bool = False, timeout: int = 25) -> dict:
     """여러 고속 모델을 순차 폴백하며 generateContent 호출 → 첫 성공 응답(dict)"""
     body: Dict[str, Any] = {"contents": contents}
     if system:
@@ -145,14 +145,19 @@ def gemini(contents: list, system: str = "", tools: Optional[list] = None, json_
 
     last: Exception = RuntimeError("GEMINI_API_KEY 없음")
     for model in MODELS:
-        try:
-            req = urllib.request.Request(
-                f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key()}",
-                data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(req, timeout=timeout) as r:
-                return json.loads(r.read())
-        except Exception as e:   # 모델/쿼터 오류 → 다음 모델
-            last = e
+        for attempt_body in (body, {k: (v.copy() if k != "generationConfig" else {gk: gv for gk, gv in v.items() if gk != "thinkingConfig"}) for k, v in body.items()}):
+            try:
+                req = urllib.request.Request(
+                    f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key()}",
+                    data=json.dumps(attempt_body).encode(), headers={"Content-Type": "application/json"})
+                with urllib.request.urlopen(req, timeout=timeout) as r:
+                    return json.loads(r.read())
+            except Exception as e:
+                last = e
+                # 400 Bad Request인 경우 thinkingConfig 제거한 attempt_body로 1회 재시도
+                if "400" in str(e):
+                    continue
+                break
     raise RuntimeError(f"Gemini 호출 실패: {last}")
 
 

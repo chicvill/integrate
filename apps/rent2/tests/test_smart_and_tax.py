@@ -115,9 +115,18 @@ class TestSmartAndTax(unittest.TestCase):
         self.assertTrue(res["success"])
         self.assertEqual(res["imported_count"], 3)
         self.assertEqual(len(self.b.units), 29)  # Chicvill 29개 표준 호실 보존
-        self.assertEqual(self.b.unit(201).active().tenant_name, "김진우")
-        self.assertEqual(self.b.unit(202).active().tenant_name, "안문철")
-        self.assertEqual(self.b.unit(301).active().tenant_name, "김정두")
+        c201 = self.b.unit(201).active()
+        self.assertIsNotNone(c201)
+        assert c201 is not None
+        self.assertEqual(c201.tenant_name, "김진우")
+        c202 = self.b.unit(202).active()
+        self.assertIsNotNone(c202)
+        assert c202 is not None
+        self.assertEqual(c202.tenant_name, "안문철")
+        c301 = self.b.unit(301).active()
+        self.assertIsNotNone(c301)
+        assert c301 is not None
+        self.assertEqual(c301.tenant_name, "김정두")
 
     def test_universal_ingest_contract_roster(self):
         """스마트 만능 붙여넣기 계약 대장 등록 검증"""
@@ -134,6 +143,21 @@ class TestSmartAndTax(unittest.TestCase):
         body = res.json()
         self.assertTrue(body["success"])
         self.assertEqual(body["applied_count"], 2)
+
+    def test_smart_paste_payment_clear_error_message(self):
+        """호실 미지정 또는 미등록 호실 시 0호 대신 명확하고 친절한 안내 메시지 검증"""
+        from fastapi.testclient import TestClient
+        from apps.rent2.backend.main import create_app
+        app = create_app(":memory:")
+        client = TestClient(app)
+        admin = User.create("super_admin_test2", "1212", role="superadmin", status="APPROVED")
+        token = admin.token()
+
+        # 알 수 없는 문자 입력 시
+        res = client.post("/api/smart/paste-payment", json={"text": "임의의 메모 50,000원 입금", "branch_id": "main"}, headers={"Authorization": f"Bearer {token}"})
+        body = res.json()
+        self.assertFalse(body["success"])
+        self.assertNotIn("0호", body.get("message", ""))
 
 
 if __name__ == "__main__":

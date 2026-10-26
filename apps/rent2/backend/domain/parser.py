@@ -6,7 +6,7 @@ import re
 from datetime import date
 from typing import Any, Dict, List, Optional
 
-from .rent import Building, num, pdate, today
+from .rent import Building, Room, num, pdate, today
 
 # 은행 알림 문자 일반 패턴 및 계좌번호/잔액/일시 필터링 정규식
 _ACCOUNT_RE = re.compile(

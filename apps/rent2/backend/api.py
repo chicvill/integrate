@@ -764,14 +764,39 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
     # A. 이미지 데이터 (base64 직접 전달 또는 text가 data:image)
     if img or text.startswith("data:image/"):
         target_img = img or text
+
+        # 1) 입금 알림 지정 요청인 경우
         if scan_kind == "bank_sms":
             sms_res = ai_tools.read_bank_sms_image(target_img)
-            if not sms_res.get("success") or not sms_res.get("text"):
-                raise HTTPException(400, sms_res.get("message") or "입금 알림 사진에서 글자를 인식하지 못했습니다.")
-            res = smart_paste_payment({"text": sms_res["text"], "branch_id": bid, "auto_apply": True}, user)
-            res["kind"] = "bank_payment"
-            res["extracted_text"] = sms_res["text"]
-            return res
+            res: Dict[str, Any] = {"success": False, "applied_count": 0, "message": "분석 실패"}
+            if sms_res.get("success") and sms_res.get("text"):
+                # 계약 대장 표를 올렸는데 입금 알림으로 선택한 경우: 계약 대장 패턴 우선 감지
+                roster_cands = parser.parse_contract_roster(sms_res["text"])
+                if len(roster_cands) >= 2 or (roster_cands and any(r.get("deposit") or r.get("rent") for r in roster_cands)):
+                    con_res = smart_ocr_contract({"image_base64": target_img, "branch_id": bid, "auto_apply": True, "clear_before_import": clear_before_import}, user)
+                    if con_res.get("success") and int(con_res.get("applied_count") or 0) > 0:
+                        return con_res
+
+                # 은행 입금 수납 처리 시도
+                res = smart_paste_payment({"text": sms_res["text"], "branch_id": bid, "auto_apply": True}, user)
+                res["kind"] = "bank_payment"
+                res["extracted_text"] = sms_res["text"]
+                if res.get("success") and int(res.get("applied_count") or 0) > 0:
+                    return res
+
+            # 수납 처리가 안 된 경우(계약 대장 사진이거나 지출 영수증인 경우) 자동 스마트 폴백!
+            con_res = smart_ocr_contract({"image_base64": target_img, "branch_id": bid, "auto_apply": True, "clear_before_import": clear_before_import}, user)
+            if con_res.get("success") and int(con_res.get("applied_count") or 0) > 0:
+                return con_res
+            rec_res = smart_ocr_receipt({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
+            if rec_res.get("success") and (rec_res.get("expense") or (rec_res.get("data") and rec_res["data"].get("amount"))):
+                return rec_res
+            
+            if sms_res.get("success") and sms_res.get("text"):
+                return res
+            raise HTTPException(400, sms_res.get("message") or "입금 알림 사진에서 글자를 인식하지 못했습니다.")
+
+        # 2) 계약 대장 지정 요청인 경우
         elif scan_kind == "contract":
             con_res = smart_ocr_contract({"image_base64": target_img, "branch_id": bid, "auto_apply": True, "clear_before_import": clear_before_import}, user)
             # 입금 알림 사진으로 자동 감지된 경우 즉시 수납 처리로 연계
@@ -780,12 +805,13 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
                 res["kind"] = "bank_payment"
                 res["extracted_text"] = con_res["text"]
                 return res
-            if con_res.get("success") and con_res.get("applied_count", 0) > 0:
+            if con_res.get("success") and int(con_res.get("applied_count") or 0) > 0:
                 return con_res
             rec_res = smart_ocr_receipt({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
             return rec_res if (rec_res.get("success") and rec_res.get("expense")) else con_res
-        else:
-            # 영수증 스캔을 먼저 시도하되, 지출 금액이 없거나 인식 실패 시 자동으로 계약서/장부 스캔으로 fallback
+
+        # 3) 지출 영수증 지정 요청인 경우
+        elif scan_kind == "receipt":
             rec_res = smart_ocr_receipt({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
             if rec_res.get("success") and (rec_res.get("expense") or (rec_res.get("data") and rec_res["data"].get("amount"))):
                 return rec_res
@@ -795,8 +821,33 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
                 res["kind"] = "bank_payment"
                 res["extracted_text"] = con_res["text"]
                 return res
-            if con_res.get("success") and con_res.get("applied_count", 0) > 0:
+            if con_res.get("success") and int(con_res.get("applied_count") or 0) > 0:
                 return con_res
+            return rec_res
+
+        # 4) AI 스마트 자동 판별 (scan_kind == "auto" 또는 기타)
+        else:
+            con_res = smart_ocr_contract({"image_base64": target_img, "branch_id": bid, "auto_apply": True, "clear_before_import": clear_before_import}, user)
+            if con_res.get("kind") == "bank_sms" and con_res.get("text"):
+                res = smart_paste_payment({"text": con_res["text"], "branch_id": bid, "auto_apply": True}, user)
+                res["kind"] = "bank_payment"
+                res["extracted_text"] = con_res["text"]
+                return res
+            if con_res.get("success") and int(con_res.get("applied_count") or 0) > 0:
+                return con_res
+            
+            rec_res = smart_ocr_receipt({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
+            if rec_res.get("success") and (rec_res.get("expense") or (rec_res.get("data") and rec_res["data"].get("amount"))):
+                return rec_res
+            
+            sms_res = ai_tools.read_bank_sms_image(target_img)
+            if sms_res.get("success") and sms_res.get("text"):
+                res = smart_paste_payment({"text": sms_res["text"], "branch_id": bid, "auto_apply": True}, user)
+                res["kind"] = "bank_payment"
+                res["extracted_text"] = sms_res["text"]
+                if res.get("success") and int(res.get("applied_count") or 0) > 0:
+                    return res
+            
             return con_res if con_res.get("success") else rec_res
 
     # B. 구글 시트 URL
@@ -961,7 +1012,10 @@ def smart_paste_payment(p: Dict[str, Any] = Body(...), user: User = Depends(me))
                 item["error_reason"] = f"{room}호의 입금 금액을 확인하지 못했습니다."
         else:
             item["applied"] = False
-            item["error_reason"] = f"존재하지 않는 호실({room}호)이거나 계약된 세입자를 찾을 수 없습니다."
+            if room == 0:
+                item["error_reason"] = f"입금 알림에서 호실 번호(예: 101호) 또는 등록된 세입자({item.get('detected_tenant') or '이름'})를 식별하지 못했습니다."
+            else:
+                item["error_reason"] = f"매장({b.name})에 등록되지 않은 호실({room}호)이거나 계약된 세입자를 찾을 수 없습니다."
 
     ok = len(applied) > 0
     fail_reasons = [it.get("error_reason") for it in parsed_list if it.get("error_reason")]

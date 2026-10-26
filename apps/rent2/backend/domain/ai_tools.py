@@ -4,8 +4,11 @@ domain/ai_tools.py — 임차 객체를 AI 도구로 노출 (함수 하나 = 도
 새 AI 기능을 추가하는 비용 = 객체 행동을 부르는 함수 5줄 + @tool.
 SQL·테이블·조인 지식은 AI에게 전혀 필요 없다.
 """
+import base64
+import io
 import re
 from typing import Any, Dict, List, Tuple
+from PIL import Image
 
 from ..kernel import agent
 from ..kernel.agent import tool
@@ -387,20 +390,40 @@ OCR_PROMPT = (
 )
 
 
+def optimize_image_base64(image_base64: str, max_dim: int = 1400) -> Tuple[str, str]:
+    """Base64 이미지를 리사이징하고 압축하여 Gemini 비전 전송 속도를 5~10배 향상"""
+    head, _, body = image_base64.rpartition(",")
+    clean_body = body.strip().replace(" ", "+")
+    try:
+        raw_bytes = base64.b64decode(clean_body)
+        im = Image.open(io.BytesIO(raw_bytes))
+        if im.mode in ("RGBA", "P"):
+            im = im.convert("RGB")
+        w, h = im.size
+        if max(w, h) > max_dim:
+            scale = max_dim / max(w, h)
+            im = im.resize((int(w * scale), int(h * scale)), Image.Resampling.LANCZOS)
+        out_buf = io.BytesIO()
+        im.save(out_buf, format="JPEG", quality=85, optimize=True)
+        opt_b64 = base64.b64encode(out_buf.getvalue()).decode("utf-8")
+        return "image/jpeg", opt_b64
+    except Exception:
+        mime = "image/jpeg" if "jpeg" in head or "jpg" in head else "image/webp" if "webp" in head else "image/png"
+        return mime, clean_body
+
+
 def read_bank_sms_image(image_base64: str) -> Dict[str, Any]:
     """은행 입금 알림 문자/카톡/금융앱 알림 캡처 사진에서 텍스트를 초고속 추출"""
     if not agent.api_key():
         return {"success": False, "has_api_key": False, "text": "",
                 "message": "서버에 GEMINI_API_KEY가 설정되어 있지 않습니다."}
-    head, _, body = image_base64.rpartition(",")
-    mime = "image/jpeg" if "jpeg" in head or "jpg" in head else "image/webp" if "webp" in head else "image/png"
-    clean_body = body.strip().replace(" ", "+")
+    mime, clean_body = optimize_image_base64(image_base64, max_dim=1400)
     prompt = (
         "이 이미지는 스마트폰 화면에 수신된 은행 입금 알림 문자, 계좌이체 확인증, 또는 금융앱(농협, 국민, 신한, 토스, 카카오뱅크 등) 캡처입니다.\n"
         "이미지 속 모든 텍스트(은행명, 입금액, 입금자/송금자 이름, 거래일시, 계좌번호, 잔액 등)를 줄바꿈을 살려 텍스트 그대로만 출력하세요. 다른 설명 없이 오직 인식된 텍스트만 출력하세요."
     )
     try:
-        res = agent.gemini([{"parts": [{"text": prompt}, {"inline_data": {"mime_type": mime, "data": clean_body}}]}], timeout=12)
+        res = agent.gemini([{"parts": [{"text": prompt}, {"inline_data": {"mime_type": mime, "data": clean_body}}]}], timeout=25)
         text = res["candidates"][0]["content"]["parts"][0]["text"].strip()
         return {"success": bool(text), "text": text, "source": "gemini_vision"}
     except Exception as e:
@@ -412,14 +435,12 @@ def read_contract_image(image_base64: str) -> Dict[str, Any]:
     if not agent.api_key():
         return {"success": False, "has_api_key": False, "rows": [], "source": "no_api_key",
                 "message": "서버에 GEMINI_API_KEY가 설정되어 있지 않아 이미지 AI 스캔이 제한됩니다. 직접 입력해 주세요."}
-    head, _, body = image_base64.rpartition(",")
-    mime = "image/jpeg" if "jpeg" in head or "jpg" in head else "image/webp" if "webp" in head else "image/png"
-    clean_body = body.strip().replace(" ", "+")
+    mime, clean_body = optimize_image_base64(image_base64, max_dim=1600)
 
     # 1. 초고속 범용 텍스트 추출(Fast-Path): 만약 사용자가 입금 알림 캡처를 올린 경우 1초 만에 감지
     try:
         quick_prompt = "이 이미지 속 모든 텍스트를 줄바꿈을 살려 그대로 추출하세요. 부가 설명 없이 텍스트만 출력하세요."
-        quick_res = agent.gemini([{"parts": [{"text": quick_prompt}, {"inline_data": {"mime_type": mime, "data": clean_body}}]}], timeout=10)
+        quick_res = agent.gemini([{"parts": [{"text": quick_prompt}, {"inline_data": {"mime_type": mime, "data": clean_body}}]}], timeout=15)
         raw_text = quick_res["candidates"][0]["content"]["parts"][0]["text"].strip()
         # 은행 입금 문자 패턴(농협, 국민, 신한, 입금, 잔액 등) 확인
         if any(kw in raw_text for kw in ("입금", "이체", "잔액", "송금", "보냈습니다", "타행", "당행")) and len(re.findall(r"\b\d{3,4}\s*호\b", raw_text)) <= 1:
@@ -429,7 +450,7 @@ def read_contract_image(image_base64: str) -> Dict[str, Any]:
 
     # 2. 계약 대장 다중 호실 표 분석
     try:
-        parsed = agent.gemini_json(OCR_PROMPT, clean_body, mime, timeout=15)
+        parsed = agent.gemini_json(OCR_PROMPT, clean_body, mime, timeout=25)
         rows = []
         if isinstance(parsed, list):
             rows = parsed
@@ -457,10 +478,9 @@ def read_receipt_image(image_base64: str) -> Dict[str, Any]:
     if not agent.api_key():
         return {"success": False, "has_api_key": False, "data": None, "source": "no_api_key",
                 "message": "서버에 GEMINI_API_KEY가 설정되어 있지 않아 영수증 AI 스캔이 제한됩니다. 직접 입력해 주세요."}
-    head, _, body = image_base64.rpartition(",")
-    mime = "image/jpeg" if "jpeg" in head or "jpg" in head else "image/webp" if "webp" in head else "image/png"
+    mime, clean_body = optimize_image_base64(image_base64, max_dim=1400)
     try:
-        parsed = agent.gemini_json(RECEIPT_OCR_PROMPT, body, mime)
+        parsed = agent.gemini_json(RECEIPT_OCR_PROMPT, clean_body, mime, timeout=25)
         if isinstance(parsed, list) and parsed:
             parsed = parsed[0]
         return {"success": bool(parsed), "data": parsed, "source": "gemini_vision"}

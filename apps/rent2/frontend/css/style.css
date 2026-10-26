@@ -519,6 +519,38 @@ table.data-table tr:hover td { background: #fcfcfc; }
 }
 
 /* ── 만능 스마트 프롬프트 바 (Omni-Input Bar) ── */
+.omni-chips-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.ai-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  border-radius: 14px;
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.ai-chip:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+.ai-chip:active {
+  transform: translateY(0);
+}
+
 .omni-prompt-card {
   border: 1.5px solid #cbd5e1;
   border-radius: 18px;
