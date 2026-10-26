@@ -1,11 +1,28 @@
 import os
 import sys
 
+from typing import Dict, List, Tuple, TypedDict
+
 sys.path.insert(0, "/app")
 from apps.rent2.backend.kernel.base import use_store, store
 from apps.rent2.backend.domain.rent import Building, Room, Contract, Payment
 
-UNITS_DATA = [
+class UnitData(TypedDict):
+    unit: int
+    name: str
+    id_number: str
+    phone: str
+    move_in: str
+    expiry: str
+    lease_type: str
+    pay_timing: str
+    deposit: int
+    rent: int
+    maintenance: int
+    clean_fee: int
+    payments: Dict[int, Tuple[str, int, int, str]]
+
+UNITS_DATA: List[UnitData] = [
     {
         "unit": 401, "name": "이정도", "id_number": "621010-1231421", "phone": "010-2763-7108",
         "move_in": "2023-04-09", "expiry": "2024-04-08", "lease_type": "월세", "pay_timing": "후불",

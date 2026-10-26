@@ -53,6 +53,28 @@ class TestSmartAndTax(unittest.TestCase):
         self.assertEqual(res2["amount"], 450000)
         self.assertEqual(res2["target_month"], 6)
 
+        # 3. 계좌번호가 포함된 농협 문자 (계좌 앞자리 302가 아닌 세입자 홍길동 201호 매칭)
+        msg3 = "[농협] 10/24 16:30 302-1234-5678-91 홍길동 입금 500,000 잔액 1,234,000"
+        res3 = parse_bank_message(msg3, "main")
+        self.assertTrue(res3["success"])
+        self.assertEqual(res3["room_number"], 201)
+        self.assertEqual(res3["amount"], 500000)
+        self.assertEqual(res3["detected_tenant"], "홍길동")
+
+        # 4. 계좌번호 123-45-678901가 포함된 국민은행 문자 (123호나 678901원 오인 방지)
+        msg4 = "[KB] 10/24 16:30 123-45-678901 홍길동 입금 500,000"
+        res4 = parse_bank_message(msg4, "main")
+        self.assertTrue(res4["success"])
+        self.assertEqual(res4["room_number"], 201)
+        self.assertEqual(res4["amount"], 500000)
+
+        # 5. 호실 번호 없이 송금자 이름만 있는 토스/카카오톡 입금 문자
+        msg5 = "[토스] 홍길동님이 500,000원을 보냈습니다"
+        res5 = parse_bank_message(msg5, "main")
+        self.assertTrue(res5["success"])
+        self.assertEqual(res5["room_number"], 201)
+        self.assertEqual(res5["amount"], 500000)
+
     def test_income_tax_report_and_exports(self):
         # 지출 전표 2건 등록 (세금계산서, 간이영수증)
         Expense(building_id="main", date="2026-03-10", item="201호 도배 및 장판", amount=350000,

@@ -108,13 +108,57 @@ function previewUniversalPaste() {
     txt.includes("만기") || txt.includes("장부") || txt.includes("보고서")
   );
 
-  const roomM = txt.match(/(\d{3,4})\s*호?/);
-  let moneyM = txt.match(/(\d{1,3}(?:,\d{3})+|\d{4,9})\s*원?/) || txt.match(/(\d+(?:\.\d+)?)\s*만\s*원?/);
-  const roomNum = roomM ? parseInt(roomM[1], 10) : null;
-  let estAmount = moneyM ? moneyM[0] : null;
+  // 계좌번호, 전화번호, 잔액, 시간 마스킹으로 호실/금액 오인식 차단
+  let cleanTxt = txt
+    .replace(/잔[액고]\s*[:\s]*[\d,]+(?:\s*원)?/g, " ")
+    .replace(/\b(?:\d{2,6}[-*]){1,4}[\d*]{2,8}\b/g, " ")
+    .replace(/\b\d{2,4}[-*]\d{2,4}[-*]\d{2,6}\b/g, " ")
+    .replace(/\b01[016789][-\s]?\d{3,4}[-\s]?\d{4}\b/g, " ")
+    .replace(/\b\d{10,16}\b/g, " ")
+    .replace(/\b\d{1,2}:\d{2}(?::\d{2})?\b/g, " ");
+
+  let roomNum = null;
+  let matchedTenant = "";
+
+  // 1단계: 세입자(송금자) 이름으로 allRooms 매칭
+  if (typeof allRooms !== "undefined" && Array.isArray(allRooms)) {
+    for (const r of allRooms) {
+      if (r.name && r.name.length >= 2 && txt.includes(r.name)) {
+        roomNum = r.room_number;
+        matchedTenant = r.name;
+        break;
+      }
+    }
+  }
+
+  // 2단계: 명시적 'OO호' 탐색
+  const explicitRoomM = cleanTxt.match(/\b(\d{3,4})\s*호\b/);
+  if (explicitRoomM) {
+    const exp = parseInt(explicitRoomM[1], 10);
+    if (!roomNum || (typeof allRooms !== "undefined" && allRooms.some(x => x.room_number === exp))) {
+      roomNum = exp;
+    }
+  }
+
+  // 3단계: 세입자명과 '호'가 모두 없는 경우, allRooms에 존재하는 3~4자리 호실 번호 탐색
+  if (!roomNum && typeof allRooms !== "undefined" && Array.isArray(allRooms)) {
+    for (const r of allRooms) {
+      const regex = new RegExp(`\\b${r.room_number}\\b`);
+      if (regex.test(cleanTxt)) {
+        roomNum = r.room_number;
+        break;
+      }
+    }
+  }
+
+  // 금액 추출: 만원 단위 및 원 단위
+  let moneyM = cleanTxt.match(/(\d+(?:\.\d+)?)\s*만\s*원?/) ||
+               cleanTxt.match(/(\d{1,3}(?:,\d{3})+|\d{4,9})\s*원/) ||
+               cleanTxt.match(/(?:입금|수납|보냈습니다)\s*[:\s]*(\d{1,3}(?:,\d{3})+|\d{4,9})/);
+  let estAmount = moneyM ? (moneyM[0].includes("만") ? moneyM[0] : `${parseInt((moneyM[1] || moneyM[0]).replace(/[^0-9]/g, ''), 10).toLocaleString()}원`) : null;
 
   // AI 질문/작업 지시일 때는 중간 감지 과정 박스를 완전히 감추고 깔끔하게 '확인' 버튼만 유지
-  if (isQuestionOrInstruction || (!roomNum && !estAmount)) {
+  if (isQuestionOrInstruction || (!roomNum && !estAmount && !matchedTenant)) {
     if (box) box.style.display = "none";
     if (btn) {
       btn.innerHTML = "확인";
@@ -124,18 +168,7 @@ function previewUniversalPaste() {
     return;
   }
 
-  // 은행 입금 문자인 경우에만 간단한 1줄 확인 정보만 노출
-  if (!estAmount && roomNum) {
-    const withoutRoom = txt.replace(roomM[0], "");
-    const shortNum = withoutRoom.match(/\b(\d{2,3})\b/);
-    if (shortNum) {
-      const val = parseInt(shortNum[1], 10);
-      if (val >= 10 && val <= 900) {
-        estAmount = `${(val * 10000).toLocaleString()}원`;
-      }
-    }
-  }
-
+  // 은행 입금 문자인 경우 금액 폴백 (계약 월세+관리비)
   if (!estAmount && roomNum && typeof allRooms !== "undefined") {
     const found = allRooms.find(r => r.room_number === roomNum);
     if (found) {
@@ -152,7 +185,8 @@ function previewUniversalPaste() {
     badge.style.background = "#0f172a";
   }
   if (body) {
-    body.innerHTML = `호실: <b>${roomNum ? roomNum + "호" : "호실 미인식"}</b> | 금액: <b>${estAmount || "계약금액 적용"}</b>`;
+    const tenantSuffix = matchedTenant ? ` (${matchedTenant})` : "";
+    body.innerHTML = `호실: <b>${roomNum ? roomNum + "호" + tenantSuffix : (matchedTenant ? matchedTenant + "님" : "호실 미인식")}</b> | 금액: <b>${estAmount || "계약금액 적용"}</b>`;
   }
   if (btn) {
     btn.innerHTML = "확인 (수납)";

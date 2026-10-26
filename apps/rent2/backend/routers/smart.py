@@ -248,17 +248,36 @@ def smart_paste_payment(p: Dict[str, Any] = Body(...), user: User = Depends(me))
     parsed_list = parser.parse_batch_bank_messages(text, bid)
     if not parsed_list:
         single = parser.parse_bank_message(text, bid)
-        parsed_list = [single] if single.get("room_number") else []
+        parsed_list = [single] if (single.get("room_number") or single.get("detected_tenant")) else []
         
     if not parsed_list:
-        return {"success": False, "message": "입금 문자에서 호실 번호(예: 403호 또는 403)를 찾지 못했습니다.", "items": []}
+        return {"success": False, "message": "입금 문자에서 호실 번호(예: 403호) 또는 입금자명(세입자)을 찾지 못했습니다.", "items": []}
 
     auto_apply = bool(p.get("auto_apply", True))
     applied = []
     b = get_building(bid)
 
     for item in parsed_list:
-        room = item["room_number"]
+        room = item.get("room_number", 0)
+        # 1. 파싱된 호실이 유효하지 않은 경우, 송금자명(세입자)으로 해당 매장의 호실 재검색
+        if room not in b.units and item.get("detected_tenant"):
+            tname = item["detected_tenant"].strip()
+            for u_num in b.units:
+                u_cand = b.unit(u_num)
+                c_act = u_cand.active()
+                if c_act and c_act.tenant_name and c_act.tenant_name.strip() == tname:
+                    room = u_num
+                    item["room_number"] = u_num
+                    break
+                # 과거 이력도 확인
+                for h in u_cand.ended():
+                    if h.tenant_name and h.tenant_name.strip() == tname:
+                        room = u_num
+                        item["room_number"] = u_num
+                        break
+                if room in b.units:
+                    break
+
         if room in b.units and auto_apply:
             u = b.unit(room)
             amt = item["amount"]
@@ -285,17 +304,21 @@ def smart_paste_payment(p: Dict[str, Any] = Body(...), user: User = Depends(me))
                 applied.append(item)
             else:
                 item["applied"] = False
+                item["error_reason"] = f"{room}호의 입금 금액을 확인하지 못했습니다."
         else:
             item["applied"] = False
+            item["error_reason"] = f"존재하지 않는 호실({room}호)이거나 계약된 세입자를 찾을 수 없습니다."
 
     ok = len(applied) > 0
+    fail_reasons = [it.get("error_reason") for it in parsed_list if it.get("error_reason")]
+    fail_msg = " | ".join(fail_reasons) if fail_reasons else "호실 계약 정보 또는 입금 금액을 확인하지 못했습니다."
     return {
         "success": ok,
         "branch_id": bid,
         "total_parsed": len(parsed_list),
         "applied_count": len(applied),
         "items": parsed_list,
-        "message": f"총 {len(parsed_list)}건 중 {len(applied)}건이 자동 수납 처리되었습니다." if ok else "호실 계약 정보 또는 입금 금액을 확인하지 못했습니다."
+        "message": f"총 {len(parsed_list)}건 중 {len(applied)}건이 자동 수납 처리되었습니다." if ok else fail_msg
     }
 
 
