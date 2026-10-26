@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MQnet 임차관리 rent2 (스마트 모바일)</title>
+  <link rel="stylesheet" href="./css/style.css?v=20261026_omni">
+</head>
+<body>
+
+  <!-- 헤더 -->
+  <header>
+    <div class="brand">RENT 2.0</div>
+    <div class="header-right">
+      <select id="branchSelect" onchange="switchBranch(this.value)" style="font-weight:700;max-width:115px;padding:3px 4px;font-size:12px;">
+        <option value="main">지점 로딩 중...</option>
+      </select>
+      <span id="userBadge" style="font-size:11px;font-weight:800;border:1px solid #000;padding:3px 5px;background:#f5f5f5;">-</span>
+      <button id="btnAuthAction" class="btn-sm btn-outline" style="padding:3px 6px;font-size:11px;" onclick="handleAuthButtonClick()">로그인</button>
+      <a href="manual.html" target="_blank" style="font-size:11px;font-weight:700;border:1px solid #000;padding:3px 5px;text-decoration:none;">📖 매뉴얼</a>
+    </div>
+  </header>
+
+  <!-- 본문 컨테이너 -->
+  <div class="container">
+    <div id="appAlert"></div>
+
+    <!-- 4대 핵심 브리핑 카드 (수납, 미납, 만기, 공실) -->
+    <div class="stats-grid">
+      <div class="stat-card" id="cardPaid" onclick="filterRooms('paid')">
+        <div class="label">당월 수납</div>
+        <div class="val" id="statPaid">-</div>
+        <div class="sub" id="statPaidAmount">0원</div>
+      </div>
+      <div class="stat-card" id="cardUnpaid" onclick="filterRooms('unpaid')">
+        <div class="label">당월 미납</div>
+        <div class="val" id="statUnpaid">-</div>
+        <div class="sub" id="statUnpaidAmount">0원</div>
+      </div>
+      <div class="stat-card" id="cardExpiring" onclick="filterRooms('expiring')">
+        <div class="label">만기 임박</div>
+        <div class="val" id="statExpiring">-</div>
+        <div class="sub">65일 이내</div>
+      </div>
+      <div class="stat-card" id="cardVacant" onclick="filterRooms('vacant')">
+        <div class="label">현재 공실</div>
+        <div class="val" id="statVacant">-</div>
+        <div class="sub" id="statTotalRooms">전체 -실</div>
+      </div>
+    </div>
+
+    <!-- 탭 네비게이션 -->
+    <div class="nav-tabs">
+      <button class="nav-tab active" id="tabRooms" onclick="setTab('rooms')">호실 관제</button>
+      <button class="nav-tab" id="tabTax" onclick="setTab('tax')">세무 자료 (부가세/종소세)</button>
+      <button class="nav-tab" id="tabExpenses" onclick="setTab('expenses')">지출 장부</button>
+      <button class="nav-tab" id="tabBranches" onclick="setTab('branches')" style="display:none;background:#f5f5f5;font-weight:800;">🏢 본사 매장 관리</button>
+    </div>
+
+    <!-- [섹션 1] 호실 관제 -->
+    <div id="secRooms">
+      <div class="filter-bar">
+        <input type="text" id="roomSearch" placeholder="호실/세입자 검색..." oninput="debouncedRenderRooms()" style="flex:1;min-width:140px;">
+        <select id="filterStatus" onchange="renderRooms()">
+          <option value="all">전체 상태</option>
+          <option value="unpaid">미납만</option>
+          <option value="paid">완납만</option>
+          <option value="vacant">공실만</option>
+          <option value="expiring">만기임박만</option>
+        </select>
+        <button class="btn-outline btn-sm" onclick="reloadRooms()" style="white-space:nowrap;padding:4px 10px;height:30px;">새로고침</button>
+      </div>
+
+      <div class="room-grid" id="roomGrid">
+        <div style="padding:20px;text-align:center;">호실 데이터를 불러오는 중...</div>
+      </div>
+    </div>
+
+    <!-- [섹션 2] 세무 자료 (부가세 & 종합소득세) -->
+    <div id="secTax" style="display:none;">
+      <!-- 부가가치세 -->
+      <div class="tax-box">
+        <div class="tax-title">
+          <span>부가가치세 신고 자료</span>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <select id="vatYear" onchange="loadVatReport()" style="padding:4px 6px;font-size:12px;font-weight:700;">
+              <option value="2025" selected>2025년</option>
+              <option value="2026">2026년</option>
+              <option value="2024">2024년</option>
+            </select>
+            <select id="vatPeriod" onchange="loadVatReport()" style="padding:4px 6px;font-size:12px;">
+              <option value="1">1기 (1~6월)</option>
+              <option value="2">2기 (7~12월)</option>
+            </select>
+            <button class="btn-sm" onclick="downloadVat('excel')">Excel</button>
+            <button class="btn-sm btn-outline" onclick="downloadVat('csv')">CSV</button>
+          </div>
+        </div>
+        <div class="tax-summary-grid">
+          <div class="tax-metric">
+            <div class="label">총 입금 월세</div>
+            <div class="val" id="vatTotalCollected">0원</div>
+          </div>
+          <div class="tax-metric">
+            <div class="label">공급가액 (매출)</div>
+            <div class="val" id="vatSupply">0원</div>
+          </div>
+          <div class="tax-metric">
+            <div class="label">부가가치세 (10%)</div>
+            <div class="val" id="vatTax">0원</div>
+          </div>
+        </div>
+        <div class="table-scroll-container">
+          <table class="data-table" id="vatTable">
+            <thead>
+              <tr id="vatTableHeadRow">
+                <th class="center" style="min-width:44px;">호실</th>
+                <th class="center" style="min-width:60px;">임차인</th>
+                <th class="center" style="min-width:44px;">유형</th>
+                <th class="center" style="min-width:48px;">부가세</th>
+                <th class="center" style="min-width:72px;">1월</th>
+                <th class="center" style="min-width:72px;">2월</th>
+                <th class="center" style="min-width:72px;">3월</th>
+                <th class="center" style="min-width:72px;">4월</th>
+                <th class="center" style="min-width:72px;">5월</th>
+                <th class="center" style="min-width:72px;">6월</th>
+                <th class="center" style="min-width:82px;background:#e9ecef;">납입합계</th>
+                <th class="center" style="min-width:82px;">공급가액</th>
+                <th class="center" style="min-width:76px;">세액(10%)</th>
+              </tr>
+            </thead>
+            <tbody><tr><td colspan="13" style="text-align:center;">조회 중...</td></tr></tbody>
+            <tfoot id="vatTableFoot"></tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- 종합소득세 -->
+      <div class="tax-box">
+        <div class="tax-title">
+          <span>종합소득세 임대소득 & 필요경비</span>
+          <div style="display:flex;gap:4px;align-items:center;">
+            <select id="taxYear" onchange="loadIncomeTax()" style="padding:3px 6px;font-size:12px;font-weight:700;">
+              <option value="2026">2026년</option>
+              <option value="2025">2025년</option>
+            </select>
+            <button class="btn-sm" onclick="downloadIncomeTax('excel')">Excel</button>
+            <button class="btn-sm btn-outline" onclick="downloadIncomeTax('csv')">CSV</button>
+          </div>
+        </div>
+        <div class="tax-summary-grid">
+          <div class="tax-metric">
+            <div class="label">연간 총수입(월세)</div>
+            <div class="val" id="taxRentIncome">0원</div>
+          </div>
+          <div class="tax-metric">
+            <div class="label">필요경비 합계</div>
+            <div class="val" id="taxExpense">0원</div>
+          </div>
+          <div class="tax-metric">
+            <div class="label">예상 임대소득</div>
+            <div class="val" id="taxNetIncome">0원</div>
+          </div>
+        </div>
+        <div style="font-weight:700;margin:10px 0 6px 0;font-size:13px;">증빙유형별 경비 집계</div>
+        <div class="table-scroll-container" style="max-height:220px;">
+          <table class="data-table" id="taxReceiptTable" style="min-width:320px;">
+            <thead><tr><th>증빙 구분</th><th style="text-align:right;">금액</th><th>세무 비고</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- [섹션 3] 지출 장부 -->
+    <div id="secExpenses" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div style="font-weight:900;font-size:16px;">지출 전표 내역</div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-primary" style="background:#000;color:#fff;" onclick="openReceiptScanModal()">📷 영수증 카메라 스캔</button>
+          <button class="btn-outline" onclick="openModal('modalExpense')">+ 지출 직접 입력</button>
+        </div>
+      </div>
+      <div class="table-scroll-container">
+        <table class="data-table" id="expensesTable" style="min-width:540px;">
+          <thead><tr><th>일자</th><th>항목</th><th style="text-align:right;">금액</th><th>증빙</th><th>적요</th><th class="center">관리</th></tr></thead>
+          <tbody><tr><td colspan="6" style="text-align:center;">조회 중...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+
+
+    <!-- [섹션 5] 본사 매장 총괄 관리 (admin 전용) -->
+    <div id="secBranches" style="display:none;">
+      <!-- 본사 가맹 매장 요약 브리핑 -->
+      <div class="tax-summary-grid" style="margin-bottom:16px;">
+        <div class="tax-metric">
+          <div class="tax-metric-label">총 가맹 매장 수</div>
+          <div class="tax-metric-val" id="statBranchTotal">-</div>
+        </div>
+        <div class="tax-metric">
+          <div class="tax-metric-label">사용료 완납 매장</div>
+          <div class="tax-metric-val" id="statBranchPaid" style="color:#2e7d32;">-</div>
+        </div>
+        <div class="tax-metric">
+          <div class="tax-metric-label">사용료 미납/연체</div>
+          <div class="tax-metric-val" id="statBranchOverdue" style="color:#c62828;">-</div>
+        </div>
+        <div class="tax-metric">
+          <div class="tax-metric-label">당월 본사 사용료 수납액</div>
+          <div class="tax-metric-val" id="statBranchFeeTotal">-</div>
+        </div>
+      </div>
+
+      <!-- 상단 액션 바 -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px;flex-wrap:wrap;">
+        <div style="font-weight:800;font-size:16px;">🏢 가맹 매장 목록 및 솔루션 사용료 수납</div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-primary" onclick="openModal('modalNewBranch')">➕ 신규 매장(건물) 개설</button>
+          <button class="btn-outline" onclick="loadAdminBranches()">새로고침</button>
+        </div>
+      </div>
+
+      <!-- 매장 카드 그리드 -->
+      <div id="branchListGrid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));gap:14px;">
+        <div style="padding:20px;text-align:center;border:1px dashed #000;grid-column:1/-1;">매장 목록을 불러오는 중...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 모바일 고정 하단 퀵 액션 바 (Zero-Typing) ── -->
+  <div class="bottom-bar">
+    <button id="btnBottomPaste" class="btn-primary" style="font-weight:900;" onclick="openAIPasteModal()">🤖 AI 비서 (촬영·음성·질문)</button>
+    <button id="btnBottomTax" onclick="setTab('tax')">📊 세무자료</button>
+    <button id="btnBottomReload" onclick="reloadRooms()">🔄 새로고침</button>
+  </div>
+
+  <!-- ── 모달 0: 사용자 로그인 / 지점 격리 인증 ── -->
+  <div class="modal-overlay" id="modalLogin">
+    <div class="modal-content" style="max-width:440px;width:95%;">
+      <div class="modal-header">
+        <h3>🔐 RENT2 지점 관리자 로그인</h3>
+        <button class="close-btn" onclick="closeModal('modalLogin')">×</button>
+      </div>
+      <div style="font-size:12px;color:#64748b;margin-bottom:12px;line-height:1.4;">
+        계정 권한에 따라 소속 건물의 정보만 안전하게 격리되어 표시됩니다.
+      </div>
+
+      <!-- 모달 전용 인라인 실시간 안내 배너 -->
+      <div id="loginAlert" style="display:none;padding:10px 12px;margin-bottom:14px;border-radius:6px;font-size:12.5px;font-weight:600;line-height:1.4;"></div>
+
+      <form onsubmit="handleLoginSubmit(event)">
+        <div class="form-group" style="margin-bottom:12px;">
+          <label style="font-size:12.5px;font-weight:700;display:block;margin-bottom:4px;">아이디 (Username):</label>
+          <input type="text" id="loginUsername" placeholder="예: admin, admin01, admin02, user" autocomplete="username" required style="width:100%;box-sizing:border-box;padding:9px 10px;font-size:14px;">
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label style="font-size:12.5px;font-weight:700;display:block;margin-bottom:4px;">비밀번호 (Password):</label>
+          <input type="password" id="loginPassword" placeholder="기본 비밀번호: 1212" value="1212" autocomplete="current-password" required style="width:100%;box-sizing:border-box;padding:9px 10px;font-size:14px;">
+        </div>
+        <button type="submit" id="btnLoginSubmit" class="btn-primary" style="width:100%;margin-bottom:14px;padding:12px;font-size:14px;font-weight:800;letter-spacing:0.5px;cursor:pointer;border-radius:6px;">로그인</button>
+      </form>
+
+      <div style="border-top:1px dashed #cbd5e1;padding-top:12px;">
+        <div style="font-size:11.5px;font-weight:800;color:#334155;margin-bottom:8px;">⚡ 빠른 테스트 원클릭 로그인:</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <button type="button" class="btn-outline btn-sm" style="padding:7px 8px;font-size:11.5px;cursor:pointer;text-align:center;" onclick="quickLogin('admin','1212')">👑 본사 총괄 (admin)</button>
+          <button type="button" class="btn-outline btn-sm" style="padding:7px 8px;font-size:11.5px;cursor:pointer;text-align:center;" onclick="quickLogin('admin01','1212')">🏢 1호점 실장 (admin01)</button>
+          <button type="button" class="btn-outline btn-sm" style="padding:7px 8px;font-size:11.5px;cursor:pointer;text-align:center;" onclick="quickLogin('admin02','1212')">🏢 2호점 실장 (admin02)</button>
+          <button type="button" class="btn-outline btn-sm" style="padding:7px 8px;font-size:11.5px;cursor:pointer;text-align:center;" onclick="quickLogin('user','1212')">👤 일반 회원 (user)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 모달 1: AI 비서 & 만능 스마트 입력 (음성 · 문자입력 · 붙여넣기 · 카메라 통합 Omni-Bar) ── -->
+  <div class="modal-overlay" id="modalPaste">
+    <div class="modal-content" style="max-width:580px;width:95%;">
+      <!-- 모달 헤더 -->
+      <div class="modal-header" style="padding-bottom:6px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:18px;">🤖</span>
+          <h3 style="margin:0;font-size:16px;">AI 비서 & 만능 스마트 입력</h3>
+          <span id="pasteTargetBranchBadge" style="padding:2px 8px;font-size:11.5px;font-weight:800;background:#0f172a;color:#ffffff;border-radius:12px;">지점</span>
+          <button type="button" class="btn-help-circle" onclick="togglePasteHelp()" title="사용 안내 보기">?</button>
+        </div>
+        <button class="close-btn" onclick="closeModal('modalPaste')">×</button>
+      </div>
+
+      <!-- 도움말 팝업 박스 -->
+      <div id="pasteHelpBox" style="display:none;font-size:12px;color:#334155;margin-bottom:10px;line-height:1.55;background:#f8fafc;padding:12px 14px;border-radius:10px;border:1.5px solid #cbd5e1;">
+        <div style="font-weight:800;color:#0f172a;margin-bottom:6px;font-size:12.5px;">💡 만능 스마트 입력 안내</div>
+        • <b>음성 입력</b>: 하단 마이크(🎙️) 버튼을 누르면 실시간으로 음성이 텍스트로 자동 입력됩니다.<br>
+        • <b>사진 / 파일 첨부</b>: 하단 <b>(+)</b> 버튼 또는 클립보드 붙여넣기(Ctrl+V), 드래그 앤 드롭으로 계약서 표나 영수증을 즉시 올릴 수 있습니다.<br>
+        • <b>은행 입금문자</b>: 복사한 입금 문자(호실·금액 자동 인식)를 붙여넣고 <b>[➔]</b> 전송을 누르시면 0.1초 만에 자동 수납됩니다.<br>
+        • <b>자연어 AI 질문</b>: "이번달 미납 호실은?", "201호 누구야?" 등 무엇이든 편하게 물어보세요.
+      </div>
+
+      <!-- 숨겨진 파일 선택 인풋 (카메라 / 앨범 / 엑셀) -->
+      <input type="file" id="pasteFileCamera" accept="image/*" capture="environment" style="display:none;" onchange="handlePasteFileInput(event)">
+      <input type="file" id="pasteFileGallery" accept="image/*" style="display:none;" onchange="handlePasteFileInput(event)">
+      <input type="file" id="pasteFileExcel" accept=".xlsx,.xls,.csv,.tsv" style="display:none;" onchange="handlePasteFileInput(event)">
+
+      <!-- 상단 원클릭 제로-타이핑 퀵 칩 바 -->
+      <div class="omni-chips-bar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;overflow-x:hidden;">
+        <button type="button" class="ai-chip" onclick="pasteQuickQuery('이번달 미납 호실과 미납액 알려줘')">⚡ 이번달 미납</button>
+        <button type="button" class="ai-chip" onclick="pasteQuickQuery('만기 65일 이내 임박 호실 목록 보여줘')">📅 만기 임박</button>
+        <button type="button" class="ai-chip" onclick="pasteQuickQuery('이번달 수납 현황과 총 수납액 요약해줘')">💰 당월 수납</button>
+        <button type="button" class="ai-chip" onclick="pasteQuickQuery('현재 비어있는 공실 알려줘')">🏢 공실 확인</button>
+        <button type="button" class="ai-chip" style="background:#f0fdf4;border-color:#bbf7d0;color:#15803d;" onclick="pasteQuickQuery('엑셀 동기화')">🔄 장부 동기화</button>
+        <button type="button" class="ai-chip" style="color:#64748b;background:#f8fafc;" onclick="clearPasteArea()">비우기 🧹</button>
+      </div>
+
+      <!-- ── 올인원 만능 스마트 프롬프트 바 (Omni-Input Card) ── -->
+      <div class="omni-prompt-card" id="omniPromptContainer" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDropFile(event)">
+        <!-- 사진/파일 첨부 미리보기 칩 -->
+        <div id="omniAttachmentChip" class="omni-attachment-chip">
+          <img id="omniThumbImg" class="omni-thumb-img" src="" alt="미리보기">
+          <div style="flex:1;min-width:140px;">
+            <div id="omniFileName" style="font-weight:800;color:#0f172a;margin-bottom:3px;font-size:12px;">첨부 이미지</div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;">
+              <label class="omni-kind-tag active" id="tagKindAuto">
+                <input type="radio" name="pasteScanKind" value="auto" checked onchange="handleScanKindChange(this.value)">
+                <span>⚡ AI 자동 판별</span>
+              </label>
+              <label class="omni-kind-tag" id="tagKindBank">
+                <input type="radio" name="pasteScanKind" value="bank_sms" onchange="handleScanKindChange(this.value)">
+                <span>💬 입금알림 (수납)</span>
+              </label>
+              <label class="omni-kind-tag" id="tagKindContract">
+                <input type="radio" name="pasteScanKind" value="contract" onchange="handleScanKindChange(this.value)">
+                <span>📋 계약대장 (일괄등록)</span>
+              </label>
+              <label class="omni-kind-tag" id="tagKindReceipt">
+                <input type="radio" name="pasteScanKind" value="receipt" onchange="handleScanKindChange(this.value)">
+                <span>🧾 지출영수증</span>
+              </label>
+            </div>
+          </div>
+          <button type="button" class="omni-btn-icon" style="width:24px;height:24px;font-size:13px;" onclick="clearPasteImage()" title="첨부 삭제">✕</button>
+        </div>
+
+        <!-- 만능 텍스트 입력창 (자동 높이 조절) -->
+        <textarea id="pasteText" class="omni-textarea" rows="2" placeholder="질문, 입금 알림 문자, 엑셀 표를 붙여넣거나 음성/사진을 추가하세요..." oninput="autoExpandTextarea(this); previewUniversalPaste();" onpaste="handleClipboardPaste(event)" onkeydown="handlePasteKeyDown(event)"></textarea>
+
+        <!-- 프롬프트 내부 하단 통합 액션 바 (스크린샷 규격 100% 일치) -->
+        <div class="omni-bottom-bar">
+          <div class="omni-bottom-left">
+            <!-- (+) 첨부 버튼 -->
+            <button type="button" id="btnOmniAttach" class="omni-btn-add" onclick="toggleOmniAttachMenu()" title="파일/사진 첨부">+</button>
+            
+            <!-- 첨부 팝업 드롭다운 메뉴 -->
+            <div id="omniAttachMenu" class="omni-attach-menu">
+              <button type="button" class="omni-attach-item" onclick="triggerAttachAction('camera')">
+                <span>📷</span><span>카메라로 촬영</span>
+              </button>
+              <button type="button" class="omni-attach-item" onclick="triggerAttachAction('gallery')">
+                <span>📁</span><span>사진 / 앨범 선택</span>
+              </button>
+              <button type="button" class="omni-attach-item" onclick="triggerAttachAction('excel')">
+                <span>📊</span><span>엑셀 / 장부 파일</span>
+              </button>
+            </div>
+
+            <!-- 타겟 배지 (Gemini 모델/지점 알림) -->
+            <div class="omni-model-pill" id="omniModelBadge" title="현재 지점 및 스마트 모드">
+              <span>⚡ 만능 AI 스마트 비서</span>
+              <span style="font-size:10px;color:#94a3b8;">▾</span>
+            </div>
+          </div>
+
+          <div class="omni-bottom-right">
+            <!-- 음성 마이크 버튼 -->
+            <button type="button" id="btnOmniMic" class="omni-btn-mic" onclick="toggleVoiceAI('pasteText', 'btnOmniMic')" title="마이크 음성 입력 🎙️">🎙️</button>
+            <!-- 전송/확인 원형 화살표 버튼 -->
+            <button type="button" id="btnOmniSend" class="omni-btn-send" onclick="submitUniversalIngest()" title="입력 전송 및 실행 (Enter)">➔</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 실시간 음성 상태 안내 배너 -->
+      <div id="pasteVoiceStatus" style="display:none;padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:8px;line-height:1.45;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;"></div>
+
+      <!-- 일괄 등록 옵션 체크박스 바 (슬림 & 깔끔) -->
+      <div style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;background:#f8fafc;padding:6px 10px;border-radius:6px;font-size:11.5px;border:1px solid #e2e8f0;">
+        <label style="cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:700;color:#1e40af;">
+          <input type="checkbox" id="chkClearBeforeImport" checked style="cursor:pointer;">
+          <span>기존 가짜/임시 호실 초기화 후 새 장부로 등록 (권장)</span>
+        </label>
+        <span style="color:#64748b;font-size:11px;">(타 매장 오염 방지)</span>
+      </div>
+
+      <!-- 숨겨진 호환용 레거시 요소 (기존 로직 호환성 100% 보장) -->
+      <div id="pasteImageSection" style="display:none;">
+        <img id="pasteImgPreview" src="" alt="첨부 사진" style="display:none;">
+        <div id="pasteScanKindHelp" style="display:none;"></div>
+      </div>
+
+      <!-- 감지 결과 미리보기 카드 -->
+      <div id="pastePreview" style="border:1.5px solid #000;padding:8px 10px;margin-bottom:8px;font-size:12px;background:#ffffff;display:none;border-radius:6px;">
+        <div id="pastePreviewBadge" style="display:inline-block;padding:2px 7px;font-size:11px;font-weight:800;background:#000;color:#fff;border-radius:3px;margin-bottom:4px;">
+          [감지된 유형]
+        </div>
+        <div id="pastePreviewBody" style="line-height:1.45;color:#1e293b;"></div>
+      </div>
+
+      <!-- AI 답변 및 실행 결과 출력 카드 -->
+      <div id="pasteAiResultBox" style="display:none;border:1.5px solid #2563eb;padding:12px 14px;margin-bottom:10px;font-size:13px;background:#f8fafc;border-radius:10px;line-height:1.55;color:#0f172a;max-height:280px;overflow-y:auto;white-space:pre-wrap;">
+        <div style="font-weight:800;color:#1d4ed8;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:13.5px;">🤖 실행 결과</span>
+          <button type="button" class="btn-outline btn-sm" style="font-size:11px;padding:2px 7px;background:#ffffff;" onclick="copyPasteResult()">결과 복사 📋</button>
+        </div>
+        <div id="pasteAiResultContent" style="color:#1e293b;word-break:break-all;"></div>
+      </div>
+
+      <!-- 닫기 / 보조 버튼 -->
+      <div style="display:flex;justify-content:flex-end;gap:6px;">
+        <button id="btnUniversalSubmit" style="display:none;" onclick="submitUniversalIngest()">확인</button>
+        <button type="button" class="btn-outline" style="padding:7px 16px;font-size:12.5px;font-weight:700;border-radius:6px;" onclick="closeModal('modalPaste')">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 모달 3: 호실 상세 / 계약 수정 ── -->
+  <div class="modal-overlay" id="modalRoom">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <h3 id="modalRoomTitle" style="margin:0;">호실 상세 정보</h3>
+          <span id="rfAutoSaveBadge" style="display:none;font-size:11px;font-weight:800;color:#16a34a;background:#f0fdf4;border:1px solid #16a34a;padding:2px 7px;border-radius:4px;">⚡ 실시간 자동 저장됨 ✅</span>
+        </div>
+        <button class="close-btn" onclick="closeModal('modalRoom')">×</button>
+      </div>
+      <div style="font-size:11.5px;color:#64748b;margin-bottom:8px;">💡 모든 변경사항은 입력 즉시 DB에 <b>실시간 자동 저장</b>됩니다. 별도로 저장 버튼을 누르지 않으셔도 안전합니다.</div>
+      <form id="roomForm" onsubmit="saveRoomForm(event)" onchange="triggerAutoSaveRoom()">
+        <input type="hidden" id="rfRoomNumber">
+        <div class="form-group">
+          <label>세입자명 (공란 저장 시 퇴실/공실 처리):</label>
+          <input type="text" id="rfName" onblur="triggerAutoSaveRoom()">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="form-group">
+            <label>연락처:</label>
+            <input type="text" id="rfPhone" onblur="triggerAutoSaveRoom()">
+          </div>
+          <div class="form-group">
+            <label>주민번호:</label>
+            <input type="text" id="rfIdNumber" onblur="triggerAutoSaveRoom()">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="form-group">
+            <label>보증금(원):</label>
+            <input type="number" id="rfDeposit" onblur="triggerAutoSaveRoom()">
+          </div>
+          <div class="form-group">
+            <label>월세(원):</label>
+            <input type="number" id="rfRent" onblur="triggerAutoSaveRoom()">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="form-group">
+            <label>관리비(원):</label>
+            <input type="number" id="rfMaintenance" onblur="triggerAutoSaveRoom()">
+          </div>
+          <div class="form-group">
+            <label>선/후불:</label>
+            <select id="rfPayTiming" onchange="triggerAutoSaveRoom()">
+              <option value="후불">후불</option>
+              <option value="선불">선불</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 부가세 2가지 체크 버튼 (과세 대상 실 & 별도 수납/세금영수증 발행) -->
+        <div style="border:1px solid #94a3b8;border-radius:4px;padding:10px 12px;margin-bottom:12px;background:#f8fafc;">
+          <div style="font-size:12px;font-weight:800;margin-bottom:8px;color:#166534;">부가세(VAT) 산출 및 수납 구분 (체크 버튼)</div>
+          <div style="display:grid;grid-template-columns:1fr;gap:8px;">
+            <label for="rfVatTarget" style="display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;cursor:pointer;padding:6px 10px;border-radius:4px;background:#ffffff;border:1px solid #cbd5e1;">
+              <input type="checkbox" id="rfVatTarget" checked onchange="triggerAutoSaveRoom()">
+              <span>부가세 산출에 포함 (신고 대상 실)</span>
+            </label>
+            <label for="rfVatSeparate" style="display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;cursor:pointer;padding:6px 10px;border-radius:4px;background:#ffffff;border:1px solid #cbd5e1;">
+              <input type="checkbox" id="rfVatSeparate" onchange="triggerAutoSaveRoom()">
+              <span>부가세 별도 수납 (세금영수증/계산서 별도 발행)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 계약 기간 3대 일정: 입주일 - 만기일 - 퇴거일 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+          <div class="form-group">
+            <label>입주일:</label>
+            <input type="date" id="rfMoveIn" onchange="triggerAutoSaveRoom()">
+          </div>
+          <div class="form-group">
+            <label>만기일:</label>
+            <input type="date" id="rfExpiry" onchange="triggerAutoSaveRoom()">
+          </div>
+          <div class="form-group">
+            <label>퇴거일 (전출):</label>
+            <input type="date" id="rfMoveOut" onchange="triggerAutoSaveRoom()">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <button type="submit" id="btnSaveRoom" class="btn-primary" style="flex:1;">완료 (자동 저장됨)</button>
+          <button type="button" class="btn-outline" onclick="closeModal('modalRoom')">닫기</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── 모달 4: 지출 직접 입력 ── -->
+  <div class="modal-overlay" id="modalExpense">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>지출 전표 등록</h3>
+        <button class="close-btn" onclick="closeModal('modalExpense')">×</button>
+      </div>
+      <form onsubmit="saveExpense(event)">
+        <div class="form-group">
+          <label>지출일자:</label>
+          <input type="date" id="expDate" required>
+        </div>
+        <div class="form-group">
+          <label>지출 항목 (예: 201호 도배, 보일러 수리, 공과금):</label>
+          <input type="text" id="expItem" required>
+        </div>
+        <div class="form-group">
+          <label>금액(원):</label>
+          <input type="number" id="expAmount" required>
+        </div>
+        <div class="form-group">
+          <label>증빙 유형 (종합소득세 필요경비 증빙):</label>
+          <select id="expReceiptType">
+            <option value="신용카드">신용카드</option>
+            <option value="세금계산서">세금계산서</option>
+            <option value="현금영수증">현금영수증</option>
+            <option value="간이영수증">간이영수증 (3만원 초과 주의)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>적요 / 메모:</label>
+          <input type="text" id="expNote">
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <button type="submit" style="flex:1;">지출 전표 저장</button>
+          <button type="button" class="btn-outline" onclick="closeModal('modalExpense')">취소</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── 모달 6: 신규 매장(건물) 개설 (admin 전용) ── -->
+  <div class="modal-overlay" id="modalNewBranch">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🏢 신규 매장(건물) 개설</h3>
+        <button class="close-btn" onclick="closeModal('modalNewBranch')">×</button>
+      </div>
+      <form onsubmit="handleCreateBranchSubmit(event)">
+        <div class="form-group">
+          <label>매장 고유 식별코드 (ID):</label>
+          <input type="text" id="nbBranchId" placeholder="예: branch_gangnam (영문/숫자/밑줄)" required>
+        </div>
+        <div class="form-group">
+          <label>매장/건물명:</label>
+          <input type="text" id="nbName" placeholder="예: 강남 원룸텔" required>
+        </div>
+        <div class="form-group">
+          <label>점주/관리자 연락처:</label>
+          <input type="text" id="nbPhone" placeholder="예: 010-1234-5678">
+        </div>
+        <div class="form-group">
+          <label>소재지 주소:</label>
+          <input type="text" id="nbAddress" placeholder="예: 서울시 강남구 테헤란로 123">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="form-group">
+            <label>월 솔루션 사용료 (원):</label>
+            <input type="number" id="nbMonthlyFee" value="150000" required>
+          </div>
+          <div class="form-group">
+            <label>사용료 납부 지정일:</label>
+            <input type="number" id="nbDueDay" value="25" min="1" max="31" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>초기 호실 자동 생성 (호실 수):</label>
+          <input type="number" id="nbRooms" placeholder="예: 15 (201호~215호 자동 생성)" value="15">
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <button type="submit" style="flex:1;">신규 매장 등록 완료</button>
+          <button type="button" class="btn-outline" onclick="closeModal('modalNewBranch')">취소</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── 모달 7: 매장 사용료 수납 상태 및 설정 변경 ── -->
+  <div class="modal-overlay" id="modalBranchBilling">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="billingModalTitle">💵 매장 사용료 수납 설정</h3>
+        <button class="close-btn" onclick="closeModal('modalBranchBilling')">×</button>
+      </div>
+      <form onsubmit="handleUpdateBranchBillingSubmit(event)">
+        <input type="hidden" id="bbBranchId">
+        <div class="form-group">
+          <label>매장명:</label>
+          <input type="text" id="bbBranchName" readonly style="background:#f0f0f0;">
+        </div>
+        <div class="form-group">
+          <label>수납 상태:</label>
+          <select id="bbBillingStatus">
+            <option value="PAID">완납 (PAID) - 정상 가맹</option>
+            <option value="PENDING">청구중 (PENDING) - 청구서 발행</option>
+            <option value="OVERDUE">미납/연체 (OVERDUE) - 사용료 지연</option>
+          </select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="form-group">
+            <label>월 솔루션 사용료 (원):</label>
+            <input type="number" id="bbMonthlyFee" required>
+          </div>
+          <div class="form-group">
+            <label>납부 지정일 (매월):</label>
+            <input type="number" id="bbDueDay" min="1" max="31" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>최종 납부일:</label>
+          <input type="date" id="bbLastPaidAt">
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <button type="submit" style="flex:1;">수납 정보 저장</button>
+          <button type="button" class="btn-outline" onclick="closeModal('modalBranchBilling')">취소</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── 모달 8: 호실별 월별 수납 내역 (작년 1월 ~ 현재월) ── -->
+  <div class="modal-overlay" id="modalPaymentHistory">
+    <div class="modal-content" style="max-width:680px;width:95%;">
+      <div class="modal-header">
+        <h3 id="payHistTitle">💳 수납 내역</h3>
+        <button class="close-btn" onclick="closeModal('modalPaymentHistory')">×</button>
+      </div>
+
+      <!-- 상단 요약 정보 -->
+      <div id="payHistSummary" style="background:#f8fafc;border:1px solid #000;padding:10px 12px;margin-bottom:12px;font-size:12.5px;">
+        <!-- 동적으로 주입 -->
+      </div>
+
+      <!-- 내역 테이블 (모바일 가로 스크롤 대응) -->
+      <div style="overflow-x:auto;max-height:420px;overflow-y:auto;border:1px solid #000;margin-bottom:14px;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;text-align:center;">
+          <thead style="position:sticky;top:0;background:#f2f2f2;border-bottom:2px solid #000;font-weight:800;z-index:2;">
+            <tr>
+              <th style="padding:7px 4px;border-right:1px solid #ccc;min-width:65px;">납부월</th>
+              <th style="padding:7px 4px;border-right:1px solid #ccc;min-width:55px;">상태</th>
+              <th style="padding:7px 4px;border-right:1px solid #ccc;min-width:75px;">납부일자</th>
+              <th style="padding:7px 4px;border-right:1px solid #ccc;min-width:75px;">임차료</th>
+              <th style="padding:7px 4px;border-right:1px solid #ccc;min-width:65px;">관리비</th>
+              <th style="padding:7px 4px;border-right:1px solid #ccc;min-width:65px;">부가세</th>
+              <th style="padding:7px 4px;min-width:80px;background:#eef2ff;">합계금액</th>
+            </tr>
+          </thead>
+          <tbody id="payHistTableBody">
+            <!-- 동적으로 주입 -->
+          </tbody>
+          <tfoot id="payHistTableFoot" style="position:sticky;bottom:0;background:#f8f9fa;border-top:2px solid #000;font-weight:800;">
+            <!-- 합계행 -->
+          </tfoot>
+        </table>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:8px;">
+        <button type="button" class="btn-primary" style="padding:8px 24px;font-size:14px;font-weight:700;" onclick="closeModal('modalPaymentHistory')">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 모달 9: 구글 스프레드시트 실시간 동기화 ── -->
+  <div class="modal-overlay" id="modalGoogleSheetSync">
+    <div class="modal-content" style="max-width:560px;width:95%;">
+      <div class="modal-header">
+        <h3>📊 구글 스프레드시트 2025/2026 장부 동기화</h3>
+        <button class="close-btn" onclick="closeModal('modalGoogleSheetSync')">×</button>
+      </div>
+      <div style="font-size:12px;color:#475569;margin-bottom:12px;line-height:1.5;">
+        구글 스프레드시트의 <strong>2025년도</strong> 및 <strong>2026년도</strong> 장부(호실별 세입자 정보, 계약 기간, 월별 납부일·임차료·관리비)를 실시간으로 읽어와 계약 및 수납 데이터로 일괄 반영합니다.
+      </div>
+      <div class="form-group">
+        <label>구글 스프레드시트 URL:</label>
+        <input type="text" id="syncSheetUrl" value="https://docs.google.com/spreadsheets/d/1Yfcc3sfIsgd76aaw_HVfMtU2LdEVdHvcO5YIKaDsAcI/edit?gid=944651128#gid=944651128" style="font-size:12px;font-family:monospace;">
+      </div>
+      <div id="syncResultBox" style="display:none;padding:10px;margin-bottom:12px;border:1px solid #000;font-size:12.5px;background:#f8fafc;white-space:pre-wrap;"></div>
+      <div style="display:flex;gap:8px;">
+        <button type="button" id="btnRunSheetSync" class="btn-primary" style="flex:1;padding:10px;" onclick="executeGoogleSheetSync()">🔄 2025/2026년 장부 실시간 동기화</button>
+        <button type="button" class="btn-outline" onclick="closeModal('modalGoogleSheetSync')">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 모듈형 분리 스크립트 로드 ── -->
+  <script src="./js/core.js"></script>
+  <script src="./js/branches_admin.js"></script>
+  <script src="./js/rooms.js"></script>
+  <script src="./js/smart.js"></script>
+  <script src="./js/tax.js"></script>
+  <script src="./js/ai.js"></script>
+
+  <!-- ── 🤖 제미나이 스타일 [+] 만능 스마트 입력바 마운트 ── -->
+  <script type="module">
+    try {
+      const { mountSmartInputBar } = await import("/shared/ui/smart_input_bar.js?v=2.0");
+      mountSmartInputBar("#geminiSmartInputBar", {
+        apiBase: API_BASE,
+        placeholder: "질문을 입력하거나, [+] 버튼으로 영수증/장부/문자를 첨부하세요...",
+        branchId: () => curBranch,
+        onSuccess: async (data) => {
+          const el = document.getElementById("aiResponse");
+          if (el) el.textContent = data.message || data.answer || JSON.stringify(data, null, 2);
+          await reloadRooms();
+        }
+      });
+    } catch (err) {
+      console.info("스마트 입력바 기본 모드 활성화:", err.message || err);
+    }
+  </script>
+</body>
+</html>

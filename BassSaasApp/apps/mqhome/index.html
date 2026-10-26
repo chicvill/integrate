@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MQnet - Innovative IT Solutions</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Background Effects -->
+    <canvas id="particleCanvas"></canvas>
+    <div class="mesh-gradient"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="#" class="logo">
+                <span class="gradient-text">MQnet</span>
+            </a>
+            <div class="nav-links">
+                <a href="/" class="nav-link" style="color: #38bdf8; font-weight: 700;">🏠 SaaS 포털</a>
+                <a href="#about" class="nav-link">회사 소개</a>
+                <a href="#products" class="nav-link">무료 서비스</a>
+                <a href="#blog" class="nav-link">기술 블로그</a>
+                <a href="#contact" class="nav-link">문의하기</a>
+            </div>
+            <div class="hamburger">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="container hero-container">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    <span class="gradient-text type-text"></span><span class="cursor">_</span><br>
+                    미래를 혁신합니다
+                </h1>
+                <p class="hero-subtitle">
+                    MQnet은 최신 IT 기술로 우리의 일상을 변화시킵니다.<br>
+                    축적된 기술력으로 개발된 다양한 앱을 무료로 경험해보세요.
+                </p>
+                <div class="hero-buttons">
+                    <a href="#products" class="btn btn-primary">서비스 체험하기 <i class="fas fa-arrow-right"></i></a>
+                    <a href="#about" class="btn btn-secondary">더 알아보기</a>
+                </div>
+            </div>
+            <div class="hero-graphic">
+                <div class="floating-element glass-card el-1">
+                    <i class="fas fa-microchip gradient-text"></i>
+                    <span>IoT & Edge Computing</span>
+                </div>
+                <div class="floating-element glass-card el-2">
+                    <i class="fas fa-brain gradient-text"></i>
+                    <span>AI & Machine Learning</span>
+                </div>
+                <div class="floating-element glass-card el-3">
+                    <i class="fas fa-robot gradient-text"></i>
+                    <span>Automation</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about section-padding" id="about">
+        <div class="container">
+            <div class="section-header">
+                <h2>기술의 경계를 넘다</h2>
+                <p>MQnet은 단순한 솔루션 제공을 넘어, 기술의 패러다임을 바꿉니다.</p>
+            </div>
+            <div class="stats-container">
+                <div class="stat-card glass-card">
+                    <div class="stat-number" data-target="6">0</div>
+                    <div class="stat-label">무료 공개 서비스</div>
+                </div>
+                <div class="stat-card glass-card">
+                    <div class="stat-number" data-target="99">0</div>
+                    <div class="stat-label">시스템 안정성 (%)</div>
+                </div>
+                <div class="stat-card glass-card">
+                    <div class="stat-number" data-target="24">0</div>
+                    <div class="stat-label">시간 자동화</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Products Section -->
+    <section class="products section-padding" id="products">
+        <div class="container">
+            <div class="section-header">
+                <h2>무료 공개 서비스</h2>
+                <p>MQnet의 최신 기술이 집약된 서비스를 직접 체험해보세요. (클릭하여 이동)</p>
+            </div>
+            <div class="products-grid">
+                <!-- StudyCafe -->
+                <a href="/studycafe/" target="_blank" class="product-card glass-card fade-in">
+                    <div class="product-icon">
+                        <i class="fas fa-coffee"></i>
+                    </div>
+                    <h3>스터디카페 관리</h3>
+                    <p>실시간 좌석 배치도 현황, 이용권 관리, NFC 도어락 및 QR 체크인 풀 시스템입니다.</p>
+                    <span class="explore-link">체험하기 <i class="fas fa-external-link-alt"></i></span>
+                </a>
+
+                <!-- SelfStudy -->
+                <a href="/selfstudy/" target="_blank" class="product-card glass-card fade-in">
+                    <div class="product-icon">
+                        <i class="fas fa-book-reader"></i>
+                    </div>
+                    <h3>자기주도학습 관리</h3>
+                    <p>학생 학습 플래너, 온보딩 스케줄러, 진도 체크 및 Gemini AI 메타인지 멘토링입니다.</p>
+                    <span class="explore-link">체험하기 <i class="fas fa-external-link-alt"></i></span>
+                </a>
+
+                <!-- Grammar Quest -->
+                <a href="/grammar/" target="_blank" class="product-card glass-card fade-in">
+                    <div class="product-icon">
+                        <i class="fas fa-spell-check"></i>
+                    </div>
+                    <h3>AI 영문법 퀘스트 (Grammar Quest)</h3>
+                    <p>초3~고3 수능 영문법 무한 생성, STEM&AI 전문 어휘 및 원어민 음성 섀도잉 정밀 발음 코칭입니다.</p>
+                    <span class="explore-link">체험하기 <i class="fas fa-external-link-alt"></i></span>
+                </a>
+
+                <!-- Store POS -->
+                <a href="https://store.chicvill.store/" target="_blank" class="product-card glass-card fade-in">
+                    <div class="product-icon">
+                        <i class="fas fa-cash-register"></i>
+                    </div>
+                    <h3>매장 관제 & POS</h3>
+                    <p>카운터 POS 주문 결제, 실시간 매장 상황실 관제 및 재고/상품 관리 풀 시스템입니다.</p>
+                    <span class="explore-link">체험하기 <i class="fas fa-external-link-alt"></i></span>
+                </a>
+
+                <!-- MQFarm -->
+                <a href="/mqfarm/" target="_blank" class="product-card glass-card fade-in">
+                    <div class="product-icon">
+                        <i class="fas fa-seedling"></i>
+                    </div>
+                    <h3>MQFarm 센서 모니터링</h3>
+                    <p>온도, 습도, CO2 센서 실시간 텔레메트리와 환풍/급수 원격 제어 및 AI 작물 생육 진단입니다.</p>
+                    <span class="explore-link">체험하기 <i class="fas fa-external-link-alt"></i></span>
+                </a>
+
+                <!-- Immich -->
+                <a href="http://localhost:9006" target="_blank" class="product-card glass-card fade-in">
+                    <div class="product-icon">
+                        <i class="fas fa-images"></i>
+                    </div>
+                    <h3>스마트 갤러리 (Immich AI)</h3>
+                    <p>AI 안면인식 및 인물별 자동 분류, 위치 지도(GPS), 자연어 스마트 검색 및 모바일 앱 실시간 사진 백업 허브입니다.</p>
+                    <span class="explore-link">체험하기 <i class="fas fa-external-link-alt"></i></span>
+                </a>
+
+                <!-- FileBrowser -->
+                <a href="http://localhost:9007" target="_blank" class="product-card glass-card fade-in">
+                    <div class="product-icon">
+                        <i class="fas fa-folder-open"></i>
+                    </div>
+                    <h3>통합 파일 탐색기</h3>
+                    <p>L: 드라이브 내 모든 문서, 음악, 영상, 압축파일의 자유로운 탐색, 대용량 업로드/다운로드 및 파일 관리자입니다.</p>
+                    <span class="explore-link">체험하기 <i class="fas fa-external-link-alt"></i></span>
+                </a>
+
+                <!-- YTDownload -->
+                <a href="/ytdownloader/" target="_blank" class="product-card glass-card fade-in">
+                    <div class="product-icon">
+                        <i class="fas fa-download"></i>
+                    </div>
+                    <h3>유튜브 미디어 다운로더</h3>
+                    <p>YouTube 최고화질 MP4 영상/MP3 오디오 고속 추출 및 Gemini AI 3줄 요약 리포트 서비스입니다.</p>
+                    <span class="explore-link">체험하기 <i class="fas fa-external-link-alt"></i></span>
+                </a>
+
+                <!-- AI Gwansang -->
+                <a href="/gwansang/" target="_blank" class="product-card glass-card fade-in">
+                    <div class="product-icon">
+                        <i class="fas fa-smile"></i>
+                    </div>
+                    <h3>AI 관상 분석</h3>
+                    <p>얼굴 이미지와 Gemini AI를 결합하여 동물상, 재물운, 연애운, 직업운을 분석합니다.</p>
+                    <span class="explore-link">체험하기 <i class="fas fa-external-link-alt"></i></span>
+                </a>
+
+                <!-- Face Analy -->
+                <a href="/face_analy/" target="_blank" class="product-card glass-card fade-in">
+                    <div class="product-icon">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <h3>테토/에겐 AI 얼굴 분석</h3>
+                    <p>얼굴 사진 및 웹캠 기반으로 테토상(시크/도시적) vs 에겐상(따뜻/친근)을 분류하고 맞춤형 스타일링을 추천합니다.</p>
+                    <span class="explore-link">체험하기 <i class="fas fa-external-link-alt"></i></span>
+                </a>
+
+                <!-- Iron Man Game -->
+                <a href="/ironman/" target="_blank" class="product-card glass-card fade-in">
+                    <div class="product-icon">
+                        <i class="fas fa-gamepad"></i>
+                    </div>
+                    <h3>아이언맨 제스처 게임</h3>
+                    <p>실시간 웹캠 핸드 트래킹 및 p5.js 물리 엔진 기반의 아이언맨 리펄서 인터랙티브 슈팅 게임입니다.</p>
+                    <span class="explore-link">체험하기 <i class="fas fa-external-link-alt"></i></span>
+                </a>
+
+                <!-- Clock -->
+                <a href="/clock/" target="_blank" class="product-card glass-card fade-in">
+                    <div class="product-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h3>모던 스마트 클락</h3>
+                    <p>네온 아날로그/디지털 듀얼 시계, 글로벌 5대 도시 세계시, 정밀 스톱워치 및 뽀모도로 타이머입니다.</p>
+                    <span class="explore-link">체험하기 <i class="fas fa-external-link-alt"></i></span>
+                </a>
+
+                <!-- VideoBooth -->
+                <a href="/videobooth/" target="_blank" class="product-card glass-card fade-in">
+                    <div class="product-icon">
+                        <i class="fas fa-tv"></i>
+                    </div>
+                    <h3>레트로 TV 비디오 부스</h3>
+                    <p>레트로 브라운관 TV 스타일의 동영상 방명록으로, 실시간 웹캠 비디오 녹화 및 갤러리 아카이빙을 지원합니다.</p>
+                    <span class="explore-link">체험하기 <i class="fas fa-external-link-alt"></i></span>
+                </a>
+
+                <!-- N8N -->
+                <a href="http://localhost:5678" target="_blank" class="product-card glass-card fade-in">
+                    <div class="product-icon">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                    <h3>n8n AI 워크플로우 자동화</h3>
+                    <p>노드 기반 시각적 캔버스에서 Gemini AI, 구글 시트, 금융 파싱, 웹훅 및 스케줄러 워크플로우를 자유롭게 제작, 테스트 및 실행하는 통합 자동화 엔진입니다.</p>
+                    <span class="explore-link">체험하기 <i class="fas fa-external-link-alt"></i></span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Blog Section -->
+    <section class="blog section-padding" id="blog">
+        <div class="container">
+            <div class="section-header">
+                <h2>기술 블로그</h2>
+                <p>MQnet이 앱을 개발하며 축적한 기술과 인사이트를 공유합니다.</p>
+            </div>
+            <div class="blog-grid">
+                <article class="blog-card glass-card fade-in">
+                    <div class="blog-image" style="background: linear-gradient(45deg, #0f2027, #203a43, #2c5364);"></div>
+                    <div class="blog-content">
+                        <span class="blog-category">IoT & Hardware</span>
+                        <h3>NFC 스터디카페 출입 제어 시스템 구축기</h3>
+                        <p>안정적이고 빠른 응답을 위한 로컬 엣지 처리와 클라우드 동기화 하이브리드 아키텍처 도입 경험을 공유합니다.</p>
+                        <a href="#" class="read-more">자세히 보기 <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </article>
+                <article class="blog-card glass-card fade-in">
+                    <div class="blog-image" style="background: linear-gradient(45deg, #141e30, #243b55);"></div>
+                    <div class="blog-content">
+                        <span class="blog-category">AI</span>
+                        <h3>메타인지 향상을 위한 AI 학습 플래너 알고리즘</h3>
+                        <p>학생의 학습 패턴을 분석하여 최적의 복습 주기와 난이도를 제안하는 AI 알고리즘 개발 과정입니다.</p>
+                        <a href="#" class="read-more">자세히 보기 <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </article>
+                <article class="blog-card glass-card fade-in">
+                    <div class="blog-image" style="background: linear-gradient(45deg, #000000, #434343);"></div>
+                    <div class="blog-content">
+                        <span class="blog-category">Edge Computing</span>
+                        <h3>N100 미니 PC를 활용한 독립형 POS 인프라</h3>
+                        <p>인터넷 연결이 끊겨도 작동하는 완전 독립형 로컬 웹 애플리케이션 아키텍처와 도커 컨테이너 전략.</p>
+                        <a href="#" class="read-more">자세히 보기 <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="contact section-padding" id="contact">
+        <div class="container">
+            <div class="section-header">
+                <h2>문의하기</h2>
+                <p>MQnet 솔루션에 관심이 있으시거나 협업을 원하신다면 언제든 연락주세요.</p>
+            </div>
+            <div class="contact-content glass-card fade-in">
+                <form class="contact-form" onsubmit="event.preventDefault(); alert('문의가 접수되었습니다.');">
+                    <div class="form-group">
+                        <input type="text" placeholder="이름" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" placeholder="이메일" required>
+                    </div>
+                    <div class="form-group">
+                        <textarea placeholder="메시지 내용" rows="5" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">메시지 보내기</button>
+                </form>
+                <div class="contact-info">
+                    <div class="info-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div>
+                            <h4>주소</h4>
+                            <p>대한민국 서울특별시</p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-envelope"></i>
+                        <div>
+                            <h4>이메일</h4>
+                            <p>contact@mqnet.com</p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-phone"></i>
+                        <div>
+                            <h4>전화번호</h4>
+                            <p>02-000-0000</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-container">
+            <div class="footer-logo">MQnet</div>
+            <p class="footer-text">&copy; 2026 MQnet. All rights reserved.</p>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-github"></i></a>
+                <a href="#"><i class="fab fa-linkedin"></i></a>
+                <a href="#"><i class="fas fa-envelope"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

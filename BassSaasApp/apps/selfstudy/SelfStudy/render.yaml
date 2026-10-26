@@ -1,0 +1,35 @@
+services:
+  # 1. Backend Web Service (FastAPI)
+  - type: web
+    name: selfstudy-backend
+    env: python
+    region: singapore
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.0-flash
+
+  # 2. Frontend Static Site (React)
+  - type: static
+    name: selfstudy-frontend
+    region: singapore
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    publishDir: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://selfstudy-api.chicvill.store
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

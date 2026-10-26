@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>무인빨래방 공식 운영 매뉴얼 | BassSaasApp</title>
+  <meta name="description" content="스마트 24시 무인빨래방 앱의 고객 이용 절차, 관리자 점검 처리, 안내 배너 의미를 설명하는 공식 운영 매뉴얼.">
+  <link rel="stylesheet" href="/shared/ui/base.css">
+  <link rel="stylesheet" href="/shared/ui/manual.css">
+</head>
+<body>
+<main class="manual">
+  <header class="manual-header">
+    <a href="./" class="bass-btn bass-btn--ghost no-print" id="back-app">← 앱으로</a>
+    <button class="bass-btn bass-btn--primary" id="print-manual" onclick="window.print()">🖨️ 매뉴얼 인쇄 / PDF 저장</button>
+  </header>
+
+  <h1>🧺 <span class="bass-gradient-text">스마트 24시 무인빨래방</span> 운영 매뉴얼</h1>
+  <p class="bass-muted">앱 ID: <code>laundry</code> · 버전 1.0.0 · API 경로 <code>/api/laundry</code></p>
+
+  <h2>1. 고객 이용 절차</h2>
+  <ol>
+    <li>보드에서 <b>사용 가능</b> 장비의 <b>▶ 코스 선택</b>을 누릅니다.</li>
+    <li>코스를 고르면 요금이 투입 금액 칸에 자동으로 채워집니다.</li>
+    <li>(선택) 완료 알림용 휴대폰 번호를 입력하고 <b>결제하고 시작</b>을 누릅니다.</li>
+    <li>완료 예정 시각이 지나면 장비가 자동으로 <b>수거 대기</b>로 바뀝니다.</li>
+    <li>세탁물을 꺼낸 뒤 <b>🧺 수거 완료</b>를 누르면 다음 고객이 사용할 수 있습니다.</li>
+  </ol>
+
+  <h2>2. 코스 및 요금</h2>
+  <table>
+    <tr><th>장비</th><th>코스</th><th>소요 시간</th><th>요금</th></tr>
+    <tr><td rowspan="3">세탁기 (W-01~06)</td><td>쾌속 세탁</td><td>25분</td><td>3,000원</td></tr>
+    <tr><td>표준 세탁</td><td>40분</td><td>4,000원</td></tr>
+    <tr><td>이불 세탁</td><td>60분</td><td>6,000원</td></tr>
+    <tr><td rowspan="2">건조기 (D-01~03)</td><td>건조 30분</td><td>30분</td><td>3,000원</td></tr>
+    <tr><td>건조 50분</td><td>50분</td><td>4,500원</td></tr>
+  </table>
+
+  <h2>3. 안내 배너의 의미</h2>
+  <table>
+    <tr><th>색상</th><th>의미</th><th>예시</th><th>대처</th></tr>
+    <tr><td>✅ 녹색</td><td>정상 처리</td><td>W-01 표준 세탁 시작</td><td>안내된 완료 시각에 방문</td></tr>
+    <tr><td>⚠️ 황색</td><td>이미 처리됨 / 중복</td><td>이미 가동 중, 수거하지 않은 세탁물 있음</td><td>다른 장비 선택 또는 수거 먼저</td></tr>
+    <tr><td>⚖️ 주황색</td><td>금액 불일치</td><td>투입 3,000원이 요금 4,000원보다 1,000원 부족</td><td>표시된 요금으로 다시 결제</td></tr>
+    <tr><td>❌ 적색</td><td>오류 / 점검</td><td>점검 중 장비, 서버 연결 실패</td><td>안내된 복구 방법 수행, 반복 시 관리자 연락</td></tr>
+  </table>
+
+  <h2>4. 관리자 기능</h2>
+  <div class="callout">포털에서 관리자 계정으로 로그인하면 장비 카드에 점검 버튼이 나타납니다.</div>
+  <ul>
+    <li><b>⛔ 점검 등록</b>: 사유를 입력하면 장비가 <b>점검 중</b>으로 바뀌고 고객 결제가 차단됩니다.</li>
+    <li><b>🛠 점검 완료</b>: 수리 후 누르면 <b>사용 가능</b>으로 복귀합니다.</li>
+    <li>모든 시작/수거/점검 이력은 포털의 <b>변경 이력</b>에 행위자와 함께 기록됩니다.</li>
+  </ul>
+
+  <h2>5. 자주 묻는 질문</h2>
+  <p><b>Q. 시간이 지났는데 아직 가동 중으로 보여요.</b><br>A. 화면은 15초마다 갱신됩니다. <b>🔄 새로고침</b>을 누르면 즉시 반영됩니다.</p>
+  <p><b>Q. 결제 버튼을 두 번 눌렀어요.</b><br>A. 처리 중에는 버튼이 잠겨 중복 결제가 발생하지 않습니다.</p>
+</main>
+</body>
+</html>

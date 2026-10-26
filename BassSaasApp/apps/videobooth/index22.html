@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro TV Guestbook</title>
+    <style>
+        :root { --tv-body: #8d6e63; --tv-screen: #212121; --neon-green: #76ff03; --dial-color: #dce775; }
+        
+        body { 
+            background-color: #2c2c2c; 
+            min-height: 100vh; 
+            margin: 0; 
+            font-family: 'Courier New', Courier, monospace; 
+            color: #e0e0e0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+        }
+        
+        /* 전체 레이아웃: 가로 배치 (왼쪽 구역 - 오른쪽 TV) */
+        .main-container { 
+            display: flex; 
+            flex-direction: row; 
+            align-items: flex-start; /* 상단 정렬 */
+            gap: 60px; /* 왼쪽 패널과 TV 사이 간격 */
+            padding: 20px; 
+        }
+
+        /* [왼쪽 구역] 설명서와 버튼을 감싸는 컨테이너 */
+        .left-container {
+            display: flex;
+            flex-direction: column; /* 수직 정렬 */
+            gap: 20px; /* 설명서와 버튼 사이 간격 */
+            width: 320px; /* 고정 너비 */
+            margin-top: 50px; /* TV와 시각적 높이 맞춤 */
+        }
+
+        /* 사용 안내 패널 */
+        .guide-panel {
+            background: rgba(0,0,0,0.6);
+            padding: 25px;
+            border-radius: 15px;
+            border-left: 5px solid var(--neon-green);
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.5);
+        }
+        .guide-panel h2 { margin-top: 0; color: var(--neon-green); border-bottom: 1px solid #555; padding-bottom: 10px; font-size: 20px; }
+        .guide-panel ul { padding-left: 20px; line-height: 1.8; font-size: 15px; margin-bottom: 0; }
+        .guide-panel li { margin-bottom: 8px; }
+
+        /* 버튼 그룹 (수직 배치) */
+        .btn-group { 
+            display: flex; 
+            flex-direction: column; /* 버튼들을 위아래로 배치 */
+            gap: 15px; 
+            width: 100%;
+        }
+
+        button { 
+            padding: 18px 20px; 
+            font-size: 18px; 
+            font-family: inherit; 
+            font-weight: bold; 
+            cursor: pointer; 
+            border-radius: 12px; 
+            border: none; 
+            box-shadow: 0 6px #111; 
+            transition: all 0.1s; 
+            outline: none; 
+            width: 100%; /* 버튼 너비를 왼쪽 패널에 꽉 차게 */
+        }
+        
+        #startBtn { background: #d32f2f; color: white; }
+        #saveBtn { background: #388e3c; color: white; display: none; } /* 평소엔 숨김 */
+        
+        button:active { transform: translateY(4px); box-shadow: 0 2px #111; }
+        button:disabled { background: #616161; color: #aaa; cursor: not-allowed; box-shadow: none; transform: translateY(4px); }
+
+        /* [오른쪽 구역] TV 섹션 */
+        .tv-section { display: flex; flex-direction: column; align-items: center; }
+
+        /* TV 본체 */
+        .tv-frame {
+            background: var(--tv-body);
+            width: 850px;
+            padding: 50px 70px 50px 50px;
+            border-radius: 70px;
+            position: relative;
+            box-shadow: inset -15px -15px 30px rgba(0,0,0,0.4), 25px 25px 60px rgba(0,0,0,0.9);
+            border: 15px solid #4e342e;
+            display: flex;
+        }
+
+        /* 스크린 영역 */
+        .screen-container {
+            background: var(--tv-screen);
+            width: 650px;
+            height: 494px;
+            border-radius: 50px;
+            border: 25px solid #1a1a1a;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 120px rgba(0,0,0,0.95);
+        }
+        
+        video { width: 100%; height: 100%; object-fit: cover; filter: contrast(1.2) saturation(1.1); }
+        
+        /* TV 컨트롤 패널 */
+        .tv-controls-panel { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-left: 40px; gap: 30px; padding-top: 20px; }
+        
+        /* 다이얼 */
+        .dial { 
+            width: 70px; height: 70px; background: #3e2723; border-radius: 50%; border: 5px solid #2d1f1b; position: relative; 
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 5px 5px 10px rgba(0,0,0,0.5);
+            transition: transform 0.3s;
+        }
+        #dial-display {
+            font-size: 32px; color: var(--dial-color); font-weight: bold; text-shadow: 0 0 10px var(--dial-color);
+            font-family: 'Impact', fantasy; letter-spacing: 2px;
+        }
+
+        .speaker-grill { width: 60px; height: 120px; background: repeating-linear-gradient(#1a1a1a, #1a1a1a 5px, #3e2723 5px, #3e2723 10px); border-radius: 5px; }
+
+        /* 3,2,1 카운트 오버레이 */
+        #central-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 150px; color: var(--neon-green); text-shadow: 0 0 30px var(--neon-green); font-weight: bold; z-index: 10; pointer-events: none; display: none; }
+
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        
+        <div class="left-container">
+            <div class="guide-panel">
+                <h2>📺 사용 안내</h2>
+                <ul>
+                    <li>🎥 카메라는 항상 켜져 있습니다.</li>
+                    <li>🔴 <strong>[촬영 시작]</strong> 버튼을 누르면 화면 중앙에 <strong>3, 2, 1</strong> 카운트 후 녹화가 시작됩니다.</li>
+                    <li>⏱️ 우측 상단 다이얼이 <strong>10초</strong>부터 줄어듭니다.</li>
+                    <li>💾 녹화 중 <strong>[정지 및 저장]</strong> 버튼을 누르면 즉시 저장됩니다.</li>
+                </ul>
+            </div>
+
+            <div class="btn-group">
+                <button id="startBtn">촬영 시작</button>
+                <button id="saveBtn">정지 및 저장</button>
+            </div>
+        </div>
+
+        <div class="tv-section">
+            <div class="tv-frame">
+                <div class="screen-container">
+                    <video id="preview" autoplay muted playsinline></video>
+                    <div id="central-overlay"></div>
+                </div>
+                <div class="tv-controls-panel">
+                    <div class="dial" id="dial-ring">
+                        <div id="dial-display">CH</div>
+                    </div>
+                    <div class="dial" style="transform: rotate(45deg);"></div>
+                    <div class="speaker-grill"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let recordedChunks = [];
+        let globalStream; 
+        
+        const preview = document.getElementById('preview');
+        const startBtn = document.getElementById('startBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const centralOverlay = document.getElementById('central-overlay');
+        const dialDisplay = document.getElementById('dial-display');
+        const dialRing = document.getElementById('dial-ring');
+
+        // 카메라 즉시 실행
+        window.onload = async () => {
+            try {
+                globalStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                preview.srcObject = globalStream;
+            } catch (err) {
+                alert("카메라를 찾을 수 없거나 권한이 없습니다.");
+            }
+        };
+
+        startBtn.onclick = () => {
+            if (!globalStream) return alert("카메라가 준비되지 않았습니다.");
+            
+            startBtn.disabled = true;
+            
+            let count = 3;
+            centralOverlay.style.display = 'block';
+            centralOverlay.innerText = count;
+            
+            const timer = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    centralOverlay.innerText = count;
+                } else {
+                    clearInterval(timer);
+                    centralOverlay.style.display = 'none'; 
+                    startRecording(); 
+                }
+            }, 1000);
+        };
+
+        function startRecording() {
+            recordedChunks = [];
+            
+            try {
+                mediaRecorder = new MediaRecorder(globalStream);
+            } catch (e) {
+                alert("이 브라우저는 녹화를 지원하지 않습니다.");
+                startBtn.disabled = false;
+                return;
+            }
+            
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) recordedChunks.push(e.data);
+            };
+
+            mediaRecorder.onstop = saveVideo;
+
+            mediaRecorder.start();
+            
+            // 저장 버튼 활성화
+            saveBtn.style.display = 'block'; // block으로 변경하여 꽉 차게 보이도록 함
+            saveBtn.disabled = false;
+            saveBtn.innerText = "정지 및 저장";
+            
+            saveBtn.onclick = () => {
+                if (mediaRecorder.state === "recording") {
+                    mediaRecorder.stop();
+                    saveBtn.onclick = null; 
+                }
+            };
+
+            let recordCount = 10;
+            dialDisplay.innerText = recordCount;
+            dialDisplay.style.color = "#ff3d00"; 
+            dialRing.style.transform = "rotate(0deg)";
+
+            const recordTimer = setInterval(() => {
+                recordCount--;
+                dialRing.style.transform = `rotate(${ (10-recordCount) * 30 }deg)`;
+
+                if (recordCount > 0) {
+                    dialDisplay.innerText = recordCount;
+                } else {
+                    clearInterval(recordTimer);
+                    if (mediaRecorder.state === "recording") {
+                        mediaRecorder.stop();
+                    }
+                }
+            }, 1000);
+
+            mediaRecorder.addEventListener('stop', () => {
+                clearInterval(recordTimer);
+                dialDisplay.innerText = "CH";
+                dialDisplay.style.color = ""; 
+                dialRing.style.transform = "rotate(0deg)";
+                startBtn.disabled = false; 
+            });
+        }
+
+        async function saveVideo() {
+            saveBtn.innerText = "저장 중...";
+            saveBtn.disabled = true;
+
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const formData = new FormData();
+            formData.append('video', blob);
+
+            try {
+                const response = await fetch('/upload', { method: 'POST', body: formData });
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert("✅ 방명록이 성공적으로 저장되었습니다!");
+                    saveBtn.style.display = 'none';
+                    dialDisplay.innerText = "CH";
+                } else {
+                    alert("저장 실패");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("서버 연결 오류");
+                saveBtn.disabled = false;
+            }
+        };
+    </script>
+</body>
+</html>

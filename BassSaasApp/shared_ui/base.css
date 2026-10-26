@@ -1,0 +1,148 @@
+/* shared_ui/base.css — BassSaasApp 공통 디자인 시스템
+   모든 앱이 <link rel="stylesheet" href="/shared/ui/base.css"> 한 줄로 동일한 룩앤필을 상속한다. */
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;500;700&display=swap");
+
+:root {
+  --bg: hsl(232 38% 7%);
+  --bg-2: hsl(234 32% 11%);
+  --surface: hsl(232 30% 16% / 0.55);
+  --surface-strong: hsl(232 30% 18% / 0.85);
+  --border: hsl(230 40% 70% / 0.12);
+  --border-strong: hsl(230 60% 75% / 0.28);
+  --text: hsl(226 40% 95%);
+  --muted: hsl(228 18% 68%);
+  --primary: hsl(258 90% 66%);
+  --primary-2: hsl(196 95% 58%);
+  --accent: hsl(326 85% 64%);
+  --ok: hsl(152 65% 50%);
+  --warn: hsl(44 96% 58%);
+  --diff: hsl(26 95% 60%);
+  --err: hsl(356 85% 62%);
+  --radius: 18px;
+  --radius-sm: 12px;
+  --shadow: 0 18px 50px -18px hsl(250 80% 5% / 0.8);
+  --glow: 0 0 0 1px var(--border-strong), 0 10px 40px -10px hsl(258 90% 60% / 0.45);
+  --font: "Noto Sans KR", "Outfit", system-ui, sans-serif;
+  --font-display: "Outfit", "Noto Sans KR", sans-serif;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: var(--font);
+  color: var(--text);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, hsl(258 90% 50% / 0.22), transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, hsl(196 95% 50% / 0.16), transparent 60%),
+    radial-gradient(700px 500px at 50% 120%, hsl(326 85% 55% / 0.12), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+  min-height: 100vh;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--primary-2); text-decoration: none; }
+h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.02em; margin: 0 0 .4em; }
+code { background: hsl(230 30% 30% / .5); padding: .1em .4em; border-radius: 6px; font-size: .9em; }
+
+.bass-container { width: min(1200px, 92vw); margin: 0 auto; }
+.bass-center { display: grid; place-items: center; min-height: 100vh; padding: 24px; }
+.bass-grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.bass-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.bass-muted { color: var(--muted); }
+.bass-gradient-text {
+  background: linear-gradient(110deg, var(--primary-2), var(--primary) 45%, var(--accent));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+/* ── 카드 (글래스모피즘) ── */
+.bass-card {
+  background: linear-gradient(160deg, hsl(232 40% 22% / .55), hsl(232 30% 12% / .55));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  box-shadow: var(--shadow);
+  transition: transform .35s var(--ease), box-shadow .35s var(--ease), border-color .35s var(--ease);
+}
+.bass-card.is-interactive:hover { transform: translateY(-4px); box-shadow: var(--glow); border-color: var(--border-strong); }
+
+/* ── 버튼 ── */
+.bass-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font: 600 14px/1 var(--font); color: var(--text);
+  padding: 11px 16px; border-radius: 12px; cursor: pointer;
+  border: 1px solid var(--border-strong);
+  background: hsl(232 30% 24% / .6);
+  transition: transform .2s var(--ease), background .2s, box-shadow .2s, opacity .2s;
+}
+.bass-btn:hover:not(:disabled) { transform: translateY(-1px); background: hsl(232 30% 30% / .8); }
+.bass-btn:active:not(:disabled) { transform: translateY(0) scale(.98); }
+.bass-btn:disabled { opacity: .55; cursor: progress; }
+.bass-btn--primary {
+  border-color: transparent;
+  background: linear-gradient(120deg, var(--primary), var(--primary-2));
+  box-shadow: 0 8px 24px -10px hsl(258 90% 60% / .8);
+}
+.bass-btn--primary:hover:not(:disabled) { background: linear-gradient(120deg, hsl(258 90% 70%), hsl(196 95% 62%)); }
+.bass-btn--danger { border-color: hsl(356 85% 62% / .5); background: hsl(356 85% 40% / .35); }
+.bass-btn--ghost { background: transparent; }
+.bass-btn--sm { padding: 7px 11px; font-size: 12.5px; border-radius: 10px; }
+
+/* ── 입력 ── */
+.bass-input, .bass-select {
+  width: 100%; font: 500 14px var(--font); color: var(--text);
+  background: hsl(232 30% 10% / .7); border: 1px solid var(--border-strong);
+  border-radius: 12px; padding: 11px 13px; outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.bass-input:focus, .bass-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px hsl(258 90% 66% / .25); }
+.bass-label { display: block; font-size: 12.5px; color: var(--muted); margin: 0 0 6px; }
+
+/* ── 배지 ── */
+.bass-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font: 600 11.5px/1 var(--font); letter-spacing: .02em;
+  padding: 6px 10px; border-radius: 999px;
+  background: hsl(232 30% 30% / .6); border: 1px solid var(--border);
+}
+.bass-badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.bass-badge--ok { color: var(--ok); }
+.bass-badge--warn { color: var(--warn); }
+.bass-badge--err { color: var(--err); }
+.bass-badge--info { color: var(--primary-2); }
+.bass-badge--pulse::before { animation: bass-pulse 1.6s infinite; }
+
+/* ── 맥락별 컬러 안내 배너 (updateAppAlert) ── */
+.bass-alert-stack { position: sticky; top: 12px; z-index: 50; display: grid; gap: 10px; margin: 12px 0; }
+.bass-alert {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start;
+  padding: 14px 16px; border-radius: 14px; border: 1px solid;
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  animation: bass-slide-in .35s var(--ease);
+}
+.bass-alert__icon { font-size: 20px; line-height: 1.2; }
+.bass-alert__msg { font-weight: 700; }
+.bass-alert__hint { font-size: 13px; opacity: .85; margin-top: 2px; }
+.bass-alert__close { background: none; border: 0; color: inherit; cursor: pointer; font-size: 18px; opacity: .7; }
+.bass-alert--warning { color: hsl(44 100% 80%); background: hsl(44 90% 30% / .28); border-color: hsl(44 96% 58% / .45); }
+.bass-alert--diff    { color: hsl(26 100% 82%); background: hsl(26 90% 30% / .28); border-color: hsl(26 95% 60% / .5); }
+.bass-alert--error   { color: hsl(356 100% 86%); background: hsl(356 80% 30% / .3); border-color: hsl(356 85% 62% / .5); }
+.bass-alert--success { color: hsl(152 80% 82%); background: hsl(152 60% 22% / .32); border-color: hsl(152 65% 50% / .45); }
+.bass-alert.is-leaving { animation: bass-fade-out .3s var(--ease) forwards; }
+
+/* ── 스켈레톤 / 애니메이션 ── */
+.bass-skeleton { border-radius: var(--radius); min-height: 160px;
+  background: linear-gradient(100deg, hsl(232 30% 16% / .6) 30%, hsl(232 30% 24% / .6) 50%, hsl(232 30% 16% / .6) 70%);
+  background-size: 300% 100%; animation: bass-shimmer 1.4s infinite; }
+.bass-reveal { animation: bass-rise .55s var(--ease) both; }
+
+@keyframes bass-pulse { 0%,100% { box-shadow: 0 0 0 0 currentColor; } 50% { box-shadow: 0 0 0 5px transparent; } }
+@keyframes bass-slide-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+@keyframes bass-fade-out { to { opacity: 0; transform: translateY(-6px); } }
+@keyframes bass-shimmer { to { background-position: -100% 0; } }
+@keyframes bass-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MQnet MQFarm 스마트팜 환경 관제 & 액추에이터 제어 매뉴얼</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #061e14;
+      --card-bg: rgba(13, 56, 38, 0.7);
+      --card-border: rgba(52, 211, 153, 0.15);
+      --accent-emerald: #34d399;
+      --accent-teal: #2dd4bf;
+      --accent-amber: #fbbf24;
+      --accent-rose: #f43f5e;
+    }
+    body {
+      background: var(--bg-dark);
+      color: #e2e8f0;
+      font-family: 'Pretendard', sans-serif;
+      line-height: 1.65;
+      margin: 0;
+      padding: 1.5rem;
+    }
+    .manual-container {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .manual-header {
+      background: linear-gradient(135deg, rgba(52, 211, 153, 0.18), rgba(45, 212, 191, 0.08));
+      border: 1px solid rgba(52, 211, 153, 0.35);
+      border-radius: 16px;
+      padding: 1.75rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .manual-title {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .manual-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent-emerald);
+      background: rgba(52, 211, 153, 0.15);
+      padding: 0.25rem 0.7rem;
+      border-radius: 6px;
+      border: 1px solid rgba(52, 211, 153, 0.3);
+    }
+    .btn-header {
+      padding: 0.55rem 1.1rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-header.primary {
+      background: var(--accent-emerald);
+      color: #061e14;
+      border: none;
+    }
+    .btn-header.secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .toc-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.25rem 1.5rem;
+    }
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 0.5rem 1.5rem;
+      margin-top: 0.75rem;
+    }
+    .toc-link {
+      color: #a7f3d0;
+      text-decoration: none;
+      font-size: 0.88rem;
+      transition: color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .toc-link:hover { color: #fff; }
+    .section-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.75rem 2rem;
+    }
+    h2 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 0 0 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 0.75rem;
+    }
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--accent-emerald);
+      margin: 1.25rem 0 0.5rem;
+    }
+    p { margin: 0 0 0.75rem; font-size: 0.92rem; color: #cbd5e1; }
+    ul, ol { margin: 0 0 1rem; padding-left: 1.4rem; font-size: 0.92rem; color: #cbd5e1; }
+    li { margin-bottom: 0.35rem; }
+    .callout {
+      border-radius: 10px;
+      padding: 0.9rem 1.2rem;
+      margin: 1rem 0;
+      font-size: 0.88rem;
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+    }
+    .callout.info {
+      background: rgba(52, 211, 153, 0.08);
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      color: #a7f3d0;
+    }
+    .callout.warning {
+      background: rgba(251, 191, 36, 0.08);
+      border: 1px solid rgba(251, 191, 36, 0.25);
+      color: #fde68a;
+    }
+    .callout.alert {
+      background: rgba(244, 63, 94, 0.08);
+      border: 1px solid rgba(244, 63, 94, 0.25);
+      color: #fecdd3;
+    }
+    .step-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .step-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 1rem;
+    }
+    .step-num {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      line-height: 24px;
+      text-align: center;
+      background: var(--accent-emerald);
+      color: #061e14;
+      font-weight: 800;
+      font-size: 0.8rem;
+      border-radius: 50%;
+      margin-bottom: 0.5rem;
+    }
+    .step-box h4 { margin: 0 0 0.3rem; font-size: 0.95rem; color: #fff; }
+    .step-box p { margin: 0; font-size: 0.82rem; color: #94a3b8; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.86rem;
+    }
+    th, td {
+      border: 1px solid var(--card-border);
+      padding: 0.65rem 0.9rem;
+      text-align: left;
+    }
+    th { background: rgba(52, 211, 153, 0.1); color: #fff; font-weight: 600; }
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.82rem;
+      color: var(--accent-emerald);
+    }
+    @media print {
+      body { background: #fff !important; color: #000 !important; }
+      .manual-container { max-width: 100% !important; gap: 1rem; }
+      .manual-header, .section-card, .toc-card { border: 1px solid #ccc !important; background: #fff !important; box-shadow: none !important; }
+      .btn-header, .no-print { display: none !important; }
+      h2, h3, .manual-title { color: #000 !important; }
+      p, li, td, th { color: #222 !important; }
+      .callout { border: 1px solid #999 !important; background: #f9f9f9 !important; color: #111 !important; }
+      a { color: #000 !important; text-decoration: underline; }
+    }
+  </style>
+</head>
+<body>
+  <div class="manual-container">
+    <!-- Header -->
+    <header class="manual-header">
+      <div>
+        <div class="manual-badge">MQnet SmartFarm IoT Edition v2.1</div>
+        <h1 class="manual-title">🌱 MQFarm 스마트팜 환경 관제 운영 매뉴얼</h1>
+        <p style="margin: 0; color: #a7f3d0; font-size: 0.88rem;">
+          온습도·CO2 센서 수집, 환기 팬·급수 펌프 액추에이터 원격 제어, AI 생장 비전 진단 가이드
+        </p>
+      </div>
+      <div style="display: flex; gap: 0.6rem;" class="no-print">
+        <button class="btn-header primary" onclick="window.print()">🖨️ 매뉴얼 인쇄 / PDF 저장</button>
+        <a href="/mqfarm" class="btn-header secondary">← 스마트팜 화면 복귀</a>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="toc-card no-print">
+      <div style="font-size: 0.85rem; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 0.05em;">목차 바로가기</div>
+      <div class="toc-grid">
+        <a href="#sec1" class="toc-link">📌 1. 스마트팜 시스템 개요 및 하드웨어 구성</a>
+        <a href="#sec2" class="toc-link">📊 2. 실시간 환경 센서 관제 (온도/습도/CO2/토양)</a>
+        <a href="#sec3" class="toc-link">🎛️ 3. 액추에이터 수동 조작 및 비상 인터락</a>
+        <a href="#sec4" class="toc-link">⚡ 4. 임계치 기반 자동화 규칙 및 트리거</a>
+        <a href="#sec5" class="toc-link">🌿 5. AI 비전 카메라 기반 작물 생장 분석</a>
+        <a href="#sec6" class="toc-link">🛡️ 6. N100 로컬 Standalone Fail-Safe 보호</a>
+        <a href="#sec7" class="toc-link">❓ 7. 현장 장애 진단 및 센서 캘리브레이션 (FAQ)</a>
+      </div>
+    </nav>
+
+    <!-- Sec 1 -->
+    <section id="sec1" class="section-card">
+      <h2>📌 1. 스마트팜 시스템 개요 및 하드웨어 구성</h2>
+      <p>
+        <strong>MQnet MQFarm</strong>은 비닐하우스, 유리온실 및 수직농장의 환경 센서(Modbus RTU / MQTT)를 실시간 수집하고, 
+        릴레이 보드를 통한 환기/급수/보온/LED 조명을 자동 또는 원격 제어하는 IoT 스마트팜 플랫폼입니다.
+      </p>
+      <div class="callout info">
+        <span>💡</span>
+        <div>
+          <strong>다중 온실(Multi-Farm) 지원:</strong>
+          본사 클라우드에서는 전국 여러 농장의 온습도 현황을 통합 모니터링하며, 
+          각 농장 현장의 N100 미니 컨트롤러는 독립형 제어 루프를 유지합니다.
+        </div>
+      </div>
+    </section>
+
+    <!-- Sec 2 -->
+    <section id="sec2" class="section-card">
+      <h2>📊 2. 실시간 환경 센서 관제 (온도/습도/CO2/토양)</h2>
+      <p>
+        센서 데이터는 5초 주기로 갱신되며, 최적 생육 범위를 벗어날 경우 색상 표시와 함께 비상 알림이 발생합니다.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>센서 항목</th>
+            <th>적정 범위 (예: 딸기 생육기)</th>
+            <th>위험 임계치 (경보 발생)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>온도 (°C)</strong></td>
+            <td>주간: 22~25°C / 야간: 10~13°C</td>
+            <td>하한: 5°C 이하 (동해) / 상한: 32°C 이상 (고온장해)</td>
+          </tr>
+          <tr>
+            <td><strong>상대 습도 (%)</strong></td>
+            <td>60 ~ 75%</td>
+            <td>하한: 40% 미만 / 상한: 90% 초과 (곰팡이병)</td>
+          </tr>
+          <tr>
+            <td><strong>CO2 농도 (ppm)</strong></td>
+            <td>800 ~ 1200 ppm (광합성 촉진)</td>
+            <td>하한: 400 ppm 미만 / 상한: 2000 ppm 초과</td>
+          </tr>
+          <tr>
+            <td><strong>토양 수분 (%)</strong></td>
+            <td>45 ~ 60%</td>
+            <td>하한: 30% 이하 (시듦) / 상한: 80% 이상 (과습)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Sec 3 -->
+    <section id="sec3" class="section-card">
+      <h2>🎛️ 3. 액추에이터 수동 조작 및 비상 인터락</h2>
+      <div class="step-grid">
+        <div class="step-box">
+          <div class="step-num">1</div>
+          <h4>환기 팬 (Exhaust Fan)</h4>
+          <p>내부 고온 및 과습 해소를 위해 즉시 강제 배기 가동.</p>
+        </div>
+        <div class="step-box">
+          <div class="step-num">2</div>
+          <h4>급수 펌프 (Water Pump)</h4>
+          <p>양액 및 점적 관수를 지정된 시간(초 단위) 동안 펄스 투입.</p>
+        </div>
+        <div class="step-box">
+          <div class="step-num">3</div>
+          <h4>식물 생장 LED</h4>
+          <p>일조량 부족 시간대 광합성 보광 조명 ON/OFF 제어.</p>
+        </div>
+        <div class="step-box">
+          <div class="step-num">4</div>
+          <h4>차광막 스크린</h4>
+          <p>정오 강한 직사광선 차단 및 야간 보온 커튼 모터 정/역회전.</p>
+        </div>
+      </div>
+      <div class="callout warning">
+        <span>⚠️</span>
+        <div>
+          <strong>하드웨어 인터락(Interlock):</strong>
+          차광막 모터의 [열림]과 [닫힘]은 하드웨어 및 소프트웨어적으로 동시 동작이 금지되어 있어 모터 소손을 방지합니다.
+        </div>
+      </div>
+    </section>
+
+    <!-- Sec 4 -->
+    <section id="sec4" class="section-card">
+      <h2>⚡ 4. 임계치 기반 자동화 규칙 및 트리거</h2>
+      <p>
+        관리자가 현장에 없더라도 센서 측정값에 맞춰 기기가 자동으로 동작합니다.
+      </p>
+      <ul>
+        <li><strong>고온 배기:</strong> 내부 온도가 28°C 초과 시 환기 팬 1단 가동 ➡️ 30°C 초과 시 전면 차광막 70% 전개.</li>
+        <li><strong>건조 관수:</strong> 토양 수분이 35% 이하로 15분 이상 유지될 경우 3분간 점적 밸브 개방.</li>
+      </ul>
+    </section>
+
+    <!-- Sec 5 -->
+    <section id="sec5" class="section-card">
+      <h2>🌿 5. AI 비전 카메라 기반 작물 생장 분석</h2>
+      <p>
+        온실 상단에 설치된 IP 카메라가 매일 정오 작물 캐노피를 촬영하여 AI Vision 모델로 상태를 판독합니다.
+      </p>
+      <ul>
+        <li><strong>엽면적 지수(LAI) 추정:</strong> 주차별 작물 잎의 녹색 면적 확장 추이 그래프 제공.</li>
+        <li><strong>병충해 초기 감지:</strong> 잎 마름병, 흰가루병 반점 조기 감지 시 관리자 텔레그램/SMS 알림.</li>
+      </ul>
+    </section>
+
+    <!-- Sec 6 -->
+    <section id="sec6" class="section-card">
+      <h2>🛡️ 6. N100 로컬 Standalone Fail-Safe 보호</h2>
+      <div class="callout alert">
+        <span>🚨</span>
+        <div>
+          <strong>인터넷 단절 시 Fail-Safe 보호 동작:</strong>
+          농장 현장의 인터넷 회선이 단절되어도 N100 제어기 내부의 타이머와 자동 제어 루프는 
+          정상 가동되며 작물 피해가 발생하지 않습니다. 복구 즉시 수집된 시계열 데이터가 클라우드로 배치 전송됩니다.
+        </div>
+      </div>
+    </section>
+
+    <!-- Sec 7 -->
+    <section id="sec7" class="section-card">
+      <h2>❓ 7. 현장 장애 진단 및 센서 캘리브레이션 (FAQ)</h2>
+      <h3>Q1. 특정 센서 값이 999.0 또는 -99.0으로 표시됩니다.</h3>
+      <p>센서 케이블 단선 또는 RS-485 통신선 접촉 불량입니다. 센서 전원선(DC 12V/24V) 및 A/B 극성을 점검하십시오.</p>
+
+      <h3>Q2. 펌프가 켜졌는데 물이 나오지 않습니다.</h3>
+      <p>물탱크의 저수위 센서가 작동하여 펌프 공회전 방지 인터락이 걸려있는지 확인하십시오.</p>
+    </section>
+  </div>
+</body>
+</html>

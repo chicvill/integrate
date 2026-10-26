@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BassSaasApp 포털 — 객체 기반 멀티앱 SaaS 플랫폼</title>
+  <meta name="description" content="BaseSaaSApp 객체를 자동 발견해 하나의 게이트웨이로 서비스하는 멀티앱 SaaS 포털. 앱 상태, 격리 현황, 변경 이력을 한눈에.">
+  <link rel="stylesheet" href="/shared/ui/base.css">
+  <link rel="stylesheet" href="portal.css">
+</head>
+<body>
+<div class="orb orb--a" aria-hidden="true"></div>
+<div class="orb orb--b" aria-hidden="true"></div>
+
+<header class="nav bass-container">
+  <a class="brand" href="/" id="brand-home"><span class="brand__mark">B</span> BassSaasApp</a>
+  <nav class="bass-row">
+    <a class="bass-btn bass-btn--ghost" href="manual.html" id="nav-manual">📘 매뉴얼</a>
+    <a class="bass-btn bass-btn--ghost" href="/docs" id="nav-docs" target="_blank" rel="noopener">⚙️ API 문서</a>
+    <span id="user-chip" class="user-chip" hidden></span>
+    <button class="bass-btn bass-btn--primary" id="login-open">로그인</button>
+  </nav>
+</header>
+
+<main class="bass-container">
+  <section class="hero bass-reveal">
+    <span class="bass-badge bass-badge--info" id="platform-badge">플랫폼 상태 확인 중…</span>
+    <h1>하나의 <span class="bass-gradient-text">객체</span>, 무한한 앱.</h1>
+    <p class="bass-muted hero__sub">모든 서비스는 <code>BaseSaaSApp</code> 객체입니다. 폴더를 추가하면 게이트웨이가 자동으로 발견하고, 문제가 생긴 앱만 안전하게 격리합니다.</p>
+    <div class="kpis">
+      <div class="kpi"><b id="kpi-apps">–</b><span>운영 중인 앱</span></div>
+      <div class="kpi"><b id="kpi-healthy">–</b><span>정상</span></div>
+      <div class="kpi kpi--err"><b id="kpi-isolated">–</b><span>격리됨</span></div>
+      <div class="kpi"><b id="kpi-disabled">–</b><span>비활성</span></div>
+    </div>
+  </section>
+
+  <div id="app-alert"></div>
+
+  <section class="toolbar">
+    <input class="bass-input" id="search" type="search" placeholder="앱 이름, 기능, 설명으로 검색…" aria-label="앱 검색">
+    <div class="chips" id="category-chips" role="tablist" aria-label="카테고리"></div>
+  </section>
+
+  <section aria-labelledby="apps-title">
+    <h2 id="apps-title" class="sr-only">앱 목록</h2>
+    <div class="bass-grid app-grid" id="app-grid">
+      <div class="bass-skeleton"></div><div class="bass-skeleton"></div><div class="bass-skeleton"></div>
+    </div>
+    <p class="bass-muted empty" id="empty-state" hidden>조건에 맞는 앱이 없습니다.</p>
+  </section>
+
+  <section class="bass-card isolated" id="isolated-panel" hidden>
+    <h2>🛡️ 격리된 앱</h2>
+    <p class="bass-muted">로드 중 오류가 발생해 자동 분리된 앱입니다. 다른 앱은 영향을 받지 않습니다. 원인을 수정한 뒤 서버를 재시작하세요.</p>
+    <div id="isolated-list"></div>
+  </section>
+
+  <section class="split">
+    <article class="bass-card create">
+      <h2>✨ 새 앱 만들기</h2>
+      <p class="bass-muted">명령 한 줄로 백엔드·도메인 객체·화면·매뉴얼이 생성되고, 재시작하면 이 포털에 자동으로 나타납니다.</p>
+      <pre id="create-cmd">py -3.14 scripts/create_app.py --id petcare --name "스마트 애견호텔" --icon 🐶 --category business</pre>
+      <button class="bass-btn" id="copy-cmd">📋 명령 복사</button>
+    </article>
+    <article class="bass-card timeline" id="timeline-panel">
+      <div class="bass-row" style="justify-content:space-between">
+        <h2>🕒 변경 이력</h2>
+        <button class="bass-btn bass-btn--sm" id="timeline-refresh" hidden>새로고침</button>
+      </div>
+      <ul id="timeline-list"><li class="bass-muted">관리자로 로그인하면 전체 앱의 변경 이력을 볼 수 있습니다.</li></ul>
+    </article>
+  </section>
+
+  <footer class="bass-muted footer">BassSaasApp · Zero-Touch Multi-App SaaS Platform</footer>
+</main>
+
+<dialog id="login-dialog">
+  <form class="bass-card" id="login-form" method="dialog">
+    <h3>🔐 관리자 로그인</h3>
+    <label class="bass-label" for="login-username">아이디</label>
+    <input class="bass-input" id="login-username" autocomplete="username" required>
+    <label class="bass-label" for="login-password" style="margin-top:10px">비밀번호</label>
+    <input class="bass-input" id="login-password" type="password" autocomplete="current-password" required>
+    <div class="bass-row" style="justify-content:flex-end;margin-top:16px">
+      <button class="bass-btn bass-btn--ghost" value="cancel" formnovalidate id="login-cancel">취소</button>
+      <button class="bass-btn bass-btn--primary" value="default" id="login-submit">로그인</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="/shared/ui/bass.js"></script>
+<script src="portal.js"></script>
+</body>
+</html>

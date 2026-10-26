@@ -1,0 +1,12 @@
+{
+  "venvPath": "D:\\Workstation\\MQnet\\studycafe\\backend",
+  "venv": ".venv",
+  "executionEnvironments": [
+    {
+      "root": "D:\\Workstation\\MQnet\\studycafe",
+      "extraPaths": [
+        "D:\\Workstation\\MQnet\\studycafe\\backend\\.venv\\Lib\\site-packages"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+name: mqnet-filebrowser
+
+services:
+  filebrowser:
+    image: filebrowser/filebrowser:latest
+    container_name: mqnet-filebrowser
+    restart: always
+    ports:
+      - "9007:80"
+    volumes:
+      # 미디어/스토리지 마운트 (Coolify/Linux: MEDIA_PATH 또는 ./media, Windows: L:/)
+      - "${MEDIA_PATH:-./media}:/srv"
+      - filebrowser_data:/database
+      - filebrowser_config:/config
+    environment:
+      - FB_DATABASE=/database/filebrowser.db
+      - FB_ROOT=/srv
+      - FB_LOG=stdout
+      - FB_NOAUTH=false
+    networks:
+      - photos-network
+
+networks:
+  photos-network:
+    name: mqnet-photos-net
+    driver: bridge
+
+volumes:
+  filebrowser_data:
+  filebrowser_config:

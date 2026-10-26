@@ -1,0 +1,4 @@
+docker를 실행
+yt-app를 활성화
+localhost5000으로 접속
+유튜브 주소 입력하고 다운로드

@@ -1,0 +1,3 @@
+from .booth import router as videobooth_router
+
+__all__ = ["videobooth_router"]

@@ -1,0 +1,58 @@
+/* ── Reset & Base Design System ──────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+svg { max-width: 100%; flex-shrink: 0; }
+
+:root {
+  /* Palette */
+  --bg-base:      #0d0e14;
+  --bg-surface:   #13141c;
+  --bg-elevated:  #1a1c27;
+  --bg-card:      #1e2030;
+  --bg-hover:     #252840;
+
+  --accent:       #818cf8;
+  --accent-dim:   #6366f1;
+  --accent-glow:  rgba(129,140,248,.25);
+  --accent-muted: rgba(129,140,248,.12);
+
+  --text-primary: #e2e4f0;
+  --text-secondary: #8b8fa8;
+  --text-muted:   #555870;
+
+  --border:       rgba(255,255,255,.07);
+  --border-active:rgba(129,140,248,.5);
+
+  --glass-bg:     rgba(19,20,28,.72);
+  --glass-border: rgba(255,255,255,.08);
+
+  --shadow-sm:    0 2px 8px rgba(0,0,0,.4);
+  --shadow-md:    0 4px 20px rgba(0,0,0,.6);
+  --shadow-lg:    0 8px 40px rgba(0,0,0,.8);
+
+  /* Layout */
+  --sidebar-w: 220px;
+  --topbar-h:  60px;
+
+  /* Radius */
+  --r-sm:  6px;
+  --r-md:  10px;
+  --r-lg:  14px;
+  --r-xl:  20px;
+}
+
+html { height: 100%; }
+
+body {
+  height: 100%;
+  font-family: 'Outfit', 'Noto Sans KR', system-ui, sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* Animations */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }

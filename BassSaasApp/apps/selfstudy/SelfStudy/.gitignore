@@ -1,0 +1,39 @@
+# Environments
+.env
+.env.*
+!.env.example
+!.env.production
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Database
+*.db
+*.sqlite3
+backend/selfstudy.db
+
+# Node
+node_modules/
+dist/
+build/
+.npm/
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Other Projects Isolation
+STcafe/
+*STcafe*
+SelfStudy/
+

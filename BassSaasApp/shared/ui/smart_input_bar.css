@@ -1,0 +1,225 @@
+/**
+ * shared/ui/smart_input_bar.css
+ * 제미나이(Gemini) 스타일 [+] 첨부 메뉴형 만능 스마트 입력바 스타일.
+ * 모든 SaaS 앱(다크/라이트 모드)에 자연스럽게 녹아드는 모던 플로팅 디자인.
+ */
+
+.smart-input-container {
+  width: 100%;
+  position: relative;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.smart-input-box {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1.5px solid #000000;
+  border-radius: 18px;
+  padding: 8px 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+}
+
+.smart-input-box:focus-within {
+  border-color: #000000;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+/* 첨부된 파일/사진 썸네일 칩 영역 */
+.smart-attachment-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed #e2e8f0;
+}
+
+.smart-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+  animation: smartFadeIn 0.2s ease;
+}
+
+.smart-chip img {
+  width: 24px;
+  height: 24px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #94a3b8;
+}
+
+.smart-chip .chip-remove {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.smart-chip .chip-remove:hover {
+  color: #ef4444;
+}
+
+/* 하단 컨트롤 행 ( [+]버튼, 텍스트창, 마이크, 전송버튼 ) */
+.smart-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+/* [+] 플러스 버튼 (Gemini 스타일 원형 토글) */
+.smart-plus-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid #000000;
+  background: #ffffff;
+  color: #000000;
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.smart-plus-btn:hover {
+  background: #000000;
+  color: #ffffff;
+  transform: rotate(90deg);
+}
+
+.smart-plus-btn.active {
+  background: #000000;
+  color: #ffffff;
+  transform: rotate(45deg);
+}
+
+/* 텍스트 입력 영역 */
+.smart-text-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #0f172a;
+  resize: none;
+  max-height: 120px;
+  min-height: 24px;
+  padding: 4px 0;
+  font-family: inherit;
+}
+
+.smart-text-input::placeholder {
+  color: #94a3b8;
+}
+
+/* 전송/실행 버튼 */
+.smart-send-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid #000000;
+  background: #000000;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.smart-send-btn:hover {
+  transform: scale(1.06);
+  opacity: 0.9;
+}
+
+.smart-send-btn:disabled {
+  background: #cbd5e1;
+  border-color: #cbd5e1;
+  color: #94a3b8;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* [+] 클릭 시 뜨는 Gemini 스타일 팝오버 메뉴 */
+.smart-popover-menu {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 0;
+  background: #ffffff;
+  border: 1.5px solid #000000;
+  border-radius: 14px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 1000;
+  min-width: 220px;
+  animation: smartSlideUp 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.smart-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #1e293b;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  width: 100%;
+}
+
+.smart-menu-item:hover {
+  background: #f1f5f9;
+}
+
+.smart-menu-item .menu-icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+.smart-menu-item .menu-desc {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 400;
+  display: block;
+}
+
+@keyframes smartSlideUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes smartFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}

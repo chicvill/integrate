@@ -1,0 +1,27 @@
+/* shared_ui/manual.css — 모든 앱 manual.html 공통 스타일 (화면 + A4 고대비 흑백 인쇄) */
+.manual { width: min(900px, 92vw); margin: 0 auto; padding: 0 0 60px; }
+.manual-header { position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; padding: 16px 0; margin-bottom: 12px; background: linear-gradient(var(--bg) 70%, transparent); }
+.manual h1 { font-size: 30px; }
+.manual h2 { margin-top: 34px; padding-bottom: 6px; border-bottom: 1px solid var(--border-strong); }
+.manual table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+.manual th, .manual td { border: 1px solid var(--border-strong); padding: 9px 11px; text-align: left; vertical-align: top; }
+.manual th { background: hsl(232 30% 22% / .6); }
+.manual ol li, .manual ul li { margin: 6px 0; }
+.manual .callout { border-left: 4px solid var(--primary); padding: 10px 14px; background: hsl(258 90% 30% / .18); border-radius: 0 10px 10px 0; }
+.manual pre { background: hsl(232 40% 6%); border: 1px solid var(--border); padding: 14px; border-radius: 12px; overflow-x: auto; }
+
+@page { size: A4; margin: 16mm 14mm; }
+@media print {
+  :root { --text: #000; --muted: #333; --border: #999; --border-strong: #555; }
+  body { background: #fff !important; color: #000 !important; font-size: 11pt; }
+  .manual { width: auto; padding: 0; }
+  .manual-header { position: static; background: none; border-bottom: 2px solid #000; }
+  .no-print, .manual-header .bass-btn { display: none !important; }
+  .bass-gradient-text { color: #000 !important; background: none !important; -webkit-text-fill-color: #000; }
+  .manual th { background: #e6e6e6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .manual .callout { background: none; border-left: 3px solid #000; }
+  .manual pre, .manual code { background: #f2f2f2 !important; color: #000; border: 1px solid #999; }
+  .manual h2 { break-after: avoid; } .manual table, .manual pre { break-inside: avoid; }
+  a { color: #000; text-decoration: underline; }
+}

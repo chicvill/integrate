@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MQnet StudyCafe | 점주 실시간 관제 대시보드</title>
+  <link rel="stylesheet" href="./style.css?v=2.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: #0b0f19;
+      color: #f1f5f9;
+      font-family: 'Pretendard', sans-serif;
+      margin: 0;
+      padding: 1.25rem;
+    }
+    .admin-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.25rem 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .admin-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+    .admin-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1.25rem;
+    }
+    .seat-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    .seat-table th, .seat-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .seat-table th {
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .btn-action {
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      border: none;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-action.kick {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="admin-container">
+    <!-- 🚀 현장/역할별 빠른 페이지 이동 버튼 바 -->
+    <div class="sc-quick-portal-bar" style="background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 0.8rem 1.1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.8rem;">
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span style="font-size: 1.15rem;">🚀</span>
+        <span style="font-weight: 800; font-size: 0.88rem; color: #fff;">바로가기:</span>
+      </div>
+      <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+        <a href="/studycafe/" class="quick-nav-btn" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.95rem; border-radius: 10px; font-size: 0.82rem; font-weight: 700; text-decoration: none; background: rgba(56,189,248,0.18); border: 1px solid rgba(56,189,248,0.45); color: #38bdf8; transition: all 0.2s;">
+          <span>📱</span> 스터디카페 키오스크/모바일
+        </a>
+        <a href="./admin.html" class="quick-nav-btn active" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.95rem; border-radius: 10px; font-size: 0.82rem; font-weight: 700; text-decoration: none; background: rgba(139,92,246,0.3); border: 1px solid rgba(139,92,246,0.6); color: #c084fc; transition: all 0.2s;">
+          <span>📊</span> 점주 실시간 관제 및 순찰 모달
+        </a>
+        <a href="./parent.html?phone=010-5555-4444" class="quick-nav-btn" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.95rem; border-radius: 10px; font-size: 0.82rem; font-weight: 700; text-decoration: none; background: rgba(16,185,129,0.18); border: 1px solid rgba(16,185,129,0.45); color: #34d399; transition: all 0.2s;">
+          <span>👨‍👩‍👧</span> 학부모 실시간 순찰 리포트 확인
+        </a>
+        <a href="./manual.html" target="_blank" class="quick-nav-btn" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.95rem; border-radius: 10px; font-size: 0.82rem; font-weight: 700; text-decoration: none; background: rgba(245,158,11,0.22); border: 1px solid rgba(245,158,11,0.55); color: #fbbf24; transition: all 0.2s;">
+          <span>📖</span> 운영 매뉴얼 보기
+        </a>
+      </div>
+    </div>
+
+    <!-- 🚨 화재 비상 대피 모드 발령 배너 -->
+    <div id="adminEmergencyBanner" style="display:none; background: linear-gradient(135deg, #ef4444, #b91c1c); border: 2px solid #f87171; border-radius: 14px; padding: 1rem 1.4rem; color: #fff; align-items: center; justify-content: space-between; gap: 1rem; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);">
+      <div style="display: flex; align-items: center; gap: 0.8rem;">
+        <span style="font-size: 2rem;">🚨</span>
+        <div>
+          <div style="font-size: 1.05rem; font-weight: 800;">[화재/비상 대피 모드 발령 중] 스마트 도어 상시 전면 개방</div>
+          <div id="adminEmergencyReason" style="font-size: 0.82rem; color: #fecaca; margin-top: 0.2rem;">소방법 규정에 따라 Fail-Safe 전자기식 락(EM-Lock) 전원이 차단되어 출입문이 영구 개방 중입니다.</div>
+        </div>
+      </div>
+      <button id="btnResetEmergencyBanner" class="btn-action" style="background: #fff; color: #dc2626; padding: 0.6rem 1.1rem; font-size: 0.88rem; font-weight: 800; border-radius: 8px; border: none; cursor: pointer; white-space: nowrap;">
+        ✅ 비상 해제 (정상 복구)
+      </button>
+    </div>
+
+    <header class="admin-header">
+      <div>
+        <h1 style="font-size:1.4rem;font-weight:800;color:#fff;margin:0 0 0.3rem;">📊 점주 실시간 관제 대시보드</h1>
+        <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.4rem;">스터디카페 지점별 실시간 재실 모니터링 & 스마트 출입문 제어 (Fail-Safe 연동)</div>
+        <!-- 🏢 지점 선택 및 관리 셀렉터 -->
+        <div style="display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap;">
+          <span style="font-size:0.82rem;color:#94a3b8;font-weight:700;">🏢 관제 매장:</span>
+          <select id="branchSelector" style="padding:0.35rem 0.65rem;font-size:0.82rem;background:#1e293b;color:#f8fafc;border:1px solid #3b82f6;border-radius:8px;cursor:pointer;font-weight:600;outline:none;">
+            <!-- 동적 지점 옵션 -->
+          </select>
+          <button id="btnOpenNewBranchModal" class="btn-action" style="padding:0.35rem 0.65rem;font-size:0.78rem;background:rgba(59,130,246,0.18);color:#93c5fd;border:1px solid rgba(59,130,246,0.4);border-radius:6px;cursor:pointer;" type="button">
+            ➕ 신규 매장 등록
+          </button>
+          <a href="./branches.html" class="btn-action" style="padding:0.35rem 0.65rem;font-size:0.78rem;background:rgba(168,85,247,0.22);color:#c084fc;border:1px solid rgba(168,85,247,0.45);border-radius:6px;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;" title="본사용 가맹점 등록/삭제 및 월 솔루션 수납 관리 포털">
+            ⚙️ 본사 매장·수납 센터
+          </a>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <button id="btnManualDoor" class="sc-modal-submit-btn" style="margin:0;background:#10b981;padding:0.6rem 0.95rem;font-size:0.82rem;" type="button">
+          🔓 출입문 5초 개방
+        </button>
+        <button id="btnEmergencyOpen" class="sc-modal-submit-btn" style="margin:0;background:#ef4444;padding:0.6rem 0.95rem;font-size:0.82rem;" type="button">
+          🚨 비상 전면 개방
+        </button>
+        <button id="btnCleanupExpired" class="sc-modal-submit-btn" style="margin:0;background:#f59e0b;padding:0.6rem 0.95rem;font-size:0.82rem;" type="button">
+          🚶 60분 초과 외출 정리
+        </button>
+        <button id="btnCleanupLogs" class="sc-modal-submit-btn" style="margin:0;background:#6366f1;padding:0.6rem 0.95rem;font-size:0.82rem;" type="button">
+          🧹 90일 순찰기록 파기
+        </button>
+        <a href="#salesReportSection" class="sc-modal-submit-btn" style="margin:0;background:linear-gradient(135deg, #10b981, #059669);padding:0.6rem 0.95rem;font-size:0.82rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;">
+          📑 세무·소득신고 정산
+        </a>
+        <a href="./manual.html" target="_blank" class="sc-modal-submit-btn" style="margin:0;background:#d97706;padding:0.6rem 0.95rem;font-size:0.82rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;">
+          📖 매뉴얼 보기
+        </a>
+        <button id="btnRefresh" class="btn-action" style="background:rgba(255,255,255,0.1);color:#fff;padding:0.6rem 0.85rem;" type="button">
+          🔄 새로고침
+        </button>
+      </div>
+    </header>
+
+    <!-- 통계 카드 그리드 -->
+    <div class="admin-stat-grid">
+      <div class="admin-card">
+        <div style="font-size:0.8rem;color:var(--text-muted);">전체 좌석</div>
+        <div id="statTotal" style="font-size:1.8rem;font-weight:800;color:#fff;margin-top:0.3rem;">20석</div>
+      </div>
+      <div class="admin-card">
+        <div style="font-size:0.8rem;color:var(--text-muted);">현재 이용 중</div>
+        <div id="statOccupied" style="font-size:1.8rem;font-weight:800;color:var(--accent);margin-top:0.3rem;">-</div>
+      </div>
+      <div class="admin-card">
+        <div style="font-size:0.8rem;color:var(--text-muted);">외출 (자리비움)</div>
+        <div id="statStepOut" style="font-size:1.8rem;font-weight:800;color:#f59e0b;margin-top:0.3rem;">-</div>
+      </div>
+      <div class="admin-card">
+        <div style="font-size:0.8rem;color:var(--text-muted);">잔여 빈 좌석</div>
+        <div id="statAvailable" style="font-size:1.8rem;font-weight:800;color:#10b981;margin-top:0.3rem;">-</div>
+      </div>
+      <div class="admin-card" style="background:linear-gradient(135deg, rgba(16,185,129,0.12), rgba(6,182,212,0.06));border-color:rgba(16,185,129,0.35);">
+        <div style="font-size:0.8rem;color:#34d399;font-weight:700;">💰 오늘 매출</div>
+        <div id="statSalesToday" style="font-size:1.55rem;font-weight:800;color:#10b981;margin-top:0.3rem;">₩ 0</div>
+        <div id="statTicketsTodaySub" style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">결제 0건</div>
+      </div>
+      <div class="admin-card" style="background:linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.06));border-color:rgba(99,102,241,0.35);">
+        <div style="font-size:0.8rem;color:#a5b4fc;font-weight:700;">📅 당월 누적 매출</div>
+        <div id="statSalesMonth" style="font-size:1.55rem;font-weight:800;color:#818cf8;margin-top:0.3rem;">₩ 0</div>
+        <div id="statSalesTotalSub" style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">총 누적 ₩ 0</div>
+      </div>
+      <div class="admin-card">
+        <div style="font-size:0.8rem;color:var(--text-muted);">도어락 상태</div>
+        <div id="statDoorState" style="font-size:1.25rem;font-weight:800;color:#10b981;margin-top:0.5rem;">정상 가동</div>
+      </div>
+    </div>
+
+    <!-- 좌석 테이블 -->
+    <div class="admin-card">
+      <h3 style="font-size:1.1rem;font-weight:800;color:#fff;margin:0 0 1rem;">🪑 좌석별 실시간 이용 현황</h3>
+      <div style="overflow-x:auto;">
+        <table class="seat-table">
+          <thead>
+            <tr>
+              <th>좌석 번호</th>
+              <th>구역</th>
+              <th>상태</th>
+              <th>이용자 성명</th>
+              <th>회원 유형</th>
+              <th>연락처</th>
+              <th>22시 심야이용</th>
+              <th>관리 조치</th>
+            </tr>
+          </thead>
+          <tbody id="seatTableBody">
+            <!-- 동적 렌더링 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 💰 실시간 이용권 결제 & 세무·소득신고 매출 통계 섹션 -->
+    <div id="salesReportSection" class="admin-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.6rem;">
+        <div>
+          <h3 style="font-size:1.15rem;font-weight:800;color:#fff;margin:0 0 0.25rem;">💰 매출 정산 및 세무·소득신고 리포트</h3>
+          <div style="font-size:0.82rem;color:var(--text-muted);">국세청 종합소득세 및 부가가치세(10%) 신고를 위한 월별/기간별 정산 내역 및 CSV 내보내기</div>
+        </div>
+        <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+          <span style="font-size:0.78rem;color:#10b981;background:rgba(16,185,129,0.12);padding:0.3rem 0.65rem;border-radius:6px;border:1px solid rgba(16,185,129,0.3);font-weight:700;">
+            ● 실시간 자동 집계 (VAT 10% 자동분리)
+          </span>
+          <button id="btnRefreshSales" class="btn-action" style="background:rgba(255,255,255,0.08);color:#fff;padding:0.35rem 0.75rem;" onclick="window.adminRefreshDashboard()">
+            🔄 매출 갱신
+          </button>
+        </div>
+      </div>
+
+      <!-- 매출 요약 서브 그리드 -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:0.85rem;margin-bottom:1.25rem;">
+        <div style="background:rgba(0,0,0,0.25);padding:0.85rem 1rem;border-radius:10px;border:1px solid rgba(255,255,255,0.06);">
+          <div style="font-size:0.78rem;color:var(--text-muted);">관리형 패스 누적 매출 (4주/12주)</div>
+          <div id="statManagedSales" style="font-size:1.35rem;font-weight:800;color:#a5b4fc;margin-top:0.25rem;">₩ 0</div>
+          <div style="font-size:0.72rem;color:#94a3b8;margin-top:0.2rem;">전용 고정석 + SelfStudy LMS 풀패키지</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.25);padding:0.85rem 1rem;border-radius:10px;border:1px solid rgba(255,255,255,0.06);">
+          <div style="font-size:0.78rem;color:var(--text-muted);">일반 자유석 누적 매출 (당일/정기/4주)</div>
+          <div id="statGeneralSales" style="font-size:1.35rem;font-weight:800;color:#38bdf8;margin-top:0.25rem;">₩ 0</div>
+          <div style="font-size:0.72rem;color:#94a3b8;margin-top:0.2rem;">자율 자유석 (자주학습 LMS 미지원)</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.25);padding:0.85rem 1rem;border-radius:10px;border:1px solid rgba(255,255,255,0.06);">
+          <div style="font-size:0.78rem;color:var(--text-muted);">전체 누적 결제 건수</div>
+          <div id="statTicketsTotalCount" style="font-size:1.35rem;font-weight:800;color:#fcd34d;margin-top:0.25rem;">0건</div>
+          <div style="font-size:0.72rem;color:#94a3b8;margin-top:0.2rem;">유효 이용권 실시간 집계</div>
+        </div>
+      </div>
+
+      <!-- 세무·매출 뷰 전환 탭 버튼 바 -->
+      <div style="display:flex;gap:0.4rem;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:0.8rem;margin-bottom:1rem;flex-wrap:wrap;">
+        <button id="btnTabRecent" class="btn-action" style="padding:0.45rem 1rem;font-size:0.84rem;border-radius:8px;background:rgba(56,189,248,0.2);color:#38bdf8;border:1px solid rgba(56,189,248,0.4);cursor:pointer;">
+          ⚡ 최근 실시간 결제 (최신 15건)
+        </button>
+        <button id="btnTabMonthly" class="btn-action" style="padding:0.45rem 1rem;font-size:0.84rem;border-radius:8px;background:rgba(255,255,255,0.05);color:#cbd5e1;border:1px solid rgba(255,255,255,0.1);cursor:pointer;">
+          📅 월별 매출 현황 (소득세/부가세 과세표준)
+        </button>
+        <button id="btnTabRange" class="btn-action" style="padding:0.45rem 1rem;font-size:0.84rem;border-radius:8px;background:rgba(255,255,255,0.05);color:#cbd5e1;border:1px solid rgba(255,255,255,0.1);cursor:pointer;">
+          📆 기간 지정 세무 정산 & CSV 다운로드
+        </button>
+      </div>
+
+      <!-- 1. 최근 결제 내역 뷰 -->
+      <div id="viewRecentPayments">
+        <div style="overflow-x:auto;">
+          <table class="seat-table">
+            <thead>
+              <tr>
+                <th>결제 시각</th>
+                <th>이용권 상품명</th>
+                <th>결제 금액 (원)</th>
+                <th>공급가액</th>
+                <th>부가가치세 (10%)</th>
+                <th>회원 식별 (ID / 번호)</th>
+                <th>구분</th>
+                <th>상태</th>
+              </tr>
+            </thead>
+            <tbody id="paymentTableBody">
+              <!-- 동적 렌더링 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 2. 월별 매출 뷰 (소득세/부가세 과세표준) -->
+      <div id="viewMonthlySales" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.6rem;">
+          <div style="display:flex;align-items:center;gap:0.6rem;">
+            <label style="font-size:0.85rem;color:var(--text-muted);font-weight:700;">귀속 연도:</label>
+            <select id="selectTaxYear" style="padding:0.35rem 0.8rem;font-size:0.85rem;background:#1e293b;color:#fff;border-radius:8px;border:1px solid rgba(255,255,255,0.15);">
+              <option value="2026" selected>2026년</option>
+              <option value="2025">2025년</option>
+            </select>
+            <button id="btnLoadMonthlyTax" class="btn-action" style="background:#3b82f6;color:#fff;padding:0.4rem 0.9rem;">
+              조회
+            </button>
+          </div>
+          <div style="font-size:0.8rem;color:#94a3b8;">
+            * 부가가치세법 규정 준수: 공급가액 = 결제액 ÷ 1.1 | 부가세 = 결제액 - 공급가액
+          </div>
+        </div>
+
+        <!-- 연간 합계 지표 -->
+        <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:10px;padding:0.85rem 1.25rem;margin-bottom:1rem;display:flex;gap:2rem;flex-wrap:wrap;">
+          <div>
+            <div style="font-size:0.75rem;color:#94a3b8;">연간 총 결제액</div>
+            <div id="yearlyTotalAmount" style="font-size:1.3rem;font-weight:800;color:#10b981;">₩ 0</div>
+          </div>
+          <div>
+            <div style="font-size:0.75rem;color:#94a3b8;">연간 공급가액 (소득 과세표준)</div>
+            <div id="yearlySupplyValue" style="font-size:1.3rem;font-weight:800;color:#38bdf8;">₩ 0</div>
+          </div>
+          <div>
+            <div style="font-size:0.75rem;color:#94a3b8;">연간 부가가치세 (10%)</div>
+            <div id="yearlyVatValue" style="font-size:1.3rem;font-weight:800;color:#fcd34d;">₩ 0</div>
+          </div>
+          <div>
+            <div style="font-size:0.75rem;color:#94a3b8;">연간 총 결제 건수</div>
+            <div id="yearlyTotalCount" style="font-size:1.3rem;font-weight:800;color:#fff;">0건</div>
+          </div>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table class="seat-table">
+            <thead>
+              <tr>
+                <th>귀속 월</th>
+                <th>결제 건수</th>
+                <th>총 결제액 (합계)</th>
+                <th>공급가액 (매출)</th>
+                <th>부가가치세 (10%)</th>
+                <th>관리형 패스 매출</th>
+                <th>일반 자유석 매출</th>
+              </tr>
+            </thead>
+            <tbody id="monthlyTaxTableBody">
+              <!-- 동적 렌더링 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 3. 기간 지정 세무 정산 & CSV 뷰 -->
+      <div id="viewRangeSales" style="display:none;">
+        <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1rem;margin-bottom:1rem;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;">
+          <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+            <label style="font-size:0.85rem;color:var(--text-muted);font-weight:700;">기간 설정:</label>
+            <input type="date" id="inputStartDate" style="padding:0.35rem 0.6rem;font-size:0.82rem;background:#1e293b;color:#fff;border-radius:8px;border:1px solid rgba(255,255,255,0.15);">
+            <span style="color:var(--text-muted);">~</span>
+            <input type="date" id="inputEndDate" style="padding:0.35rem 0.6rem;font-size:0.82rem;background:#1e293b;color:#fff;border-radius:8px;border:1px solid rgba(255,255,255,0.15);">
+            <button id="btnFetchRange" class="btn-action" style="background:#3b82f6;color:#fff;padding:0.45rem 1rem;">
+              🔍 정산 조회
+            </button>
+          </div>
+          <div style="display:flex;gap:0.5rem;">
+            <button id="btnExportCsv" class="btn-action" style="background:linear-gradient(135deg, #10b981, #059669);color:#fff;padding:0.45rem 1rem;font-weight:700;">
+              📥 세무용 CSV 다운로드
+            </button>
+            <button class="btn-action" style="background:rgba(255,255,255,0.1);color:#fff;padding:0.45rem 0.85rem;" onclick="window.print()">
+              🖨️ 정산서 인쇄
+            </button>
+          </div>
+        </div>
+
+        <!-- 기간 정산 요약 박스 -->
+        <div style="background:linear-gradient(135deg, rgba(56,189,248,0.08), rgba(99,102,241,0.08));border:1px solid rgba(56,189,248,0.25);border-radius:10px;padding:0.85rem 1.25rem;margin-bottom:1rem;display:flex;gap:2rem;flex-wrap:wrap;">
+          <div>
+            <div style="font-size:0.75rem;color:#94a3b8;">지정 기간 총 결제액</div>
+            <div id="rangeTotalAmount" style="font-size:1.3rem;font-weight:800;color:#10b981;">₩ 0</div>
+          </div>
+          <div>
+            <div style="font-size:0.75rem;color:#94a3b8;">공급가액 (과세표준)</div>
+            <div id="rangeSupplyValue" style="font-size:1.3rem;font-weight:800;color:#38bdf8;">₩ 0</div>
+          </div>
+          <div>
+            <div style="font-size:0.75rem;color:#94a3b8;">부가가치세 (10%)</div>
+            <div id="rangeVatValue" style="font-size:1.3rem;font-weight:800;color:#fcd34d;">₩ 0</div>
+          </div>
+          <div>
+            <div style="font-size:0.75rem;color:#94a3b8;">총 결제 건수</div>
+            <div id="rangeTotalCount" style="font-size:1.3rem;font-weight:800;color:#fff;">0건</div>
+          </div>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table class="seat-table">
+            <thead>
+              <tr>
+                <th>거래 일시</th>
+                <th>영수증 ID</th>
+                <th>이용권 상품명</th>
+                <th>결제 금액</th>
+                <th>공급가액</th>
+                <th>부가가치세 (10%)</th>
+                <th>회원 식별</th>
+                <th>상품 구분</th>
+              </tr>
+            </thead>
+            <tbody id="rangeTaxTableBody">
+              <!-- 동적 렌더링 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🏢 신규 매장(가맹점/지점) 등록 모달 -->
+  <div id="newBranchModal" class="sc-modal-backdrop">
+    <div class="sc-modal" style="max-width: 460px;">
+      <div class="sc-modal-header">
+        <h3 class="sc-modal-title">🏢 신규 스터디카페 매장 등록</h3>
+        <button class="sc-modal-close" onclick="document.getElementById('newBranchModal').classList.remove('open')">✕</button>
+      </div>
+      <div class="sc-modal-body" style="display:flex;flex-direction:column;gap:0.9rem;">
+        <div class="sc-form-group">
+          <label class="sc-form-label">매장 코드 (영문 고유 식별자)</label>
+          <input id="nbBranchId" type="text" class="sc-form-input" placeholder="예: sc-sinchon, sc-bundang">
+        </div>
+        <div class="sc-form-group">
+          <label class="sc-form-label">매장명 (지점명)</label>
+          <input id="nbName" type="text" class="sc-form-input" placeholder="예: MQnet 스터디카페 신촌연세점">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+          <div class="sc-form-group">
+            <label class="sc-form-label">보유 좌석 수</label>
+            <input id="nbTotalSeats" type="number" class="sc-form-input" value="20" min="5" max="100">
+          </div>
+          <div class="sc-form-group">
+            <label class="sc-form-label">매장 대표 전화</label>
+            <input id="nbPhone" type="tel" class="sc-form-input" placeholder="02-1234-5678">
+          </div>
+        </div>
+        <div class="sc-form-group">
+          <label class="sc-form-label">매장 주소</label>
+          <input id="nbAddress" type="text" class="sc-form-input" placeholder="서울특별시 서대문구 연세로 12">
+        </div>
+        <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.25);border-radius:10px;padding:0.75rem;font-size:0.78rem;color:#93c5fd;line-height:1.45;">
+          💡 <strong>자동 초기화</strong>: 매장 등록 즉시 지정된 좌석 수(A-01~A-N)의 좌석 배치도 및 포커스/일반/노트북존이 자동 생성됩니다.
+        </div>
+        <button id="btnSubmitNewBranch" class="sc-modal-submit-btn" type="button">🚀 신규 매장 등록 완료</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { 
+      CURRENT_BRANCH,
+      setCurrentBranch,
+      fetchBranches,
+      createBranch,
+      fetchAdminDashboard, 
+      cleanupExpiredSeats, 
+      triggerDoor, 
+      leaveSeat, 
+      submitPatrolLog, 
+      fetchDoorStatus, 
+      emergencyOpenDoor, 
+      emergencyResetDoor, 
+      toggleNightExempt, 
+      cleanupOldPatrolLogs,
+      fetchMonthlySales,
+      fetchRangeSales,
+      getSalesCsvExportUrl
+    } from './js/api.js?v=2.6';
+
+    async function checkDoorEmergencyStatus() {
+      try {
+        const door = await fetchDoorStatus();
+        const banner = document.getElementById('adminEmergencyBanner');
+        const reasonEl = document.getElementById('adminEmergencyReason');
+        const statDoor = document.getElementById('statDoorState');
+
+        if (door.is_emergency) {
+          banner.style.display = 'flex';
+          reasonEl.textContent = `사유: ${door.reason} (${door.fail_safe_guideline})`;
+          statDoor.textContent = '🚨 비상 개방';
+          statDoor.style.color = '#ef4444';
+        } else {
+          banner.style.display = 'none';
+          statDoor.textContent = '정상 가동 🔒';
+          statDoor.style.color = '#10b981';
+        }
+      } catch (err) {
+        console.warn('도어 상태 조회 에러:', err);
+      }
+    }
+
+    async function loadDashboard() {
+      try {
+        await checkDoorEmergencyStatus();
+        const data = await fetchAdminDashboard();
+        document.getElementById('statTotal').textContent = `${data.total_seats}석`;
+        document.getElementById('statOccupied').textContent = `${data.occupied_count}석`;
+        document.getElementById('statStepOut').textContent = `${data.step_out_count}석`;
+        document.getElementById('statAvailable').textContent = `${data.available_count}석`;
+
+        const tbody = document.getElementById('seatTableBody');
+        tbody.innerHTML = data.seats.map(s => {
+          const isStepOut = s.status === 'STEP_OUT';
+          const isOccupied = s.is_occupied || s.status === 'OCCUPIED' || isStepOut;
+          
+          let statusBadge = '<span style="color:#10b981;font-weight:700;">빈 좌석</span>';
+          if (isStepOut) statusBadge = '<span style="color:#f59e0b;font-weight:700;">외출 중 🚶‍♂️</span>';
+          else if (isOccupied) statusBadge = '<span style="color:var(--accent);font-weight:700;">이용 중 🟢</span>';
+
+          // 22시 심야 청소년 규제 상태 및 토글 버튼
+          let nightBadge = '<span style="color:var(--text-muted);">-</span>';
+          if (isOccupied) {
+            if (s.is_minor) {
+              if (s.night_exempt) {
+                nightBadge = `
+                  <button class="btn-action" style="background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.5);" onclick="window.adminToggleNightExempt('${s.phone}', '${s.user_name}')" title="클릭 시 22시 제한으로 복원">
+                    🌙 예외 허용 (클릭시 차단)
+                  </button>
+                `;
+              } else {
+                nightBadge = `
+                  <button class="btn-action" style="background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.5);" onclick="window.adminToggleNightExempt('${s.phone}', '${s.user_name}')" title="클릭 시 동의서 제출 회원 심야 예외 승인">
+                    ⛔ 22시 퇴실 (클릭시 승인)
+                  </button>
+                `;
+              }
+            } else {
+              nightBadge = '<span style="color:#94a3b8;font-size:0.8rem;">성인 (상시)</span>';
+            }
+          }
+
+          return `
+            <tr>
+              <td style="font-weight:700;color:#fff;">${s.seat_number}</td>
+              <td><span class="sc-badge zone-${s.zone_type.toLowerCase()}">${s.zone_type}</span></td>
+              <td>${statusBadge}</td>
+              <td>${s.user_name || '-'}</td>
+              <td><span class="sc-badge ${s.user_type === 'MANAGED' ? 'zone-focus' : 'zone-normal'}">${s.user_type === 'MANAGED' ? '관리형' : '일반'}</span></td>
+              <td style="color:var(--text-muted);">${s.phone || '-'}</td>
+              <td>${nightBadge}</td>
+              <td>
+                ${isOccupied ? `
+                  <div style="display:flex;gap:0.4rem;">
+                    <button class="btn-action" style="background:rgba(139,92,246,0.2);color:#c084fc;border:1px solid rgba(139,92,246,0.4);" onclick="window.openPatrolModal('${s.seat_number}', '${s.user_name || '회원'}', '${s.phone || ''}')">
+                      📋 순찰 기록
+                    </button>
+                    <button class="btn-action kick" onclick="window.adminForceLeave('${s.seat_number}')">
+                      강제 퇴실
+                    </button>
+                  </div>
+                ` : '-'}
+        }).join('');
+
+        // 💰 점주 실시간 매출 통계 렌더링
+        if (data.sales_stats) {
+          const ss = data.sales_stats;
+          const fmt = (n) => (n || 0).toLocaleString();
+
+          const elToday = document.getElementById('statSalesToday');
+          if (elToday) elToday.textContent = `₩ ${fmt(ss.sales_today)}`;
+          const elTodaySub = document.getElementById('statTicketsTodaySub');
+          if (elTodaySub) elTodaySub.textContent = `오늘 결제 ${ss.tickets_today_count || 0}건`;
+
+          const elMonth = document.getElementById('statSalesMonth');
+          if (elMonth) elMonth.textContent = `₩ ${fmt(ss.sales_month)}`;
+          const elTotalSub = document.getElementById('statSalesTotalSub');
+          if (elTotalSub) elTotalSub.textContent = `총 누적 ₩ ${fmt(ss.sales_total)}`;
+
+          const elManaged = document.getElementById('statManagedSales');
+          if (elManaged) elManaged.textContent = `₩ ${fmt(ss.managed_sales_total)}`;
+          const elGeneral = document.getElementById('statGeneralSales');
+          if (elGeneral) elGeneral.textContent = `₩ ${fmt(ss.general_sales_total)}`;
+          const elTotalCount = document.getElementById('statTicketsTotalCount');
+          if (elTotalCount) elTotalCount.textContent = `${ss.tickets_total_count || 0}건`;
+
+          const pBody = document.getElementById('paymentTableBody');
+          if (pBody && ss.recent_payments) {
+            if (ss.recent_payments.length === 0) {
+              pBody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:1.5rem;">최근 결제 내역이 없습니다.</td></tr>';
+            } else {
+              pBody.innerHTML = ss.recent_payments.map(p => {
+                const isManaged = p.is_managed;
+                const dt = p.created_at 
+                  ? new Date(p.created_at).toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }) 
+                  : '-';
+                const price = p.price || 0;
+                const supply = Math.round(price / 1.1);
+                const vat = price - supply;
+                return `
+                  <tr>
+                    <td style="color:#94a3b8;font-size:0.82rem;">${dt}</td>
+                    <td style="font-weight:700;color:#fff;">${p.ticket_type || '이용권'}</td>
+                    <td style="font-weight:800;color:#10b981;">₩ ${price.toLocaleString()}</td>
+                    <td style="color:#38bdf8;font-size:0.84rem;">₩ ${supply.toLocaleString()}</td>
+                    <td style="color:#fcd34d;font-size:0.84rem;">₩ ${vat.toLocaleString()}</td>
+                    <td style="color:#cbd5e1;font-size:0.84rem;">${p.user_id || '비회원'}</td>
+                    <td><span class="sc-badge ${isManaged ? 'zone-focus' : 'zone-normal'}">${isManaged ? '🔒 관리형 고정석' : '🪑 일반 자유석'}</span></td>
+                    <td><span style="color:${p.is_active ? '#34d399' : '#94a3b8'};font-weight:600;font-size:0.8rem;">${p.is_active ? '✓ 활성' : '만료'}</span></td>
+                  </tr>
+                `;
+              }).join('');
+            }
+          }
+        }
+      } catch (e) {
+        console.error('대시보드 에러:', e);
+      }
+    }
+
+    window.adminRefreshDashboard = loadDashboard;
+
+    // ── 📑 세무·소득신고 매출 정산 탭 제어 ──────────────────────
+    function initTaxReportLogic() {
+      const tabRecent = document.getElementById('btnTabRecent');
+      const tabMonthly = document.getElementById('btnTabMonthly');
+      const tabRange = document.getElementById('btnTabRange');
+
+      const viewRecent = document.getElementById('viewRecentPayments');
+      const viewMonthly = document.getElementById('viewMonthlySales');
+      const viewRange = document.getElementById('viewRangeSales');
+
+      function switchTab(activeTab) {
+        [tabRecent, tabMonthly, tabRange].forEach(t => {
+          t.style.background = 'rgba(255,255,255,0.05)';
+          t.style.color = '#cbd5e1';
+          t.style.borderColor = 'rgba(255,255,255,0.1)';
+        });
+
+        viewRecent.style.display = 'none';
+        viewMonthly.style.display = 'none';
+        viewRange.style.display = 'none';
+
+        if (activeTab === 'recent') {
+          tabRecent.style.background = 'rgba(56,189,248,0.2)';
+          tabRecent.style.color = '#38bdf8';
+          tabRecent.style.borderColor = 'rgba(56,189,248,0.4)';
+          viewRecent.style.display = 'block';
+        } else if (activeTab === 'monthly') {
+          tabMonthly.style.background = 'rgba(16,185,129,0.2)';
+          tabMonthly.style.color = '#34d399';
+          tabMonthly.style.borderColor = 'rgba(16,185,129,0.4)';
+          viewMonthly.style.display = 'block';
+          loadMonthlyTaxData();
+        } else if (activeTab === 'range') {
+          tabRange.style.background = 'rgba(99,102,241,0.2)';
+          tabRange.style.color = '#a5b4fc';
+          tabRange.style.borderColor = 'rgba(99,102,241,0.4)';
+          viewRange.style.display = 'block';
+          loadRangeTaxData();
+        }
+      }
+
+      tabRecent.onclick = () => switchTab('recent');
+      tabMonthly.onclick = () => switchTab('monthly');
+      tabRange.onclick = () => switchTab('range');
+
+      // ── 2. 월별 매출 조회 ──
+      const yearSelect = document.getElementById('selectTaxYear');
+      const btnLoadMonthly = document.getElementById('btnLoadMonthlyTax');
+
+      async function loadMonthlyTaxData() {
+        const year = parseInt(yearSelect.value || new Date().getFullYear());
+        try {
+          const res = await fetchMonthlySales(year);
+          if (res && res.yearly_summary) {
+            const ys = res.yearly_summary;
+            document.getElementById('yearlyTotalAmount').textContent = `₩ ${(ys.total_amount || 0).toLocaleString()}`;
+            document.getElementById('yearlySupplyValue').textContent = `₩ ${(ys.supply_value || 0).toLocaleString()}`;
+            document.getElementById('yearlyVatValue').textContent = `₩ ${(ys.vat || 0).toLocaleString()}`;
+            document.getElementById('yearlyTotalCount').textContent = `${(ys.count || 0).toLocaleString()}건`;
+          }
+
+          const mBody = document.getElementById('monthlyTaxTableBody');
+          if (mBody && res.months) {
+            mBody.innerHTML = res.months.map(m => {
+              const hasSales = m.count > 0;
+              return `
+                <tr style="${hasSales ? 'background:rgba(255,255,255,0.02);' : ''}">
+                  <td style="font-weight:700;color:${hasSales ? '#fff' : '#64748b'};">${m.year_month} (${m.month}월)</td>
+                  <td style="color:${hasSales ? '#fff' : '#64748b'};">${m.count}건</td>
+                  <td style="font-weight:800;color:${hasSales ? '#10b981' : '#64748b'};">₩ ${(m.total_amount || 0).toLocaleString()}</td>
+                  <td style="color:${hasSales ? '#38bdf8' : '#64748b'};">₩ ${(m.supply_value || 0).toLocaleString()}</td>
+                  <td style="color:${hasSales ? '#fcd34d' : '#64748b'};">₩ ${(m.vat || 0).toLocaleString()}</td>
+                  <td style="color:${hasSales ? '#a5b4fc' : '#64748b'};">₩ ${(m.managed_amount || 0).toLocaleString()}</td>
+                  <td style="color:${hasSales ? '#cbd5e1' : '#64748b'};">₩ ${(m.general_amount || 0).toLocaleString()}</td>
+                </tr>
+              `;
+            }).join('');
+          }
+        } catch (err) {
+          alert('월별 매출 조회 중 오류가 발생했습니다: ' + err.message);
+        }
+      }
+
+      if (btnLoadMonthly) btnLoadMonthly.onclick = loadMonthlyTaxData;
+      if (yearSelect) yearSelect.onchange = loadMonthlyTaxData;
+
+      // ── 3. 기간 지정 정산 및 CSV 다운로드 ──
+      const inputStart = document.getElementById('inputStartDate');
+      const inputEnd = document.getElementById('inputEndDate');
+      const btnFetchRange = document.getElementById('btnFetchRange');
+      const btnExportCsv = document.getElementById('btnExportCsv');
+
+      // 날짜 기본값 세팅: 이번 달 1일 ~ 오늘
+      const today = new Date();
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+      const toIsoDate = (d) => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      };
+      if (inputStart && !inputStart.value) inputStart.value = toIsoDate(firstDay);
+      if (inputEnd && !inputEnd.value) inputEnd.value = toIsoDate(today);
+
+      async function loadRangeTaxData() {
+        const start = inputStart.value;
+        const end = inputEnd.value;
+        if (!start || !end) return alert('시작일과 종료일을 지정해주세요.');
+
+        try {
+          const res = await fetchRangeSales(start, end);
+          if (res && res.summary) {
+            const s = res.summary;
+            document.getElementById('rangeTotalAmount').textContent = `₩ ${(s.total_amount || 0).toLocaleString()}`;
+            document.getElementById('rangeSupplyValue').textContent = `₩ ${(s.supply_value || 0).toLocaleString()}`;
+            document.getElementById('rangeVatValue').textContent = `₩ ${(s.vat || 0).toLocaleString()}`;
+            document.getElementById('rangeTotalCount').textContent = `${(s.count || 0).toLocaleString()}건`;
+          }
+
+          const rBody = document.getElementById('rangeTaxTableBody');
+          if (rBody && res.payments) {
+            if (res.payments.length === 0) {
+              rBody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:1.5rem;">선택하신 기간 내 결제 내역이 없습니다.</td></tr>';
+            } else {
+              rBody.innerHTML = res.payments.map(p => {
+                const dt = p.created_at 
+                  ? new Date(p.created_at).toLocaleString('ko-KR', { year:'numeric', month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }) 
+                  : '-';
+                return `
+                  <tr>
+                    <td style="color:#94a3b8;font-size:0.82rem;">${dt}</td>
+                    <td style="color:#64748b;font-size:0.75rem;font-family:monospace;">${p.id ? p.id.substring(0,8)+'...' : '-'}</td>
+                    <td style="font-weight:700;color:#fff;">${p.ticket_type || '이용권'}</td>
+                    <td style="font-weight:800;color:#10b981;">₩ ${(p.amount || 0).toLocaleString()}</td>
+                    <td style="color:#38bdf8;font-size:0.84rem;">₩ ${(p.supply_value || 0).toLocaleString()}</td>
+                    <td style="color:#fcd34d;font-size:0.84rem;">₩ ${(p.vat || 0).toLocaleString()}</td>
+                    <td style="color:#cbd5e1;font-size:0.84rem;">${p.user_id || '비회원'}</td>
+                    <td><span class="sc-badge ${p.is_managed ? 'zone-focus' : 'zone-normal'}">${p.is_managed ? '🔒 관리형' : '🪑 일반'}</span></td>
+                  </tr>
+                `;
+              }).join('');
+            }
+          }
+        } catch (err) {
+          alert('기간별 정산 조회 오류: ' + err.message);
+        }
+      }
+
+      if (btnFetchRange) btnFetchRange.onclick = loadRangeTaxData;
+
+      if (btnExportCsv) {
+        btnExportCsv.onclick = () => {
+          const start = inputStart.value;
+          const end = inputEnd.value;
+          if (!start || !end) return alert('시작일과 종료일을 지정해주세요.');
+          window.location.href = getSalesCsvExportUrl(start, end);
+        };
+      }
+    }
+
+    initTaxReportLogic();
+
+    // 🎯 현장 순찰 일지 팝업
+    window.openPatrolModal = function(seatNum, userName, phone) {
+      let modal = document.getElementById('patrolModal');
+      if (modal) modal.remove();
+
+      modal = document.createElement('div');
+      modal.id = 'patrolModal';
+      modal.className = 'sc-modal-backdrop open';
+      modal.style.display = 'flex';
+      modal.innerHTML = `
+        <div class="sc-modal" style="max-width:420px;">
+          <div class="sc-modal-header">
+            <h3 class="sc-modal-title">📋 현장 순찰 일지 기록</h3>
+            <button class="sc-modal-close" onclick="document.getElementById('patrolModal').remove()">✕</button>
+          </div>
+          <div class="sc-modal-body" style="display:flex;flex-direction:column;gap:1rem;">
+            <div style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);padding:0.75rem;border-radius:10px;font-size:0.85rem;color:#c084fc;">
+              🎯 대상: <strong>${seatNum}석</strong> (${userName} 님) | 학부모 안심포털에 실시간 반영됩니다.
+            </div>
+
+            <div class="sc-form-group">
+              <label class="sc-form-label">순찰 점검 항목</label>
+              <select id="patrolCategory" class="sc-form-input" style="background:#1e293b;color:#fff;">
+                <option value="SLEEP" data-pen="1">😴 졸음 주의 (벌점 +1점)</option>
+                <option value="DISTRACTION" data-pen="1">📱 스마트폰 / 웹서핑 딴짓 (벌점 +1점)</option>
+                <option value="AWAY" data-pen="2">🚶 무단 장기 이탈 (벌점 +2점)</option>
+                <option value="FOCUS" data-pen="0">👍 100% 몰입 학습 우수 (칭찬 0점)</option>
+              </select>
+            </div>
+
+            <div class="sc-form-group">
+              <label class="sc-form-label">현장 지도 메모 (학부모 열람 가능)</label>
+              <input id="patrolNote" type="text" class="sc-form-input" placeholder="예: 가볍게 깨워서 세안 안내함" value="가볍게 주의 환기 및 세안 안내">
+            </div>
+
+            <button id="btnSubmitPatrol" class="sc-modal-submit-btn" style="background:#8b5cf6;font-weight:700;" type="button">
+              📝 순찰 일지 저장 & 학부모 리포트 전송
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      document.getElementById('btnSubmitPatrol').onclick = async () => {
+        const catSelect = document.getElementById('patrolCategory');
+        const category = catSelect.value;
+        const penalty = parseInt(catSelect.options[catSelect.selectedIndex].dataset.pen || 0);
+        const note = document.getElementById('patrolNote').value.trim();
+
+        try {
+          const res = await submitPatrolLog(seatNum, category, penalty, note, '관리실장');
+          alert(res.message);
+          modal.remove();
+          loadDashboard();
+        } catch (err) {
+          alert(err.message);
+        }
+      };
+    };
+
+    window.adminToggleNightExempt = async function(phone, userName) {
+      if (!phone || phone === '-') return alert('회원 연락처 정보가 없습니다.');
+      try {
+        const res = await toggleNightExempt(phone);
+        alert(res.message);
+        loadDashboard();
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+
+    window.adminForceLeave = async function(seatNum) {
+      if (!confirm(`[점주 권한] 좌석 ${seatNum}을 강제 퇴실 처리하시겠습니까?`)) return;
+      try {
+        await leaveSeat(seatNum);
+        alert(`좌석 ${seatNum} 강제 퇴실 완료`);
+        loadDashboard();
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+
+    document.getElementById('btnManualDoor').addEventListener('click', async () => {
+      try {
+        const res = await triggerDoor(1);
+        alert(`출입문이 5초간 수동 개방되었습니다.`);
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    document.getElementById('btnEmergencyOpen').addEventListener('click', async () => {
+      if (!confirm('🚨 [긴급] 화재 비상 전면 개방을 발령하시겠습니까?\n\n소방법 규정에 따라 모든 출입문이 영구 상시 개방 모드로 전환됩니다.')) return;
+      try {
+        const res = await emergencyOpenDoor('점주 수동 비상 발령');
+        alert(res.message);
+        loadDashboard();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    document.getElementById('btnResetEmergencyBanner').addEventListener('click', async () => {
+      if (!confirm('✅ 비상 개방을 해제하고 정상 출입 제어(자동 잠금) 모드로 복구하시겠습니까?')) return;
+      try {
+        const res = await emergencyResetDoor();
+        alert(res.message);
+        loadDashboard();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    document.getElementById('btnCleanupExpired').addEventListener('click', async () => {
+      try {
+        const res = await cleanupExpiredSeats();
+        alert(`외출 60분 초과 ${res.cleaned_seats_count}개 좌석이 자동 퇴실 정리되었습니다.`);
+        loadDashboard();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    document.getElementById('btnCleanupLogs').addEventListener('click', async () => {
+      if (!confirm('🧹 [개인정보보호법 준수] 90일이 지난 과거 순찰 일지 및 벌점 기록을 영구 파기하시겠습니까?')) return;
+      try {
+        const res = await cleanupOldPatrolLogs(90);
+        alert(res.message);
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    document.getElementById('btnRefresh').addEventListener('click', loadDashboard);
+
+    // ── 🏢 지점 선택기 및 신규 지점 등록 로직 ──────────────────────
+    async function initBranchSelector() {
+      const selector = document.getElementById('branchSelector');
+      if (!selector) return;
+      try {
+        const res = await fetchBranches();
+        if (res.branches && res.branches.length > 0) {
+          selector.innerHTML = res.branches.map(b => 
+            `<option value="${b.branch_id}" ${b.branch_id === CURRENT_BRANCH ? 'selected' : ''}>
+              ${b.name} (${b.total_seats}석)
+            </option>`
+          ).join('');
+        }
+        selector.onchange = (e) => {
+          setCurrentBranch(e.target.value);
+          loadDashboard();
+        };
+      } catch (err) {
+        console.warn('지점 목록 로드 알림:', err);
+      }
+    }
+
+    document.getElementById('btnOpenNewBranchModal')?.addEventListener('click', () => {
+      document.getElementById('newBranchModal')?.classList.add('open');
+    });
+
+    document.getElementById('btnSubmitNewBranch')?.addEventListener('click', async () => {
+      const branchId = document.getElementById('nbBranchId')?.value.trim();
+      const name = document.getElementById('nbName')?.value.trim();
+      const totalSeats = parseInt(document.getElementById('nbTotalSeats')?.value || '20', 10);
+      const phone = document.getElementById('nbPhone')?.value.trim();
+      const address = document.getElementById('nbAddress')?.value.trim();
+
+      if (!branchId || !name) {
+        alert('매장 코드와 매장명을 입력해 주세요.');
+        return;
+      }
+
+      try {
+        const btn = document.getElementById('btnSubmitNewBranch');
+        btn.disabled = true;
+        btn.textContent = '등록 처리 중...';
+
+        const res = await createBranch({
+          branch_id: branchId,
+          name,
+          total_seats: totalSeats,
+          contact_phone: phone,
+          address
+        });
+
+        alert(res.message);
+        document.getElementById('newBranchModal')?.classList.remove('open');
+        setCurrentBranch(branchId);
+        await initBranchSelector();
+        await loadDashboard();
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        const btn = document.getElementById('btnSubmitNewBranch');
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '🚀 신규 매장 등록 완료';
+        }
+      }
+    });
+
+    // 초기 실행
+    initBranchSelector().then(() => {
+      loadDashboard();
+    });
+    setInterval(loadDashboard, 15000);
+  </script>
+</body>
+</html>

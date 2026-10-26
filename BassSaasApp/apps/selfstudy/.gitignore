@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+**/node_modules/
+.venv/
+**/.venv/
+venv/
+**/venv/
+
+# Build outputs
+dist/
+**/dist/
+build/
+**/build/
+
+# Executables & Binaries
+cloudflared.exe
+*.exe
+
+# Database & Environment
+*.db
+*.sqlite3
+.env
+.env.*
+!.env.template
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+
+# Python cache
+__pycache__/
+/**/__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+

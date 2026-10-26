@@ -1,0 +1,12 @@
+{
+  "venvPath": "D:\\Workstation\\MQnet\\YTDownloader\\backend",
+  "venv": ".venv",
+  "executionEnvironments": [
+    {
+      "root": "D:\\Workstation\\MQnet\\YTDownloader",
+      "extraPaths": [
+        "D:\\Workstation\\MQnet\\YTDownloader\\backend\\.venv\\Lib\\site-packages"
+      ]
+    }
+  ]
+}

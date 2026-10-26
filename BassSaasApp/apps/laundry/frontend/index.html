@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>스마트 24시 무인빨래방 — 실시간 장비 보드 | BassSaasApp</title>
+  <meta name="description" content="세탁기·건조기 실시간 현황, 코스 결제, 자동 완료 전환, 점검 관리를 제공하는 무인빨래방 관제 화면.">
+  <link rel="stylesheet" href="/shared/ui/base.css">
+  <style>
+    header.top { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 26px 0 8px; flex-wrap: wrap; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin: 18px 0 26px; }
+    .stat b { display: block; font: 800 28px var(--font-display); }
+    .stat span { color: var(--muted); font-size: 13px; }
+    .section-title { display: flex; align-items: baseline; gap: 10px; margin: 26px 0 12px; }
+    .machine { position: relative; overflow: hidden; display: grid; gap: 12px; }
+    .machine__head { display: flex; justify-content: space-between; align-items: center; }
+    .machine__no { font: 800 22px var(--font-display); }
+    .drum { width: 92px; height: 92px; border-radius: 50%; margin: 4px auto; position: relative;
+      border: 6px solid hsl(230 30% 34%); background: radial-gradient(circle at 35% 35%, hsl(200 60% 40% / .5), hsl(230 40% 10%)); }
+    .drum::after { content: ""; position: absolute; inset: 14px; border-radius: 50%; border: 3px dashed hsl(196 95% 70% / .5); }
+    .machine.is-running .drum { border-color: var(--primary-2); box-shadow: 0 0 30px -4px var(--primary-2); }
+    .machine.is-running .drum::after { animation: spin 1.2s linear infinite; }
+    .machine.is-done .drum { border-color: var(--ok); box-shadow: 0 0 26px -6px var(--ok); }
+    .machine.is-broken { opacity: .78; }
+    .machine.is-broken .drum { border-color: var(--err); filter: grayscale(.6); }
+    .progress { height: 6px; border-radius: 99px; background: hsl(230 30% 25%); overflow: hidden; }
+    .progress > i { display: block; height: 100%; background: linear-gradient(90deg, var(--primary), var(--primary-2)); transition: width .6s var(--ease); }
+    .machine__info { min-height: 42px; font-size: 13.5px; color: var(--muted); text-align: center; }
+    .machine__info strong { color: var(--text); font-size: 15px; }
+    .admin-tools { display: none; }
+    body.is-admin .admin-tools { display: flex; }
+    dialog { border: 0; padding: 0; background: transparent; color: var(--text); width: min(440px, 92vw); }
+    dialog::backdrop { background: hsl(232 50% 3% / .7); backdrop-filter: blur(4px); }
+    .courses { display: grid; gap: 8px; margin: 12px 0; }
+    .course { display: flex; justify-content: space-between; padding: 12px 14px; border-radius: 12px; cursor: pointer;
+      border: 1px solid var(--border-strong); background: hsl(232 30% 14% / .7); transition: border-color .2s, background .2s; }
+    .course:has(input:checked) { border-color: var(--primary); background: hsl(258 90% 30% / .35); }
+    .course input { display: none; }
+    .payments li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+<main class="bass-container">
+  <header class="top">
+    <div>
+      <a href="/" class="bass-muted" id="back-portal">← 포털</a>
+      <h1>🧺 <span class="bass-gradient-text">스마트 24시 무인빨래방</span></h1>
+      <p class="bass-muted" style="margin:0">장비를 눌러 코스를 선택하고 결제하세요. 완료 시간이 지나면 자동으로 <b>완료</b>로 바뀝니다.</p>
+    </div>
+    <div class="bass-row">
+      <span class="bass-badge bass-badge--info bass-badge--pulse" id="live-badge">실시간 갱신</span>
+      <a class="bass-btn bass-btn--ghost" href="manual.html" id="open-manual">📘 운영 매뉴얼</a>
+      <button class="bass-btn" id="refresh-btn">🔄 새로고침</button>
+    </div>
+  </header>
+
+  <div id="app-alert"></div>
+
+  <section class="stats" aria-label="오늘 현황">
+    <div class="bass-card stat"><b id="stat-idle">-</b><span>사용 가능</span></div>
+    <div class="bass-card stat"><b id="stat-running">-</b><span>가동 중</span></div>
+    <div class="bass-card stat"><b id="stat-done">-</b><span>수거 대기</span></div>
+    <div class="bass-card stat"><b id="stat-sales">-</b><span>오늘 매출</span></div>
+  </section>
+
+  <h2 class="section-title">세탁기 <small class="bass-muted">Washer</small></h2>
+  <div class="bass-grid" id="washer-grid"><div class="bass-skeleton"></div><div class="bass-skeleton"></div><div class="bass-skeleton"></div></div>
+
+  <h2 class="section-title">건조기 <small class="bass-muted">Dryer</small></h2>
+  <div class="bass-grid" id="dryer-grid"><div class="bass-skeleton"></div></div>
+
+  <h2 class="section-title">최근 결제</h2>
+  <section class="bass-card"><ul class="payments" id="payment-list" style="list-style:none;margin:0;padding:0"></ul></section>
+  <p class="bass-muted" style="text-align:center;margin:40px 0">BassSaasApp · laundry v1.0.0</p>
+</main>
+
+<dialog id="start-dialog">
+  <form method="dialog" class="bass-card" id="start-form">
+    <h3 id="start-title">코스 선택</h3>
+    <div class="courses" id="course-list"></div>
+    <label class="bass-label" for="paid-input">투입 금액 (원)</label>
+    <input class="bass-input" id="paid-input" type="number" min="0" step="500" required>
+    <label class="bass-label" for="phone-input" style="margin-top:10px">완료 알림 받을 휴대폰 (선택)</label>
+    <input class="bass-input" id="phone-input" type="tel" placeholder="010-0000-0000">
+    <div class="bass-row" style="justify-content:flex-end;margin-top:16px">
+      <button class="bass-btn bass-btn--ghost" value="cancel" id="start-cancel" formnovalidate>취소</button>
+      <button class="bass-btn bass-btn--primary" id="start-submit" value="default">결제하고 시작</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="/shared/ui/bass.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+**/node_modules/
+.venv/
+**/.venv/
+venv/
+**/venv/
+
+# Build outputs
+dist/
+**/dist/
+build/
+**/build/
+
+# Database & Environment
+*.db
+*.sqlite3
+.env
+.env.*
+!.env.template
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log

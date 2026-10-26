@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+
+# Local data
+downloads/
+*.mp4
+*.m4a
+*.webm
+*.part
+
+# Windows specific
+run.bat
+.run.bat.metadata.json
+
+# Logs and temp
+*.log
+.tmp/
+
+# OS specific
+.DS_Store
+Thumbs.db

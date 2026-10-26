@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MQnet Photos & Media 스마트 갤러리 운영 매뉴얼</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --card-bg: rgba(30, 41, 59, 0.65);
+      --card-border: rgba(99, 102, 241, 0.2);
+      --accent-indigo: #818cf8;
+      --accent-purple: #c084fc;
+      --accent-cyan: #38bdf8;
+      --accent-rose: #f43f5e;
+      --accent-green: #34d399;
+    }
+    body {
+      background: var(--bg-dark);
+      color: #e2e8f0;
+      font-family: 'Pretendard', sans-serif;
+      line-height: 1.65;
+      margin: 0;
+      padding: 1.5rem;
+    }
+    .manual-container {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .manual-header {
+      background: linear-gradient(135deg, rgba(129, 140, 248, 0.18), rgba(192, 132, 252, 0.08));
+      border: 1px solid rgba(129, 140, 248, 0.35);
+      border-radius: 16px;
+      padding: 1.75rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .manual-title {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .manual-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent-indigo);
+      background: rgba(129, 140, 248, 0.15);
+      padding: 0.25rem 0.7rem;
+      border-radius: 6px;
+      border: 1px solid rgba(129, 140, 248, 0.3);
+    }
+    .btn-header {
+      padding: 0.55rem 1.1rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-header.primary {
+      background: var(--accent-indigo);
+      color: #090d16;
+      border: none;
+    }
+    .btn-header.secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .toc-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.25rem 1.5rem;
+    }
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 0.5rem 1.5rem;
+      margin-top: 0.75rem;
+    }
+    .toc-link {
+      color: #c7d2fe;
+      text-decoration: none;
+      font-size: 0.88rem;
+      transition: color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .toc-link:hover { color: #fff; }
+    .section-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.75rem 2rem;
+    }
+    h2 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 0 0 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 0.75rem;
+    }
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--accent-indigo);
+      margin: 1.25rem 0 0.5rem;
+    }
+    p { margin: 0 0 0.75rem; font-size: 0.92rem; color: #cbd5e1; }
+    ul, ol { margin: 0 0 1rem; padding-left: 1.4rem; font-size: 0.92rem; color: #cbd5e1; }
+    li { margin-bottom: 0.35rem; }
+    .callout {
+      border-radius: 10px;
+      padding: 0.9rem 1.2rem;
+      margin: 1rem 0;
+      font-size: 0.88rem;
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+    }
+    .callout.info {
+      background: rgba(129, 140, 248, 0.08);
+      border: 1px solid rgba(129, 140, 248, 0.25);
+      color: #c7d2fe;
+    }
+    .callout.warning {
+      background: rgba(251, 191, 36, 0.08);
+      border: 1px solid rgba(251, 191, 36, 0.25);
+      color: #fde68a;
+    }
+    .step-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .step-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 1rem;
+    }
+    .step-num {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      line-height: 24px;
+      text-align: center;
+      background: var(--accent-indigo);
+      color: #090d16;
+      font-weight: 800;
+      font-size: 0.8rem;
+      border-radius: 50%;
+      margin-bottom: 0.5rem;
+    }
+    .step-box h4 { margin: 0 0 0.3rem; font-size: 0.95rem; color: #fff; }
+    .step-box p { margin: 0; font-size: 0.82rem; color: #94a3b8; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.86rem;
+    }
+    th, td {
+      border: 1px solid var(--card-border);
+      padding: 0.65rem 0.9rem;
+      text-align: left;
+    }
+    th { background: rgba(129, 140, 248, 0.1); color: #fff; font-weight: 600; }
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.82rem;
+      color: var(--accent-indigo);
+    }
+    @media print {
+      body { background: #fff !important; color: #000 !important; }
+      .manual-container { max-width: 100% !important; gap: 1rem; }
+      .manual-header, .section-card, .toc-card { border: 1px solid #ccc !important; background: #fff !important; box-shadow: none !important; }
+      .btn-header, .no-print { display: none !important; }
+      h2, h3, .manual-title { color: #000 !important; }
+      p, li, td, th { color: #222 !important; }
+      .callout { border: 1px solid #999 !important; background: #f9f9f9 !important; color: #111 !important; }
+      a { color: #000 !important; text-decoration: underline; }
+    }
+  </style>
+</head>
+<body>
+  <div class="manual-container">
+    <!-- Header -->
+    <header class="manual-header">
+      <div>
+        <div class="manual-badge">MQnet Media & AI Gallery Edition v7.0</div>
+        <h1 class="manual-title">📸 Photos & Media 스마트 갤러리 운영 매뉴얼</h1>
+        <p style="margin: 0; color: #c7d2fe; font-size: 0.88rem;">
+          미디어 파일 탐색, 스트리밍, Immich AI 안면 클러스터링, 중복 감지 및 로컬 드라이브 동기화 가이드
+        </p>
+      </div>
+      <div style="display: flex; gap: 0.6rem;" class="no-print">
+        <button class="btn-header primary" onclick="window.print()">🖨️ 매뉴얼 인쇄 / PDF 저장</button>
+        <a href="/photos" class="btn-header secondary">← 미디어 갤러리 복귀</a>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="toc-card no-print">
+      <div style="font-size: 0.85rem; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 0.05em;">목차 바로가기</div>
+      <div class="toc-grid">
+        <a href="#sec1" class="toc-link">📌 1. 미디어 스토리지 구조 및 아키텍처</a>
+        <a href="#sec2" class="toc-link">📁 2. 파일 탐색, 업로드 및 ZIP 다운로드</a>
+        <a href="#sec3" class="toc-link">🎬 3. 고해상도 이미지 뷰어 & 동영상 스트리밍</a>
+        <a href="#sec4" class="toc-link">🤖 4. Immich AI 얼굴 인식 & 시맨틱 검색</a>
+        <a href="#sec5" class="toc-link">🧹 5. 스마트 중복 사진 감지 및 저장공간 최적화</a>
+        <a href="#sec6" class="toc-link">💾 6. 스토리지 쿼터 및 사용자 권한 관리</a>
+        <a href="#sec7" class="toc-link">❓ 7. 미디어 썸네일 캐시 및 문제 해결 (FAQ)</a>
+      </div>
+    </nav>
+
+    <!-- Sec 1 -->
+    <section id="sec1" class="section-card">
+      <h2>📌 1. 미디어 스토리지 구조 및 아키텍처</h2>
+      <p>
+        <strong>MQnet Photos</strong>는 로컬 고용량 드라이브(<code>L:</code> 드라이브 또는 지정 볼륨)에 저장된 수십만 장의 
+        사진, 영상, 문서를 경량화된 고속 썸네일 캐시와 함께 즉각 브라우징할 수 있는 스마트 미디어 허브입니다.
+      </p>
+      <div class="callout info">
+        <span>💡</span>
+        <div>
+          <strong>하이브리드 엔진 통합:</strong>
+          자체 경량 웹 갤러리와 대용량 파일 관리자(FileBrowser), AI 심층 분석기(Immich/Photoview)를 
+          단일 통합 인터페이스에서 유기적으로 전환할 수 있습니다.
+        </div>
+      </div>
+    </section>
+
+    <!-- Sec 2 -->
+    <section id="sec2" class="section-card">
+      <h2>📁 2. 파일 탐색, 업로드 및 ZIP 다운로드</h2>
+      <div class="step-grid">
+        <div class="step-box">
+          <div class="step-num">1</div>
+          <h4>폴더 브라우징</h4>
+          <p>트리 뷰 및 경로 바를 통해 즉시 깊은 디렉토리로 이동할 수 있습니다.</p>
+        </div>
+        <div class="step-box">
+          <div class="step-num">2</div>
+          <h4>드래그 앤 드롭 업로드</h4>
+          <p>탐색기에서 파일/폴더를 브라우저 화면 위로 드래그하여 즉각 업로드합니다.</p>
+        </div>
+        <div class="step-box">
+          <div class="step-num">3</div>
+          <h4>다중 선택 & 이동</h4>
+          <p>[선택] 모드로 여러 파일을 체크하여 대상 폴더로 일괄 이동합니다.</p>
+        </div>
+        <div class="step-box">
+          <div class="step-num">4</div>
+          <h4>원클릭 ZIP 다운</h4>
+          <p>현재 폴더 전체 또는 선택한 항목을 서버에서 무손실 ZIP 압축하여 다운로드합니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sec 3 -->
+    <section id="sec3" class="section-card">
+      <h2>🎬 3. 고해상도 이미지 뷰어 & 동영상 스트리밍</h2>
+      <p>
+        미디어 클릭 시 라이트박스 뷰어가 실행되어 원본 해상도 확대/축소, 회전, EXIF 메타데이터 조회가 가능합니다.
+      </p>
+      <ul>
+        <li><strong>동영상 스트리밍:</strong> MP4, MKV, MOV 등 대용량 비디오에 대해 HTTP Range 기반 고속 탐색 지원.</li>
+        <li><strong>문서 미리보기:</strong> PDF 파일 및 텍스트/마크다운 문서를 다운로드 없이 브라우저 내에서 즉각 열람.</li>
+      </ul>
+    </section>
+
+    <!-- Sec 4 -->
+    <section id="sec4" class="section-card">
+      <h2>🤖 4. Immich AI 얼굴 인식 & 시맨틱 검색</h2>
+      <p>
+        Immich AI 엔진과의 백그라운드 연동을 통해 인물별, 사물별, 장소별 자동 태깅을 지원합니다.
+      </p>
+      <ul>
+        <li><strong>인물 클러스터링:</strong> 동일 인물의 얼굴을 클러스터링하여 인물별 앨범 자동 생성.</li>
+        <li><strong>CLIP 자연어 검색:</strong> '해변 일몰', '강아지와 산책' 등 텍스트 키워드로 관련 사진 검색.</li>
+      </ul>
+    </section>
+
+    <!-- Sec 5 -->
+    <section id="sec5" class="section-card">
+      <h2>🧹 5. 스마트 중복 사진 감지 및 저장공간 최적화</h2>
+      <p>
+        중복 정리 도구는 Perceptual Hashing(pHash) 알고리즘을 사용하여 촬영 각도나 리사이즈가 다른 
+        유사 사진까지 정확히 찾아냅니다.
+      </p>
+      <div class="callout warning">
+        <span>⚠️</span>
+        <div>
+          <strong>안전 삭제 보호:</strong>
+          중복된 파일 중 가장 해상도가 높고 원본 EXIF 메타데이터가 보존된 파일을 자동 추천하며, 
+          삭제 시에도 휴지통(Trash) 디렉토리로 안전 이동됩니다.
+        </div>
+      </div>
+    </section>
+
+    <!-- Sec 6 -->
+    <section id="sec6" class="section-card">
+      <h2>💾 6. 스토리지 쿼터 및 사용자 권한 관리</h2>
+      <p>
+        상단 게이지 위젯을 통해 L: 드라이브 총 용량 및 사용자별 할당 쿼터 현황을 실시간 확인할 수 있습니다.
+      </p>
+      <ul>
+        <li><strong>일반 사용자:</strong> 본인 할당 디렉토리에 대해서만 읽기/쓰기 권한 부여.</li>
+        <li><strong>시스템 관리자:</strong> 전체 L: 드라이브 루트 탐색 및 사용자별 쿼터 제한 설정 가능.</li>
+      </ul>
+    </section>
+
+    <!-- Sec 7 -->
+    <section id="sec7" class="section-card">
+      <h2>❓ 7. 미디어 썸네일 캐시 및 문제 해결 (FAQ)</h2>
+      <h3>Q1. 새로 업로드한 사진의 썸네일이 회색으로 나옵니다.</h3>
+      <p>대용량 이미지 백그라운드 썸네일 생성 작업이 진행 중일 수 있습니다. 몇 초 후 새로고침(F5)을 눌러주십시오.</p>
+
+      <h3>Q2. 검색창 단축키가 있나요?</h3>
+      <p><code>Ctrl + K</code> 또는 <code>Cmd + K</code>를 누르면 즉시 검색창으로 포커스 이동합니다.</p>
+    </section>
+  </div>
+</body>
+</html>

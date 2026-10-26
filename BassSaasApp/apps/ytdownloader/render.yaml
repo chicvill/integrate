@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: ytdownloader-v2
+    env: docker
+    plan: free # or starter
+    region: singapore # or your preferred region
+    healthCheckPath: /
+    envVars:
+      - key: PORT
+        value: 5000

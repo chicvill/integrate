@@ -1,0 +1,12 @@
+{
+  "venvPath": "C:\\Users\\USER\\Desktop\\Workstation\\SelfStudy\\backend",
+  "venv": ".venv",
+  "executionEnvironments": [
+    {
+      "root": "C:\\Users\\USER\\Desktop\\Workstation\\SelfStudy\\backend",
+      "extraPaths": [
+        "C:\\Users\\USER\\Desktop\\Workstation\\SelfStudy\\backend\\.venv\\Lib\\site-packages"
+      ]
+    }
+  ]
+}

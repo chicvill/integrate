@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BassSaasApp 통합 플랫폼 공식 운영 매뉴얼</title>
+  <meta name="description" content="50~100개 마이크로 SaaS 앱을 하나의 게이트웨이로 통합 운영하는 BassSaasApp 객체 지향 플랫폼 가이드.">
+  <link rel="stylesheet" href="/shared/ui/base.css">
+  <link rel="stylesheet" href="/shared/ui/manual.css">
+</head>
+<body>
+<main class="manual">
+  <header class="manual-header">
+    <a href="/" class="bass-btn bass-btn--ghost no-print" id="back-portal">← 포털로 돌아가기</a>
+    <button class="bass-btn bass-btn--primary" id="print-manual" onclick="window.print()">🖨️ 매뉴얼 인쇄 / PDF 저장</button>
+  </header>
+
+  <h1>🏢 <span class="bass-gradient-text">BassSaasApp 통합 플랫폼</span> 운영 매뉴얼</h1>
+  <p class="bass-muted">플랫폼 아키텍처: 객체 지향 마이크로 SaaS (App-as-an-Object) · 버전 1.0.0</p>
+
+  <h2>1. 플랫폼 아키텍처 원리 (Two-Tier Object Model)</h2>
+  <div class="callout">
+    BassSaasApp은 17개에서 50~100개 앱으로 확장 시 발생하는 게이트웨이 모놀리스 병목을 해결하기 위해 개발되었습니다.
+  </div>
+  <ul>
+    <li><b>계층 1: 시스템 레벨 객체화 (<code>BaseSaaSApp</code>)</b><br>
+      각 앱은 <code>app.py</code>에 정의된 파이썬 클래스 인스턴스 1개로 존재합니다. 게이트웨이는 <code>apps/</code> 디렉터리를 스캔하여 라우터 마운트, 정적 파일 서빙, 헬스체크 및 서브도메인을 100% 자동 연결합니다. 게이트웨이 코드는 단 한 줄도 수정하지 않습니다.
+    </li>
+    <li><b>계층 2: 도메인 레벨 객체화 (<code>Kernel Obj</code>)</b><br>
+      모든 앱의 비즈니스 엔티티는 스스로 저장(<code>save()</code>), 조회(<code>get()</code>, <code>find()</code>), 로깅(<code>log()</code>)을 수행하는 스키마리스 WAL 저장소를 공유합니다. 필드가 새로 추가되어도 DB 마이그레이션이 필요 없습니다.
+    </li>
+  </ul>
+
+  <h2>2. 새 앱 추가 절차 (Zero-Touch)</h2>
+  <ol>
+    <li>터미널에서 스캐폴더 명령어 1회 실행:
+      <pre>py -3.14 scripts/create_app.py --id myapp --name "내 신규 서비스" --icon ⚡ --category business</pre>
+    </li>
+    <li><code>apps/myapp/backend/domain.py</code>에 도메인 객체 및 행동 메서드 작성.</li>
+    <li>서버를 재시작하면 게이트웨이가 새 앱을 즉시 감지하여 포털에 자동 등록합니다.</li>
+  </ol>
+
+  <h2>3. 결함 격리 (Fault Isolation & Sandbox)</h2>
+  <p>100개 앱 중 특정 앱의 코드에 문법 오류나 런타임 예외가 발생하더라도, 게이트웨이는 해당 앱만 <b>일시 격리(ISOLATED)</b> 상태로 전환하고 503 에러 안내 페이지를 서빙합니다. 나머지 99개 앱은 아무런 지장 없이 100% 정상 가동됩니다.</p>
+
+  <h2>4. 표준 에러 및 알림 배너 체계</h2>
+  <table>
+    <tr><th>배너 색상</th><th>도메인 레벨</th><th>HTTP 코드</th><th>의미 및 용도</th></tr>
+    <tr><td>✅ 녹색</td><td><code>success</code></td><td>200</td><td>정상 처리 완료 (결제 성공, 입실 완료 등)</td></tr>
+    <tr><td>⚠️ 황색</td><td><code>warning</code></td><td>400 / 409</td><td>중복 실행 방지, 이미 처리된 상태 안내</td></tr>
+    <tr><td>⚖️ 주황색</td><td><code>diff</code></td><td>422</td><td>입력값과 청구 금액의 차액 발생 안내</td></tr>
+    <tr><td>❌ 적색</td><td><code>error</code></td><td>404 / 500</td><td>엔티티 부재, 권한 부족, 시스템/격리 오류</td></tr>
+  </table>
+
+  <h2>5. 관리자 계정 및 권한</h2>
+  <ul>
+    <li><b>본사 총괄 최고관리자</b>: 아이디 <code>admin</code> / 비밀번호 <code>1212</code> (<code>superadmin</code>)</li>
+    <li>모든 데이터 생성/수정/삭제 행위는 <code>actor</code>와 함께 중앙 변경 이력(Timeline)에 자동 영구 보존됩니다.</li>
+  </ul>
+</main>
+</body>
+</html>

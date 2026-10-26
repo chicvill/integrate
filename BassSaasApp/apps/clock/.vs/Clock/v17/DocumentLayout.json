@@ -1,0 +1,199 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\user\\Desktop\\video\\game\\Clock\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{B44C7ACD-83FE-451B-0A9D-FD9FDC3147A4}|Assembly-CSharp.csproj|c:\\users\\user\\desktop\\video\\game\\clock\\assets\\clock\\scripts\\animatedexitbutton.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B44C7ACD-83FE-451B-0A9D-FD9FDC3147A4}|Assembly-CSharp.csproj|solutionrelative:assets\\clock\\scripts\\animatedexitbutton.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B44C7ACD-83FE-451B-0A9D-FD9FDC3147A4}|Assembly-CSharp.csproj|C:\\Users\\user\\Desktop\\video\\game\\Clock\\assets\\clock\\scripts\\clock\\clockmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B44C7ACD-83FE-451B-0A9D-FD9FDC3147A4}|Assembly-CSharp.csproj|solutionrelative:assets\\clock\\scripts\\clock\\clockmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B44C7ACD-83FE-451B-0A9D-FD9FDC3147A4}|Assembly-CSharp.csproj|c:\\users\\user\\desktop\\video\\game\\clock\\assets\\clock\\scripts\\clockgenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B44C7ACD-83FE-451B-0A9D-FD9FDC3147A4}|Assembly-CSharp.csproj|solutionrelative:assets\\clock\\scripts\\clockgenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B44C7ACD-83FE-451B-0A9D-FD9FDC3147A4}|Assembly-CSharp.csproj|C:\\Users\\user\\Desktop\\video\\game\\Clock\\assets\\clock\\scripts\\time\\timeview.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B44C7ACD-83FE-451B-0A9D-FD9FDC3147A4}|Assembly-CSharp.csproj|solutionrelative:assets\\clock\\scripts\\time\\timeview.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B44C7ACD-83FE-451B-0A9D-FD9FDC3147A4}|Assembly-CSharp.csproj|C:\\Users\\user\\Desktop\\video\\game\\Clock\\assets\\clock\\scripts\\clock\\clockview.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B44C7ACD-83FE-451B-0A9D-FD9FDC3147A4}|Assembly-CSharp.csproj|solutionrelative:assets\\clock\\scripts\\clock\\clockview.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B44C7ACD-83FE-451B-0A9D-FD9FDC3147A4}|Assembly-CSharp.csproj|C:\\Users\\user\\Desktop\\video\\game\\Clock\\assets\\clock\\scripts\\time\\timeviewvaluedata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B44C7ACD-83FE-451B-0A9D-FD9FDC3147A4}|Assembly-CSharp.csproj|solutionrelative:assets\\clock\\scripts\\time\\timeviewvaluedata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B44C7ACD-83FE-451B-0A9D-FD9FDC3147A4}|Assembly-CSharp.csproj|C:\\Users\\user\\Desktop\\video\\game\\Clock\\assets\\clock\\scripts\\time\\timemodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B44C7ACD-83FE-451B-0A9D-FD9FDC3147A4}|Assembly-CSharp.csproj|solutionrelative:assets\\clock\\scripts\\time\\timemodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B44C7ACD-83FE-451B-0A9D-FD9FDC3147A4}|Assembly-CSharp.csproj|C:\\Users\\user\\Desktop\\video\\game\\Clock\\assets\\clock\\scripts\\enums\\timeviewtype.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B44C7ACD-83FE-451B-0A9D-FD9FDC3147A4}|Assembly-CSharp.csproj|solutionrelative:assets\\clock\\scripts\\enums\\timeviewtype.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B44C7ACD-83FE-451B-0A9D-FD9FDC3147A4}|Assembly-CSharp.csproj|C:\\Users\\user\\Desktop\\video\\game\\Clock\\assets\\clock\\scripts\\clockconfigurationso.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B44C7ACD-83FE-451B-0A9D-FD9FDC3147A4}|Assembly-CSharp.csproj|solutionrelative:assets\\clock\\scripts\\clockconfigurationso.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B44C7ACD-83FE-451B-0A9D-FD9FDC3147A4}|Assembly-CSharp.csproj|C:\\Users\\user\\Desktop\\video\\game\\Clock\\assets\\clock\\scripts\\clock\\clockcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B44C7ACD-83FE-451B-0A9D-FD9FDC3147A4}|Assembly-CSharp.csproj|solutionrelative:assets\\clock\\scripts\\clock\\clockcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B44C7ACD-83FE-451B-0A9D-FD9FDC3147A4}|Assembly-CSharp.csproj|C:\\Users\\user\\Desktop\\video\\game\\Clock\\assets\\clock\\scripts\\clocksubcontainerview.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B44C7ACD-83FE-451B-0A9D-FD9FDC3147A4}|Assembly-CSharp.csproj|solutionrelative:assets\\clock\\scripts\\clocksubcontainerview.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "AnimatedExitButton.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Desktop\\video\\game\\Clock\\Assets\\Clock\\Scripts\\AnimatedExitButton.cs",
+              "RelativeDocumentMoniker": "Assets\\Clock\\Scripts\\AnimatedExitButton.cs",
+              "ToolTip": "C:\\Users\\user\\Desktop\\video\\game\\Clock\\Assets\\Clock\\Scripts\\AnimatedExitButton.cs",
+              "RelativeToolTip": "Assets\\Clock\\Scripts\\AnimatedExitButton.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-09T14:31:52.155Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ClockModel.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Desktop\\video\\game\\Clock\\Assets\\Clock\\Scripts\\Clock\\ClockModel.cs",
+              "RelativeDocumentMoniker": "Assets\\Clock\\Scripts\\Clock\\ClockModel.cs",
+              "ToolTip": "C:\\Users\\user\\Desktop\\video\\game\\Clock\\Assets\\Clock\\Scripts\\Clock\\ClockModel.cs",
+              "RelativeToolTip": "Assets\\Clock\\Scripts\\Clock\\ClockModel.cs",
+              "ViewState": "AgIAAAsAAAAAAAAAAAAAwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-09T11:00:25.013Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "ClockController.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Desktop\\video\\game\\Clock\\Assets\\Clock\\Scripts\\Clock\\ClockController.cs",
+              "RelativeDocumentMoniker": "Assets\\Clock\\Scripts\\Clock\\ClockController.cs",
+              "ToolTip": "C:\\Users\\user\\Desktop\\video\\game\\Clock\\Assets\\Clock\\Scripts\\Clock\\ClockController.cs",
+              "RelativeToolTip": "Assets\\Clock\\Scripts\\Clock\\ClockController.cs",
+              "ViewState": "AgIAABYAAAAAAAAAAAAIwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-09T11:00:16.791Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "ClockSubContainerView.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Desktop\\video\\game\\Clock\\Assets\\Clock\\Scripts\\ClockSubContainerView.cs",
+              "RelativeDocumentMoniker": "Assets\\Clock\\Scripts\\ClockSubContainerView.cs",
+              "ToolTip": "C:\\Users\\user\\Desktop\\video\\game\\Clock\\Assets\\Clock\\Scripts\\ClockSubContainerView.cs",
+              "RelativeToolTip": "Assets\\Clock\\Scripts\\ClockSubContainerView.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-09T11:00:09.347Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "ClockGenerator.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Desktop\\video\\game\\Clock\\Assets\\Clock\\Scripts\\ClockGenerator.cs",
+              "RelativeDocumentMoniker": "Assets\\Clock\\Scripts\\ClockGenerator.cs",
+              "ToolTip": "C:\\Users\\user\\Desktop\\video\\game\\Clock\\Assets\\Clock\\Scripts\\ClockGenerator.cs",
+              "RelativeToolTip": "Assets\\Clock\\Scripts\\ClockGenerator.cs",
+              "ViewState": "AgIAACEAAAAAAAAAAAAIwBIAAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-09T10:59:57.628Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "ClockConfigurationSO.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Desktop\\video\\game\\Clock\\Assets\\Clock\\Scripts\\ClockConfigurationSO.cs",
+              "RelativeDocumentMoniker": "Assets\\Clock\\Scripts\\ClockConfigurationSO.cs",
+              "ToolTip": "C:\\Users\\user\\Desktop\\video\\game\\Clock\\Assets\\Clock\\Scripts\\ClockConfigurationSO.cs",
+              "RelativeToolTip": "Assets\\Clock\\Scripts\\ClockConfigurationSO.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-09T10:59:46.11Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "TimeViewType.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Desktop\\video\\game\\Clock\\Assets\\Clock\\Scripts\\Enums\\TimeViewType.cs",
+              "RelativeDocumentMoniker": "Assets\\Clock\\Scripts\\Enums\\TimeViewType.cs",
+              "ToolTip": "C:\\Users\\user\\Desktop\\video\\game\\Clock\\Assets\\Clock\\Scripts\\Enums\\TimeViewType.cs",
+              "RelativeToolTip": "Assets\\Clock\\Scripts\\Enums\\TimeViewType.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-09T10:59:31.352Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "TimeModel.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Desktop\\video\\game\\Clock\\Assets\\Clock\\Scripts\\Time\\TimeModel.cs",
+              "RelativeDocumentMoniker": "Assets\\Clock\\Scripts\\Time\\TimeModel.cs",
+              "ToolTip": "C:\\Users\\user\\Desktop\\video\\game\\Clock\\Assets\\Clock\\Scripts\\Time\\TimeModel.cs",
+              "RelativeToolTip": "Assets\\Clock\\Scripts\\Time\\TimeModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-09T10:59:27.188Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "TimeViewValueData.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Desktop\\video\\game\\Clock\\Assets\\Clock\\Scripts\\Time\\TimeViewValueData.cs",
+              "RelativeDocumentMoniker": "Assets\\Clock\\Scripts\\Time\\TimeViewValueData.cs",
+              "ToolTip": "C:\\Users\\user\\Desktop\\video\\game\\Clock\\Assets\\Clock\\Scripts\\Time\\TimeViewValueData.cs",
+              "RelativeToolTip": "Assets\\Clock\\Scripts\\Time\\TimeViewValueData.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-09T10:59:22.959Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "TimeView.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Desktop\\video\\game\\Clock\\Assets\\Clock\\Scripts\\Time\\TimeView.cs",
+              "RelativeDocumentMoniker": "Assets\\Clock\\Scripts\\Time\\TimeView.cs",
+              "ToolTip": "C:\\Users\\user\\Desktop\\video\\game\\Clock\\Assets\\Clock\\Scripts\\Time\\TimeView.cs",
+              "RelativeToolTip": "Assets\\Clock\\Scripts\\Time\\TimeView.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAuwCEAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-09T10:59:13.744Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "ClockView.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Desktop\\video\\game\\Clock\\Assets\\Clock\\Scripts\\Clock\\ClockView.cs",
+              "RelativeDocumentMoniker": "Assets\\Clock\\Scripts\\Clock\\ClockView.cs",
+              "ToolTip": "C:\\Users\\user\\Desktop\\video\\game\\Clock\\Assets\\Clock\\Scripts\\Clock\\ClockView.cs",
+              "RelativeToolTip": "Assets\\Clock\\Scripts\\Clock\\ClockView.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-09T10:58:59.085Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

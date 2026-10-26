@@ -1,0 +1,45 @@
+name: Auto Deploy StudyCafe & SelfStudy on Xubuntu Server
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy-linux:
+    runs-on: self-hosted
+
+    steps:
+      - name: Pull latest StudyCafe code
+        shell: bash
+        run: |
+          cd ~/studycafe
+          git remote set-url origin https://github.com/chicvill/studycafe.git 2>/dev/null || true
+          git fetch origin main
+          git reset --hard origin/main
+
+      - name: Pull latest SelfStudy code
+        shell: bash
+        run: |
+          cd ~/selfstudy
+          git remote set-url origin https://github.com/chicvill/SelfStudy.git 2>/dev/null || true
+          git fetch origin main
+          git reset --hard origin/main
+
+      - name: Rebuild Docker Stack
+        shell: bash
+        run: |
+          cd ~/studycafe
+          echo "========================================"
+          echo "  Rebuilding Docker Stack..."
+          echo "  StudyCafe: http://localhost:8001"
+          echo "  SelfStudy: http://localhost:8005"
+          echo "========================================"
+          docker compose down
+          docker compose up -d --build
+          echo ""
+          echo "Container Status:"
+          docker compose ps
+          echo ""
+          echo "[SUCCESS] Deploy completed at $(date)"

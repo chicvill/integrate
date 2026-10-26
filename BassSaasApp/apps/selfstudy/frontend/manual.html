@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MQnet SelfStudy 자기주도학습 & AI 멘토링 운영 매뉴얼</title>
+  <link rel="stylesheet" href="./style.css?v=2.7">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0b0f19;
+      --card-bg: rgba(255, 255, 255, 0.03);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-cyan: #38bdf8;
+      --accent-purple: #c084fc;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+    }
+    body {
+      background: var(--bg-dark);
+      color: #e2e8f0;
+      font-family: 'Pretendard', sans-serif;
+      line-height: 1.65;
+      margin: 0;
+      padding: 1.5rem;
+    }
+    .manual-container {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .manual-header {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(192, 132, 252, 0.08));
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 16px;
+      padding: 1.75rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .manual-title {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .manual-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      background: rgba(56, 189, 248, 0.15);
+      padding: 0.25rem 0.7rem;
+      border-radius: 6px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .btn-header {
+      padding: 0.55rem 1.1rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-header.primary {
+      background: var(--accent-cyan);
+      color: #0b0f19;
+      border: none;
+    }
+    .btn-header.secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .toc-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.25rem 1.5rem;
+    }
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 0.5rem 1.5rem;
+      margin-top: 0.75rem;
+    }
+    .toc-link {
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 0.88rem;
+      transition: color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .toc-link:hover { color: var(--accent-cyan); }
+    .section-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.75rem 2rem;
+    }
+    h2 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 0 0 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 0.75rem;
+    }
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #38bdf8;
+      margin: 1.25rem 0 0.5rem;
+    }
+    p { margin: 0 0 0.75rem; font-size: 0.92rem; color: #cbd5e1; }
+    ul, ol { margin: 0 0 1rem; padding-left: 1.4rem; font-size: 0.92rem; color: #cbd5e1; }
+    li { margin-bottom: 0.35rem; }
+    .callout {
+      border-radius: 10px;
+      padding: 0.9rem 1.2rem;
+      margin: 1rem 0;
+      font-size: 0.88rem;
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+    }
+    .callout.info {
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      color: #bae6fd;
+    }
+    .callout.warning {
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      color: #fde68a;
+    }
+    .callout.success {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      color: #a7f3d0;
+    }
+    .step-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .step-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 1rem;
+    }
+    .step-num {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      line-height: 24px;
+      text-align: center;
+      background: var(--accent-cyan);
+      color: #0b0f19;
+      font-weight: 800;
+      font-size: 0.8rem;
+      border-radius: 50%;
+      margin-bottom: 0.5rem;
+    }
+    .step-box h4 { margin: 0 0 0.3rem; font-size: 0.95rem; color: #fff; }
+    .step-box p { margin: 0; font-size: 0.82rem; color: #94a3b8; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.86rem;
+    }
+    th, td {
+      border: 1px solid var(--card-border);
+      padding: 0.65rem 0.9rem;
+      text-align: left;
+    }
+    th { background: rgba(255, 255, 255, 0.04); color: #fff; font-weight: 600; }
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.82rem;
+      color: #38bdf8;
+    }
+    @media print {
+      body { background: #fff !important; color: #000 !important; }
+      .manual-container { max-width: 100% !important; gap: 1rem; }
+      .manual-header, .section-card, .toc-card { border: 1px solid #ccc !important; background: #fff !important; box-shadow: none !important; }
+      .btn-header, .no-print { display: none !important; }
+      h2, h3, .manual-title { color: #000 !important; }
+      p, li, td, th { color: #222 !important; }
+      .callout { border: 1px solid #999 !important; background: #f9f9f9 !important; color: #111 !important; }
+      a { color: #000 !important; text-decoration: underline; }
+    }
+  </style>
+</head>
+<body>
+  <div class="manual-container">
+    <!-- Header -->
+    <header class="manual-header">
+      <div>
+        <div class="manual-badge">MQnet LMS Edition v2.7</div>
+        <h1 class="manual-title">📚 SelfStudy 자기주도학습 운영 매뉴얼</h1>
+        <p style="margin: 0; color: #94a3b8; font-size: 0.88rem;">
+          과목 플래너, PPH 진도율 분석, AI 멘토링, 스터디카페 좌석 연동 가이드
+        </p>
+      </div>
+      <div style="display: flex; gap: 0.6rem;" class="no-print">
+        <button class="btn-header primary" onclick="window.print()">🖨️ 매뉴얼 인쇄 / PDF 저장</button>
+        <a href="./index.html" class="btn-header secondary">← 학습 화면으로 복귀</a>
+      </div>
+    </header>
+
+    <!-- Table of Contents -->
+    <nav class="toc-card no-print">
+      <div style="font-size: 0.85rem; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 0.05em;">목차 바로가기</div>
+      <div class="toc-grid">
+        <a href="#sec1" class="toc-link">📌 1. 시스템 개요 & 핵심 아키텍처</a>
+        <a href="#sec2" class="toc-link">⏱️ 2. 순공 타이머 & 백색소음 활용법</a>
+        <a href="#sec3" class="toc-link">📚 3. 과목 플래너 & PPH 진도 계산법</a>
+        <a href="#sec4" class="toc-link">🤖 4. AI 멘토 질의응답 및 취약점 분석</a>
+        <a href="#sec5" class="toc-link">🪑 5. 스터디카페 좌석 실시간 연동</a>
+        <a href="#sec6" class="toc-link">📊 6. 학부모 안심 리포트 & 일일 브리핑</a>
+        <a href="#sec7" class="toc-link">❓ 7. 문제 해결 (FAQ) & 긴급 대처</a>
+      </div>
+    </nav>
+
+    <!-- Sec 1 -->
+    <section id="sec1" class="section-card">
+      <h2>📌 1. 시스템 개요 & 핵심 아키텍처</h2>
+      <p>
+        <strong>MQnet SelfStudy</strong>는 수험생 및 학생의 실제 순수 공부 시간(순공)을 정밀 측정하고, 
+        과목별 시간당 학습 페이지 수(PPH, Pages Per Hour)를 데이터화하여 AI 멘토링과 연결하는 
+        지능형 자기주도 학습 관리 시스템(LMS)입니다.
+      </p>
+      <div class="callout info">
+        <span>💡</span>
+        <div>
+          <strong>스터디카페 원터치 연동:</strong>
+          StudyCafe 앱에서 입실한 회원은 SelfStudy 타이머와 좌석 점유 상태가 실시간 동기화되어 
+          자리 이탈 시 타이머가 자동 일시중지되고 학부모에게 안전 입/퇴실 알림이 전송됩니다.
+        </div>
+      </div>
+    </section>
+
+    <!-- Sec 2 -->
+    <section id="sec2" class="section-card">
+      <h2>⏱️ 2. 순공 타이머 & 백색소음 활용법</h2>
+      <div class="step-grid">
+        <div class="step-box">
+          <div class="step-num">1</div>
+          <h4>모드 선택</h4>
+          <p>48분 몰입/12분 휴식 뽀모도로 또는 무제한 연속 스톱워치 중 선택합니다.</p>
+        </div>
+        <div class="step-box">
+          <div class="step-num">2</div>
+          <h4>과목 지정</h4>
+          <p>플래너에 등록된 오늘 목표 과목(국어, 수학, 영어 등)을 선택하여 바인딩합니다.</p>
+        </div>
+        <div class="step-box">
+          <div class="step-num">3</div>
+          <h4>백색소음 활성화</h4>
+          <p>학습 집중도를 높이기 위해 빗소리/카페 노이즈 사운드를 토글할 수 있습니다.</p>
+        </div>
+        <div class="step-box">
+          <div class="step-num">4</div>
+          <h4>학습 완료 기록</h4>
+          <p>[🏁 학습 완료] 클릭 시 진행한 페이지 수를 입력하여 즉시 PPH가 계산됩니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sec 3 -->
+    <section id="sec3" class="section-card">
+      <h2>📚 3. 과목 플래너 & PPH 진도 계산법</h2>
+      <p>
+        수험생의 실제 공부 효율은 단순히 '앉아있는 시간'이 아닌 <strong>시간당 소화한 교재 페이지 수(PPH)</strong>로 측정됩니다.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>지표</th>
+            <th>산출 공식</th>
+            <th>권장 기준치 (예: 고등 수학)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>PPH (Pages Per Hour)</strong></td>
+            <td><code>(완료 페이지 수 ÷ 집중 분) × 60</code></td>
+            <td>개념학습: 8~12 p/h, 문제풀이: 15~20 p/h</td>
+          </tr>
+          <tr>
+            <td><strong>일일 순공 달성률</strong></td>
+            <td><code>(실제 순공 시간 ÷ 목표 순공 시간) × 100%</code></td>
+            <td>평일: 85% 이상, 주말: 90% 이상</td>
+          </tr>
+          <tr>
+            <td><strong>과목 밸런스 지수</strong></td>
+            <td>취약 과목 배분 비중 (가중치 계산)</td>
+            <td>취약 영역에 최소 40% 이상 할당 권장</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Sec 4 -->
+    <section id="sec4" class="section-card">
+      <h2>🤖 4. AI 멘토 질의응답 및 취약점 분석</h2>
+      <p>
+        Mistral-7B 및 Gemini 기반의 AI 튜터가 24시간 상주하여 학생의 오답 노트 질의, 학습 계획 재조정, 
+        슬럼프 극복 동기부여 피드백을 제공합니다.
+      </p>
+      <ul>
+        <li><strong>모르는 문제 질의:</strong> 문제 텍스트 또는 풀이 과정을 입력하면 단계별 풀이 유도(소크라테스식 문답).</li>
+        <li><strong>데일리 리밸런싱:</strong> 오늘 목표치에 미달한 경우 익일 스케줄에 현실적 보충 계획 자동 편성.</li>
+        <li><strong>학업 감정 케어:</strong> 집중도 저하 패턴 감지 시 10분 스트레칭 및 긍정 마인드셋 루틴 제안.</li>
+      </ul>
+    </section>
+
+    <!-- Sec 5 -->
+    <section id="sec5" class="section-card">
+      <h2>🪑 5. 스터디카페 좌석 실시간 연동</h2>
+      <p>
+        SelfStudy는 StudyCafe 좌석 관제 엔진(<code>/api/sessions</code>)과 실시간 웹소켓/폴링으로 연동됩니다.
+      </p>
+      <ul>
+        <li><strong>입실 자동 감지:</strong> 스터디카페 키오스크 또는 웹에서 입실하면 SelfStudy 상단 배지가 <code>🟢 [좌석 12번] 입실 중</code>으로 변경됩니다.</li>
+        <li><strong>외출/퇴실 연동:</strong> 외출 시 타이머가 자동 일시 정지되며, 장기 외출 시 자리 자동 반납 경고를 표시합니다.</li>
+      </ul>
+    </section>
+
+    <!-- Sec 6 -->
+    <section id="sec6" class="section-card">
+      <h2>📊 6. 학부모 안심 리포트 & 일일 브리핑</h2>
+      <p>
+        매일 밤 22:00 또는 학생 퇴실 시 학부모 전용 알림톡/웹 포털로 일일 종합 학습 보고서가 발송됩니다.
+      </p>
+      <div class="callout success">
+        <span>📱</span>
+        <div>
+          <strong>학부모 전달 항목:</strong>
+          총 입실 체류 시간 vs 순수 집중 공부 시간 비교 차트, 과목별 공부 비중, 과목별 PPH 지표, 
+          AI 멘토 총평 코멘트가 한눈에 보이는 카드 형태로 제공됩니다.
+        </div>
+      </div>
+    </section>
+
+    <!-- Sec 7 -->
+    <section id="sec7" class="section-card">
+      <h2>❓ 7. 문제 해결 (FAQ) & 긴급 대처</h2>
+      <h3>Q1. 타이머를 켜두고 자리를 비웠는데 순공 시간이 계속 올라갑니다.</h3>
+      <p>플래너 화면에서 해당 세션을 클릭한 후 [기록 수정]을 눌러 실제 공부한 시간만큼 수동 보정할 수 있습니다.</p>
+      
+      <h3>Q2. 스터디카페 좌석 연동 배지가 '조회 실패'로 나타납니다.</h3>
+      <p>로그인한 계정이 스터디카페에서 결제한 이용권 계정과 동일한지 확인하고 브라우저를 새로고침(Ctrl + F5) 해주십시오.</p>
+
+      <h3>Q3. AI 멘토 응답이 지연되거나 네트워크 오류가 발생합니다.</h3>
+      <p>로컬 Ollama/Mistral 서비스 또는 외부 Gemini API 키 만료 여부를 게이트웨이 환경설정(<code>.env</code>)에서 점검하십시오.</p>
+    </section>
+  </div>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MQnet 임차관리 rent2 공식 운영 매뉴얼</title>
+  <style>
+    /* ── 흰 바탕 검은 글씨 순수 고대비 매뉴얼 스타일 ── */
+    :root {
+      --bg: #ffffff;
+      --fg: #000000;
+      --line: #000000;
+      --font: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font);
+      font-size: 14px;
+      line-height: 1.6;
+      padding: 24px;
+    }
+    .wrapper { max-width: 860px; margin: 0 auto; }
+
+    header {
+      border-bottom: 3px solid var(--line);
+      padding-bottom: 14px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    h1 { font-size: 22px; font-weight: 900; }
+    h2 { font-size: 17px; font-weight: 800; border-bottom: 2px solid var(--line); padding-bottom: 6px; margin: 24px 0 12px 0; }
+    h3 { font-size: 15px; font-weight: 700; margin: 16px 0 8px 0; }
+    p, ul, ol { margin-bottom: 12px; }
+    ul, ol { padding-left: 20px; }
+    li { margin-bottom: 4px; }
+    code { font-family: monospace; border: 1px solid #000; padding: 1px 4px; font-size: 13px; }
+
+    .btn-print {
+      background: #000;
+      color: #fff;
+      border: 1px solid #000;
+      padding: 8px 14px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .box {
+      border: 2px solid #000;
+      padding: 14px;
+      margin-bottom: 16px;
+      background: #fafafa;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 13px;
+    }
+    th, td {
+      border: 1px solid #000;
+      padding: 8px 10px;
+      text-align: left;
+    }
+    th { background: #f0f0f0; font-weight: 800; }
+
+    @media print {
+      body { padding: 0; }
+      .btn-print { display: none !important; }
+      header { border-bottom: 2px solid #000; }
+      .box { background: none; }
+      h2 { page-break-after: avoid; }
+      table { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <header>
+      <div>
+        <h1>MQnet rent2 공식 운영 매뉴얼</h1>
+        <div style="font-size:12px;color:#444;margin-top:2px;">Zero-Typing 스마트 모바일 임차관리 & 세무 자동화</div>
+      </div>
+      <button class="btn-print" onclick="window.print()">🖨️ 매뉴얼 인쇄 / PDF 저장</button>
+    </header>
+
+    <div class="box">
+      <b>시스템 개요:</b><br>
+      <code>rent2</code>는 복잡한 DB 테이블 및 키보드 입력 중심의 기존 임차관리를 탈피하여, 스마트폰 카메라 촬영 및 계좌 입금 알림 문자 붙여넣기로 임차 사실을 기록하고, 실시간 모바일 관제 및 부가세/종합소득세 세무 자료를 원클릭으로 산출하는 차세대 객체 기반 관리 시스템입니다.
+    </div>
+
+    <h2>1. 스마트 인제스트 (키보드 없는 자동 입력)</h2>
+    
+    <h3>1.1 만능 스마트 붙여넣기 (문자 · 구글시트 · 파일경로 · 사진)</h3>
+    <ul>
+      <li><b>통합 허브:</b> 하단 바 <code>[📋 만능 붙여넣기]</code>를 터치하면 어떤 형태의 데이터든 한 창에서 자동 감지하여 처리합니다.</li>
+      <li><b>💬 은행 입금 문자 / 카카오톡:</b> 국민, 신한, 우리, 농협, 하나, 카카오뱅크, 토스 등의 입금 문자를 붙여넣으면 호실 번호(예: <code>403호</code>), 금액(예: <code>450,000원</code>), 입금자, 일자를 자동 파싱하여 FIFO(가장 오래된 미납월 우선) 수납을 즉시 완료합니다.</li>
+      <li><b>📊 구글 스프레드시트 링크:</b> <code>https://docs.google.com/spreadsheets/d/...</code> URL을 붙여넣으면 2025년 및 2026년 29개 전 호실의 계약 및 월별 수납 장부를 실시간 원자적(Atomic) 동기화합니다.</li>
+      <li><b>📁 로컬 엑셀 / CSV 파일 경로:</b> <code>C:\장부.xlsx</code> 또는 <code>.csv</code> 경로를 붙여넣으면 로컬 장부 파일을 파싱하여 즉시 시스템에 동기화합니다.</li>
+      <li><b>📷 클립보드 사진 (Ctrl+V) 및 사진 파일 경로:</b> 캡처 도구로 복사한 영수증/계약서 사진을 붙여넣거나 로컬 사진 경로(<code>.jpg</code>, <code>.png</code>)를 입력하면 썸네일 미리보기와 함께 AI OCR 스캔 및 지출/계약 자동 등록을 원스톱 실행합니다.</li>
+    </ul>
+
+    <h3>1.2 계약서 카메라 촬영 및 OCR 등록</h3>
+    <ul>
+      <li><b>작동 원리:</b> 새 세입자 입주 시 종이 계약서를 스마트폰 카메라로 촬영(<code>capture="environment"</code>)합니다.</li>
+      <li><b>자동 추출:</b> 호실, 세입자 성명, 연락처, 주민번호, 보증금, 월세, 관리비, 전입일, 만기일.</li>
+      <li><b>자동 갱신:</b> AI 분석 후 계약 정보가 해당 호실에 즉시 동기화됩니다.</li>
+    </ul>
+
+    <h3>1.3 영수증 카메라 촬영 및 경비 전표 등록</h3>
+    <ul>
+      <li><b>작동 원리:</b> 도배, 장판, 보일러 수리 등 지출 발생 시 종이 영수증이나 카드 전표를 촬영합니다.</li>
+      <li><b>자동 추출:</b> 일자, 상호/품목, 금액, 증빙구분(세금계산서/신용카드/현금영수증/간이영수증).</li>
+      <li><b>종소세 연동:</b> 등록된 영수증은 종합소득세 필요경비 명세서로 자동 편입됩니다.</li>
+    </ul>
+
+    <h2>2. 모바일 관제 대시보드 운영</h2>
+    <table>
+      <thead>
+        <tr><th>지표 카드</th><th>상태 판정 기준</th><th>터치 시 동작</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>당월 미납</b></td>
+          <td>당월에 입금 기록이 없고 월세가 청구된 세대 (후불 입주 첫 달은 익월 청구되므로 미납 아님)</td>
+          <td>미납 호실만 필터링 ➡️ 독촉 및 개별 수납 확인</td>
+        </tr>
+        <tr>
+          <td><b>만기 임박</b></td>
+          <td>만기일까지 65일 이내로 남은 세대 (주택임대차 묵시적 갱신 방지 통보기간)</td>
+          <td>재계약 협의 대상 호실만 필터링</td>
+        </tr>
+        <tr>
+          <td><b>현재 공실</b></td>
+          <td>세입자가 없거나 퇴실 처리된 호실</td>
+          <td>공실 호실만 필터링 ➡️ 신규 계약 입력</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>3. 세무 자료 산출 가이드</h2>
+
+    <h3>3.1 부가가치세 (1기 / 2기)</h3>
+    <ul>
+      <li><b>1기:</b> 1월 ~ 6월 순수 임대료(월세) 합계 ➡️ 공급가액 = 합계 ÷ 1.1, 부가세 = 10%</li>
+      <li><b>2기:</b> 7월 ~ 12월 순수 임대료(월세) 합계 ➡️ 공급가액 및 세액 산출</li>
+      <li><b>특이사항:</b> 실비 정산 관리비 및 전세는 과세 대상에서 자동 제외됩니다.</li>
+      <li><b>출력:</b> 상단 <code>[Excel]</code> 또는 <code>[CSV]</code> 버튼으로 국세청 홈택스 제출 및 세무사 전달용 파일 즉시 다운로드.</li>
+    </ul>
+
+    <h3>3.2 종합소득세 (연간 귀속)</h3>
+    <ul>
+      <li><b>총수입금액:</b> 1년 12개월 동안 실제 수납된 순수 임대료 총액.</li>
+      <li><b>필요경비 명세서:</b>
+        <ul>
+          <li><b>적격증빙:</b> 세금계산서, 신용카드, 현금영수증(지출증빙) 합계.</li>
+          <li><b>간이영수증:</b> 3만원 초과분 구분 안내 (적격증빙 미수취 가산세 검토용).</li>
+          <li><b>계정과목별:</b> 수선유지비, 수도광열비, 청소위탁비, 화재보험료, 소모품비로 자동 분류.</li>
+        </ul>
+      </li>
+      <li><b>예상 임대소득:</b> <code>총수입금액 - 필요경비</code>를 실시간 계산하여 절세 계획 수립 지원.</li>
+    </ul>
+
+    <h2>4. 비상 및 예외 대처 요령</h2>
+    <ul>
+      <li><b>AI 키 미설정 시:</b> 오프라인 정규식 파서가 상시 대기하여 문자 및 기본 지출 전표 등록은 100% 정상 작동합니다.</li>
+      <li><b>이중 클릭 방지:</b> 전산 처리 버튼은 클릭 즉시 비활성화되어 중복 입금 처리를 원천 방지합니다.</li>
+    </ul>
+
+    <div style="margin-top:30px;padding-top:12px;border-top:1px solid #000;font-size:12px;color:#666;text-align:center;">
+      MQnet Integrated Workstation · rent2 Minimalist Property Engine
+    </div>
+  </div>
+</body>
+</html>
