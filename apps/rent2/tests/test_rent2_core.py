@@ -33,6 +33,8 @@ class TestRent2(unittest.TestCase):
 
     def test_contract_and_ledger_rules(self):
         b = Building.require("main")
+        Contract.purge("main")
+        Payment.purge("main")
         u = b.unit(201)
         # 계약 갱신 또는 신규 입주
         c = u.update({

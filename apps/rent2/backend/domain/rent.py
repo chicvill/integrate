@@ -899,7 +899,8 @@ class Building(Obj):
             if clear:
                 Payment.purge(self.id)
                 Contract.purge(self.id)
-                store().cur().execute("DELETE FROM objects WHERE kind='room' AND json_extract(data, '$.building_id') = ?", (self.id,))
+                Room.purge(self.id)
+                store().db.execute("DELETE FROM objects WHERE kind='room' AND json_extract(data, '$.building_id') = ?", (self.id,))
                 self.units = []
                 self.room_ids = []
                 self.save("rooms_cleared")
@@ -1022,7 +1023,8 @@ class Building(Obj):
             if clear_existing:
                 Payment.purge(self.id)
                 Contract.purge(self.id)
-                store().cur().execute("DELETE FROM objects WHERE kind='room' AND json_extract(data, '$.building_id') = ?", (self.id,))
+                Room.purge(self.id)
+                store().db.execute("DELETE FROM objects WHERE kind='room' AND json_extract(data, '$.building_id') = ?", (self.id,))
                 # 호실 목록을 매장 표준 기본 규격으로 리셋
                 if self.DEFAULT_UNITS:
                     self.units = list(self.DEFAULT_UNITS)

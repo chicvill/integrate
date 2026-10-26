@@ -12,7 +12,7 @@ from fastapi import APIRouter, Body, Depends, Header, HTTPException, Query, Resp
 
 from .domain import ALIASES, Building, agent, ask, parser
 from .domain import ai_tools, vat
-from .domain.rent import Contract, Expense, Unit, num, today
+from .domain.rent import Contract, Expense, Payment, Room, Unit, num, today
 from .kernel.base import recall, store
 from .kernel.identity import UpgradeRequest, User
 
@@ -849,8 +849,8 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
         if clear_before_import:
             Payment.purge(b.id)
             Contract.purge(b.id)
-            from .kernel.base import store
-            store().cur().execute("DELETE FROM objects WHERE kind='room' AND json_extract(data, '$.building_id') = ?", (b.id,))
+            Room.purge(b.id)
+            store().db.execute("DELETE FROM objects WHERE kind='room' AND json_extract(data, '$.building_id') = ?", (b.id,))
 
         applied = []
         for item in roster_items:
@@ -1036,50 +1036,59 @@ def smart_ocr_contract(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
     clear_before_import = bool(p.get("clear_before_import", True))
     saved_contracts = []
 
-    # 정규화된 계약 행 준비
-    normalized_rows = []
-    for raw_row in res.get("rows", []):
-        norm = _normalize_contract_row(raw_row)
-        if norm.get("room_number") and b.valid_room(norm["room_number"]):
-            normalized_rows.append(norm)
-
-    if auto_apply and normalized_rows:
-        # 건물 서브클래스(SunhoBuilding / SinbiBuilding / ChicvillBuilding)의 전용 reset_and_import 실행
-        import_res = b.reset_and_import(normalized_rows, clear_existing=clear_before_import)
-        saved_contracts = [act.model_dump() for u in b.view() if (act := u.active()) is not None]
-    elif auto_apply:
+    try:
+        # 정규화된 계약 행 준비
+        normalized_rows = []
         for raw_row in res.get("rows", []):
             norm = _normalize_contract_row(raw_row)
-            room_n = norm["room_number"]
-            if room_n and b.valid_room(room_n):
-                b.add_unit(room_n)
-                u = b.unit(room_n)
-                c = u.update({
-                    "name": norm["name"],
-                    "phone": norm["phone"],
-                    "id_number": norm["id_number"],
-                    "deposit": norm["deposit"],
-                    "rent": norm["rent"],
-                    "maintenance": norm["maintenance"],
-                    "clean_fee": norm["clean_fee"],
-                    "move_in": norm["move_in"],
-                    "expiry": norm["expiry"]
-                })
-                if c:
-                    saved_contracts.append(c.model_dump())
+            if norm.get("room_number") and b.valid_room(norm["room_number"]):
+                normalized_rows.append(norm)
 
-    ok = len(saved_contracts) > 0
-    return {
-        "success": True,
-        "ocr_kind": "contract",
-        "branch_id": bid,
-        "building_type": getattr(b, "BUILDING_TYPE", "base"),
-        "total_extracted": len(res.get("rows", [])),
-        "applied_count": len(saved_contracts),
-        "extracted_rows": res.get("rows", []),
-        "applied_contracts": saved_contracts,
-        "message": f"[{b.name}] 총 {len(saved_contracts)}개 호실의 임대차 계약 정보가 성공적으로 등록(기존 데이터 정화 및 교체 완료)되었습니다!" if ok else f"{len(res.get('rows', []))}건의 항목이 분석되었으나 유효한 세입자 정보가 없습니다."
-    }
+        if auto_apply and normalized_rows:
+            # 건물 서브클래스(SunhoBuilding / SinbiBuilding / ChicvillBuilding)의 전용 reset_and_import 실행
+            import_res = b.reset_and_import(normalized_rows, clear_existing=clear_before_import)
+            saved_contracts = [act.model_dump() for u in b.view() if (act := u.active()) is not None]
+        elif auto_apply:
+            for raw_row in res.get("rows", []):
+                norm = _normalize_contract_row(raw_row)
+                room_n = norm["room_number"]
+                if room_n and b.valid_room(room_n):
+                    b.add_unit(room_n)
+                    u = b.unit(room_n)
+                    c = u.update({
+                        "name": norm["name"],
+                        "phone": norm["phone"],
+                        "id_number": norm["id_number"],
+                        "deposit": norm["deposit"],
+                        "rent": norm["rent"],
+                        "maintenance": norm["maintenance"],
+                        "clean_fee": norm["clean_fee"],
+                        "move_in": norm["move_in"],
+                        "expiry": norm["expiry"]
+                    })
+                    if c:
+                        saved_contracts.append(c.model_dump())
+
+        ok = len(saved_contracts) > 0
+        return {
+            "success": ok,
+            "ocr_kind": "contract",
+            "branch_id": bid,
+            "building_type": getattr(b, "BUILDING_TYPE", "base"),
+            "total_extracted": len(res.get("rows", [])),
+            "applied_count": len(saved_contracts),
+            "extracted_rows": res.get("rows", []),
+            "applied_contracts": saved_contracts,
+            "message": f"[{b.name}] 총 {len(saved_contracts)}개 호실의 임대차 계약 정보가 성공적으로 등록(기존 데이터 정화 및 교체 완료)되었습니다!" if ok else f"{len(res.get('rows', []))}건의 항목이 분석되었으나 유효한 세입자 정보가 없습니다."
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "ocr_kind": "contract",
+            "branch_id": bid,
+            "error": str(e),
+            "message": f"계약 대장 등록 처리 중 오류가 발생했습니다: {str(e)}"
+        }
 
 
 @router.post("/smart/ocr-receipt")

@@ -92,20 +92,25 @@ function toggleVoiceAI(targetId = "pasteText", btnId = "btnMicPaste") {
 
     aiSpeechRecognition.onstart = function() {
       isVoiceListening = true;
-      if (btn) {
-        btn.classList.add("mic-active");
-        btn.innerHTML = "🔴 듣는 중...";
-        btn.style.background = "#fee2e2";
-        btn.style.borderColor = "#ef4444";
-        btn.style.color = "#b91c1c";
-        btn.title = "음성 입력 완료하려면 클릭";
-      }
+      const allMicBtns = [document.getElementById(btnId), document.getElementById("btnOmniMic"), document.getElementById("btnMicPaste")].filter(Boolean);
+      allMicBtns.forEach(b => {
+        b.classList.add("mic-active");
+        if (b.id === "btnOmniMic") {
+          b.innerHTML = "🔴";
+          b.title = "음성 입력 중 (마치려면 클릭)";
+        } else {
+          b.innerHTML = "🔴 듣는 중...";
+          b.style.background = "#fee2e2";
+          b.style.borderColor = "#ef4444";
+          b.style.color = "#b91c1c";
+        }
+      });
       if (input) {
         input.placeholder = "음성을 듣고 있습니다... 편하게 말씀해 주세요 🎙️";
         input.focus();
       }
       setPasteVoiceStatus(
-        `🔴 <b>음성을 듣고 있습니다...</b> 말씀해 주세요 🎙️<br><small style="font-weight:normal;color:#475569;">말씀을 마치시면 [🔴 듣는 중]을 다시 누르세요. (스마트폰 키보드의 🎙️도 바로 입력됩니다)</small>`,
+        `🔴 <b>음성을 듣고 있습니다...</b> 말씀해 주세요 🎙️<br><small style="font-weight:normal;color:#475569;">말씀을 마치시면 [🔴 마이크]를 다시 누르세요.</small>`,
         "listening"
       );
     };
@@ -126,11 +131,10 @@ function toggleVoiceAI(targetId = "pasteText", btnId = "btnMicPaste") {
       const spoken = (finalTranscript + interimTranscript).trim();
       if (input && spoken) {
         input.value = (baseText ? baseText.trim() + " " : "") + spoken;
-        // input 이벤트 강제 발화로 실시간 분석/미리보기 즉각 동기화
         input.dispatchEvent(new Event("input", { bubbles: true }));
-        if (typeof previewUniversalPaste === "function") {
-          previewUniversalPaste();
-        }
+        if (typeof autoExpandTextarea === "function") autoExpandTextarea(input);
+        if (typeof previewUniversalPaste === "function") previewUniversalPaste();
+        if (typeof updateOmniSendBtn === "function") updateOmniSendBtn();
       }
 
       if (spoken) {
@@ -161,14 +165,19 @@ function toggleVoiceAI(targetId = "pasteText", btnId = "btnMicPaste") {
 
     aiSpeechRecognition.onend = function() {
       isVoiceListening = false;
-      if (btn) {
-        btn.classList.remove("mic-active");
-        btn.innerHTML = "🎙️ 음성";
-        btn.style.background = "#ffffff";
-        btn.style.borderColor = "#2563eb";
-        btn.style.color = "#1d4ed8";
-        btn.title = "마이크 음성 입력 🎙️";
-      }
+      const allMicBtns = [document.getElementById(btnId), document.getElementById("btnOmniMic"), document.getElementById("btnMicPaste")].filter(Boolean);
+      allMicBtns.forEach(b => {
+        b.classList.remove("mic-active");
+        if (b.id === "btnOmniMic") {
+          b.innerHTML = "🎙️";
+          b.title = "마이크 음성 입력 🎙️";
+        } else {
+          b.innerHTML = "🎙️ 음성";
+          b.style.background = "#ffffff";
+          b.style.borderColor = "#2563eb";
+          b.style.color = "#1d4ed8";
+        }
+      });
       if (input) {
         input.placeholder = origPlaceholder;
         input.focus();

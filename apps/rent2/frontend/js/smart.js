@@ -5,6 +5,118 @@
  */
 
 let currentPasteImageBase64 = "";
+let currentPasteFileName = "";
+
+// ── 만능 스마트 프롬프트 바 (Omni-Input Bar) 핸들러 ──
+function autoExpandTextarea(el) {
+  if (!el) return;
+  el.style.height = "auto";
+  el.style.height = Math.min(Math.max(el.scrollHeight, 52), 160) + "px";
+  updateOmniSendBtn();
+}
+
+function updateOmniSendBtn() {
+  const txt = (document.getElementById("pasteText")?.value || "").trim();
+  const hasContent = Boolean(txt || currentPasteImageBase64);
+  const sendBtn = document.getElementById("btnOmniSend");
+  if (sendBtn) {
+    sendBtn.disabled = !hasContent;
+    sendBtn.style.opacity = hasContent ? "1" : "0.45";
+  }
+  const univBtn = document.getElementById("btnUniversalSubmit");
+  if (univBtn) {
+    univBtn.disabled = !hasContent;
+  }
+}
+
+function toggleOmniAttachMenu(show) {
+  const menu = document.getElementById("omniAttachMenu");
+  if (!menu) return;
+  const isShown = menu.style.display === "flex";
+  menu.style.display = (show !== undefined ? show : !isShown) ? "flex" : "none";
+}
+
+function triggerAttachAction(type) {
+  toggleOmniAttachMenu(false);
+  if (type === "camera") {
+    document.getElementById("pasteFileCamera")?.click();
+  } else if (type === "gallery") {
+    document.getElementById("pasteFileGallery")?.click();
+  } else if (type === "excel") {
+    document.getElementById("pasteFileExcel")?.click();
+  }
+}
+
+function handleScanKindChange(val) {
+  document.querySelectorAll("input[name='pasteScanKind']").forEach(r => {
+    r.checked = (r.value === val);
+  });
+  document.querySelectorAll(".omni-kind-tag").forEach(tag => {
+    const radio = tag.querySelector("input[type='radio']");
+    if (radio && radio.value === val) {
+      tag.classList.add("active");
+    } else {
+      tag.classList.remove("active");
+    }
+  });
+  previewUniversalPaste();
+}
+
+function renderOmniAttachmentChip(fileName, dataUrl) {
+  currentPasteFileName = fileName || "첨부 이미지";
+  const chipContainer = document.getElementById("omniAttachmentChip");
+  const thumb = document.getElementById("omniThumbImg");
+  const label = document.getElementById("omniFileName");
+  if (chipContainer && thumb && label) {
+    thumb.src = dataUrl;
+    label.textContent = currentPasteFileName;
+    chipContainer.style.display = "inline-flex";
+  }
+  const legacyImg = document.getElementById("pasteImgPreview");
+  if (legacyImg) legacyImg.src = dataUrl;
+  const legacySec = document.getElementById("pasteImageSection");
+  if (legacySec) legacySec.style.display = "none";
+  updateOmniSendBtn();
+}
+
+function handleDragOver(event) {
+  event.preventDefault();
+  document.getElementById("omniPromptContainer")?.classList.add("drag-over");
+}
+
+function handleDragLeave(event) {
+  event.preventDefault();
+  document.getElementById("omniPromptContainer")?.classList.remove("drag-over");
+}
+
+function handleDropFile(event) {
+  event.preventDefault();
+  document.getElementById("omniPromptContainer")?.classList.remove("drag-over");
+  const files = event.dataTransfer?.files;
+  if (!files || files.length === 0) return;
+  processIncomingFile(files[0]);
+}
+
+function processIncomingFile(file) {
+  if (!file) return;
+  const name = file.name.toLowerCase();
+  if (file.type.startsWith("image/") || name.endsWith(".jpg") || name.endsWith(".png") || name.endsWith(".jpeg") || name.endsWith(".webp")) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      currentPasteImageBase64 = e.target.result;
+      renderOmniAttachmentChip(file.name, currentPasteImageBase64);
+      previewUniversalPaste();
+    };
+    reader.readAsDataURL(file);
+  } else if (name.endsWith(".xlsx") || name.endsWith(".xls") || name.endsWith(".csv") || name.endsWith(".tsv")) {
+    const txtEl = document.getElementById("pasteText");
+    if (txtEl) {
+      txtEl.value = `[로컬 장부 파일 선택됨: ${file.name}]`;
+      autoExpandTextarea(txtEl);
+      previewUniversalPaste();
+    }
+  }
+}
 
 // 클립보드 붙여넣기 이벤트 가로채기 (이미지 파일 즉시 감지)
 function handleClipboardPaste(event) {
@@ -18,12 +130,7 @@ function handleClipboardPaste(event) {
       const reader = new FileReader();
       reader.onload = function(e) {
         currentPasteImageBase64 = e.target.result;
-        const imgEl = document.getElementById("pasteImgPreview");
-        const secEl = document.getElementById("pasteImageSection");
-        if (imgEl && secEl) {
-          imgEl.src = currentPasteImageBase64;
-          secEl.style.display = "block";
-        }
+        renderOmniAttachmentChip("클립보드 캡처 이미지", currentPasteImageBase64);
         previewUniversalPaste();
       };
       reader.readAsDataURL(blob);
@@ -31,20 +138,43 @@ function handleClipboardPaste(event) {
       return;
     }
   }
-  setTimeout(previewUniversalPaste, 50);
+  setTimeout(() => {
+    const pt = document.getElementById("pasteText");
+    if (pt) autoExpandTextarea(pt);
+    previewUniversalPaste();
+  }, 50);
 }
 
 function clearPasteImage() {
   currentPasteImageBase64 = "";
+  currentPasteFileName = "";
+  const chipContainer = document.getElementById("omniAttachmentChip");
+  if (chipContainer) chipContainer.style.display = "none";
   const secEl = document.getElementById("pasteImageSection");
   if (secEl) secEl.style.display = "none";
+  const fc = document.getElementById("pasteFileCamera");
+  if (fc) fc.value = "";
+  const fg = document.getElementById("pasteFileGallery");
+  if (fg) fg.value = "";
+  const fe = document.getElementById("pasteFileExcel");
+  if (fe) fe.value = "";
   previewUniversalPaste();
+  updateOmniSendBtn();
 }
 
 function getSelectedPasteScanKind() {
   const r = document.querySelector("input[name='pasteScanKind']:checked");
   return r ? r.value : "bank_sms";
 }
+
+// 외부 클릭 시 첨부 메뉴 닫기
+document.addEventListener("click", function(e) {
+  const menu = document.getElementById("omniAttachMenu");
+  const btn = document.getElementById("btnOmniAttach");
+  if (menu && menu.style.display === "flex" && !menu.contains(e.target) && !btn?.contains(e.target)) {
+    menu.style.display = "none";
+  }
+});
 
 // 만능 입력 실시간 분석 & 미리보기 갱신
 function previewUniversalPaste() {
@@ -67,6 +197,15 @@ function previewUniversalPaste() {
   // 1. 사진 / 이미지 데이터 감지 (스캔 종류별 즉시 버튼 안내)
   if (currentPasteImageBase64 || txt.startsWith("data:image/")) {
     const scanKind = getSelectedPasteScanKind();
+    document.querySelectorAll(".omni-kind-tag").forEach(tag => {
+      const radio = tag.querySelector("input[type='radio']");
+      if (radio && radio.value === scanKind) {
+        tag.classList.add("active");
+      } else {
+        tag.classList.remove("active");
+      }
+    });
+    updateOmniSendBtn();
     const helpEl = document.getElementById("pasteScanKindHelp");
     if (helpEl) {
       if (scanKind === "bank_sms") {
@@ -212,6 +351,7 @@ function previewUniversalPaste() {
     btn.className = "btn-primary";
     btn.style.background = "#0f172a";
   }
+  updateOmniSendBtn();
 }
 
 // ── 만능 스마트 모달 제어 헬퍼 ──
@@ -236,12 +376,24 @@ function openAIPasteModal() {
   if (badge) {
     badge.textContent = `📍 ${branchName}`;
   }
+  const modelBadge = document.getElementById("omniModelBadge");
+  if (modelBadge) {
+    modelBadge.innerHTML = `<span>⚡ ${branchName} · 만능 AI</span><span style="font-size:10px;color:#94a3b8;">▾</span>`;
+  }
+
+  // 첨부 상태 동기화
+  const chipContainer = document.getElementById("omniAttachmentChip");
+  if (chipContainer) {
+    chipContainer.style.display = currentPasteImageBase64 ? "inline-flex" : "none";
+  }
 
   setTimeout(() => {
     const pt = document.getElementById("pasteText");
     if (pt) {
+      autoExpandTextarea(pt);
       pt.focus();
     }
+    updateOmniSendBtn();
   }, 80);
 }
 
@@ -272,7 +424,7 @@ function clearPasteArea() {
 }
 
 function handlePasteKeyDown(event) {
-  if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+  if (event.key === "Enter" && !event.shiftKey) {
     event.preventDefault();
     submitUniversalIngest();
   }
@@ -296,6 +448,13 @@ async function submitUniversalIngest() {
   const origText = btn ? (btn.innerHTML.includes("확인") ? btn.innerHTML : "확인") : "확인";
   let photoTimerId = null;
   const startTime = Date.now();
+
+  const omniSendBtn = document.getElementById("btnOmniSend");
+  if (omniSendBtn) {
+    omniSendBtn.disabled = true;
+    omniSendBtn.innerHTML = "⏳";
+    omniSendBtn.style.opacity = "0.7";
+  }
 
   if (btn) {
     btn.disabled = true;
@@ -435,9 +594,24 @@ async function submitUniversalIngest() {
       })
     });
 
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.detail || data.message || "처리 실패");
+    let data;
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      data = await res.json().catch(() => null);
+    } else {
+      const rawText = await res.text().catch(() => "");
+      if (!res.ok) {
+        throw new Error(rawText ? `서버 처리 오류 (HTTP ${res.status}): ${rawText.slice(0, 150)}` : `서버 오류가 발생했습니다. (HTTP ${res.status})`);
+      }
+      try {
+        data = JSON.parse(rawText);
+      } catch (e) {
+        throw new Error(`서버 응답 파싱 실패 (HTTP ${res.status})`);
+      }
+    }
+
+    if (!res.ok || !data) {
+      throw new Error((data && (data.detail || data.message)) || `서버 처리 실패 (HTTP ${res.status})`);
     }
 
     if (data.success) {
@@ -516,6 +690,12 @@ async function submitUniversalIngest() {
       btn.innerHTML = origText;
       btn.style.background = "";
     }
+    const omniSendBtn = document.getElementById("btnOmniSend");
+    if (omniSendBtn) {
+      omniSendBtn.disabled = false;
+      omniSendBtn.innerHTML = "➔";
+      updateOmniSendBtn();
+    }
   }
 }
 
@@ -523,18 +703,7 @@ async function submitUniversalIngest() {
 function handlePasteFileInput(event) {
   const file = event.target.files && event.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    currentPasteImageBase64 = e.target.result;
-    const imgEl = document.getElementById("pasteImgPreview");
-    const secEl = document.getElementById("pasteImageSection");
-    if (imgEl && secEl) {
-      imgEl.src = currentPasteImageBase64;
-      secEl.style.display = "block";
-    }
-    previewUniversalPaste();
-  };
-  reader.readAsDataURL(file);
+  processIncomingFile(file);
   event.target.value = "";
 }
 

@@ -104,6 +104,37 @@ class TestSmartAndTax(unittest.TestCase):
         self.assertTrue(len(excel_b) > 0)
         self.assertIn("종합소득세".encode("utf-8"), excel_b)
 
+    def test_reset_and_import_chicvill(self):
+        """시크빌 1호점(본점) 일괄 등록 및 가짜/임시 호실 초기화(reset_and_import) 정상 동작 검증"""
+        rows = [
+            {"room_number": 201, "name": "김진우", "deposit": 5000000, "rent": 350000, "maintenance": 50000, "move_in": "2026-01-01", "expiry": "2027-01-01"},
+            {"room_number": 202, "name": "안문철", "deposit": 10000000, "rent": 400000, "maintenance": 50000, "move_in": "2026-02-01", "expiry": "2027-02-01"},
+            {"room_number": 301, "name": "김정두", "deposit": 5000000, "rent": 350000, "maintenance": 50000, "move_in": "2026-03-01", "expiry": "2027-03-01"}
+        ]
+        res = self.b.reset_and_import(rows, clear_existing=True)
+        self.assertTrue(res["success"])
+        self.assertEqual(res["imported_count"], 3)
+        self.assertEqual(len(self.b.units), 29)  # Chicvill 29개 표준 호실 보존
+        self.assertEqual(self.b.unit(201).active().tenant_name, "김진우")
+        self.assertEqual(self.b.unit(202).active().tenant_name, "안문철")
+        self.assertEqual(self.b.unit(301).active().tenant_name, "김정두")
+
+    def test_universal_ingest_contract_roster(self):
+        """스마트 만능 붙여넣기 계약 대장 등록 검증"""
+        from fastapi.testclient import TestClient
+        from apps.rent2.backend.main import create_app
+        app = create_app(":memory:")
+        client = TestClient(app)
+        admin = User.create("super_admin_test", "1212", role="superadmin", status="APPROVED")
+        token = admin.token()
+
+        roster_text = "호실\t세입자\t보증금\t월세\t관리비\n201\t김진우\t500만\t35만\t5만\n202\t안문철\t1000만\t40만\t5만"
+        res = client.post("/api/smart/universal-ingest", json={"text": roster_text, "branch_id": "main", "clear_before_import": True}, headers={"Authorization": f"Bearer {token}"})
+        self.assertEqual(res.status_code, 200)
+        body = res.json()
+        self.assertTrue(body["success"])
+        self.assertEqual(body["applied_count"], 2)
+
 
 if __name__ == "__main__":
     unittest.main()

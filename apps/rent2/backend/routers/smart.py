@@ -347,44 +347,50 @@ def smart_ocr_contract(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
     
     bid = Building.canon(user.branch or p.get("branch_id") or "main")
     b = get_building(bid)
-    auto_apply = bool(p.get("auto_apply", False))
+    auto_apply = bool(p.get("auto_apply", True))
+    clear_before_import = bool(p.get("clear_before_import", True))
     saved_contracts = []
 
-    # 신규 등록 매장(활성 계약이 없는 상태)인 경우 더미 호실 대신 실제 추출된 호실로 자동 재정렬
-    has_active = any((act := u.active()) is not None and bool(act.tenant_name) for u in b.view())
-    extracted_rooms = sorted(set(num(r.get("호실") or r.get("room_number") or r.get("room")) for r in res.get("rows", []) if num(r.get("호실") or r.get("room_number") or r.get("room")) > 0))
-    if not has_active and extracted_rooms and auto_apply:
-        b.units = extracted_rooms
-        b.save("units_realigned_from_ocr")
+    try:
+        normalized_rows = []
+        for raw_row in res.get("rows", []):
+            rn = num(raw_row.get("호실") or raw_row.get("room_number") or raw_row.get("room") or raw_row.get("unit"))
+            if rn and b.valid_room(rn):
+                normalized_rows.append({
+                    "room_number": rn,
+                    "name": str(raw_row.get("세입자") or raw_row.get("name") or "").strip(),
+                    "phone": str(raw_row.get("연락처") or raw_row.get("phone") or "").strip(),
+                    "id_number": str(raw_row.get("주민등록번호") or raw_row.get("id_number") or "").strip(),
+                    "deposit": num(raw_row.get("보증금") or raw_row.get("deposit")),
+                    "rent": num(raw_row.get("월세") or raw_row.get("rent")),
+                    "maintenance": num(raw_row.get("관리비") or raw_row.get("maintenance")),
+                    "clean_fee": num(raw_row.get("청소비") or raw_row.get("clean_fee")),
+                    "move_in": raw_row.get("전입일") or raw_row.get("move_in") or today().isoformat(),
+                    "expiry": raw_row.get("만기일") or raw_row.get("expiry") or ""
+                })
 
-    for row in res.get("rows", []):
-        room_n = num(row.get("호실") or row.get("room_number") or row.get("room"))
-        if room_n and auto_apply:
-            b.add_unit(room_n)
-            u = b.unit(room_n)
-            c = u.update({
-                "name": row.get("세입자") or row.get("name") or "",
-                "phone": row.get("연락처") or row.get("phone") or "",
-                "id_number": row.get("주민등록번호") or row.get("id_number") or "",
-                "deposit": num(row.get("보증금") or row.get("deposit")),
-                "rent": num(row.get("월세") or row.get("rent")),
-                "maintenance": num(row.get("관리비") or row.get("maintenance")),
-                "move_in": row.get("전입일") or row.get("move_in") or today().isoformat(),
-                "expiry": row.get("만기일") or row.get("expiry") or ""
-            })
-            if c:
-                saved_contracts.append(c.model_dump())
+        if auto_apply and normalized_rows:
+            import_res = b.reset_and_import(normalized_rows, clear_existing=clear_before_import)
+            saved_contracts = [act.model_dump() for u in b.view() if (act := u.active()) is not None]
 
-    if auto_apply and saved_contracts:
-        b.sync_all_rooms()
-        Building.invalidate_cache()
-
-    return {
-        "success": True,
-        "extracted_rows": res.get("rows", []),
-        "applied_contracts": saved_contracts,
-        "message": f"총 {len(res.get('rows', []))}건 중 {len(saved_contracts)}개 호실 계약이 자동 등록·동기화되었습니다."
-    }
+        ok = len(saved_contracts) > 0
+        return {
+            "success": ok,
+            "ocr_kind": "contract",
+            "branch_id": bid,
+            "extracted_rows": res.get("rows", []),
+            "applied_contracts": saved_contracts,
+            "applied_count": len(saved_contracts),
+            "message": f"총 {len(res.get('rows', []))}건 중 {len(saved_contracts)}개 호실 계약이 자동 등록·동기화되었습니다." if ok else f"{len(res.get('rows', []))}건의 항목이 분석되었으나 유효한 세입자 정보가 없습니다."
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "ocr_kind": "contract",
+            "branch_id": bid,
+            "error": str(e),
+            "message": f"계약 대장 등록 처리 중 오류: {str(e)}"
+        }
 
 
 @router.post("/smart/ocr-receipt")
