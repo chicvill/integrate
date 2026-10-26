@@ -7,12 +7,12 @@ import datetime
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from fastapi.responses import Response, FileResponse
 from sqlalchemy.orm import Session
-from apps.YTDownloader.backend.db.database import get_db, SessionLocal, engine, Base
-from apps.YTDownloader.backend.db import models
-from apps.YTDownloader.backend.schemas import DownloadRequest, DownloadResponse
-from apps.YTDownloader.backend.services.ytdlp_engine import ytdlp_engine
-from apps.YTDownloader.backend.services.ai_transcribe import ai_transcribe_engine
-from apps.YTDownloader.backend.config import settings
+from ..db.database import get_db, SessionLocal, engine, Base
+from ..db import models
+from ..schemas import DownloadRequest, DownloadResponse
+from ..services.ytdlp_engine import ytdlp_engine
+from ..services.ai_transcribe import ai_transcribe_engine
+from ..config import settings
 
 # DB 테이블 및 컬럼 자동 마이그레이션 보장
 try:

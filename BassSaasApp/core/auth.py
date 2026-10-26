@@ -24,10 +24,13 @@ from .errors import DomainError, Forbidden
 from .kernel import Obj, store
 
 TOKEN_TTL_SECONDS = 60 * 60 * 12
-ROLES = ("superadmin", "admin", "user")
+ROLES = ("superadmin", "branch_admin", "admin", "user")
 DEFAULT_ACCOUNTS = (
-    # username, password, name, role
-    ("admin", "1212", "본사 최고관리자", "superadmin"),
+    # username, password, name, role, branch
+    ("admin", "1212", "본사 총괄 최고관리자", "superadmin", None),
+    ("chic", "1212", "시크빌 관리자", "branch_admin", "main"),
+    ("sunho", "1212", "선호아트빌 관리자", "branch_admin", "sunho"),
+    ("sinbi", "1212", "신비주택 관리자", "branch_admin", "sinbi"),
 )
 
 _secret_cache: Optional[bytes] = None
@@ -46,6 +49,7 @@ class User(Obj):
     username: str
     name: str = ""
     role: str = "user"
+    branch: Optional[str] = None
     salt: str = ""
     password_hash: str = ""
 
@@ -58,7 +62,7 @@ class User(Obj):
         return bool(self.password_hash) and hmac.compare_digest(self.password_hash, _hash(raw, self.salt))
 
     def public(self) -> Dict[str, Any]:
-        return {"id": self.id, "username": self.username, "name": self.name, "role": self.role}
+        return {"id": self.id, "username": self.username, "name": self.name, "role": self.role, "branch": self.branch}
 
     def summary(self) -> str:
         return f"{self.username} ({self.role})"
@@ -89,7 +93,7 @@ def _unb64(text: str) -> bytes:
 
 
 def issue_token(user: User, ttl: int = TOKEN_TTL_SECONDS) -> str:
-    payload = _b64(json.dumps({"u": user.username, "r": user.role, "exp": int(time.time()) + ttl}).encode())
+    payload = _b64(json.dumps({"u": user.username, "r": user.role, "b": user.branch, "exp": int(time.time()) + ttl}).encode())
     sig = _b64(hmac.new(_secret(), payload.encode(), hashlib.sha256).digest())
     return f"{payload}.{sig}"
 
@@ -112,9 +116,25 @@ def ensure_default_admins() -> None:
     current = id(store())
     if _seeded_for == current:
         return
-    for username, password, name, role in DEFAULT_ACCOUNTS:
-        if not User.by_username(username):
-            User(username=username, name=name, role=role).set_password(password).save("seeded")
+    for item in DEFAULT_ACCOUNTS:
+        username, password, name, role = item[0], item[1], item[2], item[3]
+        branch = item[4] if len(item) > 4 else None
+        u = User.by_username(username)
+        if not u:
+            User(username=username, name=name, role=role, branch=branch).set_password(password).save("seeded")
+        else:
+            updated = False
+            if u.role != role:
+                u.role = role
+                updated = True
+            if u.name != name:
+                u.name = name
+                updated = True
+            if u.branch != branch:
+                u.branch = branch
+                updated = True
+            if updated:
+                u.save("admin_sync")
     _seeded_for = current
 
 

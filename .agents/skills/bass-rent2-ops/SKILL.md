@@ -30,6 +30,12 @@ description: Operational business rules, domain invariants, and verification ins
 - 지점 ID(`normalize_branch_id`)는 진입점에서 단일 Canonical ID로 1회만 변환합니다.
 - 금액 필드 누락 시 `0` 또는 기본값 fallback을 의무 적용합니다.
 
+### ⑤ 지점별 격리 관리자 계정 매트릭스 (Admin Account Matrix)
+- 👑 **총괄 최고관리자**: `admin` / `1212` (`role: superadmin` ➡️ 시크빌, 선호아트빌, 신비주택 모든 건물 자유 전환 및 총괄 관제)
+- 🏢 **시크빌 관리자**: `chic` / `1212` (`role: branch_admin`, `branch: main` ➡️ 시크빌 29개실 전용 격리)
+- 🏢 **선호아트빌 관리자**: `sunho` / `1212` (`role: branch_admin`, `branch: sunho` ➡️ 선호아트빌 15개실 전용 격리)
+- 🏢 **신비주택 관리자**: `sinbi` / `1212` (`role: branch_admin`, `branch: sinbi` ➡️ 신비주택 20개실 전용 격리)
+
 ---
 
 ## 2. 기능 변경 시 필수 체크리스트 (Skill-First Workflow)

@@ -1,6 +1,6 @@
 import datetime
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Float, Text
-from apps.YTDownloader.backend.db.database import Base
+from .database import Base
 
 class DownloadJob(Base):
     __tablename__ = "download_jobs"

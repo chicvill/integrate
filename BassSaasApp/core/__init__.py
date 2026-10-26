@@ -9,9 +9,12 @@ from .auth import current_user, require_role, require_user
 from .errors import Conflict, DomainError, Forbidden, Mismatch, NotFound
 from .kernel import Obj, actor, store, use_store
 
+from .gateway import create_gateway
+
 __all__ = [
     "BaseSaaSApp", "AppDefinitionError",
     "Obj", "actor", "store", "use_store",
     "DomainError", "NotFound", "Conflict", "Mismatch", "Forbidden",
     "current_user", "require_user", "require_role",
+    "create_gateway",
 ]

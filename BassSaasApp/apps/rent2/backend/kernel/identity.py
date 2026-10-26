@@ -104,7 +104,24 @@ class UpgradeRequest(Obj):
 
 
 def seed_users(rows: List[tuple]) -> None:
-    """기본 계정 시드: 기동 시 1회 · 이미 있으면 건드리지 않는다 (운영 중 비밀번호 변경 보호)"""
+    """기본 계정 시드: 기동 시 1회 · 이미 있으면 비밀번호 외 속성 갱신"""
     for username, name, role, branch in rows:
-        if not User.by_username(username):
+        u = User.by_username(username)
+        if not u:
             User(username=username, pw=_hash("1212"), name=name, role=role, branch=branch, status="APPROVED").save("seeded")
+        else:
+            updated = False
+            if u.role != role:
+                u.role = role
+                updated = True
+            if u.name != name:
+                u.name = name
+                updated = True
+            if u.branch != branch:
+                u.branch = branch
+                updated = True
+            if u.status != "APPROVED":
+                u.status = "APPROVED"
+                updated = True
+            if updated:
+                u.save("admin_sync")

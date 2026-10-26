@@ -191,13 +191,19 @@ class TestRent2Migration(unittest.TestCase):
         unauth_res = client.get("/api/rent2/status")
         self.assertEqual(unauth_res.status_code, 401)
 
-        # 3. 플랫폼 관리자 로그인 후 정상 200 반환 및 방 29개 로드 검증
+        # 3. 플랫폼 관리자 로그인 후 정상 200 반환 (전체 3개 건물 합계 64개실)
         login_res = client.post("/auth/login", json={"username": "admin", "password": "1212"}).json()
         token = login_res["token"]
         auth_res = client.get("/api/rent2/status", headers={"Authorization": f"Bearer {token}"})
         self.assertEqual(auth_res.status_code, 200)
         self.assertEqual(auth_res.json()["app_id"], "rent2")
-        self.assertEqual(auth_res.json()["total_rooms"], 29)
+        self.assertEqual(auth_res.json()["total_rooms"], 64)
+
+        # 4. 시크빌 점주(chic) 로그인 시 시크빌 29개실 전용 격리 검증
+        chic_login = client.post("/auth/login", json={"username": "chic", "password": "1212"}).json()
+        chic_res = client.get("/api/rent2/status", headers={"Authorization": f"Bearer {chic_login['token']}"})
+        self.assertEqual(chic_res.status_code, 200)
+        self.assertEqual(chic_res.json()["total_rooms"], 29)
 
 
 if __name__ == "__main__":

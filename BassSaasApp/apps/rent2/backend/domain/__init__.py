@@ -7,24 +7,26 @@ from ..kernel import agent, identity
 from ..kernel.base import store
 from ..kernel.identity import seed_users
 from . import ai_tools  # noqa: F401  (도구 등록)
-from .rent import ROOM_NUMBERS, Building, Contract
+from .rent import ROOM_NUMBERS, Building, Contract, ChicvillBuilding, SinbiBuilding, SunhoBuilding
 
 # 건물 별칭은 코드가 아니라 '데이터'(Building.aliases)다. 신규 건물 생성 시 알려진 별칭을 붙인다.
 ALIASES = {
-    "main": ["chicvill01", "chicvill1", "chicvill", "시크빌", "시크빌1호점", "시크빌 1호점"],
-    "branch_9027": ["chicvill02", "chicvill2", "시크빌2호점", "시크빌 2호점"],
+    "main": ["chicvill01", "chicvill1", "chicvill", "시크빌", "시크빌1호점", "시크빌 1호점", "chic"],
+    "sunho": ["branch_5611", "branch_01", "branch_1", "선호", "선호아트빌", "선호빌", "선호원룸", "sunhovill"],
+    "sinbi": ["branch_9348", "branch_02", "branch_2", "신비", "신비주택", "신비원룸"],
 }
 DEFAULT_USERS = [
     ("admin", "본사 총괄 최고관리자", "superadmin", None),
-    ("admin01", "1호점(본점) 관리실장", "branch_admin", "main"),
-    ("admin02", "2호점 관리실장", "branch_admin", "branch_9027"),
+    ("chic", "시크빌 관리자", "branch_admin", "main"),
+    ("sunho", "선호아트빌 관리자", "branch_admin", "sunho"),
+    ("sinbi", "신비주택 관리자", "branch_admin", "sinbi"),
     ("user", "일반 회원/세입자", "user", None),
 ]
 _ready_store: Optional[Any] = None      # 이 저장소 인스턴스로 이미 초기화했는가 (캐시)
 
 
 def bootstrap(seed_json: Optional[str] = None) -> None:
-    """기동 1회: 별칭 해석기 연결 → 기본 계정 → 기본 본점(main) 시드 (DB가 완전히 비었을 때만 1회 생성)"""
+    """기동 1회: 별칭 해석기 연결 → 기본 계정 → 시크빌(main), 선호아트빌(sunho), 신비주택(sinbi) 시드"""
     global _ready_store
     s = store()
     identity.scope_resolver = Building.canon
@@ -38,20 +40,30 @@ def bootstrap(seed_json: Optional[str] = None) -> None:
         if os.path.exists(def_path):
             target_seed = def_path
 
-    # DB에 건물이 단 1건도 없는 경우에만 최초 기본 본점(시크빌 1호점) 생성
-    buildings = Building.all()
-    if not buildings:
-        b = Building(id="main", name="시크빌 1호점 (본점, 29개실)", units=ROOM_NUMBERS, aliases=ALIASES["main"],
-                     contact_phone="010-2345-6789", address="서울특별시 강남구 테헤란로 123").save("seeded")
+    # 1. 시크빌 (main, 29개실)
+    b_main = Building.get("main")
+    if not b_main:
+        b_main = ChicvillBuilding(id="main", name="시크빌 (본점, 29개실)", units=ChicvillBuilding.DEFAULT_UNITS, aliases=ALIASES["main"],
+                                  contact_phone="010-2345-6789", address="서울특별시 강남구 테헤란로 123").save("seeded")
         if target_seed and os.path.exists(target_seed):
             try:
                 with open(target_seed, encoding="utf-8") as f:
                     seed_data = json.load(f)
                     rooms_data = seed_data.get("rooms", {})
                     if rooms_data:
-                        b.restore({"rooms": rooms_data})
+                        b_main.restore({"rooms": rooms_data})
             except Exception as _seed_err:
                 print(f"[bootstrap] 시드 세입자 데이터 복원 경고: {_seed_err}")
+
+    # 2. 선호아트빌 (sunho, 15개실)
+    if not Building.get("sunho"):
+        SunhoBuilding(id="sunho", name="선호아트빌 (15개실)", units=SunhoBuilding.DEFAULT_UNITS, aliases=ALIASES["sunho"],
+                      contact_phone="010-7250-7800", address="서울특별시 광진구 자양동 456").save("seeded")
+
+    # 3. 신비주택 (sinbi, 20개실)
+    if not Building.get("sinbi"):
+        SinbiBuilding(id="sinbi", name="신비주택 (20개실)", units=SinbiBuilding.DEFAULT_UNITS, aliases=ALIASES["sinbi"],
+                      contact_phone="010-4281-6453", address="서울특별시 영등포구 신길동 123-45").save("seeded")
 
     _ready_store = s
 

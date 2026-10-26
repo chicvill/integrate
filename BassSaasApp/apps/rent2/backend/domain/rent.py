@@ -708,6 +708,10 @@ class Unit:
 # ───────────────────────────── 건물 ─────────────────────────────
 class Building(Obj):
     scope_field = "id"
+
+    @classmethod
+    def kind(cls) -> str:
+        return "building"
     name: str = ""
     address: str = ""
     contact_phone: str = ""

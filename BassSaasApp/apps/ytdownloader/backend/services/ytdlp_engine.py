@@ -4,7 +4,7 @@ import time
 import shutil
 import logging
 import yt_dlp
-from apps.YTDownloader.backend.config import settings
+from ..config import settings
 
 logger = logging.getLogger("ytdlp_engine")
 

@@ -7,11 +7,11 @@ import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from apps.YTDownloader.backend.db.database import get_db
-from apps.YTDownloader.backend.db import models
-from apps.YTDownloader.backend.schemas import MediaFileItem
-from apps.YTDownloader.backend.config import settings
-from apps.YTDownloader.backend.routers.download import safe_content_disposition, locate_disk_file
+from ..db.database import get_db
+from ..db import models
+from ..schemas import MediaFileItem
+from ..config import settings
+from .download import safe_content_disposition, locate_disk_file
 
 router = APIRouter(prefix="", tags=["Media Archive"])
 

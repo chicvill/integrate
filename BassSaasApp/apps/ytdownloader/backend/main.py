@@ -5,9 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 
-from apps.YTDownloader.backend.config import settings
-from apps.YTDownloader.backend.db.database import engine, Base
-from apps.YTDownloader.backend.routers import download, media
+from .config import settings
+from .db.database import engine, Base
+from .routers import download, media
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ytdownloader_main")

@@ -59,7 +59,7 @@ def me(authorization: str = Header(""), token: Optional[str] = Query(None)) -> U
                 uname = pdata["u"]
                 u = User.by_username(uname)
                 if not u:
-                    u = User(username=uname, name=uname, role=pdata.get("r", "superadmin"), status="APPROVED").save("auto_seed")
+                    u = User(username=uname, name=uname, role=pdata.get("r", "superadmin"), branch=pdata.get("b"), status="APPROVED").save("auto_seed")
         except Exception:
             pass
     if not u:
