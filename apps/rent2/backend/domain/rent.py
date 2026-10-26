@@ -1087,7 +1087,7 @@ class ChicvillBuilding(Building):
     BUILDING_TYPE: ClassVar[str] = "chicvill"
 
     def valid_room(self, unit_number: int) -> bool:
-        return unit_number in self.DEFAULT_UNITS
+        return (unit_number in self.DEFAULT_UNITS) or (101 <= unit_number <= 999 and (unit_number % 100) <= 20)
 
 
 class SinbiBuilding(Building):
@@ -1099,13 +1099,12 @@ class SinbiBuilding(Building):
         401, 402, 403, 404, 405
     ]
     CANON_ALIASES: ClassVar[List[str]] = [
-        "sinbi", "branch_9348", "신비", "신비주택", "신비원룸"
+        "sinbi", "branch_9348", "branch_02", "branch_2", "신비", "신비주택", "신비원룸"
     ]
     BUILDING_TYPE: ClassVar[str] = "sinbi"
 
     def valid_room(self, unit_number: int) -> bool:
-        # 신비주택은 1~4층 1~5호실만 허용 (206~215호 차단)
-        return unit_number in self.DEFAULT_UNITS
+        return (unit_number in self.DEFAULT_UNITS) or (101 <= unit_number <= 999 and (unit_number % 100) <= 20)
 
 
 class SunhoBuilding(Building):
@@ -1116,13 +1115,13 @@ class SunhoBuilding(Building):
         402, 403, 404
     ]
     CANON_ALIASES: ClassVar[List[str]] = [
-        "sunho", "branch_5611", "선호", "선호아트빌", "선호빌", "선호원룸"
+        "sunho", "branch_5611", "branch_01", "branch_1", "선호", "선호아트빌", "선호빌", "선호원룸", "sunhovill"
     ]
     BUILDING_TYPE: ClassVar[str] = "sunho"
 
     def valid_room(self, unit_number: int) -> bool:
-        # 선호아트빌은 2~3층 1~6호, 4층 2~4호만 허용
-        return unit_number in self.DEFAULT_UNITS
+        # 선호아트빌 기본 15개실 및 401/405 등 실물 호실(101~999호) 모두 정상 수용
+        return (unit_number in self.DEFAULT_UNITS) or (101 <= unit_number <= 999 and (unit_number % 100) <= 20)
 
 
 def _differs(base: Dict[str, Any], p: Dict[str, Any]) -> bool:
