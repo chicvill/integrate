@@ -314,11 +314,23 @@ function previewUniversalPaste() {
     }
   }
 
-  // 금액 추출: 만원 단위 및 원 단위
+  // 금액 추출: 만원 단위 및 원 단위 및 5자리 이상 숫자
   let moneyM = cleanTxt.match(/(\d+(?:\.\d+)?)\s*만\s*원?/) ||
                cleanTxt.match(/(\d{1,3}(?:,\d{3})+|\d{4,9})\s*원/) ||
-               cleanTxt.match(/(?:입금|수납|보냈습니다)\s*[:\s]*(\d{1,3}(?:,\d{3})+|\d{4,9})/);
+               cleanTxt.match(/(?:입금|수납|보냈습니다)\s*[:\s]*(\d{1,3}(?:,\d{3})+|\d{4,9})/) ||
+               cleanTxt.match(/\b([1-9]\d{4,8})\b/) ||
+               cleanTxt.match(/\b(\d{1,3}(?:,\d{3})+)\b/);
   let estAmount = moneyM ? (moneyM[0].includes("만") ? moneyM[0] : `${parseInt((moneyM[1] || moneyM[0]).replace(/[^0-9]/g, ''), 10).toLocaleString()}원`) : null;
+
+  let estAmountNum = 0;
+  if (moneyM) {
+    if (moneyM[0].includes("만")) {
+      const v = parseFloat(moneyM[1] || moneyM[0]);
+      estAmountNum = Math.round(v * 10000);
+    } else {
+      estAmountNum = parseInt((moneyM[1] || moneyM[0]).replace(/[^0-9]/g, ''), 10);
+    }
+  }
 
   // AI 질문/작업 지시일 때는 중간 감지 과정 박스를 완전히 감추고 깔끔하게 '확인' 버튼만 유지
   if (isQuestionOrInstruction || (!roomNum && !estAmount && !matchedTenant)) {
@@ -331,30 +343,123 @@ function previewUniversalPaste() {
     return;
   }
 
-  // 은행 입금 문자인 경우 금액 폴백 (계약 월세+관리비)
-  if (!estAmount && roomNum && typeof allRooms !== "undefined") {
-    const found = allRooms.find(r => r.room_number === roomNum);
-    if (found) {
-      const total = (found.rent || 0) + (found.maintenance || 0);
-      if (total > 0) {
-        estAmount = `${total.toLocaleString()}원`;
+  const found = (typeof allRooms !== "undefined" && Array.isArray(allRooms)) ? allRooms.find(r => r.room_number === roomNum) : null;
+  let isAlreadyPaid = false;
+  let isAmountMismatch = false;
+  let diffAmount = 0;
+  let contractTotal = 0;
+  let contractRent = 0;
+  let contractMaint = 0;
+  let splitRent = 0;
+  let splitMaint = 0;
+
+  if (found) {
+    contractRent = Number(found.rent || 0);
+    contractMaint = Number(found.maintenance || 0);
+    const isVatSeparate = Boolean(found.vat_separate);
+    const isVatTarget = found.vat_target !== false;
+    const contractVat = (isVatSeparate && isVatTarget) ? Math.round(contractRent * 0.1) : 0;
+    contractTotal = contractRent + contractMaint + contractVat;
+
+    // 현재월 완납 및 미납 내역 여부 판별 (2026.10 완납 상태 중복 입금 방지)
+    const unpaids = found.unpaid_months || [];
+    const now = new Date();
+    const curYM = `${now.getFullYear()}-${now.getMonth() + 1}`;
+    const curPay = (found.payments && (found.payments[curYM] || found.payments[now.getMonth() + 1])) || {};
+    isAlreadyPaid = (unpaids.length === 0 && Boolean(curPay.paid));
+
+    if (!estAmountNum && contractTotal > 0) {
+      estAmountNum = contractTotal;
+      estAmount = `${contractTotal.toLocaleString()}원`;
+    }
+
+    if (estAmountNum > 0 && contractTotal > 0) {
+      if (estAmountNum !== contractTotal) {
+        isAmountMismatch = true;
+        diffAmount = estAmountNum - contractTotal;
+      }
+      // 계약내용의 임차료와 관리비를 참조하여 분리 저장 예정액 계산
+      if (estAmountNum === contractTotal) {
+        splitRent = contractRent;
+        splitMaint = contractMaint;
+      } else if (contractRent > 0 && estAmountNum <= contractRent) {
+        splitRent = estAmountNum;
+        splitMaint = 0;
+      } else if (contractRent > 0) {
+        splitRent = contractRent;
+        splitMaint = estAmountNum - contractRent;
+      } else {
+        splitRent = 0;
+        splitMaint = estAmountNum;
       }
     }
   }
 
   if (box) box.style.display = "block";
   if (badge) {
-    badge.innerHTML = "💬 입금 감지";
-    badge.style.background = "#0f172a";
+    if (isAlreadyPaid) {
+      badge.innerHTML = "⚠️ 완납 호실 (중복 주의)";
+      badge.style.background = "#dc2626";
+    } else if (isAmountMismatch) {
+      badge.innerHTML = "⚖️ 금액 불일치";
+      badge.style.background = "#ea580c";
+    } else {
+      badge.innerHTML = "💬 입금 감지";
+      badge.style.background = "#0f172a";
+    }
   }
+
+  let amountDisplayHtml = "";
+  if (isAmountMismatch) {
+    // 계약내용과 합계(송금)액이 틀린경우 빨간 글씨로 알려줘
+    const sign = diffAmount > 0 ? "+" : "";
+    amountDisplayHtml = `<span style="color:#dc2626;font-weight:900;">${estAmountNum.toLocaleString()}원 (⚠️ 계약 ${contractTotal.toLocaleString()}원 불일치: ${sign}${diffAmount.toLocaleString()}원)</span>`;
+  } else if (contractTotal > 0 && estAmountNum === contractTotal) {
+    amountDisplayHtml = `<span style="color:#166534;font-weight:800;">${estAmountNum.toLocaleString()}원 (계약일치)</span>`;
+  } else if (contractTotal === 0 && (!found || !found.name)) {
+    amountDisplayHtml = `<span style="color:#ea580c;font-weight:800;">${estAmountNum.toLocaleString()}원 (⚠️ 공실/미계약 상태)</span>`;
+  } else {
+    amountDisplayHtml = `<b>${estAmount || "계약금액 적용"}</b>`;
+  }
+
+  let splitDisplayHtml = "";
+  if (contractTotal > 0 && estAmountNum > 0) {
+    const splitColor = isAmountMismatch ? "#dc2626" : "#475569";
+    splitDisplayHtml = `<div style="font-size:11.5px;color:${splitColor};margin-top:3px;font-weight:600;">
+      ↳ 계약참조 분리: 임차료 ${splitRent.toLocaleString()}원 / 관리비 ${splitMaint.toLocaleString()}원
+    </div>`;
+  }
+
+  let duplicateNoticeHtml = "";
+  if (isAlreadyPaid) {
+    duplicateNoticeHtml = `<div style="color:#dc2626;font-weight:900;font-size:12px;margin-top:4px;background:#fee2e2;padding:4px 8px;border-radius:4px;border:1px solid #ef4444;">
+      🚫 2026.10 완납 상태입니다. 추가 입금 시 중복 입금 오류로 차단됩니다!
+    </div>`;
+  }
+
   if (body) {
-    const tenantSuffix = matchedTenant ? ` (${matchedTenant})` : "";
-    body.innerHTML = `호실: <b>${roomNum ? roomNum + "호" + tenantSuffix : (matchedTenant ? matchedTenant + "님" : "호실 미인식")}</b> | 금액: <b>${estAmount || "계약금액 적용"}</b>`;
+    const tenantSuffix = matchedTenant ? ` (${matchedTenant})` : (found?.name ? ` (${found.name})` : "");
+    body.innerHTML = `
+      <div>호실: <b>${roomNum ? roomNum + "호" + tenantSuffix : (matchedTenant ? matchedTenant + "님" : "호실 미인식")}</b> | 금액: ${amountDisplayHtml}</div>
+      ${splitDisplayHtml}
+      ${duplicateNoticeHtml}
+    `;
   }
+
   if (btn) {
-    btn.innerHTML = "확인 (수납)";
-    btn.className = "btn-primary";
-    btn.style.background = "#0f172a";
+    if (isAlreadyPaid) {
+      btn.innerHTML = "중복 입금 주의 (수납 차단)";
+      btn.className = "btn-primary";
+      btn.style.background = "#dc2626";
+    } else if (isAmountMismatch) {
+      btn.innerHTML = "확인 (금액 불일치 수납)";
+      btn.className = "btn-primary";
+      btn.style.background = "#ea580c";
+    } else {
+      btn.innerHTML = "확인 (수납)";
+      btn.className = "btn-primary";
+      btn.style.background = "#0f172a";
+    }
   }
   updateOmniSendBtn();
 }
@@ -625,8 +730,15 @@ async function submitUniversalIngest() {
         const first = data.items?.[0];
         const amtStr = first ? ` (${first.room_number}호 ${((first.applied_amount || first.amount) || 0).toLocaleString()}원)` : "";
         const periodInfo = (first && first.applied_year && first.applied_month) ? ` · ${first.applied_year}-${first.applied_month < 10 ? '0' : ''}${first.applied_month}분` : "";
+        const splitDesc = (first && first.applied_rent !== undefined && first.applied_maintenance !== undefined)
+          ? `<br><small style="font-size:11.5px;color:#334155;">💰 분리 저장 완료: 임차료 ${first.applied_rent.toLocaleString()}원 / 관리비 ${first.applied_maintenance.toLocaleString()}원</small>`
+          : "";
+        let mismatchDesc = "";
+        if (first && first.amount_mismatch) {
+          mismatchDesc = `<br><span style="color:#dc2626;font-weight:900;font-size:12px;">⚠️ [계약금액 불일치] 계약액(${first.contract_expected?.toLocaleString()}원) ≠ 송금액(${first.applied_amount?.toLocaleString()}원) (차액: ${first.diff > 0 ? '+' : ''}${first.diff?.toLocaleString()}원)</span>`;
+        }
         const extractedDesc = data.extracted_text ? `<br><small style="font-size:11.5px;color:#334155;">📷 텍스트 추출: ${data.extracted_text.replace(/\n/g, ' ')}</small>` : "";
-        alertMsg = `✅ <b>입금 수납 완료</b>: ${data.applied_count}건 수납 처리되었습니다!${amtStr}${periodInfo}${extractedDesc}`;
+        alertMsg = `✅ <b>입금 수납 완료</b>: ${data.applied_count}건 수납 처리되었습니다!${amtStr}${periodInfo}${splitDesc}${mismatchDesc}${extractedDesc}`;
       } else if (data.kind === "google_sheet" || data.kind === "file_excel") {
         alertMsg = `✅ <b>장부 동기화 완료</b>: 2025/2026년 전체 데이터가 성공적으로 반영되었습니다.`;
       } else if (data.ocr_kind === "receipt" || data.expense) {
@@ -653,21 +765,24 @@ async function submitUniversalIngest() {
       await reloadRooms();
       if (typeof loadVatReport === "function") loadVatReport();
     } else {
+      const isDuplicate = Boolean(data.items && data.items.some(x => x.is_duplicate)) || Boolean(data.message && data.message.includes("중복 입금"));
       const failMsg = data.message || "유효한 계약/세입자 정보를 인식하지 못했습니다. 글자가 선명하도록 다시 촬영해 주시거나 엑셀 텍스트를 붙여넣어 주세요.";
       if (resBox && resContent) {
         resBox.style.display = "block";
-        resBox.style.borderColor = "#d97706";
-        resBox.style.background = "#fffbeb";
-        resContent.innerHTML = `<span style="color:#b45309;font-weight:800;font-size:13.5px;">⚠️ 분석 결과 안내 (반영 0건):</span><br><br>${failMsg.replace(/\n/g, '<br>')}<br><br><span style="font-size:11.5px;color:#64748b;">💡 조치 팁: 엑셀이나 스프레드시트의 셀을 복사(Ctrl+C)하여 만능 입력창에 붙여넣으시면 즉시 일괄 등록됩니다.</span>`;
+        resBox.style.borderColor = isDuplicate ? "#ef4444" : "#d97706";
+        resBox.style.background = isDuplicate ? "#fef2f2" : "#fffbeb";
+        const titleText = isDuplicate ? "❌ [중복 입금 오류 안내]" : "⚠️ 분석 결과 안내 (반영 0건):";
+        const titleColor = isDuplicate ? "#dc2626" : "#b45309";
+        resContent.innerHTML = `<span style="color:${titleColor};font-weight:900;font-size:13.5px;">${titleText}</span><br><br>${failMsg.replace(/\n/g, '<br>')}`;
         setTimeout(() => {
           resBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }, 50);
       }
-      setAlert(`⚠️ [분석 결과 안내] ${failMsg}`, "warning");
+      setAlert(failMsg, isDuplicate ? "error" : "warning");
       if (btn) {
         btn.disabled = false;
-        btn.innerHTML = "다시 확인 / 시도 🔄";
-        btn.style.background = "#d97706";
+        btn.innerHTML = isDuplicate ? "중복 입금 확인 (차단됨)" : "다시 확인 / 시도 🔄";
+        btn.style.background = isDuplicate ? "#dc2626" : "#d97706";
       }
     }
   } catch (err) {

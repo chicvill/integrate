@@ -365,23 +365,55 @@ def smart_paste_payment(p: Dict[str, Any] = Body(...), user: User = Depends(me))
                 c = u.active()
                 amt = (c.monthly_rent + c.maintenance) if c else 0
 
+            target_y = item.get("target_year") or today().year
+            target_m = item.get("target_month") or today().month
+            unpaids = u.unpaid_periods()
+
+            # 1. 2026.10 완납 상태가 되었는데 중복 입금되면 오류 메시지로 안내
+            is_target_paid = u.period(target_y, target_m).get("paid", False)
+            if len(unpaids) == 0 and is_target_paid:
+                c_act = u.active()
+                tname = item.get("detected_tenant") or (c_act.tenant_name if c_act else "") or f"{room}호"
+                item["applied"] = False
+                item["is_duplicate"] = True
+                item["error_reason"] = f"⚠️ [중복 입금 오류] {room}호 {tname}님은 {target_y}년 {target_m:02d}월까지 이미 전액 완납되었습니다. 중복 입금(송금액: {amt:,}원)이 감지되어 자동 수납이 차단되었습니다."
+                continue
+
+            # 2. 계약내용의 임차료와 관리비를 참조하여 분리 저장
+            split_rent, split_maint, is_mismatch, c_total = u.split_payment_amount(amt, target_y, target_m)
+            item["split_rent"] = split_rent
+            item["split_maintenance"] = split_maint
+            item["amount_mismatch"] = is_mismatch
+            item["contract_expected"] = c_total
+            item["diff"] = amt - c_total
+
             if amt > 0:
+                mismatch_tag = f" [⚠️계약불일치: 계약 {c_total:,}원 ≠ 송금 {amt:,}원]" if is_mismatch else ""
                 note_suffix = " (계약금액 자동적용)" if item.get("is_fallback_amount") or item["amount"] == 0 else ""
-                pay_obj, app_y, app_m, was_oldest = u.pay_fifo(
-                    paid_date=item["paid_date"],
-                    note=f"문자 자동수납 ({item['detected_tenant'] or '입금자'} {amt:,}원{note_suffix})",
-                    tenant_name=item.get("detected_tenant"),
-                    rent_amount=amt,
-                    fallback_month=item["target_month"],
-                    fallback_year=item["target_year"]
-                )
-                item["applied"] = True
-                item["applied_amount"] = amt
-                item["applied_year"] = app_y
-                item["applied_month"] = app_m
-                item["was_oldest_unpaid"] = was_oldest
-                item["payment_id"] = pay_obj.id
-                applied.append(item)
+                try:
+                    pay_obj, app_y, app_m, was_oldest = u.pay_fifo(
+                        paid_date=item["paid_date"],
+                        note=f"문자 자동수납 ({item['detected_tenant'] or '입금자'} {amt:,}원{mismatch_tag}{note_suffix})",
+                        tenant_name=item.get("detected_tenant"),
+                        rent_amount=split_rent,
+                        maintenance_amount=split_maint,
+                        fallback_month=target_m,
+                        fallback_year=target_y,
+                        check_duplicate=True
+                    )
+                    item["applied"] = True
+                    item["applied_amount"] = amt
+                    item["applied_rent"] = split_rent
+                    item["applied_maintenance"] = split_maint
+                    item["applied_year"] = app_y
+                    item["applied_month"] = app_m
+                    item["was_oldest_unpaid"] = was_oldest
+                    item["payment_id"] = pay_obj.id
+                    applied.append(item)
+                except ValueError as ve:
+                    item["applied"] = False
+                    item["is_duplicate"] = True
+                    item["error_reason"] = str(ve)
             else:
                 item["applied"] = False
                 item["error_reason"] = f"{room}호의 입금 금액을 확인하지 못했습니다."
@@ -395,13 +427,24 @@ def smart_paste_payment(p: Dict[str, Any] = Body(...), user: User = Depends(me))
     ok = len(applied) > 0
     fail_reasons = [it.get("error_reason") for it in parsed_list if it.get("error_reason")]
     fail_msg = " | ".join(fail_reasons) if fail_reasons else "호실 계약 정보 또는 입금 금액을 확인하지 못했습니다."
+
+    mismatch_items = [it for it in applied if it.get("amount_mismatch")]
+    mismatch_notice = ""
+    if mismatch_items:
+        first_m = mismatch_items[0]
+        mismatch_notice = f" <span style='color:#dc2626;font-weight:800;'>[⚠️ 계약금액 불일치: 계약 {first_m['contract_expected']:,}원 ≠ 송금 {first_m['applied_amount']:,}원 (차액: {first_m['diff']:+,}원)]</span>"
+
+    success_msg = f"총 {len(parsed_list)}건 중 {len(applied)}건이 자동 수납 처리되었습니다."
+    if mismatch_notice:
+        success_msg += mismatch_notice
+
     return {
         "success": ok,
         "branch_id": bid,
         "total_parsed": len(parsed_list),
         "applied_count": len(applied),
         "items": parsed_list,
-        "message": f"총 {len(parsed_list)}건 중 {len(applied)}건이 자동 수납 처리되었습니다." if ok else fail_msg
+        "message": success_msg if ok else fail_msg
     }
 
 

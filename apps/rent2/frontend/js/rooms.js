@@ -185,6 +185,11 @@ function renderRooms() {
 async function quickPay(roomNum) {
   const r = (typeof allRooms !== "undefined") ? allRooms.find(x => x.room_number === roomNum) : null;
   const unpaids = r?.unpaid_months || [];
+  if (unpaids.length === 0) {
+    setAlert(`⚠️ [${roomNum}호] 이미 당월까지 전액 완납된 상태입니다. 중복 입금 처리를 차단합니다.`, "warning");
+    return;
+  }
+
   const targetLabel = unpaids.length > 0 ? `${unpaids[0]}분 (가장 오래된 미납)` : "당월분";
   if (!confirm(`[${roomNum}호] ${targetLabel} 수납(정상 입금)으로 처리하시겠습니까?`)) return;
 
@@ -201,14 +206,17 @@ async function quickPay(roomNum) {
         note: "원클릭 수납"
       })
     });
-    if (!res.ok) return;
+    if (!res.ok) {
+      const errData = await res.json().catch(() => null);
+      throw new Error(errData?.detail || `서버 오류 (HTTP ${res.status})`);
+    }
     const data = await res.json();
     const pLabel = data.applied_period || `${now.getFullYear()}-${now.getMonth() + 1}`;
     const suffix = data.was_oldest_unpaid ? " (오래된 미납 우선 충당)" : "";
     setAlert(`✅ [${roomNum}호] ${pLabel}분 정상 수납 완료되었습니다!${suffix}`, "success");
     await reloadRooms();
   } catch (err) {
-    setAlert("수납 처리에 실패했습니다: " + (err.message || ""), "error");
+    setAlert(err.message || "수납 처리에 실패했습니다.", "error");
   }
 }
 
@@ -293,6 +301,7 @@ function openPaymentHistory(roomNumber) {
 
   let totalPaidCount = 0;
   let totalUnpaidCount = 0;
+  let totalMismatchCount = 0;
   let sumRent = 0;
   let sumMaint = 0;
   let sumVat = 0;
@@ -332,6 +341,23 @@ function openPaymentHistory(roomNumber) {
     let rawRentAmt = Number(payInfo.rent_amount !== undefined ? payInfo.rent_amount : (room.rent || 0));
     let rawMaintAmt = Number(payInfo.maintenance_amount !== undefined ? payInfo.maintenance_amount : (room.maintenance || 0));
 
+    // 계약내용의 임차료와 관리비를 참조하여 분리 표시
+    const cRent = Number(room.rent || 0);
+    const cMaint = Number(room.maintenance || 0);
+    const cTotal = cRent + cMaint;
+
+    // 만약 기존 저장된 결제 데이터에서 관리비가 0 또는 비어있고,
+    // 임차료에 송금 총액이 들어가 있다면 계약내용을 참조하여 분리
+    if (isPaid && (rawMaintAmt === 0 || payInfo.maintenance_amount === undefined) && cMaint > 0) {
+      if (rawRentAmt === cTotal) {
+        rawRentAmt = cRent;
+        rawMaintAmt = cMaint;
+      } else if (rawRentAmt > cRent) {
+        rawMaintAmt = rawRentAmt - cRent;
+        rawRentAmt = cRent;
+      }
+    }
+
     const isZeroAmountUnpaid = !isPaid && rawRentAmt === 0 && rawMaintAmt === 0;
     const isVacant = isExplicitVacant || isBeforeMoveIn || isPostpayMoveInVacant || isAfterMoveOut || isZeroAmountUnpaid;
 
@@ -354,6 +380,14 @@ function openPaymentHistory(roomNumber) {
 
     const monthTotal = rentAmt + maintAmt + vatAmt;
 
+    // 계약내용과 합계(송금)액이 틀린경우 빨간 글씨 판별
+    let expectedMonthTotal = cTotal;
+    if (isVatSeparate && isVatTarget) {
+      expectedMonthTotal += Math.round(cRent * 0.1);
+    }
+    const isAmountMismatch = isPaid && !isVacant && (expectedMonthTotal > 0) && (monthTotal !== expectedMonthTotal);
+    if (isAmountMismatch) totalMismatchCount++;
+
     if (isPaid) {
       totalPaidCount++;
       sumRent += rentAmt;
@@ -375,10 +409,23 @@ function openPaymentHistory(roomNumber) {
 
     const tr = document.createElement("tr");
     tr.style.borderBottom = "1px solid #e5e7eb";
-    if (!isPaid && !isVacant && room.name) {
+    if (isAmountMismatch) {
+      tr.style.background = "#fff1f2";
+    } else if (!isPaid && !isVacant && room.name) {
       tr.style.background = "#fff8f8";
     } else if (isVacant) {
       tr.style.background = "#fafafa";
+    }
+
+    let totalCellHtml = "-";
+    if (monthTotal > 0) {
+      if (isAmountMismatch) {
+        const diff = monthTotal - expectedMonthTotal;
+        const sign = diff > 0 ? "+" : "";
+        totalCellHtml = `<span style="color:#dc2626;font-weight:900;" title="계약액 ${expectedMonthTotal.toLocaleString()}원 불일치 (차액: ${sign}${diff.toLocaleString()}원)">${monthTotal.toLocaleString()}원 <small style="display:inline-block;padding:1px 3px;font-size:10px;background:#fee2e2;color:#dc2626;border-radius:2px;font-weight:700;">불일치</small></span>`;
+      } else {
+        totalCellHtml = `${monthTotal.toLocaleString()}원`;
+      }
     }
 
     tr.innerHTML = `
@@ -388,10 +435,14 @@ function openPaymentHistory(roomNumber) {
       <td style="padding:6px 4px;text-align:right;border-right:1px solid #e5e7eb;">${rentAmt > 0 ? rentAmt.toLocaleString() + '원' : '-'}</td>
       <td style="padding:6px 4px;text-align:right;border-right:1px solid #e5e7eb;">${maintAmt > 0 ? maintAmt.toLocaleString() + '원' : '-'}</td>
       <td style="padding:6px 4px;text-align:right;border-right:1px solid #e5e7eb;">${vatDisplay}</td>
-      <td style="padding:6px 4px;text-align:right;font-weight:800;background:${isPaid ? '#f8fafc' : '#fff'};">${monthTotal > 0 ? monthTotal.toLocaleString() + '원' : '-'}</td>
+      <td style="padding:6px 4px;text-align:right;font-weight:800;background:${isAmountMismatch ? '#fee2e2' : (isPaid ? '#f8fafc' : '#fff')};">${totalCellHtml}</td>
     `;
     tbody.appendChild(tr);
   });
+
+  const mismatchBadge = totalMismatchCount > 0
+    ? `<span style="color:#dc2626;font-weight:800;margin-left:6px;background:#fee2e2;padding:2px 6px;border-radius:3px;border:1px solid #ef4444;">⚠️ 계약금액 불일치 ${totalMismatchCount}건 (빨간색 표시)</span>`
+    : "";
 
   summaryEl.innerHTML = `
     <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:4px;">
@@ -400,7 +451,7 @@ function openPaymentHistory(roomNumber) {
     </div>
     <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;color:#333;">
       <div><b>조회기간:</b> ${prevY}년 01월 ~ ${curY}년 ${String(curM).padStart(2, '0')}월 (총 ${periods.length}개월)</div>
-      <div><b>수납현황:</b> <span style="color:#166534;font-weight:700;">완납 ${totalPaidCount}회</span> / <span style="color:#dc2626;font-weight:700;">미납 ${totalUnpaidCount}회</span></div>
+      <div><b>수납현황:</b> <span style="color:#166534;font-weight:700;">완납 ${totalPaidCount}회</span> / <span style="color:#dc2626;font-weight:700;">미납 ${totalUnpaidCount}회</span>${mismatchBadge}</div>
     </div>
   `;
 

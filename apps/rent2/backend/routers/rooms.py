@@ -74,21 +74,45 @@ def fill_payments(p: Dict[str, Any] = Body_, branch_id: str = "main", user: User
 def pay(n: int, p: Dict[str, Any] = Body(...), branch_id: str = "main", user: User = Depends(me)):
     u = get_unit(branch_id, n, user)
     force = bool(p.get("force_month"))
+    req_m = num(p.get("month")) or today().month
+    req_y = num(p.get("year")) or today().year
+
+    # 중복 입금 방지: force가 아닌 경우, 미납이 없고 대상월이 이미 완납이면 차단
+    if not force:
+        unpaids = u.unpaid_periods()
+        if len(unpaids) == 0 and u.period(req_y, req_m).get("paid"):
+            c_act = u.active()
+            tname = (c_act.tenant_name if c_act else "") or f"{n}호"
+            raise HTTPException(400, f"⚠️ [중복 입금 오류] {n}호 {tname}님은 {req_y}년 {req_m:02d}월까지 이미 전액 완납 상태입니다. 중복 수납 처리를 할 수 없습니다.")
+
+    # 임차료와 관리비 분리 처리
+    amt = num(p.get("amount") or p.get("rent_amount"))
+    rent_amt = p.get("rent_amount")
+    maint_amt = p.get("maintenance_amount")
+
+    if (maint_amt is None or maint_amt == 0) and amt and amt > 0:
+        s_rent, s_maint, _, _ = u.split_payment_amount(amt, req_y, req_m)
+        rent_amt, maint_amt = s_rent, s_maint
+
     if force and p.get("month"):
         p_obj = u.pay(num(p.get("month")), p.get("year"), p.get("paid_date"), p.get("note") or "정상 입금",
-                      p.get("tenant_name"), p.get("rent_amount"), p.get("maintenance_amount"))
+                      p.get("tenant_name"), rent_amt, maint_amt, check_duplicate=not force)
         app_y, app_m, was_oldest = p_obj.year, p_obj.month, False
     else:
         # 비즈니스 규칙: 미납월 중 가장 오래된 월부터 우선 적용 (FIFO)
-        p_obj, app_y, app_m, was_oldest = u.pay_fifo(
-            paid_date=p.get("paid_date"),
-            note=p.get("note") or "정상 입금",
-            tenant_name=p.get("tenant_name"),
-            rent_amount=p.get("rent_amount"),
-            maintenance_amount=p.get("maintenance_amount"),
-            fallback_month=num(p.get("month")),
-            fallback_year=num(p.get("year"))
-        )
+        try:
+            p_obj, app_y, app_m, was_oldest = u.pay_fifo(
+                paid_date=p.get("paid_date"),
+                note=p.get("note") or "정상 입금",
+                tenant_name=p.get("tenant_name"),
+                rent_amount=rent_amt,
+                maintenance_amount=maint_amt,
+                fallback_month=num(p.get("month")),
+                fallback_year=num(p.get("year")),
+                check_duplicate=True
+            )
+        except ValueError as ve:
+            raise HTTPException(400, str(ve))
     res = u.room()
     res["applied_period"] = f"{app_y}-{app_m:02d}"
     res["was_oldest_unpaid"] = was_oldest

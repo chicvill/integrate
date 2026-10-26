@@ -253,13 +253,28 @@ class Room(Obj):
 
     def pay_direct(self, month: int, year: Optional[int] = None, paid_date: Optional[str] = None,
                    note: str = "정상 입금", tenant_name: Optional[str] = None,
-                   rent_amount: Optional[int] = None, maintenance_amount: Optional[int] = None) -> Dict[str, Any]:
-        """O(1) 단건 수납 즉각 처리"""
+                   rent_amount: Optional[int] = None, maintenance_amount: Optional[int] = None,
+                   check_duplicate: bool = False) -> Dict[str, Any]:
+        """O(1) 단건 수납 즉각 처리 (계약내용 참조 분리 저장 및 중복 입금 방지)"""
         y = year or today().year
         key = f"{y}-{month:02d}"
+        if check_duplicate and key in self.payments and self.payments[key].get("paid"):
+            raise ValueError(f"{self.room_number}호는 {y}년 {month:02d}월에 이미 완납되었습니다. (중복 입금 오류)")
         c = self.contract or {}
-        rent = rent_amount if rent_amount is not None else c.get("rent", 0)
-        maint = maintenance_amount if maintenance_amount is not None else c.get("maintenance", 0)
+        c_rent = c.get("rent", 0) or 0
+        c_maint = c.get("maintenance", 0) or 0
+        rent = rent_amount if rent_amount is not None else c_rent
+        maint = maintenance_amount if maintenance_amount is not None else c_maint
+
+        # 계약내용을 참조하여 임차료와 관리비 분리 저장
+        if rent_amount is not None and (maintenance_amount is None or maintenance_amount == 0) and c_maint > 0 and (c_rent + c_maint) > 0:
+            if rent_amount == (c_rent + c_maint):
+                rent, maint = c_rent, c_maint
+            elif c_rent > 0 and rent_amount <= c_rent:
+                rent, maint = rent_amount, 0
+            elif c_rent > 0:
+                rent, maint = c_rent, rent_amount - c_rent
+
         p_record = {
             "id": f"pay_{self.building_id}_{self.room_number}_{y}_{month}",
             "building_id": self.building_id,
@@ -464,16 +479,72 @@ class Unit:
         return sorted(res, key=lambda ym: idx(ym[0], ym[1]), reverse=True)
 
     # ── 행동 ──
+    def split_payment_amount(self, total_amt: int, year: Optional[int] = None, month: Optional[int] = None) -> Tuple[int, int, bool, int]:
+        """
+        계약내용의 임차료와 관리비를 참조하여 송금액(total_amt)을 분리 계산한다.
+        반환값: (rent_amount, maintenance_amount, is_mismatch, contract_total)
+        """
+        y = year or today().year
+        m = month or today().month
+        c = self.covering(idx(y, m)) or self.active() or self.latest()
+        if not c:
+            return (total_amt, 0, False, 0)
+
+        c_rent = getattr(c, "monthly_rent", 0) or getattr(c, "rent", 0) or 0
+        c_maint = getattr(c, "maintenance", 0) or 0
+        c_total = c_rent + c_maint
+
+        if c_total <= 0:
+            return (total_amt, 0, False, 0)
+
+        is_mismatch = (total_amt != c_total)
+
+        if total_amt == c_total:
+            # 계약 금액과 정확히 일치: 계약상의 임차료와 관리비로 분리
+            return (c_rent, c_maint, False, c_total)
+        elif c_rent > 0 and total_amt <= c_rent:
+            # 송금액이 임차료보다 적거나 같은 경우: 임차료 우선 충당
+            return (total_amt, 0, is_mismatch, c_total)
+        elif c_rent > 0:
+            # 송금액이 임차료를 초과하는 경우: 임차료 전액 + 초과분은 관리비로 배분
+            return (c_rent, total_amt - c_rent, is_mismatch, c_total)
+        else:
+            return (0, total_amt, is_mismatch, c_total)
+
     def pay(self, month: int, year: Optional[int] = None, paid_date: Optional[str] = None, note: str = "정상 입금",
             tenant_name: Optional[str] = None, rent_amount: Optional[int] = None,
-            maintenance_amount: Optional[int] = None) -> Payment:
+            maintenance_amount: Optional[int] = None, check_duplicate: bool = False) -> Payment:
         y = year or today().year
         base = self.period(y, month)
+
+        if check_duplicate and base.get("paid"):
+            t_name = tenant_name or base.get("tenant_name") or f"{self.number}호"
+            raise ValueError(f"{self.number}호 {t_name}님은 {y}년 {month:02d}월에 이미 완납되었습니다. (중복 입금 오류)")
+
+        # 계약내용을 참조하여 임차료와 관리비 분리 저장
+        c = self.covering(idx(y, month)) or self.active() or self.latest()
+        c_rent = getattr(c, "monthly_rent", 0) or getattr(c, "rent", 0) or 0
+        c_maint = getattr(c, "maintenance", 0) or 0
+
+        final_rent = rent_amount
+        final_maint = maintenance_amount
+
+        if final_rent is None and final_maint is None:
+            final_rent = base["rent_amount"]
+            final_maint = base["maintenance_amount"]
+        elif final_rent is not None and (final_maint is None or final_maint == 0):
+            # rent_amount만 전달된 경우 (송금 총액이 rent_amount로 들어왔을 가능성)
+            if c and (c_rent + c_maint) > 0 and c_maint > 0:
+                s_rent, s_maint, _, _ = self.split_payment_amount(final_rent, y, month)
+                final_rent, final_maint = s_rent, s_maint
+            else:
+                final_maint = base["maintenance_amount"] or 0
+
         p = Payment(id=Payment.pid(self.b.id, self.number, y, month), building_id=self.b.id, unit=self.number,
                     year=y, month=month, paid=True, paid_date=paid_date or today().isoformat(), note=note or "정상 입금",
                     tenant_name=tenant_name or base["tenant_name"], tenant_id_number=base["tenant_id_number"],
-                    rent_amount=base["rent_amount"] if rent_amount is None else rent_amount,
-                    maintenance_amount=base["maintenance_amount"] if maintenance_amount is None else maintenance_amount)
+                    rent_amount=final_rent,
+                    maintenance_amount=final_maint)
         self.pays[(y, month)] = p.save("paid", unit=self.number, period=f"{y}-{month:02d}", amount=(p.rent_amount or 0) + (p.maintenance_amount or 0))
         r = Room.get_room(self.b.id, self.number)
         if r:
@@ -484,10 +555,12 @@ class Unit:
     def pay_fifo(self, paid_date: Optional[str] = None, note: str = "정상 입금",
                  tenant_name: Optional[str] = None, rent_amount: Optional[int] = None,
                  maintenance_amount: Optional[int] = None, fallback_month: int = 0,
-                 fallback_year: int = 0) -> Tuple[Payment, int, int, bool]:
+                 fallback_year: int = 0, total_amount: Optional[int] = None,
+                 check_duplicate: bool = False) -> Tuple[Payment, int, int, bool]:
         """
         입금 적용월: 호실의 미납월 중 가장 오래된 것부터 우선 충당 (FIFO).
         미납월이 없으면 전달받은 fallback_month(또는 당월)에 적용.
+        check_duplicate=True인 경우, 미납월이 없고 대상월이 이미 완납 상태이면 ValueError 발생.
         반환값: (Payment객체, 적용연도, 적용월, 과거미납충당여부)
         """
         unpaids = self.unpaid_periods()
@@ -499,13 +572,27 @@ class Unit:
             target_y = fallback_year or now.year
             target_m = fallback_month or now.month
             was_oldest = False
+            # 중복 입금 검사: 미납월이 전혀 없고 해당 월이 이미 완납된 경우
+            if check_duplicate:
+                target_period = self.period(target_y, target_m)
+                if target_period.get("paid"):
+                    c_act = self.active()
+                    t_name = tenant_name or (c_act.tenant_name if c_act else "") or f"{self.number}호"
+                    raise ValueError(f"{self.number}호 {t_name}님은 {target_y}년 {target_m:02d}월까지 이미 전액 완납된 상태입니다. (중복 입금 오류)")
+
+        # 송금 총액이 주어진 경우, 또는 rent_amount만 주어지고 maintenance_amount가 없는 경우 분리
+        tot = total_amount if total_amount is not None else (rent_amount if (maintenance_amount is None or maintenance_amount == 0) else None)
+        if tot is not None and tot > 0:
+            s_rent, s_maint, _, _ = self.split_payment_amount(tot, target_y, target_m)
+            rent_amount, maintenance_amount = s_rent, s_maint
 
         applied_note = note or "정상 입금"
         if was_oldest and f"{target_m}월" not in applied_note:
             applied_note = f"{applied_note} ({target_m}월 미납분 충당)"
 
         p = self.pay(month=target_m, year=target_y, paid_date=paid_date, note=applied_note,
-                     tenant_name=tenant_name, rent_amount=rent_amount, maintenance_amount=maintenance_amount)
+                     tenant_name=tenant_name, rent_amount=rent_amount, maintenance_amount=maintenance_amount,
+                     check_duplicate=False)
         return (p, target_y, target_m, was_oldest)
 
     def cancel(self, month: int, year: Optional[int] = None, note: Optional[str] = "납부 취소") -> Payment:

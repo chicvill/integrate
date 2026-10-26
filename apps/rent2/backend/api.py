@@ -277,21 +277,45 @@ def sync_google_sheet(p: Dict[str, Any] = Body_, branch_id: str = "main", user: 
 def pay(n: int, p: Dict[str, Any] = Body(...), branch_id: str = "main", user: User = Depends(me)):
     u = _unit(branch_id, n, user)
     force = bool(p.get("force_month"))
+    req_m = num(p.get("month")) or today().month
+    req_y = num(p.get("year")) or today().year
+
+    # 중복 입금 방지: force가 아닌 경우, 미납이 없고 대상월이 이미 완납이면 차단
+    if not force:
+        unpaids = u.unpaid_periods()
+        if len(unpaids) == 0 and u.period(req_y, req_m).get("paid"):
+            c_act = u.active()
+            tname = (c_act.tenant_name if c_act else "") or f"{n}호"
+            raise HTTPException(400, f"⚠️ [중복 입금 오류] {n}호 {tname}님은 {req_y}년 {req_m:02d}월까지 이미 전액 완납 상태입니다. 중복 수납 처리를 할 수 없습니다.")
+
+    # 임차료와 관리비 분리 처리
+    amt = num(p.get("amount") or p.get("rent_amount"))
+    rent_amt = p.get("rent_amount")
+    maint_amt = p.get("maintenance_amount")
+
+    if (maint_amt is None or maint_amt == 0) and amt and amt > 0:
+        s_rent, s_maint, _, _ = u.split_payment_amount(amt, req_y, req_m)
+        rent_amt, maint_amt = s_rent, s_maint
+
     if force and p.get("month"):
         p_obj = u.pay(num(p.get("month")), p.get("year"), p.get("paid_date"), p.get("note") or "정상 입금",
-                      p.get("tenant_name"), p.get("rent_amount"), p.get("maintenance_amount"))
+                      p.get("tenant_name"), rent_amt, maint_amt, check_duplicate=not force)
         app_y, app_m, was_oldest = p_obj.year, p_obj.month, False
     else:
         # 비즈니스 규칙: 미납월 중 가장 오래된 월부터 우선 적용 (FIFO)
-        p_obj, app_y, app_m, was_oldest = u.pay_fifo(
-            paid_date=p.get("paid_date"),
-            note=p.get("note") or "정상 입금",
-            tenant_name=p.get("tenant_name"),
-            rent_amount=p.get("rent_amount"),
-            maintenance_amount=p.get("maintenance_amount"),
-            fallback_month=num(p.get("month")),
-            fallback_year=num(p.get("year"))
-        )
+        try:
+            p_obj, app_y, app_m, was_oldest = u.pay_fifo(
+                paid_date=p.get("paid_date"),
+                note=p.get("note") or "정상 입금",
+                tenant_name=p.get("tenant_name"),
+                rent_amount=rent_amt,
+                maintenance_amount=maint_amt,
+                fallback_month=num(p.get("month")),
+                fallback_year=num(p.get("year")),
+                check_duplicate=True
+            )
+        except ValueError as ve:
+            raise HTTPException(400, str(ve))
     res = u.room()
     res["applied_period"] = f"{app_y}-{app_m:02d}"
     res["was_oldest_unpaid"] = was_oldest
@@ -990,23 +1014,55 @@ def smart_paste_payment(p: Dict[str, Any] = Body(...), user: User = Depends(me))
                 c = u.active()
                 amt = (c.monthly_rent + c.maintenance) if c else 0
 
+            target_y = item.get("target_year") or today().year
+            target_m = item.get("target_month") or today().month
+            unpaids = u.unpaid_periods()
+
+            # 1. 2026.10 완납 상태가 되었는데 중복 입금되면 오류 메시지로 안내
+            is_target_paid = u.period(target_y, target_m).get("paid", False)
+            if len(unpaids) == 0 and is_target_paid:
+                c_act = u.active()
+                tname = item.get("detected_tenant") or (c_act.tenant_name if c_act else "") or f"{room}호"
+                item["applied"] = False
+                item["is_duplicate"] = True
+                item["error_reason"] = f"⚠️ [중복 입금 오류] {room}호 {tname}님은 {target_y}년 {target_m:02d}월까지 이미 전액 완납되었습니다. 중복 입금(송금액: {amt:,}원)이 감지되어 자동 수납이 차단되었습니다."
+                continue
+
+            # 2. 계약내용의 임차료와 관리비를 참조하여 분리 저장
+            split_rent, split_maint, is_mismatch, c_total = u.split_payment_amount(amt, target_y, target_m)
+            item["split_rent"] = split_rent
+            item["split_maintenance"] = split_maint
+            item["amount_mismatch"] = is_mismatch
+            item["contract_expected"] = c_total
+            item["diff"] = amt - c_total
+
             if amt > 0:
+                mismatch_tag = f" [⚠️계약불일치: 계약 {c_total:,}원 ≠ 송금 {amt:,}원]" if is_mismatch else ""
                 note_suffix = " (계약금액 자동적용)" if item.get("is_fallback_amount") or item["amount"] == 0 else ""
-                pay_obj, app_y, app_m, was_oldest = u.pay_fifo(
-                    paid_date=item["paid_date"],
-                    note=f"문자 자동수납 ({item['detected_tenant'] or '입금자'} {amt:,}원{note_suffix})",
-                    tenant_name=item.get("detected_tenant"),
-                    rent_amount=amt,
-                    fallback_month=item["target_month"],
-                    fallback_year=item["target_year"]
-                )
-                item["applied"] = True
-                item["applied_amount"] = amt
-                item["applied_year"] = app_y
-                item["applied_month"] = app_m
-                item["was_oldest_unpaid"] = was_oldest
-                item["payment_id"] = pay_obj.id
-                applied.append(item)
+                try:
+                    pay_obj, app_y, app_m, was_oldest = u.pay_fifo(
+                        paid_date=item["paid_date"],
+                        note=f"문자 자동수납 ({item['detected_tenant'] or '입금자'} {amt:,}원{mismatch_tag}{note_suffix})",
+                        tenant_name=item.get("detected_tenant"),
+                        rent_amount=split_rent,
+                        maintenance_amount=split_maint,
+                        fallback_month=target_m,
+                        fallback_year=target_y,
+                        check_duplicate=True
+                    )
+                    item["applied"] = True
+                    item["applied_amount"] = amt
+                    item["applied_rent"] = split_rent
+                    item["applied_maintenance"] = split_maint
+                    item["applied_year"] = app_y
+                    item["applied_month"] = app_m
+                    item["was_oldest_unpaid"] = was_oldest
+                    item["payment_id"] = pay_obj.id
+                    applied.append(item)
+                except ValueError as ve:
+                    item["applied"] = False
+                    item["is_duplicate"] = True
+                    item["error_reason"] = str(ve)
             else:
                 item["applied"] = False
                 item["error_reason"] = f"{room}호의 입금 금액을 확인하지 못했습니다."
@@ -1020,13 +1076,24 @@ def smart_paste_payment(p: Dict[str, Any] = Body(...), user: User = Depends(me))
     ok = len(applied) > 0
     fail_reasons = [it.get("error_reason") for it in parsed_list if it.get("error_reason")]
     fail_msg = " | ".join(fail_reasons) if fail_reasons else "호실 계약 정보 또는 입금 금액을 확인하지 못했습니다."
+
+    mismatch_items = [it for it in applied if it.get("amount_mismatch")]
+    mismatch_notice = ""
+    if mismatch_items:
+        first_m = mismatch_items[0]
+        mismatch_notice = f" <span style='color:#dc2626;font-weight:800;'>[⚠️ 계약금액 불일치: 계약 {first_m['contract_expected']:,}원 ≠ 송금 {first_m['applied_amount']:,}원 (차액: {first_m['diff']:+,}원)]</span>"
+
+    success_msg = f"총 {len(parsed_list)}건 중 {len(applied)}건이 자동 수납 처리되었습니다."
+    if mismatch_notice:
+        success_msg += mismatch_notice
+
     return {
         "success": ok,
         "branch_id": bid,
         "total_parsed": len(parsed_list),
         "applied_count": len(applied),
         "items": parsed_list,
-        "message": f"총 {len(parsed_list)}건 중 {len(applied)}건이 자동 수납 처리되었습니다." if ok else fail_msg
+        "message": success_msg if ok else fail_msg
     }
 
 

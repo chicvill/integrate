@@ -44,6 +44,8 @@ def parse_bank_message(text: str, default_building: str = "main") -> Dict[str, A
     tenant_to_unit: Dict[str, int] = {}
     unit_to_tenant: Dict[int, str] = {}
     unit_to_expected: Dict[int, int] = {}
+    unit_to_rent: Dict[int, int] = {}
+    unit_to_maintenance: Dict[int, int] = {}
     past_tenant_to_unit: Dict[str, int] = {}
 
     if b and b.units:
@@ -55,7 +57,11 @@ def parse_bank_message(text: str, default_building: str = "main") -> Dict[str, A
                     tname = c_act.tenant_name.strip()
                     tenant_to_unit[tname] = u_num
                     unit_to_tenant[u_num] = tname
-                    unit_to_expected[u_num] = (c_act.monthly_rent or 0) + (c_act.maintenance or 0)
+                    r_val = c_act.monthly_rent or 0
+                    m_val = c_act.maintenance or 0
+                    unit_to_rent[u_num] = r_val
+                    unit_to_maintenance[u_num] = m_val
+                    unit_to_expected[u_num] = r_val + m_val
                 else:
                     r_obj = Room.get_room(b.id, u_num)
                     if r_obj and r_obj.contract and r_obj.contract.get("name"):
@@ -64,6 +70,8 @@ def parse_bank_message(text: str, default_building: str = "main") -> Dict[str, A
                         unit_to_tenant[u_num] = tname
                         rent_v = num(r_obj.contract.get("rent")) or 0
                         maint_v = num(r_obj.contract.get("maintenance")) or 0
+                        unit_to_rent[u_num] = rent_v
+                        unit_to_maintenance[u_num] = maint_v
                         unit_to_expected[u_num] = rent_v + maint_v
                 for h in u_obj.ended():
                     if h.tenant_name and h.tenant_name.strip() not in tenant_to_unit:
@@ -217,6 +225,13 @@ def parse_bank_message(text: str, default_building: str = "main") -> Dict[str, A
         else:
             msg = f"{room_number}호 입금 금액을 확인하지 못했습니다."
 
+    expected_tenant = unit_to_tenant.get(room_number, "")
+    expected_rent = unit_to_rent.get(room_number, 0)
+    expected_maintenance = unit_to_maintenance.get(room_number, 0)
+    expected_total = unit_to_expected.get(room_number, 0)
+    is_mismatch = bool(amount > 0 and expected_total > 0 and amount != expected_total)
+    diff = (amount - expected_total) if (amount > 0 and expected_total > 0) else 0
+
     return {
         "success": success_flag,
         "raw_text": clean,
@@ -228,7 +243,11 @@ def parse_bank_message(text: str, default_building: str = "main") -> Dict[str, A
         "target_month": target_month,
         "detected_tenant": detected_tenant,
         "expected_tenant": expected_tenant,
+        "expected_rent": expected_rent,
+        "expected_maintenance": expected_maintenance,
         "expected_total": expected_total,
+        "amount_mismatch": is_mismatch,
+        "diff": diff,
         "matched": matched_unit is not None or (room_number in valid_units),
         "message": msg
     }
