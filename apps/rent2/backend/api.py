@@ -829,7 +829,7 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
                 res["kind"] = "bank_payment"
                 res["extracted_text"] = con_res["text"]
                 return res
-            if con_res.get("success") and int(con_res.get("applied_count") or 0) > 0:
+            if con_res.get("success") and num(con_res.get("applied_count")) > 0:
                 return con_res
             rec_res = smart_ocr_receipt({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
             return rec_res if (rec_res.get("success") and rec_res.get("expense")) else con_res
@@ -845,7 +845,7 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
                 res["kind"] = "bank_payment"
                 res["extracted_text"] = con_res["text"]
                 return res
-            if con_res.get("success") and int(con_res.get("applied_count") or 0) > 0:
+            if con_res.get("success") and num(con_res.get("applied_count")) > 0:
                 return con_res
             return rec_res
 
@@ -857,7 +857,7 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
                 res["kind"] = "bank_payment"
                 res["extracted_text"] = con_res["text"]
                 return res
-            if con_res.get("success") and int(con_res.get("applied_count") or 0) > 0:
+            if con_res.get("success") and num(con_res.get("applied_count")) > 0:
                 return con_res
             
             rec_res = smart_ocr_receipt({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
@@ -869,7 +869,7 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
                 res = smart_paste_payment({"text": sms_res["text"], "branch_id": bid, "auto_apply": True}, user)
                 res["kind"] = "bank_payment"
                 res["extracted_text"] = sms_res["text"]
-                if res.get("success") and int(res.get("applied_count") or 0) > 0:
+                if res.get("success") and num(res.get("applied_count")) > 0:
                     return res
             
             return con_res if con_res.get("success") else rec_res
