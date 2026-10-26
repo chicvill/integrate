@@ -29,7 +29,7 @@ from core.gateway import create_gateway
 def main():
     parser = argparse.ArgumentParser(description="BassSaasApp 플랫폼 실행기")
     parser.add_argument("--host", default="0.0.0.0", help="바인딩 호스트 (기본: 0.0.0.0)")
-    parser.add_argument("--port", type=int, default=8000, help="바인딩 포트 (기본: 8000)")
+    parser.add_argument("--port", type=int, default=int(os.getenv("PORT", "8000")), help="바인딩 포트 (기본: 환경변수 PORT 또는 8000)")
     parser.add_argument("--app", default=None, help="독립 실행할 단일 앱 ID (예: laundry)")
     parser.add_argument("--reload", action="store_true", help="코드 변경 시 자동 재시작")
     args = parser.parse_args()
