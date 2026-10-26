@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Body, Depends, HTTPException
 
 from ..domain import ai_tools
-from ..domain.rent import num
+from ..domain.rent import num, today
 from ..kernel.identity import User
 from .common import get_building, get_unit, me
 

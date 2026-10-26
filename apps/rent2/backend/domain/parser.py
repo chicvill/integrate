@@ -229,7 +229,7 @@ def parse_bank_message(text: str, default_building: str = "main") -> Dict[str, A
     expected_rent = unit_to_rent.get(room_number, 0)
     expected_maintenance = unit_to_maintenance.get(room_number, 0)
     expected_total = unit_to_expected.get(room_number, 0)
-    is_mismatch = bool(amount > 0 and expected_total > 0 and amount != expected_total)
+    is_mismatch = (amount > 0 and expected_total > 0 and amount != expected_total)
     diff = (amount - expected_total) if (amount > 0 and expected_total > 0) else 0
 
     return {

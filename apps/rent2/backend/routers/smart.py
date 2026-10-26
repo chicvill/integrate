@@ -191,19 +191,19 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
                 roster_cands = parser.parse_contract_roster(sms_res["text"])
                 if len(roster_cands) >= 2 or (roster_cands and any(r.get("deposit") or r.get("rent") for r in roster_cands)):
                     con_res = smart_ocr_contract({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
-                    if con_res.get("success") and int(con_res.get("applied_count") or 0) > 0:
+                    if con_res.get("success") and num(con_res.get("applied_count")) > 0:
                         return con_res
 
                 # 은행 입금 수납 처리 시도
                 res = smart_paste_payment({"text": sms_res["text"], "branch_id": bid, "auto_apply": True}, user)
                 res["kind"] = "bank_payment"
                 res["extracted_text"] = sms_res["text"]
-                if res.get("success") and int(res.get("applied_count") or 0) > 0:
+                if res.get("success") and num(res.get("applied_count")) > 0:
                     return res
 
             # 수납 처리가 안 된 경우(계약 대장 사진이거나 지출 영수증인 경우) 자동 스마트 폴백!
             con_res = smart_ocr_contract({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
-            if con_res.get("success") and int(con_res.get("applied_count") or 0) > 0:
+            if con_res.get("success") and num(con_res.get("applied_count")) > 0:
                 return con_res
             rec_res = smart_ocr_receipt({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
             if rec_res.get("success") and (rec_res.get("expense") or (rec_res.get("data") and rec_res["data"].get("amount"))):
@@ -222,7 +222,7 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
                 res["kind"] = "bank_payment"
                 res["extracted_text"] = con_res["text"]
                 return res
-            if con_res.get("success") and int(con_res.get("applied_count") or 0) > 0:
+            if con_res.get("success") and num(con_res.get("applied_count")) > 0:
                 return con_res
             rec_res = smart_ocr_receipt({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
             return rec_res if (rec_res.get("success") and rec_res.get("expense")) else con_res
@@ -238,7 +238,7 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
                 res["kind"] = "bank_payment"
                 res["extracted_text"] = con_res["text"]
                 return res
-            if con_res.get("success") and int(con_res.get("applied_count") or 0) > 0:
+            if con_res.get("success") and num(con_res.get("applied_count")) > 0:
                 return con_res
             return rec_res
 
@@ -250,7 +250,7 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
                 res["kind"] = "bank_payment"
                 res["extracted_text"] = con_res["text"]
                 return res
-            if con_res.get("success") and int(con_res.get("applied_count") or 0) > 0:
+            if con_res.get("success") and num(con_res.get("applied_count")) > 0:
                 return con_res
 
             rec_res = smart_ocr_receipt({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
@@ -262,7 +262,7 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
                 res = smart_paste_payment({"text": sms_res["text"], "branch_id": bid, "auto_apply": True}, user)
                 res["kind"] = "bank_payment"
                 res["extracted_text"] = sms_res["text"]
-                if res.get("success") and int(res.get("applied_count") or 0) > 0:
+                if res.get("success") and num(res.get("applied_count")) > 0:
                     return res
 
             return con_res if con_res.get("success") else rec_res
