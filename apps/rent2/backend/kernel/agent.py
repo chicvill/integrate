@@ -22,7 +22,7 @@ from .identity import User
 TOOLS: Dict[str, "Tool"] = {}
 current_user: ContextVar[Optional[User]] = ContextVar("current_user", default=None)
 _TYPES = {int: "INTEGER", float: "NUMBER", bool: "BOOLEAN", str: "STRING"}
-MODELS = ["gemini-3.8-flash", "gemini-flash-latest", "gemini-3.5-flash", "gemini-3.7-flash"]
+MODELS = ["gemini-3.1-flash-lite", "gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-3.8-flash"]
 
 
 @dataclass
@@ -130,15 +130,19 @@ def api_key() -> Optional[str]:
     return key
 
 
-def gemini(contents: list, system: str = "", tools: Optional[list] = None, json_mode: bool = False, timeout: int = 30) -> dict:
-    """여러 모델을 순차 폴백하며 generateContent 호출 → 첫 성공 응답(dict)"""
+def gemini(contents: list, system: str = "", tools: Optional[list] = None, json_mode: bool = False, timeout: int = 15) -> dict:
+    """여러 고속 모델을 순차 폴백하며 generateContent 호출 → 첫 성공 응답(dict)"""
     body: Dict[str, Any] = {"contents": contents}
     if system:
         body["system_instruction"] = {"parts": [{"text": system}]}
     if tools:
         body["tools"] = [{"functionDeclarations": tools}]
+    gen_config: Dict[str, Any] = {}
     if json_mode:
-        body["generationConfig"] = {"response_mime_type": "application/json"}
+        gen_config["response_mime_type"] = "application/json"
+    gen_config["thinkingConfig"] = {"thinkingBudget": 0}
+    body["generationConfig"] = gen_config
+
     last: Exception = RuntimeError("GEMINI_API_KEY 없음")
     for model in MODELS:
         try:
@@ -152,7 +156,7 @@ def gemini(contents: list, system: str = "", tools: Optional[list] = None, json_
     raise RuntimeError(f"Gemini 호출 실패: {last}")
 
 
-def gemini_json(prompt: str, image_b64: str = "", mime: str = "image/png", timeout: int = 40) -> Any:
+def gemini_json(prompt: str, image_b64: str = "", mime: str = "image/png", timeout: int = 15) -> Any:
     """프롬프트(+이미지) → 순수 JSON 파싱 결과 (계약서 OCR 등 비전 추출용)"""
     parts: list = [{"text": prompt}]
     if image_b64:

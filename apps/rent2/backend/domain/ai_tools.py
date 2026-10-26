@@ -387,6 +387,26 @@ OCR_PROMPT = (
 )
 
 
+def read_bank_sms_image(image_base64: str) -> Dict[str, Any]:
+    """은행 입금 알림 문자/카톡/금융앱 알림 캡처 사진에서 텍스트를 초고속 추출"""
+    if not agent.api_key():
+        return {"success": False, "has_api_key": False, "text": "",
+                "message": "서버에 GEMINI_API_KEY가 설정되어 있지 않습니다."}
+    head, _, body = image_base64.rpartition(",")
+    mime = "image/jpeg" if "jpeg" in head or "jpg" in head else "image/webp" if "webp" in head else "image/png"
+    clean_body = body.strip().replace(" ", "+")
+    prompt = (
+        "이 이미지는 스마트폰 화면에 수신된 은행 입금 알림 문자, 계좌이체 확인증, 또는 금융앱(농협, 국민, 신한, 토스, 카카오뱅크 등) 캡처입니다.\n"
+        "이미지 속 모든 텍스트(은행명, 입금액, 입금자/송금자 이름, 거래일시, 계좌번호, 잔액 등)를 줄바꿈을 살려 텍스트 그대로만 출력하세요. 다른 설명 없이 오직 인식된 텍스트만 출력하세요."
+    )
+    try:
+        res = agent.gemini([{"parts": [{"text": prompt}, {"inline_data": {"mime_type": mime, "data": clean_body}}]}], timeout=12)
+        text = res["candidates"][0]["content"]["parts"][0]["text"].strip()
+        return {"success": bool(text), "text": text, "source": "gemini_vision"}
+    except Exception as e:
+        return {"success": False, "text": "", "message": f"입금 알림 사진 분석 실패 ({e}). 문자를 복사하여 붙여넣어 주세요."}
+
+
 def read_contract_image(image_base64: str) -> Dict[str, Any]:
     """계약서·장부 사진에서 계약 후보 행을 추출한다 (키 없음/실패 시 사용자에게 직접 입력 안내)."""
     if not agent.api_key():
@@ -395,8 +415,21 @@ def read_contract_image(image_base64: str) -> Dict[str, Any]:
     head, _, body = image_base64.rpartition(",")
     mime = "image/jpeg" if "jpeg" in head or "jpg" in head else "image/webp" if "webp" in head else "image/png"
     clean_body = body.strip().replace(" ", "+")
+
+    # 1. 초고속 범용 텍스트 추출(Fast-Path): 만약 사용자가 입금 알림 캡처를 올린 경우 1초 만에 감지
     try:
-        parsed = agent.gemini_json(OCR_PROMPT, clean_body, mime, timeout=40)
+        quick_prompt = "이 이미지 속 모든 텍스트를 줄바꿈을 살려 그대로 추출하세요. 부가 설명 없이 텍스트만 출력하세요."
+        quick_res = agent.gemini([{"parts": [{"text": quick_prompt}, {"inline_data": {"mime_type": mime, "data": clean_body}}]}], timeout=10)
+        raw_text = quick_res["candidates"][0]["content"]["parts"][0]["text"].strip()
+        # 은행 입금 문자 패턴(농협, 국민, 신한, 입금, 잔액 등) 확인
+        if any(kw in raw_text for kw in ("입금", "이체", "잔액", "송금", "보냈습니다", "타행", "당행")) and len(re.findall(r"\b\d{3,4}\s*호\b", raw_text)) <= 1:
+            return {"success": True, "kind": "bank_sms", "text": raw_text, "source": "gemini_vision", "rows": []}
+    except Exception:
+        pass
+
+    # 2. 계약 대장 다중 호실 표 분석
+    try:
+        parsed = agent.gemini_json(OCR_PROMPT, clean_body, mime, timeout=15)
         rows = []
         if isinstance(parsed, list):
             rows = parsed
@@ -411,7 +444,7 @@ def read_contract_image(image_base64: str) -> Dict[str, Any]:
         return {"success": bool(rows), "rows": rows, "source": "gemini_vision"}
     except Exception as e:
         return {"success": False, "has_api_key": True, "rows": [], "source": "ocr_failed",
-                "message": f"AI 사진 분석 지연({e}). 구글 AI API 사용량 한도 초과 또는 일시적 지연입니다. 💡 엑셀 화면에서 셀을 복사(Ctrl+C)하여 만능 입력창에 붙여넣기(Ctrl+V)하시면 AI 제한 없이 0.1초 만에 100% 즉시 등록됩니다."}
+                "message": f"AI 사진 분석 지연({e}). 구글 AI API 일시적 지연입니다. 💡 엑셀 화면에서 셀을 복사(Ctrl+C)하여 만능 입력창에 붙여넣기(Ctrl+V)하시면 AI 제한 없이 0.1초 만에 100% 즉시 등록됩니다."}
 
 
 RECEIPT_OCR_PROMPT = ("이 이미지는 영수증, 간이영수증, 세금계산서, 이체증, 신용카드 영수증 캡처입니다. "

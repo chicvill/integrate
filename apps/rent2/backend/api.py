@@ -764,8 +764,22 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
     # A. 이미지 데이터 (base64 직접 전달 또는 text가 data:image)
     if img or text.startswith("data:image/"):
         target_img = img or text
-        if scan_kind == "contract":
+        if scan_kind == "bank_sms":
+            sms_res = ai_tools.read_bank_sms_image(target_img)
+            if not sms_res.get("success") or not sms_res.get("text"):
+                raise HTTPException(400, sms_res.get("message") or "입금 알림 사진에서 글자를 인식하지 못했습니다.")
+            res = smart_paste_payment({"text": sms_res["text"], "branch_id": bid, "auto_apply": True}, user)
+            res["kind"] = "bank_payment"
+            res["extracted_text"] = sms_res["text"]
+            return res
+        elif scan_kind == "contract":
             con_res = smart_ocr_contract({"image_base64": target_img, "branch_id": bid, "auto_apply": True, "clear_before_import": clear_before_import}, user)
+            # 입금 알림 사진으로 자동 감지된 경우 즉시 수납 처리로 연계
+            if con_res.get("kind") == "bank_sms" and con_res.get("text"):
+                res = smart_paste_payment({"text": con_res["text"], "branch_id": bid, "auto_apply": True}, user)
+                res["kind"] = "bank_payment"
+                res["extracted_text"] = con_res["text"]
+                return res
             if con_res.get("success") and con_res.get("applied_count", 0) > 0:
                 return con_res
             rec_res = smart_ocr_receipt({"image_base64": target_img, "branch_id": bid, "auto_apply": True}, user)
@@ -776,6 +790,11 @@ def universal_ingest(p: Dict[str, Any] = Body(...), user: User = Depends(me)):
             if rec_res.get("success") and (rec_res.get("expense") or (rec_res.get("data") and rec_res["data"].get("amount"))):
                 return rec_res
             con_res = smart_ocr_contract({"image_base64": target_img, "branch_id": bid, "auto_apply": True, "clear_before_import": clear_before_import}, user)
+            if con_res.get("kind") == "bank_sms" and con_res.get("text"):
+                res = smart_paste_payment({"text": con_res["text"], "branch_id": bid, "auto_apply": True}, user)
+                res["kind"] = "bank_payment"
+                res["extracted_text"] = con_res["text"]
+                return res
             if con_res.get("success") and con_res.get("applied_count", 0) > 0:
                 return con_res
             return con_res if con_res.get("success") else rec_res

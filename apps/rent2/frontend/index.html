@@ -345,13 +345,16 @@
           <img id="pasteImgPreview" src="" alt="첨부 사진" style="width:72px;height:72px;object-fit:cover;border:1px solid #000;border-radius:3px;">
           <div style="flex:1;font-size:12px;">
             <div style="font-weight:700;margin-bottom:6px;color:#0f172a;">스캔 대상 선택:</div>
-            <label style="margin-right:14px;cursor:pointer;font-weight:700;color:#1e40af;">
-              <input type="radio" name="pasteScanKind" value="contract" checked onchange="previewUniversalPaste()"> 📋 임대차 대장 / 계약서 (호실·세입자 일괄 등록)
+            <label style="margin-right:12px;cursor:pointer;font-weight:700;color:#0f172a;">
+              <input type="radio" name="pasteScanKind" value="bank_sms" checked onchange="previewUniversalPaste()"> 💬 은행 입금 문자 / 알림 캡처 (수납)
+            </label>
+            <label style="margin-right:12px;cursor:pointer;font-weight:700;color:#1e40af;">
+              <input type="radio" name="pasteScanKind" value="contract" onchange="previewUniversalPaste()"> 📋 임대차 대장 / 계약서
             </label>
             <label style="cursor:pointer;color:#475569;">
-              <input type="radio" name="pasteScanKind" value="receipt" onchange="previewUniversalPaste()"> 🧾 지출 영수증 (비용 전표)
+              <input type="radio" name="pasteScanKind" value="receipt" onchange="previewUniversalPaste()"> 🧾 지출 영수증
             </label>
-            <div style="font-size:11px;color:#64748b;margin-top:4px;">💡 호실별 표(장부) 사진을 올리시면 <b>모든 호실의 세입자 정보가 일괄 자동 등록</b>됩니다.</div>
+            <div id="pasteScanKindHelp" style="font-size:11px;color:#64748b;margin-top:4px;">💡 스마트폰 입금 알림 문자나 계좌이체 캡처를 올리시면 <b>1초 만에 세입자 호실로 자동 수납</b>됩니다.</div>
           </div>
         </div>
       </div>

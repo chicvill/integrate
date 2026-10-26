@@ -43,7 +43,7 @@ function clearPasteImage() {
 
 function getSelectedPasteScanKind() {
   const r = document.querySelector("input[name='pasteScanKind']:checked");
-  return r ? r.value : "receipt";
+  return r ? r.value : "bank_sms";
 }
 
 // 만능 입력 실시간 분석 & 미리보기 갱신
@@ -64,13 +64,32 @@ function previewUniversalPaste() {
     return;
   }
 
-  // 1. 사진 / 이미지 데이터 감지 (필요 시에만 간결 표시)
+  // 1. 사진 / 이미지 데이터 감지 (스캔 종류별 즉시 버튼 안내)
   if (currentPasteImageBase64 || txt.startsWith("data:image/")) {
+    const scanKind = getSelectedPasteScanKind();
+    const helpEl = document.getElementById("pasteScanKindHelp");
+    if (helpEl) {
+      if (scanKind === "bank_sms") {
+        helpEl.innerHTML = "💡 스마트폰 입금 알림 문자나 계좌이체 캡처를 올리시면 <b>1초 만에 세입자 호실로 자동 수납</b>됩니다.";
+      } else if (scanKind === "contract") {
+        helpEl.innerHTML = "💡 호실별 표(장부) 사진을 올리시면 <b>모든 호실의 세입자 정보가 일괄 자동 등록</b>됩니다.";
+      } else {
+        helpEl.innerHTML = "💡 영수증이나 지출 전표 사진을 올리시면 <b>지출 장부에 자동 등록</b>됩니다.";
+      }
+    }
     if (box) box.style.display = "none";
     if (btn) {
-      btn.innerHTML = "확인 (사진 분석)";
+      if (scanKind === "bank_sms") {
+        btn.innerHTML = "확인 (⚡ 1초 입금 수납)";
+        btn.style.background = "#0f172a";
+      } else if (scanKind === "contract") {
+        btn.innerHTML = "확인 (계약 대장 등록)";
+        btn.style.background = "#1e40af";
+      } else {
+        btn.innerHTML = "확인 (영수증 전표 등록)";
+        btn.style.background = "#2563eb";
+      }
       btn.className = "btn-primary";
-      btn.style.background = "#2563eb";
     }
     return;
   }
@@ -275,9 +294,22 @@ async function submitUniversalIngest() {
   const isPhoto = Boolean(img || (text && text.startsWith("data:image/")));
   const btn = document.getElementById("btnUniversalSubmit");
   const origText = btn ? (btn.innerHTML.includes("확인") ? btn.innerHTML : "확인") : "확인";
+  let photoTimerId = null;
+  const startTime = Date.now();
+
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = isPhoto ? "📸 사진 AI 분석 중... ⏳" : "확인 중... ⏳";
+    if (isPhoto) {
+      btn.innerHTML = "⚡ 초고속 AI 분석 중... (0.1초)";
+      photoTimerId = setInterval(() => {
+        const sec = ((Date.now() - startTime) / 1000).toFixed(1);
+        if (btn && btn.disabled) {
+          btn.innerHTML = `⚡ 초고속 AI 분석 중... (${sec}초)`;
+        }
+      }, 150);
+    } else {
+      btn.innerHTML = "확인 중... ⏳";
+    }
   }
 
   // 0. 엑셀/구글 시트 장부 동기화 명령 직접 실행 (즉각 DB 반영 및 화면 갱신)
@@ -387,7 +419,7 @@ async function submitUniversalIngest() {
   }
 
   // 2. 은행 입금문자 / 구글시트 / 파일 / 사진 인제스트 처리
-  setAlert(isPhoto ? "📸 사진(임대차 대장/영수증)을 AI가 정밀 분석 중입니다. 잠시만 기다려주세요..." : "만능 인제스트 분석 및 처리 진행 중...", "info");
+  setAlert(isPhoto ? (scanKind === "bank_sms" ? "⚡ 입금 알림 사진을 AI가 초고속 분석 중입니다..." : "📸 사진을 AI가 분석 중입니다...") : "만능 인제스트 분석 및 처리 진행 중...", "info");
 
   try {
     const clearBeforeImport = document.getElementById("chkClearBeforeImport") ? document.getElementById("chkClearBeforeImport").checked : true;
@@ -414,7 +446,8 @@ async function submitUniversalIngest() {
         const first = data.items?.[0];
         const amtStr = first ? ` (${first.room_number}호 ${((first.applied_amount || first.amount) || 0).toLocaleString()}원)` : "";
         const periodInfo = (first && first.applied_year && first.applied_month) ? ` · ${first.applied_year}-${first.applied_month < 10 ? '0' : ''}${first.applied_month}분` : "";
-        alertMsg = `✅ <b>입금 수납 완료</b>: ${data.applied_count}건 수납 처리되었습니다!${amtStr}${periodInfo}`;
+        const extractedDesc = data.extracted_text ? `<br><small style="font-size:11.5px;color:#334155;">📷 텍스트 추출: ${data.extracted_text.replace(/\n/g, ' ')}</small>` : "";
+        alertMsg = `✅ <b>입금 수납 완료</b>: ${data.applied_count}건 수납 처리되었습니다!${amtStr}${periodInfo}${extractedDesc}`;
       } else if (data.kind === "google_sheet" || data.kind === "file_excel") {
         alertMsg = `✅ <b>장부 동기화 완료</b>: 2025/2026년 전체 데이터가 성공적으로 반영되었습니다.`;
       } else if (data.ocr_kind === "receipt" || data.expense) {
@@ -425,6 +458,7 @@ async function submitUniversalIngest() {
       }
 
       if (isPhoto && btn) {
+        if (photoTimerId) clearInterval(photoTimerId);
         btn.innerHTML = "✅ 분석 완료! (닫는 중...)";
         btn.style.background = "#16a34a";
       }
@@ -476,6 +510,7 @@ async function submitUniversalIngest() {
       btn.style.background = "#dc2626";
     }
   } finally {
+    if (photoTimerId) clearInterval(photoTimerId);
     if (btn && btn.disabled) {
       btn.disabled = false;
       btn.innerHTML = origText;
